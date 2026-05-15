@@ -1,0 +1,45 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+
+# Godot cache
+.import/
+
+# Godot / game export artifacts
+build/
+dist/
+exports/
+*.exe
+*.apk
+*.aab
+*.app
+*.dmg
+*.zip
+*.7z
+*.rar
+
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs / temp files
+*.log
+tmp/
+temp/
+
+# Node / WebApp
+node_modules/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Temporary art / AI process assets excluded from main repo
+ai_outputs/
+ai_temp/
+references_temp/
+screenshots/
+recordings/
