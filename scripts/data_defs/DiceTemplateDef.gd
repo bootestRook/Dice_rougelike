@@ -7,7 +7,8 @@ const FaceState = preload("res://scripts/core/dice/FaceState.gd")
 
 
 @export var id: StringName = &""
-@export var display_name: String = ""
+@export var name_key: StringName = &""
+@export var desc_key: StringName = &""
 @export var face_pips: PackedInt32Array = PackedInt32Array([1, 2, 3, 4, 5, 6])
 @export var face_material_ids: Array[StringName] = []
 @export var face_mark_ids: Array[StringName] = []

@@ -1,0 +1,721 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: DiceRoguelite\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "UI.MAIN.TITLE"
+msgstr ""
+
+msgid "UI.MAIN.DESCRIPTION"
+msgstr ""
+
+msgid "UI.MAIN.VERSION_TITLE"
+msgstr ""
+
+msgid "UI.MAIN.VERSION_BODY"
+msgstr ""
+
+msgid "UI.MAIN.START"
+msgstr ""
+
+msgid "UI.MAIN.RULES"
+msgstr ""
+
+msgid "UI.MAIN.RULES_TITLE"
+msgstr ""
+
+msgid "UI.MAIN.RULES_BODY"
+msgstr ""
+
+msgid "UI.MAIN.INITIAL_DICE_TITLE"
+msgstr ""
+
+msgid "UI.MAIN.DIE_LINE"
+msgstr ""
+
+msgid "UI.MAIN.PREVIEW_TITLE"
+msgstr ""
+
+msgid "UI.MAIN.PREVIEW_BODY"
+msgstr ""
+
+msgid "UI.MAIN.DEFEAT_TITLE"
+msgstr ""
+
+msgid "UI.MAIN.DEFEAT_BODY"
+msgstr ""
+
+msgid "UI.MAIN.BACK_TO_MAIN"
+msgstr ""
+
+msgid "UI.BATTLE.TITLE"
+msgstr ""
+
+msgid "UI.BATTLE.SCORE"
+msgstr ""
+
+msgid "UI.BATTLE.HAND"
+msgstr ""
+
+msgid "UI.BATTLE.REROLL"
+msgstr ""
+
+msgid "UI.BATTLE.REROLL_LEFT"
+msgstr ""
+
+msgid "UI.BATTLE.LOCK"
+msgstr ""
+
+msgid "UI.BATTLE.UNLOCK"
+msgstr ""
+
+msgid "UI.BATTLE.SELECT"
+msgstr ""
+
+msgid "UI.BATTLE.SELECTED"
+msgstr ""
+
+msgid "UI.BATTLE.UNSELECTED"
+msgstr ""
+
+msgid "UI.BATTLE.LOCKED"
+msgstr ""
+
+msgid "UI.BATTLE.UNLOCKED"
+msgstr ""
+
+msgid "UI.BATTLE.SCORE_SELECTED"
+msgstr ""
+
+msgid "UI.BATTLE.STATUS_READY"
+msgstr ""
+
+msgid "UI.BATTLE.STATUS_STARTED"
+msgstr ""
+
+msgid "UI.BATTLE.STATUS_CHOOSE"
+msgstr ""
+
+msgid "UI.BATTLE.SELECTED_COUNT"
+msgstr ""
+
+msgid "UI.BATTLE.LOG_EMPTY"
+msgstr ""
+
+msgid "UI.BATTLE.LOG_HINT"
+msgstr ""
+
+msgid "UI.BATTLE.LOG_LAST_TITLE"
+msgstr ""
+
+msgid "UI.BATTLE.LOG_SECTION_TITLE"
+msgstr ""
+
+msgid "UI.BATTLE.PREVIEW_EMPTY"
+msgstr ""
+
+msgid "UI.BATTLE.PREVIEW"
+msgstr ""
+
+msgid "UI.BATTLE.DEBUG_INFO"
+msgstr ""
+
+msgid "UI.BATTLE.VICTORY"
+msgstr ""
+
+msgid "UI.BATTLE.DEFEAT"
+msgstr ""
+
+msgid "UI.REWARD.TITLE"
+msgstr ""
+
+msgid "UI.REWARD.EMPTY"
+msgstr ""
+
+msgid "UI.REWARD.RARITY"
+msgstr ""
+
+msgid "UI.REWARD.EFFECT"
+msgstr ""
+
+msgid "UI.REWARD.EFFECT_NONE"
+msgstr ""
+
+msgid "UI.REWARD.SELECT"
+msgstr ""
+
+msgid "UI.INSTALL.TITLE"
+msgstr ""
+
+msgid "UI.INSTALL.NO_RUN"
+msgstr ""
+
+msgid "UI.INSTALL.NO_PIECE"
+msgstr ""
+
+msgid "UI.INSTALL.DIE"
+msgstr ""
+
+msgid "UI.INSTALL.FACE"
+msgstr ""
+
+msgid "UI.INSTALL.VALUE"
+msgstr ""
+
+msgid "UI.INSTALL.MATERIAL"
+msgstr ""
+
+msgid "UI.INSTALL.IMPRINT"
+msgstr ""
+
+msgid "UI.INSTALL.RUNE"
+msgstr ""
+
+msgid "UI.INSTALL.LEVEL"
+msgstr ""
+
+msgid "UI.INSTALL.CONFIRM"
+msgstr ""
+
+msgid "UI.INSTALL.CANCEL"
+msgstr ""
+
+msgid "UI.FACE.MATERIAL"
+msgstr ""
+
+msgid "UI.FACE.IMPRINT"
+msgstr ""
+
+msgid "UI.FACE.RUNE"
+msgstr ""
+
+msgid "UI.FACE.LEVEL"
+msgstr ""
+
+msgid "RARITY.COMMON"
+msgstr ""
+
+msgid "RARITY.UNCOMMON"
+msgstr ""
+
+msgid "RARITY.RARE"
+msgstr ""
+
+msgid "RARITY.EPIC"
+msgstr ""
+
+msgid "RARITY.LEGENDARY"
+msgstr ""
+
+msgid "COMBO.HIGH_CARD"
+msgstr ""
+
+msgid "COMBO.PAIR"
+msgstr ""
+
+msgid "COMBO.TWO_PAIR"
+msgstr ""
+
+msgid "COMBO.THREE_KIND"
+msgstr ""
+
+msgid "COMBO.FULL_HOUSE"
+msgstr ""
+
+msgid "COMBO.SMALL_STRAIGHT"
+msgstr ""
+
+msgid "COMBO.LARGE_STRAIGHT"
+msgstr ""
+
+msgid "COMBO.FOUR_KIND"
+msgstr ""
+
+msgid "COMBO.FIVE_KIND"
+msgstr ""
+
+msgid "LOG.COMBO"
+msgstr ""
+
+msgid "LOG.PIP_SUM"
+msgstr ""
+
+msgid "LOG.BASE_CHIPS"
+msgstr ""
+
+msgid "LOG.BASE_MULT"
+msgstr ""
+
+msgid "LOG.BASE_XMULT"
+msgstr ""
+
+msgid "LOG.CHIPS_GAIN"
+msgstr ""
+
+msgid "LOG.MULT_GAIN"
+msgstr ""
+
+msgid "LOG.XMULT_GAIN"
+msgstr ""
+
+msgid "LOG.RETRIGGER"
+msgstr ""
+
+msgid "LOG.MATERIAL_TRIGGER"
+msgstr ""
+
+msgid "LOG.IMPRINT_TRIGGER"
+msgstr ""
+
+msgid "LOG.RUNE_TRIGGER"
+msgstr ""
+
+msgid "LOG.RELIC_TRIGGER"
+msgstr ""
+
+msgid "LOG.FORGE_PART_TRIGGER"
+msgstr ""
+
+msgid "LOG.FINAL_SCORE"
+msgstr ""
+
+msgid "LOG.MATERIAL_STEEL"
+msgstr ""
+
+msgid "LOG.IMPRINT_BLUE"
+msgstr ""
+
+msgid "LOG.IMPRINT_RED"
+msgstr ""
+
+msgid "LOG.RUNE_PAIR_RETRIGGER"
+msgstr ""
+
+msgid "LOG.EXTRA_TRIGGER_PIP"
+msgstr ""
+
+msgid "LOG.LEVEL_CHIPS"
+msgstr ""
+
+msgid "LOG.MATERIAL_GLASS"
+msgstr ""
+
+msgid "LOG.RUNE_SIX"
+msgstr ""
+
+msgid "LOG.RUNE_STRAIGHT"
+msgstr ""
+
+msgid "LOG.RUNE_ODD"
+msgstr ""
+
+msgid "LOG.RUNE_EVEN"
+msgstr ""
+
+msgid "MATERIAL.NONE.NAME"
+msgstr ""
+
+msgid "MATERIAL.NONE.DESC"
+msgstr ""
+
+msgid "MATERIAL.GLASS.NAME"
+msgstr ""
+
+msgid "MATERIAL.GLASS.DESC"
+msgstr ""
+
+msgid "MATERIAL.STEEL.NAME"
+msgstr ""
+
+msgid "MATERIAL.STEEL.DESC"
+msgstr ""
+
+msgid "MATERIAL.BLOOD.NAME"
+msgstr ""
+
+msgid "MATERIAL.BLOOD.DESC"
+msgstr ""
+
+msgid "MATERIAL.MIRROR.NAME"
+msgstr ""
+
+msgid "MATERIAL.MIRROR.DESC"
+msgstr ""
+
+msgid "MATERIAL.CURSE.NAME"
+msgstr ""
+
+msgid "MATERIAL.CURSE.DESC"
+msgstr ""
+
+msgid "IMPRINT.NONE.NAME"
+msgstr ""
+
+msgid "IMPRINT.NONE.DESC"
+msgstr ""
+
+msgid "IMPRINT.RED.NAME"
+msgstr ""
+
+msgid "IMPRINT.RED.DESC"
+msgstr ""
+
+msgid "IMPRINT.BLUE.NAME"
+msgstr ""
+
+msgid "IMPRINT.BLUE.DESC"
+msgstr ""
+
+msgid "IMPRINT.GOLD.NAME"
+msgstr ""
+
+msgid "IMPRINT.GOLD.DESC"
+msgstr ""
+
+msgid "IMPRINT.WHITE.NAME"
+msgstr ""
+
+msgid "IMPRINT.WHITE.DESC"
+msgstr ""
+
+msgid "IMPRINT.PURPLE.NAME"
+msgstr ""
+
+msgid "IMPRINT.PURPLE.DESC"
+msgstr ""
+
+msgid "IMPRINT.BLACK.NAME"
+msgstr ""
+
+msgid "IMPRINT.BLACK.DESC"
+msgstr ""
+
+msgid "RUNE.NONE.NAME"
+msgstr ""
+
+msgid "RUNE.NONE.DESC"
+msgstr ""
+
+msgid "RUNE.SIX.NAME"
+msgstr ""
+
+msgid "RUNE.SIX.DESC"
+msgstr ""
+
+msgid "RUNE.LOW.NAME"
+msgstr ""
+
+msgid "RUNE.LOW.DESC"
+msgstr ""
+
+msgid "RUNE.STRAIGHT.NAME"
+msgstr ""
+
+msgid "RUNE.STRAIGHT.DESC"
+msgstr ""
+
+msgid "RUNE.PAIR.NAME"
+msgstr ""
+
+msgid "RUNE.PAIR.DESC"
+msgstr ""
+
+msgid "RUNE.ODD.NAME"
+msgstr ""
+
+msgid "RUNE.ODD.DESC"
+msgstr ""
+
+msgid "RUNE.EVEN.NAME"
+msgstr ""
+
+msgid "RUNE.EVEN.DESC"
+msgstr ""
+
+msgid "RUNE.REROLL.NAME"
+msgstr ""
+
+msgid "RUNE.REROLL.DESC"
+msgstr ""
+
+msgid "RUNE.CURSE.NAME"
+msgstr ""
+
+msgid "RUNE.CURSE.DESC"
+msgstr ""
+
+msgid "FORGE_OP.SET_PIP"
+msgstr ""
+
+msgid "FORGE_OP.SET_MATERIAL"
+msgstr ""
+
+msgid "FORGE_OP.SET_IMPRINT"
+msgstr ""
+
+msgid "FORGE_OP.SET_RUNE"
+msgstr ""
+
+msgid "FORGE_OP.UPGRADE"
+msgstr ""
+
+msgid "FORGE_OP.CLEANSE"
+msgstr ""
+
+msgid "FORGE_OP.RESET_FACE"
+msgstr ""
+
+msgid "FORGE_OP.COPY_FROM_FACE"
+msgstr ""
+
+msgid "FORGE_OP.UNKNOWN"
+msgstr ""
+
+msgid "FORGE_PART.PIP_6.NAME"
+msgstr ""
+
+msgid "FORGE_PART.PIP_6.DESC"
+msgstr ""
+
+msgid "FORGE_PART.PIP_1.NAME"
+msgstr ""
+
+msgid "FORGE_PART.PIP_1.DESC"
+msgstr ""
+
+msgid "FORGE_PART.PIP_3.NAME"
+msgstr ""
+
+msgid "FORGE_PART.PIP_3.DESC"
+msgstr ""
+
+msgid "FORGE_PART.MARK_RED.NAME"
+msgstr ""
+
+msgid "FORGE_PART.MARK_RED.DESC"
+msgstr ""
+
+msgid "FORGE_PART.MARK_BLUE.NAME"
+msgstr ""
+
+msgid "FORGE_PART.MARK_BLUE.DESC"
+msgstr ""
+
+msgid "FORGE_PART.MATERIAL_GLASS.NAME"
+msgstr ""
+
+msgid "FORGE_PART.MATERIAL_GLASS.DESC"
+msgstr ""
+
+msgid "FORGE_PART.MATERIAL_STEEL.NAME"
+msgstr ""
+
+msgid "FORGE_PART.MATERIAL_STEEL.DESC"
+msgstr ""
+
+msgid "FORGE_PART.RUNE_SIX.NAME"
+msgstr ""
+
+msgid "FORGE_PART.RUNE_SIX.DESC"
+msgstr ""
+
+msgid "FORGE_PART.RUNE_STRAIGHT.NAME"
+msgstr ""
+
+msgid "FORGE_PART.RUNE_STRAIGHT.DESC"
+msgstr ""
+
+msgid "FORGE_PART.RUNE_PAIR.NAME"
+msgstr ""
+
+msgid "FORGE_PART.RUNE_PAIR.DESC"
+msgstr ""
+
+msgid "FORGE_PART.RUNE_ODD.NAME"
+msgstr ""
+
+msgid "FORGE_PART.RUNE_ODD.DESC"
+msgstr ""
+
+msgid "FORGE_PART.RUNE_EVEN.NAME"
+msgstr ""
+
+msgid "FORGE_PART.RUNE_EVEN.DESC"
+msgstr ""
+
+msgid "FORGE_PART.UPGRADE_1.NAME"
+msgstr ""
+
+msgid "FORGE_PART.UPGRADE_1.DESC"
+msgstr ""
+
+msgid "FORGE_PART.CLEANSE.NAME"
+msgstr ""
+
+msgid "FORGE_PART.CLEANSE.DESC"
+msgstr ""
+
+msgid "FORGE_PART.RED_6.NAME"
+msgstr ""
+
+msgid "FORGE_PART.RED_6.DESC"
+msgstr ""
+
+msgid "FORGE_PART.GLASS_1.NAME"
+msgstr ""
+
+msgid "FORGE_PART.GLASS_1.DESC"
+msgstr ""
+
+msgid "DIE.NORMAL_D6.NAME"
+msgstr ""
+
+msgid "DIE.NORMAL_D6.DESC"
+msgstr ""
+
+msgid "RELIC.NONE.NAME"
+msgstr ""
+
+msgid "RELIC.NONE.DESC"
+msgstr ""
+
+msgid "ENCOUNTER.NORMAL_BATTLE.NAME"
+msgstr ""
+
+msgid "UI.INSTALL.NO_FACE"
+msgstr ""
+
+msgid "UI.RUN.VICTORY_TITLE"
+msgstr ""
+
+msgid "UI.RUN.DEFEAT_TITLE"
+msgstr ""
+
+msgid "UI.RUN.RESTART"
+msgstr ""
+
+msgid "UI.RUN.BACK_TO_MAIN"
+msgstr ""
+
+msgid "UI.RUN.NO_RUN_STATE"
+msgstr ""
+
+msgid "UI.RUN.NO_DICE"
+msgstr ""
+
+msgid "UI.RUN.FINAL_DICE"
+msgstr ""
+
+msgid "UI.RUN.DIE"
+msgstr ""
+
+msgid "UI.RUN.FACE"
+msgstr ""
+
+msgid "UI.RUN.FACE_PIP"
+msgstr ""
+
+msgid "UI.RUN.FACE_MATERIAL"
+msgstr ""
+
+msgid "UI.RUN.FACE_IMPRINT"
+msgstr ""
+
+msgid "UI.RUN.FACE_RUNE"
+msgstr ""
+
+msgid "UI.RUN.FACE_LEVEL"
+msgstr ""
+
+msgid "UI.RUN.SUMMARY_BATTLES_CLEARED"
+msgstr ""
+
+msgid "UI.RUN.SUMMARY_CURRENT_BATTLE"
+msgstr ""
+
+msgid "UI.RUN.SUMMARY_TOTAL_HANDS"
+msgstr ""
+
+msgid "UI.RUN.SUMMARY_TOTAL_SCORE"
+msgstr ""
+
+msgid "UI.RUN.SUMMARY_BEST_HAND"
+msgstr ""
+
+msgid "UI.RUN.SUMMARY_INSTALLED_COUNT"
+msgstr ""
+
+msgid "UI.RUN.SUMMARY_HISTORY_NONE"
+msgstr ""
+
+msgid "UI.RUN.SUMMARY_HISTORY_TITLE"
+msgstr ""
+
+msgid "UI.RUN.SUMMARY_HISTORY_ITEM"
+msgstr ""
+
+msgid "UI.SCORE_SUMMARY.NONE"
+msgstr ""
+
+msgid "UI.SCORE_SUMMARY.COMBO"
+msgstr ""
+
+msgid "UI.SCORE_SUMMARY.TAGS"
+msgstr ""
+
+msgid "UI.SCORE_SUMMARY.CHIPS"
+msgstr ""
+
+msgid "UI.SCORE_SUMMARY.MULT"
+msgstr ""
+
+msgid "UI.SCORE_SUMMARY.XMULT"
+msgstr ""
+
+msgid "UI.SCORE_SUMMARY.FINAL"
+msgstr ""
+
+msgid "TAG.ALL_ODD"
+msgstr ""
+
+msgid "TAG.ALL_EVEN"
+msgstr ""
+
+msgid "TAG.LOW_TOTAL"
+msgstr ""
+
+msgid "TAG.HIGH_TOTAL"
+msgstr ""
+
+msgid "TAG.CONTAINS_SIX"
+msgstr ""
+
+msgid "TAG.MANY_SIXES"
+msgstr ""
+
+msgid "TAG.FEW_SCORED"
+msgstr ""
+
+msgid "TAG.REROLLED"
+msgstr ""
+
+msgid "TAG.LAST_HAND"
+msgstr ""
+
+msgid "PHASE.INIT"
+msgstr ""
+
+msgid "PHASE.WAITING_ACTION"
+msgstr ""
+
+msgid "PHASE.SCORING"
+msgstr ""
+
+msgid "PHASE.VICTORY"
+msgstr ""
+
+msgid "PHASE.DEFEAT"
+msgstr ""
+
+msgid "PHASE.UNKNOWN"
+msgstr ""

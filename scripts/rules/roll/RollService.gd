@@ -37,6 +37,22 @@ func reroll_unlocked(dice: Array[DieState], current: Array[RolledFace]) -> Array
 	return results
 
 
+func reroll_selected(dice: Array[DieState], current: Array[RolledFace]) -> Array[RolledFace]:
+	var results: Array[RolledFace] = []
+	var roll_count: int = min(dice.size(), current.size())
+
+	for die_index in range(roll_count):
+		var current_roll := current[die_index]
+
+		if current_roll.selected:
+			results.append(roll_die(dice[die_index], die_index))
+		else:
+			current_roll.locked = false
+			results.append(current_roll)
+
+	return results
+
+
 func roll_dice(dice: Array[DieState], external_rng: RandomNumberGenerator = null) -> Array[RolledFace]:
 	var active_rng := _get_rng(external_rng)
 	var results: Array[RolledFace] = []

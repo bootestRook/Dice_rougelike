@@ -2,10 +2,15 @@ extends RefCounted
 class_name ScoreEngine
 
 
-const ScoreContext = preload("res://scripts/core/scoring/ScoreContext.gd")
-const ScoreLogEntry = preload("res://scripts/core/scoring/ScoreLogEntry.gd")
-const ScoreResult = preload("res://scripts/core/scoring/ScoreResult.gd")
 const ComboEvaluator = preload("res://scripts/rules/combo/ComboEvaluator.gd")
+const EffectResolver = preload("res://scripts/rules/scoring/EffectResolver.gd")
+const LocKeys = preload("res://scripts/i18n/LocKeys.gd")
+const ScoreContext = preload("res://scripts/core/scoring/ScoreContext.gd")
+const BattleLogEntry = preload("res://scripts/log/BattleLogEntry.gd")
+const ScoreResult = preload("res://scripts/core/scoring/ScoreResult.gd")
+
+
+var effect_resolver := EffectResolver.new()
 
 
 func score(context: ScoreContext) -> ScoreResult:
@@ -15,19 +20,34 @@ func score(context: ScoreContext) -> ScoreResult:
 
 	if combo_id == &"":
 		combo_id = ComboEvaluator.new().evaluate(_selected_pips(context))
+	context.combo_id = combo_id
+	context.combo_type = combo_id
+	result.combo_id = combo_id
+	result.combo_name_key = LocKeys.combo_key(combo_id)
+	_copy_display_combos(context, result)
+	result.tags.clear()
+	for tag in context.tags:
+		result.tags.append(tag)
 
 	var base_values := _base_values_for_combo(combo_id, total_pips)
 	result.chips = int(base_values["chips"])
 	result.mult = int(base_values["mult"])
 	result.xmult = 1.0
-	result.final_score = roundi(float(result.chips * result.mult) * result.xmult)
 
-	_add_log(result, "combo", "Combo: %s" % [str(combo_id)])
-	_add_log(result, "pips", "Pip total: %d" % [total_pips])
-	_add_log(result, "chips", "Chips: %d" % [result.chips], result.chips, 0, 1.0)
-	_add_log(result, "mult", "Mult: %d" % [result.mult], 0, result.mult, 1.0)
-	_add_log(result, "xmult", "XMult: %.2f" % [result.xmult], 0, 0, result.xmult)
-	_add_log(result, "final", "Final score: %d" % [result.final_score])
+	_add_log(result, &"LOG.COMBO", {"combo": LocKeys.combo_key(combo_id)}, &"combo")
+	_add_log(result, &"LOG.PIP_SUM", {"sum": total_pips}, &"base")
+	_add_log(result, &"LOG.BASE_CHIPS", {"chips": result.chips}, &"base")
+	_add_log(result, &"LOG.BASE_MULT", {"mult": result.mult}, &"base")
+	_add_log(result, &"LOG.BASE_XMULT", {"xmult": _format_xmult(result.xmult)}, &"base")
+
+	effect_resolver.apply_effects(context, result)
+	result.final_score = roundi(float(result.chips * result.mult) * result.xmult)
+	_add_log(result, &"LOG.FINAL_SCORE", {
+		"chips": result.chips,
+		"mult": result.mult,
+		"xmult": _format_xmult(result.xmult),
+		"score": result.final_score,
+	}, &"final")
 	return result
 
 
@@ -48,6 +68,16 @@ func _sum_selected_pips(context: ScoreContext) -> int:
 		total += pip
 
 	return total
+
+
+func _copy_display_combos(context: ScoreContext, result: ScoreResult) -> void:
+	result.display_combo_ids.clear()
+	if context.display_combo_ids.is_empty():
+		result.display_combo_ids.append(context.combo_id)
+		return
+
+	for display_combo_id in context.display_combo_ids:
+		result.display_combo_ids.append(display_combo_id)
 
 
 func _base_values_for_combo(combo_id: StringName, pip_total: int) -> Dictionary:
@@ -72,7 +102,10 @@ func _base_values_for_combo(combo_id: StringName, pip_total: int) -> Dictionary:
 			return {"chips": pip_total, "mult": 1}
 
 
-func _add_log(result: ScoreResult, source: String, text: String, chips_delta: int = 0, mult_delta: int = 0, xmult_factor: float = 1.0) -> void:
-	var entry := ScoreLogEntry.new()
-	entry.setup(source, text, chips_delta, mult_delta, xmult_factor)
+func _add_log(result: ScoreResult, key: StringName, args: Dictionary = {}, category: StringName = &"general") -> void:
+	var entry := BattleLogEntry.new(key, args, category)
 	result.add_log(entry)
+
+
+func _format_xmult(value: float) -> String:
+	return "%.2f" % [value]

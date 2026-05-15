@@ -1,0 +1,722 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: DiceRoguelite\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: en\n"
+
+msgid "UI.MAIN.TITLE"
+msgstr "Dice Roguelite Prototype"
+
+msgid "UI.MAIN.DESCRIPTION"
+msgstr "Core loop: six d6, reroll, select, score, and earn forge-piece rewards after battle."
+
+msgid "UI.MAIN.VERSION_TITLE"
+msgstr "v0.1 Playtest Prototype"
+
+msgid "UI.MAIN.VERSION_BODY"
+msgstr "- 5 linear battles\n- Forge piece after each non-final victory\n- Dice face effects enabled\n- No map / shop / boss yet"
+
+msgid "UI.MAIN.START"
+msgstr "Start Run"
+
+msgid "UI.MAIN.RULES"
+msgstr "Rules"
+
+msgid "UI.MAIN.RULES_TITLE"
+msgstr "Rules"
+
+msgid "UI.MAIN.RULES_BODY"
+msgstr "Battle rules: dice={dice}  max selected={max_selected}  rerolls={rerolls}  hands={hands}  target={target}"
+
+msgid "UI.MAIN.INITIAL_DICE_TITLE"
+msgstr "Starting Dice"
+
+msgid "UI.MAIN.DIE_LINE"
+msgstr "Die {die}: [{pips}]"
+
+msgid "UI.MAIN.PREVIEW_TITLE"
+msgstr "Play Preview"
+
+msgid "UI.MAIN.PREVIEW_BODY"
+msgstr "Start a battle to roll, lock, reroll, select, and score a normal fight."
+
+msgid "UI.MAIN.DEFEAT_TITLE"
+msgstr "Defeat"
+
+msgid "UI.MAIN.DEFEAT_BODY"
+msgstr "This run has ended for now. Return to the prototype menu to start a new run."
+
+msgid "UI.MAIN.BACK_TO_MAIN"
+msgstr "Back to Main Menu"
+
+msgid "UI.BATTLE.TITLE"
+msgstr "Battle"
+
+msgid "UI.BATTLE.SCORE"
+msgstr "Score: {score} / {target}"
+
+msgid "UI.BATTLE.HAND"
+msgstr "Hand: {hand} / {hands}"
+
+msgid "UI.BATTLE.REROLL"
+msgstr "Reroll"
+
+msgid "UI.BATTLE.REROLL_LEFT"
+msgstr "Rerolls: {rerolls}"
+
+msgid "UI.BATTLE.LOCK"
+msgstr "Lock"
+
+msgid "UI.BATTLE.UNLOCK"
+msgstr "Unlock"
+
+msgid "UI.BATTLE.SELECT"
+msgstr "Select"
+
+msgid "UI.BATTLE.SELECTED"
+msgstr "Selected"
+
+msgid "UI.BATTLE.UNSELECTED"
+msgstr "Unselected"
+
+msgid "UI.BATTLE.LOCKED"
+msgstr "Locked"
+
+msgid "UI.BATTLE.UNLOCKED"
+msgstr "Unlocked"
+
+msgid "UI.BATTLE.SCORE_SELECTED"
+msgstr "Score Selected"
+
+msgid "UI.BATTLE.STATUS_READY"
+msgstr "Ready"
+
+msgid "UI.BATTLE.STATUS_STARTED"
+msgstr "Battle started."
+
+msgid "UI.BATTLE.STATUS_CHOOSE"
+msgstr "Select dice to score, or lock before rerolling."
+
+msgid "UI.BATTLE.SELECTED_COUNT"
+msgstr "Selected: {count} / {max}"
+
+msgid "UI.BATTLE.LOG_EMPTY"
+msgstr "The latest scoring log will appear here."
+
+msgid "UI.BATTLE.LOG_HINT"
+msgstr "Select 1 to 5 dice to score. You can lock dice before rerolling."
+
+msgid "UI.BATTLE.LOG_LAST_TITLE"
+msgstr "Latest Settlement"
+
+msgid "UI.BATTLE.LOG_SECTION_TITLE"
+msgstr "Settlement Log"
+
+msgid "UI.BATTLE.PREVIEW_EMPTY"
+msgstr "Current Selection Preview\nNo face selected."
+
+msgid "UI.BATTLE.PREVIEW"
+msgstr "Current Selection Preview\n{summary}"
+
+msgid "UI.BATTLE.DEBUG_INFO"
+msgstr "Debug: battle {battle} / {max_battles} | target {target} | hand {hand} / {hands} | rerolls {rerolls} | selected {selected} | phase {phase}"
+
+msgid "UI.BATTLE.VICTORY"
+msgstr "Victory."
+
+msgid "UI.BATTLE.DEFEAT"
+msgstr "Defeat."
+
+msgid "UI.REWARD.TITLE"
+msgstr "Choose a Forge Piece"
+
+msgid "UI.REWARD.EMPTY"
+msgstr "No rewards were generated."
+
+msgid "UI.REWARD.RARITY"
+msgstr "Rarity: {rarity}"
+
+msgid "UI.REWARD.EFFECT"
+msgstr "Effect:\n{effects}"
+
+msgid "UI.REWARD.EFFECT_NONE"
+msgstr "Effect: None"
+
+msgid "UI.REWARD.SELECT"
+msgstr "Choose"
+
+msgid "UI.INSTALL.TITLE"
+msgstr "Install Forge Piece"
+
+msgid "UI.INSTALL.NO_RUN"
+msgstr "No current run state."
+
+msgid "UI.INSTALL.NO_PIECE"
+msgstr "No forge piece selected."
+
+msgid "UI.INSTALL.DIE"
+msgstr "Die {die}"
+
+msgid "UI.INSTALL.FACE"
+msgstr "#{face}  {pip}"
+
+msgid "UI.INSTALL.VALUE"
+msgstr "Pip: {value}"
+
+msgid "UI.INSTALL.MATERIAL"
+msgstr "Material: {material}"
+
+msgid "UI.INSTALL.IMPRINT"
+msgstr "Imprint: {imprint}"
+
+msgid "UI.INSTALL.RUNE"
+msgstr "Rune: {rune}"
+
+msgid "UI.INSTALL.LEVEL"
+msgstr "Level {level}"
+
+msgid "UI.INSTALL.CONFIRM"
+msgstr "Confirm"
+
+msgid "UI.INSTALL.CANCEL"
+msgstr "Cancel"
+
+msgid "UI.FACE.MATERIAL"
+msgstr "Material: {material}"
+
+msgid "UI.FACE.IMPRINT"
+msgstr "Imprint: {imprint}"
+
+msgid "UI.FACE.RUNE"
+msgstr "Rune: {rune}"
+
+msgid "UI.FACE.LEVEL"
+msgstr "Level {level}"
+
+msgid "RARITY.COMMON"
+msgstr "Common"
+
+msgid "RARITY.UNCOMMON"
+msgstr "Uncommon"
+
+msgid "RARITY.RARE"
+msgstr "Rare"
+
+msgid "RARITY.EPIC"
+msgstr "Epic"
+
+msgid "RARITY.LEGENDARY"
+msgstr "Legendary"
+
+msgid "COMBO.HIGH_CARD"
+msgstr "High Card"
+
+msgid "COMBO.PAIR"
+msgstr "Pair"
+
+msgid "COMBO.TWO_PAIR"
+msgstr "Two Pair"
+
+msgid "COMBO.THREE_KIND"
+msgstr "Three of a Kind"
+
+msgid "COMBO.FULL_HOUSE"
+msgstr "Full House"
+
+msgid "COMBO.SMALL_STRAIGHT"
+msgstr "Small Straight"
+
+msgid "COMBO.LARGE_STRAIGHT"
+msgstr "Large Straight"
+
+msgid "COMBO.FOUR_KIND"
+msgstr "Four of a Kind"
+
+msgid "COMBO.FIVE_KIND"
+msgstr "Five of a Kind"
+
+msgid "LOG.COMBO"
+msgstr "Main combo: {combo}"
+
+msgid "LOG.PIP_SUM"
+msgstr "Pip total: {sum}"
+
+msgid "LOG.BASE_CHIPS"
+msgstr "Base Chips: {chips}"
+
+msgid "LOG.BASE_MULT"
+msgstr "Base Mult: {mult}"
+
+msgid "LOG.BASE_XMULT"
+msgstr "Base XMult: {xmult}"
+
+msgid "LOG.CHIPS_GAIN"
+msgstr "{source}: +{chips} Chips"
+
+msgid "LOG.MULT_GAIN"
+msgstr "{source}: +{mult} Mult"
+
+msgid "LOG.XMULT_GAIN"
+msgstr "{source}: x{xmult} XMult"
+
+msgid "LOG.RETRIGGER"
+msgstr "{source}: +{count} extra trigger"
+
+msgid "LOG.MATERIAL_TRIGGER"
+msgstr "Material trigger: {source}, {effect}"
+
+msgid "LOG.IMPRINT_TRIGGER"
+msgstr "Imprint trigger: {source}, {effect}"
+
+msgid "LOG.RUNE_TRIGGER"
+msgstr "Rune trigger: {source}, {effect}"
+
+msgid "LOG.RELIC_TRIGGER"
+msgstr "Relic trigger: {source}, {effect}"
+
+msgid "LOG.FORGE_PART_TRIGGER"
+msgstr "Forge piece trigger: {source}, {effect}"
+
+msgid "LOG.FINAL_SCORE"
+msgstr "Final: {chips} x {mult} x {xmult} = {score}"
+
+msgid "LOG.MATERIAL_STEEL"
+msgstr "Die {die} Face {face} {material}: unselected, +{mult} Mult"
+
+msgid "LOG.IMPRINT_BLUE"
+msgstr "Die {die} Face {face} {imprint}: unselected, +{mult} Mult"
+
+msgid "LOG.IMPRINT_RED"
+msgstr "Die {die} Face {face} {imprint}: +{count} extra trigger"
+
+msgid "LOG.RUNE_PAIR_RETRIGGER"
+msgstr "Die {die} Face {face} {rune}: matching pip pair, +{count} extra trigger"
+
+msgid "LOG.EXTRA_TRIGGER_PIP"
+msgstr "Die {die} Face {face} extra trigger {trigger}: +{chips} Chips"
+
+msgid "LOG.LEVEL_CHIPS"
+msgstr "Die {die} Face {face} Level {level} trigger {trigger}: +{chips} Chips"
+
+msgid "LOG.MATERIAL_GLASS"
+msgstr "Die {die} Face {face} {material} trigger {trigger}: x{xmult} XMult"
+
+msgid "LOG.RUNE_SIX"
+msgstr "Die {die} Face {face} {rune} trigger {trigger}: +{mult} Mult"
+
+msgid "LOG.RUNE_STRAIGHT"
+msgstr "Die {die} Face {face} {rune} in straight, trigger {trigger}: +{chips} Chips"
+
+msgid "LOG.RUNE_ODD"
+msgstr "Die {die} Face {face} {rune} trigger {trigger}: +{mult} Mult"
+
+msgid "LOG.RUNE_EVEN"
+msgstr "Die {die} Face {face} {rune} trigger {trigger}: +{chips} Chips"
+
+msgid "MATERIAL.NONE.NAME"
+msgstr "None"
+
+msgid "MATERIAL.NONE.DESC"
+msgstr "No material effect."
+
+msgid "MATERIAL.GLASS.NAME"
+msgstr "Glass"
+
+msgid "MATERIAL.GLASS.DESC"
+msgstr "When selected and triggered, x2 multiplicative multiplier. It does not break in this version."
+
+msgid "MATERIAL.STEEL.NAME"
+msgstr "Steel"
+
+msgid "MATERIAL.STEEL.DESC"
+msgstr "When rolled but not selected, +5 Mult."
+
+msgid "MATERIAL.BLOOD.NAME"
+msgstr "Blood"
+
+msgid "MATERIAL.BLOOD.DESC"
+msgstr "Reserved material."
+
+msgid "MATERIAL.MIRROR.NAME"
+msgstr "Mirror"
+
+msgid "MATERIAL.MIRROR.DESC"
+msgstr "Reserved material."
+
+msgid "MATERIAL.CURSE.NAME"
+msgstr "Curse"
+
+msgid "MATERIAL.CURSE.DESC"
+msgstr "A negative material that can be cleansed."
+
+msgid "IMPRINT.NONE.NAME"
+msgstr "None"
+
+msgid "IMPRINT.NONE.DESC"
+msgstr "No imprint effect."
+
+msgid "IMPRINT.RED.NAME"
+msgstr "Red"
+
+msgid "IMPRINT.RED.DESC"
+msgstr "When selected, this face triggers one extra time."
+
+msgid "IMPRINT.BLUE.NAME"
+msgstr "Blue"
+
+msgid "IMPRINT.BLUE.DESC"
+msgstr "When rolled but not selected, +3 Mult."
+
+msgid "IMPRINT.GOLD.NAME"
+msgstr "Gold"
+
+msgid "IMPRINT.GOLD.DESC"
+msgstr "Reserved imprint."
+
+msgid "IMPRINT.WHITE.NAME"
+msgstr "White"
+
+msgid "IMPRINT.WHITE.DESC"
+msgstr "Reserved imprint."
+
+msgid "IMPRINT.PURPLE.NAME"
+msgstr "Purple"
+
+msgid "IMPRINT.PURPLE.DESC"
+msgstr "Reserved imprint."
+
+msgid "IMPRINT.BLACK.NAME"
+msgstr "Black"
+
+msgid "IMPRINT.BLACK.DESC"
+msgstr "A negative imprint that can be cleansed."
+
+msgid "RUNE.NONE.NAME"
+msgstr "None"
+
+msgid "RUNE.NONE.DESC"
+msgstr "No rune effect."
+
+msgid "RUNE.SIX.NAME"
+msgstr "Six"
+
+msgid "RUNE.SIX.DESC"
+msgstr "If this face is a 6, +8 Mult when selected and triggered."
+
+msgid "RUNE.LOW.NAME"
+msgstr "Low"
+
+msgid "RUNE.LOW.DESC"
+msgstr "Reserved rune."
+
+msgid "RUNE.STRAIGHT.NAME"
+msgstr "Straight"
+
+msgid "RUNE.STRAIGHT.DESC"
+msgstr "When part of a straight, +20 Chips when selected and triggered."
+
+msgid "RUNE.PAIR.NAME"
+msgstr "Pair"
+
+msgid "RUNE.PAIR.DESC"
+msgstr "If this pip is paired, this face triggers one extra time."
+
+msgid "RUNE.ODD.NAME"
+msgstr "Odd"
+
+msgid "RUNE.ODD.DESC"
+msgstr "If this face is odd, +4 Mult when selected and triggered."
+
+msgid "RUNE.EVEN.NAME"
+msgstr "Even"
+
+msgid "RUNE.EVEN.DESC"
+msgstr "If this face is even, +8 Chips when selected and triggered."
+
+msgid "RUNE.REROLL.NAME"
+msgstr "Reroll"
+
+msgid "RUNE.REROLL.DESC"
+msgstr "Reserved rune."
+
+msgid "RUNE.CURSE.NAME"
+msgstr "Curse"
+
+msgid "RUNE.CURSE.DESC"
+msgstr "A negative rune that can be cleansed."
+
+msgid "FORGE_OP.SET_PIP"
+msgstr "Set pip to {pip}"
+
+msgid "FORGE_OP.SET_MATERIAL"
+msgstr "Set material to {material}"
+
+msgid "FORGE_OP.SET_IMPRINT"
+msgstr "Set imprint to {imprint}"
+
+msgid "FORGE_OP.SET_RUNE"
+msgstr "Set rune to {rune}"
+
+msgid "FORGE_OP.UPGRADE"
+msgstr "Level +{level}"
+
+msgid "FORGE_OP.CLEANSE"
+msgstr "Cleanse negative traits"
+
+msgid "FORGE_OP.RESET_FACE"
+msgstr "Reset face"
+
+msgid "FORGE_OP.COPY_FROM_FACE"
+msgstr "Copy face (not fully supported yet)"
+
+msgid "FORGE_OP.UNKNOWN"
+msgstr "{op}"
+
+msgid "FORGE_PART.PIP_6.NAME"
+msgstr "Pip Plate: 6"
+
+msgid "FORGE_PART.PIP_6.DESC"
+msgstr "Change one face to 6 pips."
+
+msgid "FORGE_PART.PIP_1.NAME"
+msgstr "Pip Plate: 1"
+
+msgid "FORGE_PART.PIP_1.DESC"
+msgstr "Change one face to 1 pip."
+
+msgid "FORGE_PART.PIP_3.NAME"
+msgstr "Pip Plate: 3"
+
+msgid "FORGE_PART.PIP_3.DESC"
+msgstr "Change one face to 3 pips."
+
+msgid "FORGE_PART.MARK_RED.NAME"
+msgstr "Red Imprint"
+
+msgid "FORGE_PART.MARK_RED.DESC"
+msgstr "When selected, this face triggers one extra time."
+
+msgid "FORGE_PART.MARK_BLUE.NAME"
+msgstr "Blue Imprint"
+
+msgid "FORGE_PART.MARK_BLUE.DESC"
+msgstr "When rolled but not selected, +3 Mult."
+
+msgid "FORGE_PART.MATERIAL_GLASS.NAME"
+msgstr "Glass"
+
+msgid "FORGE_PART.MATERIAL_GLASS.DESC"
+msgstr "When selected and triggered, x2 multiplicative multiplier. It does not break in this version."
+
+msgid "FORGE_PART.MATERIAL_STEEL.NAME"
+msgstr "Steel"
+
+msgid "FORGE_PART.MATERIAL_STEEL.DESC"
+msgstr "When rolled but not selected, +5 Mult."
+
+msgid "FORGE_PART.RUNE_SIX.NAME"
+msgstr "Six Rune"
+
+msgid "FORGE_PART.RUNE_SIX.DESC"
+msgstr "If this face is a 6, +8 Mult when selected and triggered."
+
+msgid "FORGE_PART.RUNE_STRAIGHT.NAME"
+msgstr "Straight Rune"
+
+msgid "FORGE_PART.RUNE_STRAIGHT.DESC"
+msgstr "When part of a straight, +20 Chips when selected and triggered."
+
+msgid "FORGE_PART.RUNE_PAIR.NAME"
+msgstr "Pair Rune"
+
+msgid "FORGE_PART.RUNE_PAIR.DESC"
+msgstr "If this pip is paired, this face triggers one extra time."
+
+msgid "FORGE_PART.RUNE_ODD.NAME"
+msgstr "Odd Rune"
+
+msgid "FORGE_PART.RUNE_ODD.DESC"
+msgstr "If this face is odd, +4 Mult when selected and triggered."
+
+msgid "FORGE_PART.RUNE_EVEN.NAME"
+msgstr "Even Rune"
+
+msgid "FORGE_PART.RUNE_EVEN.DESC"
+msgstr "If this face is even, +8 Chips when selected and triggered."
+
+msgid "FORGE_PART.UPGRADE_1.NAME"
+msgstr "Upgrade +1"
+
+msgid "FORGE_PART.UPGRADE_1.DESC"
+msgstr "This face gains +1 level. Each level above 1 gives +5 Chips when selected and triggered."
+
+msgid "FORGE_PART.CLEANSE.NAME"
+msgstr "Cleanse Piece"
+
+msgid "FORGE_PART.CLEANSE.DESC"
+msgstr "Remove a simple curse, black imprint, or curse rune from one face."
+
+msgid "FORGE_PART.RED_6.NAME"
+msgstr "Red 6"
+
+msgid "FORGE_PART.RED_6.DESC"
+msgstr "Change one face to 6 pips and add a red imprint."
+
+msgid "FORGE_PART.GLASS_1.NAME"
+msgstr "Low Glass"
+
+msgid "FORGE_PART.GLASS_1.DESC"
+msgstr "Change one face to 1 pip and add glass material."
+
+msgid "DIE.NORMAL_D6.NAME"
+msgstr "Normal D6"
+
+msgid "DIE.NORMAL_D6.DESC"
+msgstr "A basic die with pips from 1 to 6."
+
+msgid "RELIC.NONE.NAME"
+msgstr "No Relic"
+
+msgid "RELIC.NONE.DESC"
+msgstr "No relic effect."
+
+msgid "ENCOUNTER.NORMAL_BATTLE.NAME"
+msgstr "Normal Battle"
+
+msgid "UI.INSTALL.NO_FACE"
+msgstr "No face."
+
+msgid "UI.RUN.VICTORY_TITLE"
+msgstr "Run Victory"
+
+msgid "UI.RUN.DEFEAT_TITLE"
+msgstr "Run Defeat"
+
+msgid "UI.RUN.RESTART"
+msgstr "Restart Run"
+
+msgid "UI.RUN.BACK_TO_MAIN"
+msgstr "Back to Main"
+
+msgid "UI.RUN.NO_RUN_STATE"
+msgstr "No run state."
+
+msgid "UI.RUN.NO_DICE"
+msgstr "No dice."
+
+msgid "UI.RUN.FINAL_DICE"
+msgstr "Final Dice"
+
+msgid "UI.RUN.DIE"
+msgstr "Die {die}"
+
+msgid "UI.RUN.FACE"
+msgstr "Face {face}: {details}"
+
+msgid "UI.RUN.FACE_PIP"
+msgstr "pip={pip}"
+
+msgid "UI.RUN.FACE_MATERIAL"
+msgstr "material={material}"
+
+msgid "UI.RUN.FACE_IMPRINT"
+msgstr "imprint={imprint}"
+
+msgid "UI.RUN.FACE_RUNE"
+msgstr "rune={rune}"
+
+msgid "UI.RUN.FACE_LEVEL"
+msgstr "level={level}"
+
+msgid "UI.RUN.SUMMARY_BATTLES_CLEARED"
+msgstr "Battles cleared: {cleared} / {max}"
+
+msgid "UI.RUN.SUMMARY_CURRENT_BATTLE"
+msgstr "Current battle index: {battle}"
+
+msgid "UI.RUN.SUMMARY_TOTAL_HANDS"
+msgstr "Total hands scored: {hands}"
+
+msgid "UI.RUN.SUMMARY_TOTAL_SCORE"
+msgstr "Total score scored: {score}"
+
+msgid "UI.RUN.SUMMARY_BEST_HAND"
+msgstr "Best hand score: {score}"
+
+msgid "UI.RUN.SUMMARY_INSTALLED_COUNT"
+msgstr "Installed forge pieces: {count}"
+
+msgid "UI.RUN.SUMMARY_HISTORY_NONE"
+msgstr "Installed history: none"
+
+msgid "UI.RUN.SUMMARY_HISTORY_TITLE"
+msgstr "Installed history:"
+
+msgid "UI.RUN.SUMMARY_HISTORY_ITEM"
+msgstr "- Battle {battle} reward: {piece} -> Die {die} Face {face}"
+
+msgid "UI.SCORE_SUMMARY.NONE"
+msgstr "none"
+
+msgid "UI.SCORE_SUMMARY.COMBO"
+msgstr "Combo: {combo}"
+
+msgid "UI.SCORE_SUMMARY.TAGS"
+msgstr "Tags: {tags}"
+
+msgid "UI.SCORE_SUMMARY.CHIPS"
+msgstr "Chips: {chips}"
+
+msgid "UI.SCORE_SUMMARY.MULT"
+msgstr "Mult: {mult}"
+
+msgid "UI.SCORE_SUMMARY.XMULT"
+msgstr "XMult: {xmult}"
+
+msgid "UI.SCORE_SUMMARY.FINAL"
+msgstr "Final: {score}"
+
+msgid "TAG.ALL_ODD"
+msgstr "All odd"
+
+msgid "TAG.ALL_EVEN"
+msgstr "All even"
+
+msgid "TAG.LOW_TOTAL"
+msgstr "Low total"
+
+msgid "TAG.HIGH_TOTAL"
+msgstr "High total"
+
+msgid "TAG.CONTAINS_SIX"
+msgstr "Contains 6"
+
+msgid "TAG.MANY_SIXES"
+msgstr "Many sixes"
+
+msgid "TAG.FEW_SCORED"
+msgstr "Few scored dice"
+
+msgid "TAG.REROLLED"
+msgstr "Rerolled"
+
+msgid "TAG.LAST_HAND"
+msgstr "Last hand"
+
+msgid "PHASE.INIT"
+msgstr "Init"
+
+msgid "PHASE.WAITING_ACTION"
+msgstr "Waiting action"
+
+msgid "PHASE.SCORING"
+msgstr "Scoring"
+
+msgid "PHASE.VICTORY"
+msgstr "Victory"
+
+msgid "PHASE.DEFEAT"
+msgstr "Defeat"
+
+msgid "PHASE.UNKNOWN"
+msgstr "Unknown"

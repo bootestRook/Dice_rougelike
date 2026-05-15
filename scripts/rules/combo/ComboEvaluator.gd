@@ -47,6 +47,21 @@ func evaluate(pips: Array[int]) -> StringName:
 	return HIGH_CARD
 
 
+func evaluate_display_combos(pips: Array[int]) -> Array[StringName]:
+	var result: Array[StringName] = []
+	var main_combo := evaluate(pips)
+	result.append(main_combo)
+
+	if main_combo != SMALL_STRAIGHT and main_combo != LARGE_STRAIGHT:
+		return result
+
+	var duplicate_combo := _evaluate_duplicate_combo(_get_pip_counts(pips))
+	if duplicate_combo != &"" and duplicate_combo != main_combo:
+		result.append(duplicate_combo)
+
+	return result
+
+
 func evaluate_rolls(selected_faces: Array[RolledFace]) -> StringName:
 	return evaluate(_pips_from_rolls(selected_faces))
 
@@ -109,6 +124,25 @@ func _is_full_house(pip_counts: Dictionary) -> bool:
 		has_pair = has_pair or pip_count == 2
 
 	return has_three and has_pair
+
+
+func _evaluate_duplicate_combo(pip_counts: Dictionary) -> StringName:
+	var max_count := _get_max_count(pip_counts)
+
+	if max_count >= 5:
+		return FIVE_KIND
+	if max_count >= 4:
+		return FOUR_KIND
+	if _is_full_house(pip_counts):
+		return FULL_HOUSE
+	if max_count >= 3:
+		return THREE_KIND
+	if _pair_count(pip_counts) >= 2:
+		return TWO_PAIR
+	if max_count >= 2:
+		return PAIR
+
+	return &""
 
 
 func _has_straight(unique_pips: Array[int], length: int) -> bool:

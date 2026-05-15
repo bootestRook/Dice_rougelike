@@ -1,0 +1,722 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: DiceRoguelite\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: zh_Hans\n"
+
+msgid "UI.MAIN.TITLE"
+msgstr "骰子肉鸽原型"
+
+msgid "UI.MAIN.DESCRIPTION"
+msgstr "核心循环：6 颗六面骰、重掷、选择、得分、战后铸骰件奖励。"
+
+msgid "UI.MAIN.VERSION_TITLE"
+msgstr "v0.1 游玩测试原型"
+
+msgid "UI.MAIN.VERSION_BODY"
+msgstr "- 5 场线性战斗\n- 每次非最终胜利后获得铸骰件\n- 骰面效果已启用\n- 暂无地图 / 商店 / Boss"
+
+msgid "UI.MAIN.START"
+msgstr "开始冒险"
+
+msgid "UI.MAIN.RULES"
+msgstr "规则"
+
+msgid "UI.MAIN.RULES_TITLE"
+msgstr "规则"
+
+msgid "UI.MAIN.RULES_BODY"
+msgstr "战斗规则：骰子={dice}  最多选择={max_selected}  重掷={rerolls}  手牌={hands}  目标={target}"
+
+msgid "UI.MAIN.INITIAL_DICE_TITLE"
+msgstr "初始骰子"
+
+msgid "UI.MAIN.DIE_LINE"
+msgstr "骰子 {die}：[{pips}]"
+
+msgid "UI.MAIN.PREVIEW_TITLE"
+msgstr "玩法预览"
+
+msgid "UI.MAIN.PREVIEW_BODY"
+msgstr "点击开始战斗后，可以投骰、锁定、重掷、选择并结算一场普通战斗。"
+
+msgid "UI.MAIN.DEFEAT_TITLE"
+msgstr "战败"
+
+msgid "UI.MAIN.DEFEAT_BODY"
+msgstr "本次冒险暂时结束。回到原型菜单后可以开始新的一局。"
+
+msgid "UI.MAIN.BACK_TO_MAIN"
+msgstr "返回主菜单"
+
+msgid "UI.BATTLE.TITLE"
+msgstr "战斗"
+
+msgid "UI.BATTLE.SCORE"
+msgstr "得分：{score} / {target}"
+
+msgid "UI.BATTLE.HAND"
+msgstr "手牌：{hand} / {hands}"
+
+msgid "UI.BATTLE.REROLL"
+msgstr "重掷"
+
+msgid "UI.BATTLE.REROLL_LEFT"
+msgstr "重掷：{rerolls}"
+
+msgid "UI.BATTLE.LOCK"
+msgstr "锁定"
+
+msgid "UI.BATTLE.UNLOCK"
+msgstr "解锁"
+
+msgid "UI.BATTLE.SELECT"
+msgstr "选择"
+
+msgid "UI.BATTLE.SELECTED"
+msgstr "已选择"
+
+msgid "UI.BATTLE.UNSELECTED"
+msgstr "未选择"
+
+msgid "UI.BATTLE.LOCKED"
+msgstr "已锁定"
+
+msgid "UI.BATTLE.UNLOCKED"
+msgstr "未锁定"
+
+msgid "UI.BATTLE.SCORE_SELECTED"
+msgstr "结算已选"
+
+msgid "UI.BATTLE.STATUS_READY"
+msgstr "准备就绪"
+
+msgid "UI.BATTLE.STATUS_STARTED"
+msgstr "战斗开始。"
+
+msgid "UI.BATTLE.STATUS_CHOOSE"
+msgstr "选择要结算的骰子，或锁定后重掷。"
+
+msgid "UI.BATTLE.SELECTED_COUNT"
+msgstr "已选择：{count} / {max}"
+
+msgid "UI.BATTLE.LOG_EMPTY"
+msgstr "最近一次结算日志会显示在这里。"
+
+msgid "UI.BATTLE.LOG_HINT"
+msgstr "选择 1 到 5 颗骰子后结算。重掷前可以先锁定骰子。"
+
+msgid "UI.BATTLE.LOG_LAST_TITLE"
+msgstr "最近一次结算"
+
+msgid "UI.BATTLE.LOG_SECTION_TITLE"
+msgstr "结算日志"
+
+msgid "UI.BATTLE.PREVIEW_EMPTY"
+msgstr "当前选择预览\n未选择骰面。"
+
+msgid "UI.BATTLE.PREVIEW"
+msgstr "当前选择预览\n{summary}"
+
+msgid "UI.BATTLE.DEBUG_INFO"
+msgstr "调试信息：战斗 {battle} / {max_battles} | 目标 {target} | 手牌 {hand} / {hands} | 重掷 {rerolls} | 已选 {selected} | 阶段 {phase}"
+
+msgid "UI.BATTLE.VICTORY"
+msgstr "胜利。"
+
+msgid "UI.BATTLE.DEFEAT"
+msgstr "战败。"
+
+msgid "UI.REWARD.TITLE"
+msgstr "选择一个铸骰件"
+
+msgid "UI.REWARD.EMPTY"
+msgstr "没有生成奖励。"
+
+msgid "UI.REWARD.RARITY"
+msgstr "稀有度：{rarity}"
+
+msgid "UI.REWARD.EFFECT"
+msgstr "效果：\n{effects}"
+
+msgid "UI.REWARD.EFFECT_NONE"
+msgstr "效果：无"
+
+msgid "UI.REWARD.SELECT"
+msgstr "选择"
+
+msgid "UI.INSTALL.TITLE"
+msgstr "安装铸骰件"
+
+msgid "UI.INSTALL.NO_RUN"
+msgstr "没有当前局状态。"
+
+msgid "UI.INSTALL.NO_PIECE"
+msgstr "尚未选择铸骰件。"
+
+msgid "UI.INSTALL.DIE"
+msgstr "骰子 {die}"
+
+msgid "UI.INSTALL.FACE"
+msgstr "#{face}  {pip}"
+
+msgid "UI.INSTALL.VALUE"
+msgstr "点数：{value}"
+
+msgid "UI.INSTALL.MATERIAL"
+msgstr "材质：{material}"
+
+msgid "UI.INSTALL.IMPRINT"
+msgstr "印记：{imprint}"
+
+msgid "UI.INSTALL.RUNE"
+msgstr "符文：{rune}"
+
+msgid "UI.INSTALL.LEVEL"
+msgstr "等级 {level}"
+
+msgid "UI.INSTALL.CONFIRM"
+msgstr "确认"
+
+msgid "UI.INSTALL.CANCEL"
+msgstr "取消"
+
+msgid "UI.FACE.MATERIAL"
+msgstr "材质：{material}"
+
+msgid "UI.FACE.IMPRINT"
+msgstr "印记：{imprint}"
+
+msgid "UI.FACE.RUNE"
+msgstr "符文：{rune}"
+
+msgid "UI.FACE.LEVEL"
+msgstr "等级 {level}"
+
+msgid "RARITY.COMMON"
+msgstr "普通"
+
+msgid "RARITY.UNCOMMON"
+msgstr "罕见"
+
+msgid "RARITY.RARE"
+msgstr "稀有"
+
+msgid "RARITY.EPIC"
+msgstr "史诗"
+
+msgid "RARITY.LEGENDARY"
+msgstr "传说"
+
+msgid "COMBO.HIGH_CARD"
+msgstr "高牌"
+
+msgid "COMBO.PAIR"
+msgstr "对子"
+
+msgid "COMBO.TWO_PAIR"
+msgstr "两对"
+
+msgid "COMBO.THREE_KIND"
+msgstr "三条"
+
+msgid "COMBO.FULL_HOUSE"
+msgstr "葫芦"
+
+msgid "COMBO.SMALL_STRAIGHT"
+msgstr "小顺子"
+
+msgid "COMBO.LARGE_STRAIGHT"
+msgstr "大顺子"
+
+msgid "COMBO.FOUR_KIND"
+msgstr "四条"
+
+msgid "COMBO.FIVE_KIND"
+msgstr "五条"
+
+msgid "LOG.COMBO"
+msgstr "主组合：{combo}"
+
+msgid "LOG.PIP_SUM"
+msgstr "点数合计：{sum}"
+
+msgid "LOG.BASE_CHIPS"
+msgstr "基础筹码：{chips}"
+
+msgid "LOG.BASE_MULT"
+msgstr "基础倍率：{mult}"
+
+msgid "LOG.BASE_XMULT"
+msgstr "基础乘算倍率：{xmult}"
+
+msgid "LOG.CHIPS_GAIN"
+msgstr "{source}：+{chips} 筹码"
+
+msgid "LOG.MULT_GAIN"
+msgstr "{source}：+{mult} 倍率"
+
+msgid "LOG.XMULT_GAIN"
+msgstr "{source}：×{xmult} 乘算倍率"
+
+msgid "LOG.RETRIGGER"
+msgstr "{source}：额外触发 +{count}"
+
+msgid "LOG.MATERIAL_TRIGGER"
+msgstr "材质触发：{source}，{effect}"
+
+msgid "LOG.IMPRINT_TRIGGER"
+msgstr "印记触发：{source}，{effect}"
+
+msgid "LOG.RUNE_TRIGGER"
+msgstr "符文触发：{source}，{effect}"
+
+msgid "LOG.RELIC_TRIGGER"
+msgstr "骰具触发：{source}，{effect}"
+
+msgid "LOG.FORGE_PART_TRIGGER"
+msgstr "铸骰件触发：{source}，{effect}"
+
+msgid "LOG.FINAL_SCORE"
+msgstr "最终：{chips} × {mult} × {xmult} = {score}"
+
+msgid "LOG.MATERIAL_STEEL"
+msgstr "骰子 {die} 面 {face} 的{material}：未被选择，+{mult} 倍率"
+
+msgid "LOG.IMPRINT_BLUE"
+msgstr "骰子 {die} 面 {face} 的{imprint}：未被选择，+{mult} 倍率"
+
+msgid "LOG.IMPRINT_RED"
+msgstr "骰子 {die} 面 {face} 的{imprint}：额外触发 +{count}"
+
+msgid "LOG.RUNE_PAIR_RETRIGGER"
+msgstr "骰子 {die} 面 {face} 的{rune}：点数成对，额外触发 +{count}"
+
+msgid "LOG.EXTRA_TRIGGER_PIP"
+msgstr "骰子 {die} 面 {face} 第 {trigger} 次额外触发：+{chips} 筹码"
+
+msgid "LOG.LEVEL_CHIPS"
+msgstr "骰子 {die} 面 {face} 等级 {level} 第 {trigger} 次触发：+{chips} 筹码"
+
+msgid "LOG.MATERIAL_GLASS"
+msgstr "骰子 {die} 面 {face} 的{material}第 {trigger} 次触发：×{xmult} 乘算倍率"
+
+msgid "LOG.RUNE_SIX"
+msgstr "骰子 {die} 面 {face} 的{rune}第 {trigger} 次触发：+{mult} 倍率"
+
+msgid "LOG.RUNE_STRAIGHT"
+msgstr "骰子 {die} 面 {face} 的{rune}参与顺子，第 {trigger} 次触发：+{chips} 筹码"
+
+msgid "LOG.RUNE_ODD"
+msgstr "骰子 {die} 面 {face} 的{rune}第 {trigger} 次触发：+{mult} 倍率"
+
+msgid "LOG.RUNE_EVEN"
+msgstr "骰子 {die} 面 {face} 的{rune}第 {trigger} 次触发：+{chips} 筹码"
+
+msgid "MATERIAL.NONE.NAME"
+msgstr "无"
+
+msgid "MATERIAL.NONE.DESC"
+msgstr "没有材质效果。"
+
+msgid "MATERIAL.GLASS.NAME"
+msgstr "玻璃"
+
+msgid "MATERIAL.GLASS.DESC"
+msgstr "被选择触发时，×2 乘算倍率；当前版本不会破碎。"
+
+msgid "MATERIAL.STEEL.NAME"
+msgstr "钢铁"
+
+msgid "MATERIAL.STEEL.DESC"
+msgstr "当前投出但未被选择时，+5 倍率。"
+
+msgid "MATERIAL.BLOOD.NAME"
+msgstr "鲜血"
+
+msgid "MATERIAL.BLOOD.DESC"
+msgstr "预留材质。"
+
+msgid "MATERIAL.MIRROR.NAME"
+msgstr "镜面"
+
+msgid "MATERIAL.MIRROR.DESC"
+msgstr "预留材质。"
+
+msgid "MATERIAL.CURSE.NAME"
+msgstr "诅咒"
+
+msgid "MATERIAL.CURSE.DESC"
+msgstr "负面材质，可被净化。"
+
+msgid "IMPRINT.NONE.NAME"
+msgstr "无"
+
+msgid "IMPRINT.NONE.DESC"
+msgstr "没有印记效果。"
+
+msgid "IMPRINT.RED.NAME"
+msgstr "红"
+
+msgid "IMPRINT.RED.DESC"
+msgstr "被选择时，该面额外触发一次。"
+
+msgid "IMPRINT.BLUE.NAME"
+msgstr "蓝"
+
+msgid "IMPRINT.BLUE.DESC"
+msgstr "当前投出但未被选择时，+3 倍率。"
+
+msgid "IMPRINT.GOLD.NAME"
+msgstr "金"
+
+msgid "IMPRINT.GOLD.DESC"
+msgstr "预留印记。"
+
+msgid "IMPRINT.WHITE.NAME"
+msgstr "白"
+
+msgid "IMPRINT.WHITE.DESC"
+msgstr "预留印记。"
+
+msgid "IMPRINT.PURPLE.NAME"
+msgstr "紫"
+
+msgid "IMPRINT.PURPLE.DESC"
+msgstr "预留印记。"
+
+msgid "IMPRINT.BLACK.NAME"
+msgstr "黑"
+
+msgid "IMPRINT.BLACK.DESC"
+msgstr "负面印记，可被净化。"
+
+msgid "RUNE.NONE.NAME"
+msgstr "无"
+
+msgid "RUNE.NONE.DESC"
+msgstr "没有符文效果。"
+
+msgid "RUNE.SIX.NAME"
+msgstr "六点"
+
+msgid "RUNE.SIX.DESC"
+msgstr "若该面为 6，被选择触发时 +8 倍率。"
+
+msgid "RUNE.LOW.NAME"
+msgstr "低点"
+
+msgid "RUNE.LOW.DESC"
+msgstr "预留符文。"
+
+msgid "RUNE.STRAIGHT.NAME"
+msgstr "顺子"
+
+msgid "RUNE.STRAIGHT.DESC"
+msgstr "参与顺子时，被选择触发 +20 筹码。"
+
+msgid "RUNE.PAIR.NAME"
+msgstr "对子"
+
+msgid "RUNE.PAIR.DESC"
+msgstr "若该点数成对，该面额外触发一次。"
+
+msgid "RUNE.ODD.NAME"
+msgstr "奇数"
+
+msgid "RUNE.ODD.DESC"
+msgstr "若该面为奇数，被选择触发时 +4 倍率。"
+
+msgid "RUNE.EVEN.NAME"
+msgstr "偶数"
+
+msgid "RUNE.EVEN.DESC"
+msgstr "若该面为偶数，被选择触发时 +8 筹码。"
+
+msgid "RUNE.REROLL.NAME"
+msgstr "重掷"
+
+msgid "RUNE.REROLL.DESC"
+msgstr "预留符文。"
+
+msgid "RUNE.CURSE.NAME"
+msgstr "诅咒"
+
+msgid "RUNE.CURSE.DESC"
+msgstr "负面符文，可被净化。"
+
+msgid "FORGE_OP.SET_PIP"
+msgstr "点数变为 {pip}"
+
+msgid "FORGE_OP.SET_MATERIAL"
+msgstr "材质变为 {material}"
+
+msgid "FORGE_OP.SET_IMPRINT"
+msgstr "印记变为 {imprint}"
+
+msgid "FORGE_OP.SET_RUNE"
+msgstr "符文变为 {rune}"
+
+msgid "FORGE_OP.UPGRADE"
+msgstr "等级 +{level}"
+
+msgid "FORGE_OP.CLEANSE"
+msgstr "净化负面信息"
+
+msgid "FORGE_OP.RESET_FACE"
+msgstr "重置骰面"
+
+msgid "FORGE_OP.COPY_FROM_FACE"
+msgstr "复制骰面（暂未完整支持）"
+
+msgid "FORGE_OP.UNKNOWN"
+msgstr "{op}"
+
+msgid "FORGE_PART.PIP_6.NAME"
+msgstr "点数片：6"
+
+msgid "FORGE_PART.PIP_6.DESC"
+msgstr "将一个骰面改为 6 点。"
+
+msgid "FORGE_PART.PIP_1.NAME"
+msgstr "点数片：1"
+
+msgid "FORGE_PART.PIP_1.DESC"
+msgstr "将一个骰面改为 1 点。"
+
+msgid "FORGE_PART.PIP_3.NAME"
+msgstr "点数片：3"
+
+msgid "FORGE_PART.PIP_3.DESC"
+msgstr "将一个骰面改为 3 点。"
+
+msgid "FORGE_PART.MARK_RED.NAME"
+msgstr "红印"
+
+msgid "FORGE_PART.MARK_RED.DESC"
+msgstr "被选择时，该面额外触发一次。"
+
+msgid "FORGE_PART.MARK_BLUE.NAME"
+msgstr "蓝印"
+
+msgid "FORGE_PART.MARK_BLUE.DESC"
+msgstr "当前投出但未被选择时，+3 倍率。"
+
+msgid "FORGE_PART.MATERIAL_GLASS.NAME"
+msgstr "玻璃"
+
+msgid "FORGE_PART.MATERIAL_GLASS.DESC"
+msgstr "被选择触发时，×2 乘算倍率；当前版本不会破碎。"
+
+msgid "FORGE_PART.MATERIAL_STEEL.NAME"
+msgstr "钢铁"
+
+msgid "FORGE_PART.MATERIAL_STEEL.DESC"
+msgstr "当前投出但未被选择时，+5 倍率。"
+
+msgid "FORGE_PART.RUNE_SIX.NAME"
+msgstr "六点符文"
+
+msgid "FORGE_PART.RUNE_SIX.DESC"
+msgstr "若该面为 6，被选择触发时 +8 倍率。"
+
+msgid "FORGE_PART.RUNE_STRAIGHT.NAME"
+msgstr "顺子符文"
+
+msgid "FORGE_PART.RUNE_STRAIGHT.DESC"
+msgstr "参与顺子时，被选择触发 +20 筹码。"
+
+msgid "FORGE_PART.RUNE_PAIR.NAME"
+msgstr "对子符文"
+
+msgid "FORGE_PART.RUNE_PAIR.DESC"
+msgstr "若该点数成对，该面额外触发一次。"
+
+msgid "FORGE_PART.RUNE_ODD.NAME"
+msgstr "奇数符文"
+
+msgid "FORGE_PART.RUNE_ODD.DESC"
+msgstr "若该面为奇数，被选择触发时 +4 倍率。"
+
+msgid "FORGE_PART.RUNE_EVEN.NAME"
+msgstr "偶数符文"
+
+msgid "FORGE_PART.RUNE_EVEN.DESC"
+msgstr "若该面为偶数，被选择触发时 +8 筹码。"
+
+msgid "FORGE_PART.UPGRADE_1.NAME"
+msgstr "升级件 +1"
+
+msgid "FORGE_PART.UPGRADE_1.DESC"
+msgstr "该面等级 +1；每高 1 级，被选择触发时 +5 筹码。"
+
+msgid "FORGE_PART.CLEANSE.NAME"
+msgstr "净化件"
+
+msgid "FORGE_PART.CLEANSE.DESC"
+msgstr "移除一个骰面上的简单诅咒、黑印或诅咒符文。"
+
+msgid "FORGE_PART.RED_6.NAME"
+msgstr "红印 6"
+
+msgid "FORGE_PART.RED_6.DESC"
+msgstr "将一个面变为 6 点，并添加红印。"
+
+msgid "FORGE_PART.GLASS_1.NAME"
+msgstr "低点玻璃"
+
+msgid "FORGE_PART.GLASS_1.DESC"
+msgstr "将一个面变为 1 点，并添加玻璃材质。"
+
+msgid "DIE.NORMAL_D6.NAME"
+msgstr "普通六面骰"
+
+msgid "DIE.NORMAL_D6.DESC"
+msgstr "拥有 1 到 6 点的基础骰子。"
+
+msgid "RELIC.NONE.NAME"
+msgstr "无骰具"
+
+msgid "RELIC.NONE.DESC"
+msgstr "没有骰具效果。"
+
+msgid "ENCOUNTER.NORMAL_BATTLE.NAME"
+msgstr "普通战斗"
+
+msgid "UI.INSTALL.NO_FACE"
+msgstr "没有骰面"
+
+msgid "UI.RUN.VICTORY_TITLE"
+msgstr "冒险胜利"
+
+msgid "UI.RUN.DEFEAT_TITLE"
+msgstr "冒险战败"
+
+msgid "UI.RUN.RESTART"
+msgstr "重新开始"
+
+msgid "UI.RUN.BACK_TO_MAIN"
+msgstr "返回主菜单"
+
+msgid "UI.RUN.NO_RUN_STATE"
+msgstr "没有当前局状态。"
+
+msgid "UI.RUN.NO_DICE"
+msgstr "没有骰子。"
+
+msgid "UI.RUN.FINAL_DICE"
+msgstr "最终骰子"
+
+msgid "UI.RUN.DIE"
+msgstr "骰子 {die}"
+
+msgid "UI.RUN.FACE"
+msgstr "面 {face}：{details}"
+
+msgid "UI.RUN.FACE_PIP"
+msgstr "点数={pip}"
+
+msgid "UI.RUN.FACE_MATERIAL"
+msgstr "材质={material}"
+
+msgid "UI.RUN.FACE_IMPRINT"
+msgstr "印记={imprint}"
+
+msgid "UI.RUN.FACE_RUNE"
+msgstr "符文={rune}"
+
+msgid "UI.RUN.FACE_LEVEL"
+msgstr "等级={level}"
+
+msgid "UI.RUN.SUMMARY_BATTLES_CLEARED"
+msgstr "已通过战斗：{cleared} / {max}"
+
+msgid "UI.RUN.SUMMARY_CURRENT_BATTLE"
+msgstr "当前战斗序号：{battle}"
+
+msgid "UI.RUN.SUMMARY_TOTAL_HANDS"
+msgstr "累计结算手牌：{hands}"
+
+msgid "UI.RUN.SUMMARY_TOTAL_SCORE"
+msgstr "累计得分：{score}"
+
+msgid "UI.RUN.SUMMARY_BEST_HAND"
+msgstr "最佳单手得分：{score}"
+
+msgid "UI.RUN.SUMMARY_INSTALLED_COUNT"
+msgstr "已安装铸骰件：{count}"
+
+msgid "UI.RUN.SUMMARY_HISTORY_NONE"
+msgstr "安装记录：无"
+
+msgid "UI.RUN.SUMMARY_HISTORY_TITLE"
+msgstr "安装记录："
+
+msgid "UI.RUN.SUMMARY_HISTORY_ITEM"
+msgstr "- 第 {battle} 场奖励：{piece} -> 骰子 {die} 面 {face}"
+
+msgid "UI.SCORE_SUMMARY.NONE"
+msgstr "无"
+
+msgid "UI.SCORE_SUMMARY.COMBO"
+msgstr "组合：{combo}"
+
+msgid "UI.SCORE_SUMMARY.TAGS"
+msgstr "标签：{tags}"
+
+msgid "UI.SCORE_SUMMARY.CHIPS"
+msgstr "筹码：{chips}"
+
+msgid "UI.SCORE_SUMMARY.MULT"
+msgstr "倍率：{mult}"
+
+msgid "UI.SCORE_SUMMARY.XMULT"
+msgstr "乘算倍率：{xmult}"
+
+msgid "UI.SCORE_SUMMARY.FINAL"
+msgstr "最终：{score}"
+
+msgid "TAG.ALL_ODD"
+msgstr "全奇数"
+
+msgid "TAG.ALL_EVEN"
+msgstr "全偶数"
+
+msgid "TAG.LOW_TOTAL"
+msgstr "低点数合计"
+
+msgid "TAG.HIGH_TOTAL"
+msgstr "高点数合计"
+
+msgid "TAG.CONTAINS_SIX"
+msgstr "包含 6"
+
+msgid "TAG.MANY_SIXES"
+msgstr "多个 6"
+
+msgid "TAG.FEW_SCORED"
+msgstr "少量计分骰"
+
+msgid "TAG.REROLLED"
+msgstr "已重掷"
+
+msgid "TAG.LAST_HAND"
+msgstr "最后一手"
+
+msgid "PHASE.INIT"
+msgstr "初始化"
+
+msgid "PHASE.WAITING_ACTION"
+msgstr "等待行动"
+
+msgid "PHASE.SCORING"
+msgstr "结算中"
+
+msgid "PHASE.VICTORY"
+msgstr "胜利"
+
+msgid "PHASE.DEFEAT"
+msgstr "战败"
+
+msgid "PHASE.UNKNOWN"
+msgstr "未知"

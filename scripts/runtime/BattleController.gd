@@ -6,6 +6,7 @@ const BattleConfig = preload("res://scripts/core/battle/BattleConfig.gd")
 const BattleState = preload("res://scripts/core/battle/BattleState.gd")
 const DieState = preload("res://scripts/core/dice/DieState.gd")
 const HandState = preload("res://scripts/core/battle/HandState.gd")
+const RunState = preload("res://scripts/core/battle/RunState.gd")
 const RolledFace = preload("res://scripts/core/dice/RolledFace.gd")
 const RollService = preload("res://scripts/rules/roll/RollService.gd")
 const ComboEvaluator = preload("res://scripts/rules/combo/ComboEvaluator.gd")
@@ -34,6 +35,7 @@ signal hand_scored(result: ScoreResult)
 signal battle_won()
 signal battle_lost()
 signal phase_changed(phase: int)
+signal score_preview_changed(result)
 
 
 var battle_state: BattleState = null
@@ -47,12 +49,23 @@ var tag_evaluator := TagEvaluator.new()
 var score_engine := ScoreEngine.new()
 
 
-func start_battle(config: BattleConfig = null) -> void:
+func start_battle(config: BattleConfig = null, run_state: RunState = null) -> void:
 	var active_config: BattleConfig = config
 	if active_config == null:
 		active_config = BattleConfig.new()
+	else:
+		active_config = active_config.clone()
 
-	dice = _create_normal_dice(active_config.dice_count)
+	if run_state != null:
+		run_state.ensure_starting_dice()
+		if not run_state.dice.is_empty():
+			dice = run_state.dice
+			active_config.dice_count = dice.size()
+			active_config.target_score = run_state.get_target_score()
+		else:
+			dice = _create_normal_dice(active_config.dice_count)
+	else:
+		dice = _create_normal_dice(active_config.dice_count)
 
 	battle_state = BattleState.new()
 	battle_state.setup(active_config, dice)
@@ -69,6 +82,7 @@ func toggle_lock(index: int) -> void:
 
 	hand_state.rolled_faces[index].locked = not hand_state.rolled_faces[index].locked
 	dice_changed.emit(get_current_rolls())
+	_emit_score_preview()
 
 
 func toggle_select(index: int) -> void:
@@ -80,13 +94,12 @@ func toggle_select(index: int) -> void:
 	if rolled_face.selected:
 		rolled_face.selected = false
 	else:
-		if _selected_count() >= battle_state.config.max_selected_dice:
-			return
-
-		rolled_face.selected = true
+		if _selected_count() < battle_state.config.max_selected_dice:
+			rolled_face.selected = true
 
 	selection_changed.emit(_selected_count())
 	dice_changed.emit(get_current_rolls())
+	_emit_score_preview()
 
 
 func reroll() -> void:
@@ -95,11 +108,12 @@ func reroll() -> void:
 	if not can_reroll():
 		return
 
-	hand_state.rolled_faces = roll_service.reroll_unlocked(dice, hand_state.rolled_faces)
+	hand_state.rolled_faces = roll_service.reroll_selected(dice, hand_state.rolled_faces)
 	hand_state.rerolls_used += 1
 	dice_changed.emit(get_current_rolls())
 	rerolls_changed.emit(_rerolls_left())
 	selection_changed.emit(_selected_count())
+	_emit_score_preview()
 
 
 func score_selected() -> void:
@@ -108,7 +122,10 @@ func score_selected() -> void:
 
 	_set_phase(BattlePhase.SCORING)
 	var context := _build_score_context()
-	context.combo_id = combo_evaluator.evaluate(_selected_pips(context.selected_faces))
+	var selected_pips := _selected_pips(context.selected_faces)
+	context.combo_id = combo_evaluator.evaluate(selected_pips)
+	context.combo_type = context.combo_id
+	context.display_combo_ids = combo_evaluator.evaluate_display_combos(selected_pips)
 	context.tags = tag_evaluator.evaluate_tags(context)
 
 	var result := score_engine.score(context)
@@ -117,6 +134,7 @@ func score_selected() -> void:
 	battle_state.total_score += result.final_score
 	battle_state.hands_played += 1
 	hand_scored.emit(result)
+	score_preview_changed.emit(null)
 	score_changed.emit(battle_state.total_score, battle_state.config.target_score)
 
 	if battle_state.total_score >= battle_state.config.target_score:
@@ -153,6 +171,7 @@ func start_next_hand() -> void:
 	dice_changed.emit(get_current_rolls())
 	rerolls_changed.emit(_rerolls_left())
 	selection_changed.emit(0)
+	score_preview_changed.emit(null)
 
 
 func get_current_rolls() -> Array[RolledFace]:
@@ -164,15 +183,56 @@ func get_current_rolls() -> Array[RolledFace]:
 
 
 func can_reroll() -> bool:
-	return hand_state != null and phase == BattlePhase.WAITING_ACTION and hand_state.rerolls_used < battle_state.config.rerolls_per_hand
+	return (
+		hand_state != null
+		and phase == BattlePhase.WAITING_ACTION
+		and hand_state.rerolls_used < battle_state.config.rerolls_per_hand
+		and _selected_count() >= 1
+	)
 
 
 func can_score() -> bool:
-	return hand_state != null and phase == BattlePhase.WAITING_ACTION and _selected_count() >= 1
+	var selected_count := _selected_count()
+	return (
+		hand_state != null
+		and phase == BattlePhase.WAITING_ACTION
+		and selected_count >= 1
+		and selected_count <= get_max_selected_dice()
+	)
+
+
+func preview_selected_score() -> ScoreResult:
+	if hand_state == null or battle_state == null:
+		return null
+	var selected_count := _selected_count()
+	if selected_count <= 0 or selected_count > get_max_selected_dice():
+		return null
+
+	var context := _build_score_context()
+	var selected_pips := _selected_pips(context.selected_faces)
+	context.combo_id = combo_evaluator.evaluate(selected_pips)
+	context.combo_type = context.combo_id
+	context.display_combo_ids = combo_evaluator.evaluate_display_combos(selected_pips)
+	context.tags = tag_evaluator.evaluate_tags(context)
+	return score_engine.score(context)
 
 
 func get_rerolls_left() -> int:
 	return _rerolls_left()
+
+
+func get_rerolls_per_hand() -> int:
+	if battle_state == null:
+		return 0
+
+	return battle_state.config.rerolls_per_hand
+
+
+func get_max_selected_dice() -> int:
+	if battle_state == null:
+		return 0
+
+	return battle_state.config.max_selected_dice
 
 
 func get_total_score() -> int:
@@ -207,6 +267,22 @@ func get_phase() -> int:
 	return phase
 
 
+func get_phase_name() -> String:
+	match phase:
+		BattlePhase.INIT:
+			return "INIT"
+		BattlePhase.WAITING_ACTION:
+			return "WAITING_ACTION"
+		BattlePhase.SCORING:
+			return "SCORING"
+		BattlePhase.VICTORY:
+			return "VICTORY"
+		BattlePhase.DEFEAT:
+			return "DEFEAT"
+		_:
+			return "UNKNOWN"
+
+
 func _create_normal_dice(count: int) -> Array[DieState]:
 	var result: Array[DieState] = []
 
@@ -222,6 +298,9 @@ func _build_score_context() -> ScoreContext:
 	context.all_rolled_faces = hand_state.rolled_faces
 	context.battle_state = battle_state
 	context.hand_state = hand_state
+	context.rerolls_used = hand_state.rerolls_used
+	context.used_reroll = hand_state.rerolls_used > 0
+	context.is_last_hand = _is_last_hand()
 	return context
 
 
@@ -255,6 +334,17 @@ func _rerolls_left() -> int:
 		return 0
 
 	return max(0, battle_state.config.rerolls_per_hand - hand_state.rerolls_used)
+
+
+func _is_last_hand() -> bool:
+	if hand_state == null or battle_state == null:
+		return false
+
+	return hand_state.hand_index >= max(0, battle_state.config.hands_per_battle - 1)
+
+
+func _emit_score_preview() -> void:
+	score_preview_changed.emit(preview_selected_score())
 
 
 func _set_phase(new_phase: int) -> void:

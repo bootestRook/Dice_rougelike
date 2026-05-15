@@ -17,20 +17,23 @@ func _init() -> void:
 	all_passed = _check("start_battle creates 6 rolls", controller.get_current_rolls().size() == 6) and all_passed
 
 	var before_reroll := _face_indexes(controller.get_current_rolls())
-	controller.toggle_lock(0)
-	var locked_before := before_reroll[0]
+	controller.toggle_select(0)
 	controller.reroll()
 	var after_reroll := _face_indexes(controller.get_current_rolls())
-	var locked_kept := after_reroll[0] == locked_before and controller.get_current_rolls()[0].locked
-	var unlocked_changed := _any_unlocked_changed(before_reroll, after_reroll)
-	all_passed = _check("locked die stays unchanged after reroll", locked_kept) and all_passed
-	all_passed = _check("at least one unlocked die changes after reroll", unlocked_changed) and all_passed
+	var unselected_kept := _all_unselected_kept(before_reroll, after_reroll)
+	var selection_cleared := _selected_count(controller.get_current_rolls()) == 0
+	all_passed = _check("unselected dice stay unchanged after selected reroll", unselected_kept) and all_passed
+	all_passed = _check("selection clears after reroll", selection_cleared) and all_passed
 
 	for index in range(6):
 		controller.toggle_select(index)
 
 	var selected_count := _selected_count(controller.get_current_rolls())
 	all_passed = _check("selection does not exceed 5", selected_count == 5) and all_passed
+	all_passed = _check("score is enabled at max selection", controller.can_score()) and all_passed
+	controller.get_current_rolls()[5].selected = true
+	all_passed = _check("score is disabled above max selection", not controller.can_score()) and all_passed
+	controller.get_current_rolls()[5].selected = false
 
 	var score_before := controller.get_total_score()
 	controller.score_selected()
@@ -64,12 +67,12 @@ func _face_indexes(rolls: Array[RolledFace]) -> Array[int]:
 	return result
 
 
-func _any_unlocked_changed(before: Array[int], after: Array[int]) -> bool:
+func _all_unselected_kept(before: Array[int], after: Array[int]) -> bool:
 	for index in range(1, min(before.size(), after.size())):
 		if before[index] != after[index]:
-			return true
+			return false
 
-	return false
+	return true
 
 
 func _selected_count(rolls: Array[RolledFace]) -> int:

@@ -1,0 +1,71 @@
+extends SceneTree
+class_name DebugRunFlowSmokeTest
+
+
+const GameFlowController = preload("res://scripts/runtime/GameFlowController.gd")
+const RunState = preload("res://scripts/core/battle/RunState.gd")
+
+
+func _init() -> void:
+	print("--- DebugRunFlowSmokeTest: start ---")
+
+	var all_passed := true
+	var flow := GameFlowController.new()
+	flow.start_new_run()
+
+	all_passed = _check("run_state exists after start_new_run", flow.get_run_state() != null) and all_passed
+	all_passed = _check("starting run has 6 dice", flow.get_run_state().dice.size() == 6) and all_passed
+	all_passed = _check("battle_index starts at 0", flow.get_run_state().battle_index == 0) and all_passed
+	all_passed = _check_target_curve() and all_passed
+
+	flow.on_battle_won()
+	all_passed = _check("non-final win generates 3 rewards", flow.get_run_state().last_reward_choices.size() == 3) and all_passed
+
+	var reward = flow.get_run_state().last_reward_choices[0]
+	flow.choose_reward(reward)
+	flow.install_pending_piece(0, 0)
+	all_passed = _check("installed_piece_count increased", flow.get_run_state().installed_piece_count == 1) and all_passed
+	all_passed = _check("installed_piece_history has record", flow.get_run_state().installed_piece_history.size() == 1) and all_passed
+	all_passed = _check("battle_index advanced after install", flow.get_run_state().battle_index == 1) and all_passed
+
+	flow.get_run_state().battle_index = flow.get_run_state().max_battles - 1
+	flow.on_battle_won()
+	all_passed = _check("final battle win marks run_won", flow.get_run_state().run_won) and all_passed
+	all_passed = _check("final battle win does not keep normal rewards", flow.get_run_state().last_reward_choices.is_empty()) and all_passed
+
+	flow.start_new_run()
+	flow.on_battle_lost()
+	all_passed = _check("battle loss marks run_lost", flow.get_run_state().run_lost) and all_passed
+
+	if all_passed:
+		print("PASS: DebugRunFlowSmokeTest")
+	else:
+		print("FAIL: DebugRunFlowSmokeTest")
+
+	flow.free()
+	print("--- DebugRunFlowSmokeTest: end ---")
+	quit(0 if all_passed else 1)
+
+
+func _check(label: String, passed: bool) -> bool:
+	var status := "PASS" if passed else "FAIL"
+	print("%s: %s" % [status, label])
+	if not passed:
+		push_error(label)
+	return passed
+
+
+func _check_target_curve() -> bool:
+	var run_state := RunState.new()
+	run_state.setup_new_run()
+
+	var expected_scores: Array[int] = [1000, 1150, 1400, 1750, 2300]
+	var all_passed := true
+	for index in range(expected_scores.size()):
+		if index > 0:
+			run_state.advance_battle()
+		all_passed = _check(
+			"battle %d target_score == %d" % [index + 1, expected_scores[index]],
+			run_state.get_target_score() == expected_scores[index]
+		) and all_passed
+	return all_passed

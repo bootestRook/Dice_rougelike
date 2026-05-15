@@ -15,9 +15,17 @@ run/main_scene="res://scenes/main/Main.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"
 
+[autoload]
+
+Loc="*res://scripts/i18n/Loc.gd"
+
 [dotnet]
 
 project/assembly_name="Dice_Rougelike"
+
+[internationalization]
+
+locale/translations=PackedStringArray("res://i18n/zh_Hans.po", "res://i18n/en.po")
 
 [physics]
 

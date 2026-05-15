@@ -53,7 +53,15 @@ func _init() -> void:
 			"name": "small straight with duplicate",
 			"pips": [1, 2, 3, 4, 4],
 			"combo": ComboEvaluator.SMALL_STRAIGHT,
+			"display_combos": [ComboEvaluator.SMALL_STRAIGHT, ComboEvaluator.PAIR],
 			"tags": [],
+		},
+		{
+			"name": "small straight plus pair",
+			"pips": [3, 4, 4, 5, 6],
+			"combo": ComboEvaluator.SMALL_STRAIGHT,
+			"display_combos": [ComboEvaluator.SMALL_STRAIGHT, ComboEvaluator.PAIR],
+			"tags": [TagEvaluator.CONTAINS_SIX],
 		},
 		{
 			"name": "three kind",
@@ -94,21 +102,29 @@ func _init() -> void:
 		var test_case: Dictionary = cases[case_index]
 		var selected_faces := _make_selected_faces(test_case["pips"])
 		var context := _make_context(selected_faces, test_case)
-		var actual_combo := combo_evaluator.evaluate(_to_int_array(test_case["pips"]))
+		var pips := _to_int_array(test_case["pips"])
+		var actual_combo := combo_evaluator.evaluate(pips)
+		var actual_display_combos := combo_evaluator.evaluate_display_combos(pips)
 		var actual_tags := tag_evaluator.evaluate_tags(context)
 		var expected_combo := StringName(str(test_case["combo"]))
+		var expected_display_combos: Array[StringName] = [expected_combo]
+		if test_case.has("display_combos"):
+			expected_display_combos = _to_string_name_array(test_case["display_combos"])
 		var expected_tags := _to_string_name_array(test_case["tags"])
 		var combo_passed := actual_combo == expected_combo
+		var display_passed := _same_ids(actual_display_combos, expected_display_combos)
 		var tags_passed := _same_tags(actual_tags, expected_tags)
-		all_passed = all_passed and combo_passed and tags_passed
+		all_passed = all_passed and combo_passed and display_passed and tags_passed
 
 		print("Case %02d: %s" % [case_index + 1, test_case["name"]])
 		print("  input: %s" % [_describe_pips(test_case["pips"])])
 		print("  expected combo: %s" % [str(expected_combo)])
 		print("  actual combo:   %s" % [str(actual_combo)])
+		print("  expected display combos: %s" % [_describe_tags(expected_display_combos)])
+		print("  actual display combos:   %s" % [_describe_tags(actual_display_combos)])
 		print("  expected tags:  %s" % [_describe_tags(expected_tags)])
 		print("  actual tags:    %s" % [_describe_tags(actual_tags)])
-		print("  passed: %s" % [str(combo_passed and tags_passed)])
+		print("  passed: %s" % [str(combo_passed and display_passed and tags_passed)])
 
 	print("--- DebugComboEvaluator: end ---")
 	var exit_code := 0
@@ -170,6 +186,17 @@ func _same_tags(actual: Array[StringName], expected: Array[StringName]) -> bool:
 
 	for expected_tag in expected:
 		if not actual.has(expected_tag):
+			return false
+
+	return true
+
+
+func _same_ids(actual: Array[StringName], expected: Array[StringName]) -> bool:
+	if actual.size() != expected.size():
+		return false
+
+	for index in range(expected.size()):
+		if actual[index] != expected[index]:
 			return false
 
 	return true
