@@ -107,16 +107,19 @@ msgid "UI.BATTLE.LOG_HINT"
 msgstr "Select 1 to 5 dice to score. You can lock dice before rerolling."
 
 msgid "UI.BATTLE.LOG_LAST_TITLE"
-msgstr "Latest Settlement"
+msgstr "Actual Settlement (applied)"
+
+msgid "UI.BATTLE.LOG_ACTUAL_SCORE"
+msgstr "Actual hand score: +{score}"
 
 msgid "UI.BATTLE.LOG_SECTION_TITLE"
-msgstr "Settlement Log"
+msgstr "Actual Trigger Log"
 
 msgid "UI.BATTLE.PREVIEW_EMPTY"
-msgstr "Current Selection Preview\nNo face selected."
+msgstr "Preview Score (not applied)\nNo face selected."
 
 msgid "UI.BATTLE.PREVIEW"
-msgstr "Current Selection Preview\n{summary}"
+msgstr "Preview Score (not applied)\n{summary}"
 
 msgid "UI.BATTLE.DEBUG_INFO"
 msgstr "Debug: battle {battle} / {max_battles} | target {target} | hand {hand} / {hands} | rerolls {rerolls} | selected {selected} | phase {phase}"
@@ -135,6 +138,12 @@ msgstr "No rewards were generated."
 
 msgid "UI.REWARD.RARITY"
 msgstr "Rarity: {rarity}"
+
+msgid "UI.REWARD.ARCHETYPE_TAGS"
+msgstr "Fits: {tags}"
+
+msgid "UI.REWARD.ARCHETYPE_TAG_NONE"
+msgstr "untagged"
 
 msgid "UI.REWARD.EFFECT"
 msgstr "Effect:\n{effects}"
@@ -643,6 +652,12 @@ msgstr "Total score scored: {score}"
 msgid "UI.RUN.SUMMARY_BEST_HAND"
 msgstr "Best hand score: {score}"
 
+msgid "UI.RUN.SUMMARY_TOP_EFFECT"
+msgstr "Most triggered effect: {effect} x{count}"
+
+msgid "UI.RUN.SUMMARY_TOP_EFFECT_NONE"
+msgstr "Most triggered effect: none"
+
 msgid "UI.RUN.SUMMARY_INSTALLED_COUNT"
 msgstr "Installed forge pieces: {count}"
 
@@ -654,6 +669,18 @@ msgstr "Installed history:"
 
 msgid "UI.RUN.SUMMARY_HISTORY_ITEM"
 msgstr "- Battle {battle} reward: {piece} -> Die {die} Face {face}"
+
+msgid "UI.RUN.SUMMARY_SETTLEMENT_TITLE"
+msgstr "Recent settlement logs ({count} / {max} kept):"
+
+msgid "UI.RUN.SUMMARY_SETTLEMENT_NONE"
+msgstr "Recent settlement logs: none"
+
+msgid "UI.RUN.SUMMARY_SETTLEMENT_ITEM"
+msgstr "- Battle {battle} Hand {hand}: +{score}"
+
+msgid "UI.RUN.SUMMARY_SETTLEMENT_LOG_ITEM"
+msgstr "  - {text}"
 
 msgid "UI.SCORE_SUMMARY.NONE"
 msgstr "none"
@@ -702,6 +729,54 @@ msgstr "Rerolled"
 
 msgid "TAG.LAST_HAND"
 msgstr "Last hand"
+
+msgid "TAG.SIX_BUILD"
+msgstr "Six build"
+
+msgid "TAG.HIGH_PIP"
+msgstr "High pip"
+
+msgid "TAG.LOW_PIP"
+msgstr "Low pip"
+
+msgid "TAG.ODD_BUILD"
+msgstr "Odd build"
+
+msgid "TAG.EVEN_BUILD"
+msgstr "Even build"
+
+msgid "TAG.SINGLE_FACE"
+msgstr "Single face"
+
+msgid "TAG.RETRIGGER"
+msgstr "Retrigger"
+
+msgid "TAG.UNSELECTED"
+msgstr "Unselected"
+
+msgid "TAG.MULT_BUILD"
+msgstr "Mult build"
+
+msgid "TAG.XMULT_BUILD"
+msgstr "XMult build"
+
+msgid "TAG.STRAIGHT_BUILD"
+msgstr "Straight build"
+
+msgid "TAG.CHIPS_BUILD"
+msgstr "Chips build"
+
+msgid "TAG.PAIR_BUILD"
+msgstr "Pair build"
+
+msgid "TAG.LEVEL_BUILD"
+msgstr "Level build"
+
+msgid "TAG.CLEANSE"
+msgstr "Cleanse"
+
+msgid "EFFECT.LEVEL.NAME"
+msgstr "Level"
 
 msgid "PHASE.INIT"
 msgstr "Init"

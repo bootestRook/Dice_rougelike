@@ -108,6 +108,9 @@ msgstr ""
 msgid "UI.BATTLE.LOG_LAST_TITLE"
 msgstr ""
 
+msgid "UI.BATTLE.LOG_ACTUAL_SCORE"
+msgstr ""
+
 msgid "UI.BATTLE.LOG_SECTION_TITLE"
 msgstr ""
 
@@ -133,6 +136,12 @@ msgid "UI.REWARD.EMPTY"
 msgstr ""
 
 msgid "UI.REWARD.RARITY"
+msgstr ""
+
+msgid "UI.REWARD.ARCHETYPE_TAGS"
+msgstr ""
+
+msgid "UI.REWARD.ARCHETYPE_TAG_NONE"
 msgstr ""
 
 msgid "UI.REWARD.EFFECT"
@@ -642,6 +651,12 @@ msgstr ""
 msgid "UI.RUN.SUMMARY_BEST_HAND"
 msgstr ""
 
+msgid "UI.RUN.SUMMARY_TOP_EFFECT"
+msgstr ""
+
+msgid "UI.RUN.SUMMARY_TOP_EFFECT_NONE"
+msgstr ""
+
 msgid "UI.RUN.SUMMARY_INSTALLED_COUNT"
 msgstr ""
 
@@ -652,6 +667,18 @@ msgid "UI.RUN.SUMMARY_HISTORY_TITLE"
 msgstr ""
 
 msgid "UI.RUN.SUMMARY_HISTORY_ITEM"
+msgstr ""
+
+msgid "UI.RUN.SUMMARY_SETTLEMENT_TITLE"
+msgstr ""
+
+msgid "UI.RUN.SUMMARY_SETTLEMENT_NONE"
+msgstr ""
+
+msgid "UI.RUN.SUMMARY_SETTLEMENT_ITEM"
+msgstr ""
+
+msgid "UI.RUN.SUMMARY_SETTLEMENT_LOG_ITEM"
 msgstr ""
 
 msgid "UI.SCORE_SUMMARY.NONE"
@@ -700,6 +727,54 @@ msgid "TAG.REROLLED"
 msgstr ""
 
 msgid "TAG.LAST_HAND"
+msgstr ""
+
+msgid "TAG.SIX_BUILD"
+msgstr ""
+
+msgid "TAG.HIGH_PIP"
+msgstr ""
+
+msgid "TAG.LOW_PIP"
+msgstr ""
+
+msgid "TAG.ODD_BUILD"
+msgstr ""
+
+msgid "TAG.EVEN_BUILD"
+msgstr ""
+
+msgid "TAG.SINGLE_FACE"
+msgstr ""
+
+msgid "TAG.RETRIGGER"
+msgstr ""
+
+msgid "TAG.UNSELECTED"
+msgstr ""
+
+msgid "TAG.MULT_BUILD"
+msgstr ""
+
+msgid "TAG.XMULT_BUILD"
+msgstr ""
+
+msgid "TAG.STRAIGHT_BUILD"
+msgstr ""
+
+msgid "TAG.CHIPS_BUILD"
+msgstr ""
+
+msgid "TAG.PAIR_BUILD"
+msgstr ""
+
+msgid "TAG.LEVEL_BUILD"
+msgstr ""
+
+msgid "TAG.CLEANSE"
+msgstr ""
+
+msgid "EFFECT.LEVEL.NAME"
 msgstr ""
 
 msgid "PHASE.INIT"

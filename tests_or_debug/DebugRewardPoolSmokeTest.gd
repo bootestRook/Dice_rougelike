@@ -12,6 +12,7 @@ func _init() -> void:
 	var all_passed := true
 	var generator := RewardGenerator.new()
 	generator.rng.seed = 97531
+	all_passed = _check("all forge pieces have archetype tags", _all_catalog_pieces_have_tags(generator)) and all_passed
 
 	var early_choices := generator.generate_forge_choices(3, 0)
 	print("Early choices: %s" % [_ids_text(early_choices)])
@@ -71,6 +72,15 @@ func _ids_text(choices: Array[ForgePieceDef]) -> String:
 	for choice in choices:
 		ids.append(str(choice.id if choice != null else &"null"))
 	return "[" + ", ".join(ids) + "]"
+
+
+func _all_catalog_pieces_have_tags(generator: RewardGenerator) -> bool:
+	var catalog := generator._build_piece_catalog()
+	for id in catalog.keys():
+		var piece := catalog[id] as ForgePieceDef
+		if piece == null or piece.get_archetype_tags().is_empty():
+			return false
+	return true
 
 
 func _check(label: String, passed: bool) -> bool:

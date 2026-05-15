@@ -217,7 +217,7 @@ func _on_hand_scored(result: ScoreResult) -> void:
 	log_args.clear()
 	_refresh_log()
 	if game_flow_controller != null:
-		game_flow_controller.record_hand_score(result.final_score)
+		game_flow_controller.record_hand_score(result, controller.get_current_hand_number())
 	_refresh_debug()
 
 
@@ -397,6 +397,7 @@ func _refresh_log() -> void:
 	if last_score_result != null:
 		var lines := PackedStringArray()
 		lines.append(Loc.t(&"UI.BATTLE.LOG_LAST_TITLE"))
+		lines.append(Loc.t(&"UI.BATTLE.LOG_ACTUAL_SCORE", {"score": last_score_result.final_score}))
 		lines.append(last_score_result.get_summary_text())
 		lines.append("")
 		lines.append(Loc.t(&"UI.BATTLE.LOG_SECTION_TITLE"))

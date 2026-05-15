@@ -76,6 +76,9 @@ func _make_choice_card(piece: ForgePieceDef) -> Control:
 	box.add_child(_make_text_label(Loc.t(&"UI.REWARD.RARITY", {
 		"rarity": Loc.t(piece.get_rarity_key()),
 	}), 14, Color(0.72, 0.82, 0.92)))
+	box.add_child(_make_text_label(Loc.t(&"UI.REWARD.ARCHETYPE_TAGS", {
+		"tags": piece.get_archetype_tag_text(),
+	}), 14, Color(0.78, 0.88, 0.72)))
 
 	var operations_label := _make_text_label(piece.get_effect_text(), 14, Color(0.84, 0.84, 0.78))
 	operations_label.custom_minimum_size = Vector2(0, 90)

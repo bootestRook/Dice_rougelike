@@ -150,26 +150,26 @@ func _build_pool_from_ids(ids: Array) -> Array[ForgePieceDef]:
 
 func _build_piece_catalog() -> Dictionary:
 	return {
-		&"pip_6": _make_piece(&"pip_6", [_make_int_op(ForgeOperationDef.OP_SET_PIP, 6)]),
-		&"pip_1": _make_piece(&"pip_1", [_make_int_op(ForgeOperationDef.OP_SET_PIP, 1)]),
-		&"pip_3": _make_piece(&"pip_3", [_make_int_op(ForgeOperationDef.OP_SET_PIP, 3)]),
-		&"mark_red": _make_piece(&"mark_red", [_make_id_op(ForgeOperationDef.OP_SET_MARK, &"red")]),
-		&"mark_blue": _make_piece(&"mark_blue", [_make_id_op(ForgeOperationDef.OP_SET_MARK, &"blue")]),
-		&"material_glass": _make_piece(&"material_glass", [_make_id_op(ForgeOperationDef.OP_SET_MATERIAL, &"glass")]),
-		&"material_steel": _make_piece(&"material_steel", [_make_id_op(ForgeOperationDef.OP_SET_MATERIAL, &"steel")]),
-		&"rune_six": _make_piece(&"rune_six", [_make_id_op(ForgeOperationDef.OP_SET_RUNE, &"six")]),
-		&"rune_straight": _make_piece(&"rune_straight", [_make_id_op(ForgeOperationDef.OP_SET_RUNE, &"straight")]),
-		&"rune_pair": _make_piece(&"rune_pair", [_make_id_op(ForgeOperationDef.OP_SET_RUNE, &"pair")]),
-		&"rune_odd": _make_piece(&"rune_odd", [_make_id_op(ForgeOperationDef.OP_SET_RUNE, &"odd")]),
-		&"rune_even": _make_piece(&"rune_even", [_make_id_op(ForgeOperationDef.OP_SET_RUNE, &"even")]),
-		&"upgrade_1": _make_piece(&"upgrade_1", [_make_int_op(ForgeOperationDef.OP_UPGRADE, 1)]),
-		&"cleanse": _make_piece(&"cleanse", [_make_op(ForgeOperationDef.OP_CLEANSE)]),
-		&"red_6": _make_piece(&"red_6", [_make_int_op(ForgeOperationDef.OP_SET_PIP, 6), _make_id_op(ForgeOperationDef.OP_SET_MARK, &"red")]),
-		&"glass_1": _make_piece(&"glass_1", [_make_int_op(ForgeOperationDef.OP_SET_PIP, 1), _make_id_op(ForgeOperationDef.OP_SET_MATERIAL, &"glass")]),
+		&"pip_6": _make_piece(&"pip_6", [_make_int_op(ForgeOperationDef.OP_SET_PIP, 6)], &"common", [&"six_build", &"high_pip"]),
+		&"pip_1": _make_piece(&"pip_1", [_make_int_op(ForgeOperationDef.OP_SET_PIP, 1)], &"common", [&"low_pip"]),
+		&"pip_3": _make_piece(&"pip_3", [_make_int_op(ForgeOperationDef.OP_SET_PIP, 3)], &"common", [&"odd_build", &"low_pip"]),
+		&"mark_red": _make_piece(&"mark_red", [_make_id_op(ForgeOperationDef.OP_SET_MARK, &"red")], &"common", [&"single_face", &"retrigger"]),
+		&"mark_blue": _make_piece(&"mark_blue", [_make_id_op(ForgeOperationDef.OP_SET_MARK, &"blue")], &"common", [&"unselected", &"mult_build"]),
+		&"material_glass": _make_piece(&"material_glass", [_make_id_op(ForgeOperationDef.OP_SET_MATERIAL, &"glass")], &"common", [&"single_face", &"xmult_build"]),
+		&"material_steel": _make_piece(&"material_steel", [_make_id_op(ForgeOperationDef.OP_SET_MATERIAL, &"steel")], &"common", [&"unselected", &"mult_build"]),
+		&"rune_six": _make_piece(&"rune_six", [_make_id_op(ForgeOperationDef.OP_SET_RUNE, &"six")], &"common", [&"six_build", &"mult_build"]),
+		&"rune_straight": _make_piece(&"rune_straight", [_make_id_op(ForgeOperationDef.OP_SET_RUNE, &"straight")], &"common", [&"straight_build", &"chips_build"]),
+		&"rune_pair": _make_piece(&"rune_pair", [_make_id_op(ForgeOperationDef.OP_SET_RUNE, &"pair")], &"common", [&"pair_build", &"retrigger"]),
+		&"rune_odd": _make_piece(&"rune_odd", [_make_id_op(ForgeOperationDef.OP_SET_RUNE, &"odd")], &"common", [&"odd_build", &"mult_build"]),
+		&"rune_even": _make_piece(&"rune_even", [_make_id_op(ForgeOperationDef.OP_SET_RUNE, &"even")], &"common", [&"even_build", &"chips_build"]),
+		&"upgrade_1": _make_piece(&"upgrade_1", [_make_int_op(ForgeOperationDef.OP_UPGRADE, 1)], &"common", [&"level_build", &"single_face"]),
+		&"cleanse": _make_piece(&"cleanse", [_make_op(ForgeOperationDef.OP_CLEANSE)], &"common", [&"cleanse"]),
+		&"red_6": _make_piece(&"red_6", [_make_int_op(ForgeOperationDef.OP_SET_PIP, 6), _make_id_op(ForgeOperationDef.OP_SET_MARK, &"red")], &"common", [&"six_build", &"retrigger"]),
+		&"glass_1": _make_piece(&"glass_1", [_make_int_op(ForgeOperationDef.OP_SET_PIP, 1), _make_id_op(ForgeOperationDef.OP_SET_MATERIAL, &"glass")], &"common", [&"low_pip", &"xmult_build"]),
 	}
 
 
-func _make_piece(id: StringName, ops: Array, rarity: StringName = &"common") -> ForgePieceDef:
+func _make_piece(id: StringName, ops: Array, rarity: StringName = &"common", tags: Array = []) -> ForgePieceDef:
 	var piece := ForgePieceDef.new()
 	piece.id = id
 	piece.name_key = LocKeys.forge_part_name_key(id)
@@ -179,6 +179,11 @@ func _make_piece(id: StringName, ops: Array, rarity: StringName = &"common") -> 
 	for op_def in ops:
 		if op_def is ForgeOperationDef:
 			piece.operations.append(op_def)
+	for tag in tags:
+		if tag is StringName:
+			piece.archetype_tags.append(tag)
+		else:
+			piece.archetype_tags.append(StringName(str(tag)))
 	return piece
 
 

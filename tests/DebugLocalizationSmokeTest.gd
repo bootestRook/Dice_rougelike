@@ -64,6 +64,7 @@ func _test_core_keys() -> bool:
 		&"UI.BATTLE.SELECT",
 		&"UI.BATTLE.SELECTED",
 		&"UI.BATTLE.LOG_LAST_TITLE",
+		&"UI.BATTLE.LOG_ACTUAL_SCORE",
 		&"UI.BATTLE.LOG_SECTION_TITLE",
 		&"UI.BATTLE.PREVIEW_EMPTY",
 		&"UI.BATTLE.PREVIEW",
@@ -77,8 +78,16 @@ func _test_core_keys() -> bool:
 		&"UI.SCORE_SUMMARY.MULT",
 		&"UI.SCORE_SUMMARY.XMULT",
 		&"UI.SCORE_SUMMARY.FINAL",
+		&"UI.RUN.SUMMARY_TOP_EFFECT",
+		&"UI.RUN.SUMMARY_TOP_EFFECT_NONE",
+		&"UI.RUN.SUMMARY_SETTLEMENT_TITLE",
+		&"UI.RUN.SUMMARY_SETTLEMENT_NONE",
+		&"UI.RUN.SUMMARY_SETTLEMENT_ITEM",
+		&"UI.RUN.SUMMARY_SETTLEMENT_LOG_ITEM",
 		&"UI.REWARD.TITLE",
 		&"UI.REWARD.RARITY",
+		&"UI.REWARD.ARCHETYPE_TAGS",
+		&"UI.REWARD.ARCHETYPE_TAG_NONE",
 		&"UI.REWARD.EFFECT",
 		&"UI.REWARD.SELECT",
 		&"UI.INSTALL.TITLE",
@@ -127,6 +136,22 @@ func _test_core_keys() -> bool:
 		&"TAG.FEW_SCORED",
 		&"TAG.REROLLED",
 		&"TAG.LAST_HAND",
+		&"TAG.SIX_BUILD",
+		&"TAG.HIGH_PIP",
+		&"TAG.LOW_PIP",
+		&"TAG.ODD_BUILD",
+		&"TAG.EVEN_BUILD",
+		&"TAG.SINGLE_FACE",
+		&"TAG.RETRIGGER",
+		&"TAG.UNSELECTED",
+		&"TAG.MULT_BUILD",
+		&"TAG.XMULT_BUILD",
+		&"TAG.STRAIGHT_BUILD",
+		&"TAG.CHIPS_BUILD",
+		&"TAG.PAIR_BUILD",
+		&"TAG.LEVEL_BUILD",
+		&"TAG.CLEANSE",
+		&"EFFECT.LEVEL.NAME",
 		&"PHASE.INIT",
 		&"PHASE.WAITING_ACTION",
 		&"PHASE.SCORING",
@@ -207,6 +232,10 @@ func _test_data_keys() -> bool:
 				var operation_text := operation.get_display_text()
 				if operation_text == str(operation.get_text_key()):
 					push_error("Forge operation did not localize: %s" % [str(operation.get_text_key())])
+					return false
+			for tag in piece.get_archetype_tags():
+				if not _key_translates(LocKeys.tag_key(tag)):
+					push_error("Missing forge piece archetype tag key: %s" % [str(tag)])
 					return false
 
 		if not _test_id_key_group("material", [&"none", &"glass", &"steel", &"blood", &"mirror", &"curse"]):

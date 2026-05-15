@@ -114,11 +114,11 @@ func install_pending_piece(die_index: int, face_index: int) -> void:
 	start_next_battle()
 
 
-func record_hand_score(score: int) -> void:
+func record_hand_score(score_or_result, hand_number: int = 0) -> void:
 	if run_state == null:
 		return
 
-	run_state.record_hand_score(score)
+	run_state.record_hand_score(score_or_result, hand_number)
 	run_state_changed.emit(run_state)
 
 

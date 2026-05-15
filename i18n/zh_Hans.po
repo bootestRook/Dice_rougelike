@@ -107,16 +107,19 @@ msgid "UI.BATTLE.LOG_HINT"
 msgstr "选择 1 到 5 颗骰子后结算。重掷前可以先锁定骰子。"
 
 msgid "UI.BATTLE.LOG_LAST_TITLE"
-msgstr "最近一次结算"
+msgstr "实际结算（已计入）"
+
+msgid "UI.BATTLE.LOG_ACTUAL_SCORE"
+msgstr "实际单手得分：+{score}"
 
 msgid "UI.BATTLE.LOG_SECTION_TITLE"
-msgstr "结算日志"
+msgstr "实际触发日志"
 
 msgid "UI.BATTLE.PREVIEW_EMPTY"
-msgstr "当前选择预览\n未选择骰面。"
+msgstr "预览分（尚未计入）\n未选择骰面。"
 
 msgid "UI.BATTLE.PREVIEW"
-msgstr "当前选择预览\n{summary}"
+msgstr "预览分（尚未计入）\n{summary}"
 
 msgid "UI.BATTLE.DEBUG_INFO"
 msgstr "调试信息：战斗 {battle} / {max_battles} | 目标 {target} | 手牌 {hand} / {hands} | 重掷 {rerolls} | 已选 {selected} | 阶段 {phase}"
@@ -135,6 +138,12 @@ msgstr "没有生成奖励。"
 
 msgid "UI.REWARD.RARITY"
 msgstr "稀有度：{rarity}"
+
+msgid "UI.REWARD.ARCHETYPE_TAGS"
+msgstr "适配流派：{tags}"
+
+msgid "UI.REWARD.ARCHETYPE_TAG_NONE"
+msgstr "未标记"
 
 msgid "UI.REWARD.EFFECT"
 msgstr "效果：\n{effects}"
@@ -643,6 +652,12 @@ msgstr "累计得分：{score}"
 msgid "UI.RUN.SUMMARY_BEST_HAND"
 msgstr "最佳单手得分：{score}"
 
+msgid "UI.RUN.SUMMARY_TOP_EFFECT"
+msgstr "最常触发的效果：{effect} x{count}"
+
+msgid "UI.RUN.SUMMARY_TOP_EFFECT_NONE"
+msgstr "最常触发的效果：无"
+
 msgid "UI.RUN.SUMMARY_INSTALLED_COUNT"
 msgstr "已安装铸骰件：{count}"
 
@@ -654,6 +669,18 @@ msgstr "安装记录："
 
 msgid "UI.RUN.SUMMARY_HISTORY_ITEM"
 msgstr "- 第 {battle} 场奖励：{piece} -> 骰子 {die} 面 {face}"
+
+msgid "UI.RUN.SUMMARY_SETTLEMENT_TITLE"
+msgstr "最近结算日志（保留 {count} / {max}）："
+
+msgid "UI.RUN.SUMMARY_SETTLEMENT_NONE"
+msgstr "最近结算日志：无"
+
+msgid "UI.RUN.SUMMARY_SETTLEMENT_ITEM"
+msgstr "- 第 {battle} 场第 {hand} 手：+{score}"
+
+msgid "UI.RUN.SUMMARY_SETTLEMENT_LOG_ITEM"
+msgstr "  - {text}"
 
 msgid "UI.SCORE_SUMMARY.NONE"
 msgstr "无"
@@ -702,6 +729,54 @@ msgstr "已重掷"
 
 msgid "TAG.LAST_HAND"
 msgstr "最后一手"
+
+msgid "TAG.SIX_BUILD"
+msgstr "六点流"
+
+msgid "TAG.HIGH_PIP"
+msgstr "高点流"
+
+msgid "TAG.LOW_PIP"
+msgstr "低点流"
+
+msgid "TAG.ODD_BUILD"
+msgstr "奇数流"
+
+msgid "TAG.EVEN_BUILD"
+msgstr "偶数流"
+
+msgid "TAG.SINGLE_FACE"
+msgstr "单面核心"
+
+msgid "TAG.RETRIGGER"
+msgstr "重复触发"
+
+msgid "TAG.UNSELECTED"
+msgstr "留场未选"
+
+msgid "TAG.MULT_BUILD"
+msgstr "倍率流"
+
+msgid "TAG.XMULT_BUILD"
+msgstr "乘算流"
+
+msgid "TAG.STRAIGHT_BUILD"
+msgstr "顺子流"
+
+msgid "TAG.CHIPS_BUILD"
+msgstr "筹码流"
+
+msgid "TAG.PAIR_BUILD"
+msgstr "对子流"
+
+msgid "TAG.LEVEL_BUILD"
+msgstr "升级流"
+
+msgid "TAG.CLEANSE"
+msgstr "净化"
+
+msgid "EFFECT.LEVEL.NAME"
+msgstr "等级"
 
 msgid "PHASE.INIT"
 msgstr "初始化"

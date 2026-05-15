@@ -4,6 +4,8 @@ class_name DebugRunFlowSmokeTest
 
 const GameFlowController = preload("res://scripts/runtime/GameFlowController.gd")
 const RunState = preload("res://scripts/core/battle/RunState.gd")
+const BattleLogEntry = preload("res://scripts/log/BattleLogEntry.gd")
+const ScoreResult = preload("res://scripts/core/scoring/ScoreResult.gd")
 
 
 func _init() -> void:
@@ -27,6 +29,11 @@ func _init() -> void:
 	all_passed = _check("installed_piece_count increased", flow.get_run_state().installed_piece_count == 1) and all_passed
 	all_passed = _check("installed_piece_history has record", flow.get_run_state().installed_piece_history.size() == 1) and all_passed
 	all_passed = _check("battle_index advanced after install", flow.get_run_state().battle_index == 1) and all_passed
+	_record_sample_settlements(flow.get_run_state())
+	all_passed = _check("recent settlement logs are capped at 5", flow.get_run_state().recent_settlement_logs.size() == 5) and all_passed
+	all_passed = _check("oldest settlement log was trimmed", int(flow.get_run_state().recent_settlement_logs[0].get("hand", 0)) == 2) and all_passed
+	all_passed = _check("best hand score records highest actual result", flow.get_run_state().best_hand_score == 105) and all_passed
+	all_passed = _check("effect trigger counts accumulate", int(flow.get_run_state().effect_trigger_counts.get(&"rune_six", 0)) == 6) and all_passed
 
 	flow.get_run_state().battle_index = flow.get_run_state().max_battles - 1
 	flow.on_battle_won()
@@ -69,3 +76,17 @@ func _check_target_curve() -> bool:
 			run_state.get_target_score() == expected_scores[index]
 		) and all_passed
 	return all_passed
+
+
+func _record_sample_settlements(run_state: RunState) -> void:
+	for index in range(6):
+		var result := ScoreResult.new()
+		result.final_score = 100 + index
+		result.add_log(BattleLogEntry.new(&"LOG.RUNE_SIX", {
+			"die": 1,
+			"face": 1,
+			"rune": &"RUNE.SIX.NAME",
+			"trigger": 1,
+			"mult": 8,
+		}, &"rune_six"))
+		run_state.record_hand_score(result, index + 1)

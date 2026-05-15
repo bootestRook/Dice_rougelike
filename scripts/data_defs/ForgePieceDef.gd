@@ -14,6 +14,7 @@ const LocService = preload("res://scripts/i18n/LocService.gd")
 @export var rarity_key: StringName = &""
 @export var rarity: StringName = &"common"
 @export var operations: Array[ForgeOperationDef] = []
+@export var archetype_tags: Array[StringName] = []
 
 @export var rarity_id: StringName = &""
 @export var operation: ForgeOperationDef = null
@@ -78,12 +79,32 @@ func get_effect_text() -> String:
 	return LocService.t(&"UI.REWARD.EFFECT", {"effects": "\n".join(op_texts)})
 
 
+func get_archetype_tags() -> Array[StringName]:
+	var result: Array[StringName] = []
+	for tag in archetype_tags:
+		if tag != &"" and not result.has(tag):
+			result.append(tag)
+	return result
+
+
+func get_archetype_tag_text() -> String:
+	var tags := get_archetype_tags()
+	if tags.is_empty():
+		return LocService.t(&"UI.REWARD.ARCHETYPE_TAG_NONE")
+
+	var tag_texts := PackedStringArray()
+	for tag in tags:
+		tag_texts.append(LocService.t(LocKeys.tag_key(tag)))
+	return ", ".join(tag_texts)
+
+
 func get_display_text() -> String:
 	var lines := PackedStringArray()
 
 	lines.append(LocService.t(get_name_key()))
 	lines.append(LocService.t(get_desc_key()))
 	lines.append(LocService.t(&"UI.REWARD.RARITY", {"rarity": LocService.t(get_rarity_key())}))
+	lines.append(LocService.t(&"UI.REWARD.ARCHETYPE_TAGS", {"tags": get_archetype_tag_text()}))
 	lines.append(get_effect_text())
 
 	return "\n".join(lines)
