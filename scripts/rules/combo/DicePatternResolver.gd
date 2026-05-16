@@ -1,0 +1,3 @@
+extends ComboEvaluator
+class_name DicePatternResolver
+

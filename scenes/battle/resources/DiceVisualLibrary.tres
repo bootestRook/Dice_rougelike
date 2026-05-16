@@ -1,0 +1,132 @@
+[gd_resource type="Resource" script_class="DiceVisualLibrary" load_steps=23 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/battle/resources/DiceVisualLibrary.gd" id="1_visual_script"]
+[ext_resource type="Texture2D" path="res://assets/ui/battle/dice/die_body_standard.png" id="2_standard_body"]
+[ext_resource type="Texture2D" path="res://assets/ui/battle/dice/pips/pip_1.png" id="3_pip_1"]
+[ext_resource type="Texture2D" path="res://assets/ui/battle/dice/pips/pip_2.png" id="4_pip_2"]
+[ext_resource type="Texture2D" path="res://assets/ui/battle/dice/pips/pip_3.png" id="5_pip_3"]
+[ext_resource type="Texture2D" path="res://assets/ui/battle/dice/pips/pip_4.png" id="6_pip_4"]
+[ext_resource type="Texture2D" path="res://assets/ui/battle/dice/pips/pip_5.png" id="7_pip_5"]
+[ext_resource type="Texture2D" path="res://assets/ui/battle/dice/pips/pip_6.png" id="8_pip_6"]
+[ext_resource type="Texture2D" path="res://assets/ui/battle/dice/pips/pip_7.png" id="9_pip_7"]
+[ext_resource type="Texture2D" path="res://assets/ui/battle/dice/pips/pip_8.png" id="10_pip_8"]
+[ext_resource type="Texture2D" path="res://assets/ui/battle/dice/state/selected_overlay.png" id="11_selected_overlay"]
+[ext_resource type="Texture2D" path="res://assets/ui/battle/dice/state/viewing_overlay.png" id="12_viewing_overlay"]
+[ext_resource type="Texture2D" path="res://assets/ui/battle/dice/state/rerollable_overlay.png" id="13_rerollable_overlay"]
+[ext_resource type="Texture2D" path="res://assets/ui/battle/dice/state/scored_overlay.png" id="14_scored_overlay"]
+[ext_resource type="Texture2D" path="res://assets/ui/battle/dice/state/disabled_overlay.png" id="15_disabled_overlay"]
+[ext_resource type="Texture2D" path="res://assets/ui/battle/icons/ornament_placeholder.png" id="16_ornament_placeholder"]
+[ext_resource type="Texture2D" path="res://assets/ui/battle/icons/mark_placeholder.png" id="17_mark_placeholder"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_die_default"]
+bg_color = Color(0.88, 0.88, 0.82, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.23, 0.28, 0.24, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_die_selected"]
+bg_color = Color(1, 0.82, 0.58, 1)
+border_width_left = 6
+border_width_top = 6
+border_width_right = 6
+border_width_bottom = 6
+border_color = Color(1, 0.05, 0.02, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_die_rerollable"]
+bg_color = Color(0.9, 0.92, 0.86, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.24, 0.58, 0.74, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_die_scored"]
+bg_color = Color(0.52, 0.56, 0.5, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.8, 0.8, 0.72, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_die_disabled"]
+bg_color = Color(0.28, 0.3, 0.28, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.16, 0.18, 0.17, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[resource]
+script = ExtResource("1_visual_script")
+fallback_die_texture = ExtResource("2_standard_body")
+body_textures = {
+&"standard": ExtResource("2_standard_body")
+}
+placeholder_body_texture_paths = PackedStringArray()
+pip_textures = {
+&"1": ExtResource("3_pip_1"),
+&"2": ExtResource("4_pip_2"),
+&"3": ExtResource("5_pip_3"),
+&"4": ExtResource("6_pip_4"),
+&"5": ExtResource("7_pip_5"),
+&"6": ExtResource("8_pip_6"),
+&"7": ExtResource("9_pip_7"),
+&"8": ExtResource("10_pip_8")
+}
+ornament_textures = {
+&"orn_chip": ExtResource("16_ornament_placeholder"),
+&"orn_mult": ExtResource("16_ornament_placeholder"),
+&"orn_wild": ExtResource("16_ornament_placeholder"),
+&"orn_burst": ExtResource("16_ornament_placeholder"),
+&"orn_stay": ExtResource("16_ornament_placeholder"),
+&"orn_stone": ExtResource("16_ornament_placeholder"),
+&"orn_gold": ExtResource("16_ornament_placeholder"),
+&"orn_lucky": ExtResource("16_ornament_placeholder"),
+&"orn_foil": ExtResource("16_ornament_placeholder"),
+&"orn_holo": ExtResource("16_ornament_placeholder"),
+&"orn_poly": ExtResource("16_ornament_placeholder"),
+&"curse": ExtResource("16_ornament_placeholder")
+}
+mark_textures = {
+&"red": ExtResource("17_mark_placeholder"),
+&"blue": ExtResource("17_mark_placeholder"),
+&"purple": ExtResource("17_mark_placeholder"),
+&"black": ExtResource("17_mark_placeholder"),
+&"gold": ExtResource("17_mark_placeholder")
+}
+state_overlay_textures = {
+&"selected": ExtResource("11_selected_overlay"),
+&"viewing": ExtResource("12_viewing_overlay"),
+&"rerollable": ExtResource("13_rerollable_overlay"),
+&"scored": ExtResource("14_scored_overlay"),
+&"disabled": ExtResource("15_disabled_overlay")
+}
+body_colors = {}
+pip_colors = {}
+default_die_style = SubResource("StyleBoxFlat_die_default")
+selected_die_style = SubResource("StyleBoxFlat_die_selected")
+rerollable_die_style = SubResource("StyleBoxFlat_die_rerollable")
+scored_die_style = SubResource("StyleBoxFlat_die_scored")
+disabled_die_style = SubResource("StyleBoxFlat_die_disabled")

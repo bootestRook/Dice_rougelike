@@ -1,0 +1,80 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/battle/components/DiceBenchArea.gd" id="1_bench"]
+
+[node name="DiceBenchArea" type="PanelContainer"]
+custom_minimum_size = Vector2(0, 280)
+script = ExtResource("1_bench")
+
+[node name="BenchMargin" type="MarginContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="Rows" type="VBoxContainer" parent="BenchMargin"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Header" type="HBoxContainer" parent="BenchMargin/Rows"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TitleLabel" type="Label" parent="BenchMargin/Rows/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "骰子备战区"
+
+[node name="HintLabel" type="Label" parent="BenchMargin/Rows/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "等待行动"
+horizontal_alignment = 1
+clip_text = true
+
+[node name="RerollButton" type="Button" parent="BenchMargin/Rows/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "重投所选"
+
+[node name="ScoreButton" type="Button" parent="BenchMargin/Rows/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "结算所选"
+
+[node name="BenchOverlay" type="Control" parent="BenchMargin/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="DiceCenter" type="CenterContainer" parent="BenchMargin/Rows/BenchOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 46.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="DiceRow" type="HBoxContainer" parent="BenchMargin/Rows/BenchOverlay/DiceCenter"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="PopupMount" type="CenterContainer" parent="BenchMargin/Rows/BenchOverlay"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = -38.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2

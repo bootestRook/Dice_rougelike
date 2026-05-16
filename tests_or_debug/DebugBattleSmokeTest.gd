@@ -25,15 +25,18 @@ func _init() -> void:
 	all_passed = _check("unselected dice stay unchanged after selected reroll", unselected_kept) and all_passed
 	all_passed = _check("selection clears after reroll", selection_cleared) and all_passed
 
-	for index in range(6):
+	for index in range(5):
 		controller.toggle_select(index)
 
 	var selected_count := _selected_count(controller.get_current_rolls())
-	all_passed = _check("selection does not exceed 5", selected_count == 5) and all_passed
+	all_passed = _check("selection reaches max selection", selected_count == 5) and all_passed
 	all_passed = _check("score is enabled at max selection", controller.can_score()) and all_passed
-	controller.get_current_rolls()[5].selected = true
+	controller.toggle_select(5)
+	selected_count = _selected_count(controller.get_current_rolls())
+	all_passed = _check("selection can exceed max for rerolling", selected_count == 6) and all_passed
 	all_passed = _check("score is disabled above max selection", not controller.can_score()) and all_passed
-	controller.get_current_rolls()[5].selected = false
+	all_passed = _check("reroll is enabled above max selection", controller.can_reroll()) and all_passed
+	controller.toggle_select(5)
 
 	var score_before := controller.get_total_score()
 	controller.score_selected()

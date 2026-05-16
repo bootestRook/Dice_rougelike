@@ -1,0 +1,108 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/battle/components/SegmentScoringArea.gd" id="1_score"]
+
+[node name="SegmentScoringArea" type="PanelContainer"]
+script = ExtResource("1_score")
+
+[node name="ScoringMargin" type="MarginContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="Rows" type="VBoxContainer" parent="ScoringMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TitleLabel" type="Label" parent="ScoringMargin/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "骰子结算区"
+horizontal_alignment = 1
+
+[node name="StagePanel" type="PanelContainer" parent="ScoringMargin/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="StageMargin" type="MarginContainer" parent="ScoringMargin/Rows/StagePanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 18
+
+[node name="StageRows" type="VBoxContainer" parent="ScoringMargin/Rows/StagePanel/StageMargin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+alignment = 1
+
+[node name="SettlementSlots" type="HBoxContainer" parent="ScoringMargin/Rows/StagePanel/StageMargin/StageRows"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/separation = 14
+alignment = 1
+
+[node name="Slot1" type="PanelContainer" parent="ScoringMargin/Rows/StagePanel/StageMargin/StageRows/SettlementSlots"]
+custom_minimum_size = Vector2(100, 150)
+layout_mode = 2
+
+[node name="Slot2" type="PanelContainer" parent="ScoringMargin/Rows/StagePanel/StageMargin/StageRows/SettlementSlots"]
+custom_minimum_size = Vector2(100, 150)
+layout_mode = 2
+
+[node name="Slot3" type="PanelContainer" parent="ScoringMargin/Rows/StagePanel/StageMargin/StageRows/SettlementSlots"]
+custom_minimum_size = Vector2(100, 150)
+layout_mode = 2
+
+[node name="Slot4" type="PanelContainer" parent="ScoringMargin/Rows/StagePanel/StageMargin/StageRows/SettlementSlots"]
+custom_minimum_size = Vector2(100, 150)
+layout_mode = 2
+
+[node name="Slot5" type="PanelContainer" parent="ScoringMargin/Rows/StagePanel/StageMargin/StageRows/SettlementSlots"]
+custom_minimum_size = Vector2(100, 150)
+layout_mode = 2
+
+[node name="StatusLabel" type="Label" parent="ScoringMargin/Rows/StagePanel/StageMargin/StageRows"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "选择骰子后，点击「结算所选」放入此处并计算得分"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="PreviewLabel" type="Label" parent="ScoringMargin/Rows/StagePanel/StageMargin/StageRows"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "计分预览"
+horizontal_alignment = 1
+autowrap_mode = 2
+clip_text = true
+max_lines_visible = 2
+
+[node name="LogScroll" type="ScrollContainer" parent="ScoringMargin/Rows/StagePanel/StageMargin/StageRows"]
+visible = false
+layout_mode = 2
+custom_minimum_size = Vector2(0, 0)
+size_flags_horizontal = 3
+
+[node name="LogRows" type="VBoxContainer" parent="ScoringMargin/Rows/StagePanel/StageMargin/StageRows/LogScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="FloatingScoreLayer" type="Control" parent="ScoringMargin/Rows/StagePanel"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2

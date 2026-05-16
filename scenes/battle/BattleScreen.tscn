@@ -1,6 +1,21 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=17 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/battle/BattleScreen.gd" id="1_battle"]
+[ext_resource type="Resource" path="res://scenes/battle/resources/BattleUiStyleConfig.tres" id="2_style"]
+[ext_resource type="Resource" path="res://scenes/battle/resources/BattleIconLibrary.tres" id="3_icons"]
+[ext_resource type="Resource" path="res://scenes/battle/resources/DiceVisualLibrary.tres" id="4_dice_visuals"]
+[ext_resource type="PackedScene" path="res://scenes/battle/components/LeftBattleSidebar.tscn" id="5_left"]
+[ext_resource type="PackedScene" path="res://scenes/battle/components/TopInventoryBar.tscn" id="6_top"]
+[ext_resource type="PackedScene" path="res://scenes/battle/components/InventorySlotView.tscn" id="7_slot"]
+[ext_resource type="PackedScene" path="res://scenes/battle/components/SegmentScoringArea.tscn" id="8_score"]
+[ext_resource type="PackedScene" path="res://scenes/battle/components/DiceBenchArea.tscn" id="9_bench"]
+[ext_resource type="PackedScene" path="res://scenes/battle/components/DiceView.tscn" id="10_dice"]
+[ext_resource type="PackedScene" path="res://scenes/battle/components/DiceInfoPopup.tscn" id="11_popup"]
+[ext_resource type="PackedScene" path="res://scenes/battle/components/FaceInfoCard.tscn" id="12_face"]
+[ext_resource type="PackedScene" path="res://scenes/battle/components/ScoreLogRow.tscn" id="13_log"]
+[ext_resource type="PackedScene" path="res://scenes/battle/components/FloatingScoreText.tscn" id="14_float"]
+[ext_resource type="PackedScene" path="res://scenes/battle/components/ComboInfoPopup.tscn" id="15_combo_popup"]
+[ext_resource type="PackedScene" path="res://scenes/battle/components/ComboInfoRow.tscn" id="16_combo_row"]
 
 [node name="BattleScreen" type="Control"]
 layout_mode = 3
@@ -10,3 +25,18 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_battle")
+style_config = ExtResource("2_style")
+icon_library = ExtResource("3_icons")
+dice_visual_library = ExtResource("4_dice_visuals")
+left_sidebar_scene = ExtResource("5_left")
+top_inventory_bar_scene = ExtResource("6_top")
+inventory_slot_view_scene = ExtResource("7_slot")
+segment_scoring_area_scene = ExtResource("8_score")
+dice_bench_area_scene = ExtResource("9_bench")
+dice_view_scene = ExtResource("10_dice")
+dice_info_popup_scene = ExtResource("11_popup")
+face_info_card_scene = ExtResource("12_face")
+combo_info_popup_scene = ExtResource("15_combo_popup")
+combo_info_row_scene = ExtResource("16_combo_row")
+score_log_row_scene = ExtResource("13_log")
+floating_score_text_scene = ExtResource("14_float")

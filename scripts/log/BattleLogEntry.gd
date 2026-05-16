@@ -2,7 +2,7 @@ extends RefCounted
 class_name BattleLogEntry
 
 
-const LocService = preload("res://scripts/i18n/LocService.gd")
+const DisplayNames = preload("res://scripts/ui/DisplayNames.gd")
 
 
 var key: StringName
@@ -22,13 +22,10 @@ func _init(
 
 func get_text() -> String:
 	var formatted_args := {}
-
 	for arg_key in args.keys():
 		var value = args[arg_key]
-
 		if value is StringName:
-			formatted_args[arg_key] = LocService.t(value)
+			formatted_args[arg_key] = DisplayNames.display_from_key_or_id(value)
 		else:
 			formatted_args[arg_key] = value
-
-	return LocService.t(key, formatted_args)
+	return DisplayNames.log_text(key, formatted_args)

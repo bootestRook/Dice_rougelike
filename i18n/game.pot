@@ -117,6 +117,9 @@ msgstr ""
 msgid "UI.BATTLE.PREVIEW_EMPTY"
 msgstr ""
 
+msgid "UI.BATTLE.PREVIEW_TOO_MANY"
+msgstr ""
+
 msgid "UI.BATTLE.PREVIEW"
 msgstr ""
 
@@ -219,6 +222,9 @@ msgstr ""
 msgid "COMBO.HIGH_CARD"
 msgstr ""
 
+msgid "COMBO.SCATTER"
+msgstr ""
+
 msgid "COMBO.PAIR"
 msgstr ""
 
@@ -237,13 +243,37 @@ msgstr ""
 msgid "COMBO.LARGE_STRAIGHT"
 msgstr ""
 
+msgid "COMBO.STRAIGHT"
+msgstr ""
+
 msgid "COMBO.FOUR_KIND"
 msgstr ""
 
 msgid "COMBO.FIVE_KIND"
 msgstr ""
 
+msgid "CONTAINED_PATTERN.CONTAINS_PAIR"
+msgstr ""
+
+msgid "CONTAINED_PATTERN.CONTAINS_TWO_PAIR"
+msgstr ""
+
+msgid "CONTAINED_PATTERN.CONTAINS_THREE_KIND"
+msgstr ""
+
+msgid "CONTAINED_PATTERN.CONTAINS_FULL_HOUSE"
+msgstr ""
+
+msgid "CONTAINED_PATTERN.CONTAINS_FOUR_KIND"
+msgstr ""
+
+msgid "CONTAINED_PATTERN.CONTAINS_FIVE_KIND"
+msgstr ""
+
 msgid "LOG.COMBO"
+msgstr ""
+
+msgid "LOG.CONTAINED_PATTERNS"
 msgstr ""
 
 msgid "LOG.PIP_SUM"
@@ -456,6 +486,9 @@ msgstr ""
 msgid "FORGE_OP.SET_PIP"
 msgstr ""
 
+msgid "FORGE_OP.SET_ORNAMENT"
+msgstr ""
+
 msgid "FORGE_OP.SET_MATERIAL"
 msgstr ""
 
@@ -475,6 +508,9 @@ msgid "FORGE_OP.RESET_FACE"
 msgstr ""
 
 msgid "FORGE_OP.COPY_FROM_FACE"
+msgstr ""
+
+msgid "FORGE_OP.COMBO_UPGRADE"
 msgstr ""
 
 msgid "FORGE_OP.UNKNOWN"
@@ -498,6 +534,30 @@ msgstr ""
 msgid "FORGE_PART.PIP_3.DESC"
 msgstr ""
 
+msgid "FORGE_PART.ORNAMENT_CHIP.NAME"
+msgstr ""
+
+msgid "FORGE_PART.ORNAMENT_CHIP.DESC"
+msgstr ""
+
+msgid "FORGE_PART.ORNAMENT_MULT.NAME"
+msgstr ""
+
+msgid "FORGE_PART.ORNAMENT_MULT.DESC"
+msgstr ""
+
+msgid "FORGE_PART.ORNAMENT_BURST.NAME"
+msgstr ""
+
+msgid "FORGE_PART.ORNAMENT_BURST.DESC"
+msgstr ""
+
+msgid "FORGE_PART.ORNAMENT_STAY.NAME"
+msgstr ""
+
+msgid "FORGE_PART.ORNAMENT_STAY.DESC"
+msgstr ""
+
 msgid "FORGE_PART.MARK_RED.NAME"
 msgstr ""
 
@@ -508,6 +568,24 @@ msgid "FORGE_PART.MARK_BLUE.NAME"
 msgstr ""
 
 msgid "FORGE_PART.MARK_BLUE.DESC"
+msgstr ""
+
+msgid "FORGE_PART.MARK_PURPLE.NAME"
+msgstr ""
+
+msgid "FORGE_PART.MARK_PURPLE.DESC"
+msgstr ""
+
+msgid "FORGE_PART.MARK_GOLD.NAME"
+msgstr ""
+
+msgid "FORGE_PART.MARK_GOLD.DESC"
+msgstr ""
+
+msgid "FORGE_PART.MARK_WHITE.NAME"
+msgstr ""
+
+msgid "FORGE_PART.MARK_WHITE.DESC"
 msgstr ""
 
 msgid "FORGE_PART.MATERIAL_GLASS.NAME"
@@ -568,6 +646,18 @@ msgid "FORGE_PART.RED_6.NAME"
 msgstr ""
 
 msgid "FORGE_PART.RED_6.DESC"
+msgstr ""
+
+msgid "FORGE_PART.BURST_1.NAME"
+msgstr ""
+
+msgid "FORGE_PART.BURST_1.DESC"
+msgstr ""
+
+msgid "FORGE_PART.STAY_6.NAME"
+msgstr ""
+
+msgid "FORGE_PART.STAY_6.DESC"
 msgstr ""
 
 msgid "FORGE_PART.GLASS_1.NAME"
@@ -687,6 +777,12 @@ msgstr ""
 msgid "UI.SCORE_SUMMARY.COMBO"
 msgstr ""
 
+msgid "UI.SCORE_SUMMARY.PRIMARY_COMBO"
+msgstr ""
+
+msgid "UI.SCORE_SUMMARY.CONTAINED_PATTERNS"
+msgstr ""
+
 msgid "UI.SCORE_SUMMARY.TAGS"
 msgstr ""
 
@@ -727,6 +823,57 @@ msgid "TAG.REROLLED"
 msgstr ""
 
 msgid "TAG.LAST_HAND"
+msgstr ""
+
+msgid "TAG.SIX"
+msgstr ""
+
+msgid "TAG.POWER"
+msgstr ""
+
+msgid "TAG.LOW"
+msgstr ""
+
+msgid "TAG.STRAIGHT"
+msgstr ""
+
+msgid "TAG.ODD"
+msgstr ""
+
+msgid "TAG.ORNAMENT"
+msgstr ""
+
+msgid "TAG.STABLE"
+msgstr ""
+
+msgid "TAG.CHIPS"
+msgstr ""
+
+msgid "TAG.MULT"
+msgstr ""
+
+msgid "TAG.BURST"
+msgstr ""
+
+msgid "TAG.XMULT"
+msgstr ""
+
+msgid "TAG.STAY"
+msgstr ""
+
+msgid "TAG.MARK"
+msgstr ""
+
+msgid "TAG.GOLD"
+msgstr ""
+
+msgid "TAG.UPGRADE"
+msgstr ""
+
+msgid "TAG.EXTRA_TRIGGER"
+msgstr ""
+
+msgid "TAG.REROLL"
 msgstr ""
 
 msgid "TAG.SIX_BUILD"

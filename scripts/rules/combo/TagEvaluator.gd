@@ -2,68 +2,61 @@ extends RefCounted
 class_name TagEvaluator
 
 
+const ComboEvaluator = preload("res://scripts/rules/combo/ComboEvaluator.gd")
+
+
 const ALL_ODD := &"all_odd"
 const ALL_EVEN := &"all_even"
+const ALL_LOW := &"all_low"
+const ALL_HIGH := &"all_high"
 const LOW_TOTAL := &"low_total"
 const HIGH_TOTAL := &"high_total"
 const CONTAINS_SIX := &"contains_six"
 const MANY_SIXES := &"many_sixes"
 const FEW_SCORED := &"few_scored"
 const REROLLED := &"rerolled"
+const FIRST_ROLL_SCORED := &"first_roll_scored"
 const LAST_HAND := &"last_hand"
+const UNSCORED_STAY := &"unscored_stay"
 
 
 func evaluate_tags(context) -> Array[StringName]:
 	var tags: Array[StringName] = []
 
-	if context.selected_faces.is_empty():
+	if context == null:
 		return tags
 
-	var total_pips := 0
-	var selected_count := 0
-	var six_count := 0
-	var all_odd := true
-	var all_even := true
-
-	for rolled_face in context.selected_faces:
-		if rolled_face.face == null:
-			continue
-
-		var pip: int = int(rolled_face.face.pip)
-		selected_count += 1
-		total_pips += pip
-		if pip == 6:
-			six_count += 1
-		all_odd = all_odd and pip % 2 == 1
-		all_even = all_even and pip % 2 == 0
-
-	if selected_count == 0:
+	if context.active_tags != null and not context.active_tags.is_empty():
+		for tag in context.active_tags:
+			if tag != &"":
+				tags.append(tag)
 		return tags
 
-	if all_odd:
-		tags.append(ALL_ODD)
-	if all_even:
-		tags.append(ALL_EVEN)
-
-	if total_pips <= 10:
-		tags.append(LOW_TOTAL)
-	if total_pips >= 25:
-		tags.append(HIGH_TOTAL)
-	if six_count >= 1:
-		tags.append(CONTAINS_SIX)
-	if six_count >= 3:
-		tags.append(MANY_SIXES)
-	if selected_count >= 1 and selected_count <= 3:
-		tags.append(FEW_SCORED)
-	if context.hand_state != null and context.hand_state.rerolls_used > 0:
-		tags.append(REROLLED)
-	if _is_last_hand(context):
-		tags.append(LAST_HAND)
+	for tag in context.tags:
+		if tag != &"":
+			tags.append(tag)
 
 	return tags
 
 
+func evaluate_facts(context) -> Dictionary:
+	if context == null:
+		return {}
+
+	var resolver := ComboEvaluator.new()
+	return resolver.evaluate_facts(
+		context.selected_faces,
+		context.all_rolled_faces,
+		_has_rerolled(context),
+		_is_last_hand(context),
+		context
+	)
+
+
 func _is_last_hand(context) -> bool:
+	if context.is_last_hand:
+		return true
+
 	if context.battle_state == null:
 		return false
 
@@ -73,3 +66,13 @@ func _is_last_hand(context) -> bool:
 		return context.hand_state.hand_index >= last_hand_index
 
 	return context.battle_state.hands_played >= last_hand_index
+
+
+func _has_rerolled(context) -> bool:
+	if context.used_reroll:
+		return true
+	if context.rerolls_used > 0:
+		return true
+	if context.hand_state != null and context.hand_state.rerolls_used > 0:
+		return true
+	return false

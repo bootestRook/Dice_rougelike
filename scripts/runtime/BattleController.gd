@@ -7,13 +7,15 @@ const BattleState = preload("res://scripts/core/battle/BattleState.gd")
 const DieState = preload("res://scripts/core/dice/DieState.gd")
 const HandState = preload("res://scripts/core/battle/HandState.gd")
 const RunState = preload("res://scripts/core/battle/RunState.gd")
+const FaceState = preload("res://scripts/core/dice/FaceState.gd")
 const RolledFace = preload("res://scripts/core/dice/RolledFace.gd")
 const RollService = preload("res://scripts/rules/roll/RollService.gd")
 const ComboEvaluator = preload("res://scripts/rules/combo/ComboEvaluator.gd")
 const ScoreContext = preload("res://scripts/core/scoring/ScoreContext.gd")
 const ScoreEngine = preload("res://scripts/rules/scoring/ScoreEngine.gd")
 const ScoreResult = preload("res://scripts/core/scoring/ScoreResult.gd")
-const TagEvaluator = preload("res://scripts/rules/combo/TagEvaluator.gd")
+const BattleLogEntry = preload("res://scripts/log/BattleLogEntry.gd")
+const RewardGenerator = preload("res://scripts/rules/reward/RewardGenerator.gd")
 
 
 enum BattlePhase {
@@ -40,16 +42,25 @@ signal score_preview_changed(result)
 
 var battle_state: BattleState = null
 var hand_state: HandState = null
+var run_state: RunState = null
 var dice: Array[DieState] = []
 var phase: int = BattlePhase.INIT
 
 var roll_service := RollService.new()
 var combo_evaluator := ComboEvaluator.new()
-var tag_evaluator := TagEvaluator.new()
 var score_engine := ScoreEngine.new()
+var reward_generator := RewardGenerator.new()
+var score_rng := RandomNumberGenerator.new()
+var pending_mark_logs: Array[BattleLogEntry] = []
+var pending_mark_floating_texts: Array[Dictionary] = []
+
+
+func _init() -> void:
+	score_rng.randomize()
 
 
 func start_battle(config: BattleConfig = null, run_state: RunState = null) -> void:
+	self.run_state = run_state
 	var active_config: BattleConfig = config
 	if active_config == null:
 		active_config = BattleConfig.new()
@@ -62,6 +73,8 @@ func start_battle(config: BattleConfig = null, run_state: RunState = null) -> vo
 			dice = run_state.dice
 			active_config.dice_count = dice.size()
 			active_config.target_score = run_state.get_target_score()
+			if run_state.is_final_battle():
+				active_config.is_boss_battle = true
 		else:
 			dice = _create_normal_dice(active_config.dice_count)
 	else:
@@ -70,6 +83,8 @@ func start_battle(config: BattleConfig = null, run_state: RunState = null) -> vo
 	battle_state = BattleState.new()
 	battle_state.setup(active_config, dice)
 	hand_state = null
+	pending_mark_logs.clear()
+	pending_mark_floating_texts.clear()
 	_set_phase(BattlePhase.INIT)
 	battle_started.emit()
 	score_changed.emit(battle_state.total_score, battle_state.config.target_score)
@@ -94,8 +109,7 @@ func toggle_select(index: int) -> void:
 	if rolled_face.selected:
 		rolled_face.selected = false
 	else:
-		if _selected_count() < battle_state.config.max_selected_dice:
-			rolled_face.selected = true
+		rolled_face.selected = true
 
 	selection_changed.emit(_selected_count())
 	dice_changed.emit(get_current_rolls())
@@ -108,6 +122,7 @@ func reroll() -> void:
 	if not can_reroll():
 		return
 
+	_trigger_purple_marks_before_reroll()
 	hand_state.rolled_faces = roll_service.reroll_selected(dice, hand_state.rolled_faces)
 	hand_state.rerolls_used += 1
 	dice_changed.emit(get_current_rolls())
@@ -116,39 +131,32 @@ func reroll() -> void:
 	_emit_score_preview()
 
 
-func score_selected() -> void:
+func score_selected(wild_effective_pips: Dictionary = {}) -> void:
 	if phase != BattlePhase.WAITING_ACTION or not can_score():
 		return
 
 	_set_phase(BattlePhase.SCORING)
 	var context := _build_score_context()
-	var selected_pips := _selected_pips(context.selected_faces)
-	context.combo_id = combo_evaluator.evaluate(selected_pips)
-	context.combo_type = context.combo_id
-	context.display_combo_ids = combo_evaluator.evaluate_display_combos(selected_pips)
-	context.tags = tag_evaluator.evaluate_tags(context)
+	context.wild_effective_pips = wild_effective_pips.duplicate(true)
 
 	var result := score_engine.score(context)
 	hand_state.scored = true
 	hand_state.score_result = result
 	battle_state.total_score += result.final_score
 	battle_state.hands_played += 1
+	_consume_pending_mark_events(result)
+
+	if battle_state.total_score >= battle_state.config.target_score:
+		_mark_battle_finished(true, result)
+	elif battle_state.hands_played >= battle_state.config.hands_per_battle:
+		_mark_battle_finished(false, result)
+
 	hand_scored.emit(result)
 	score_preview_changed.emit(null)
 	score_changed.emit(battle_state.total_score, battle_state.config.target_score)
 
-	if battle_state.total_score >= battle_state.config.target_score:
-		battle_state.victory = true
-		battle_state.battle_finished = true
-		_set_phase(BattlePhase.VICTORY)
-		battle_won.emit()
-		return
-
-	if battle_state.hands_played >= battle_state.config.hands_per_battle:
-		battle_state.victory = false
-		battle_state.battle_finished = true
-		_set_phase(BattlePhase.DEFEAT)
-		battle_lost.emit()
+	if battle_state.battle_finished:
+		_emit_battle_finished()
 		return
 
 	start_next_hand()
@@ -209,12 +217,33 @@ func preview_selected_score() -> ScoreResult:
 		return null
 
 	var context := _build_score_context()
-	var selected_pips := _selected_pips(context.selected_faces)
-	context.combo_id = combo_evaluator.evaluate(selected_pips)
-	context.combo_type = context.combo_id
-	context.display_combo_ids = combo_evaluator.evaluate_display_combos(selected_pips)
-	context.tags = tag_evaluator.evaluate_tags(context)
+	context.is_preview = true
 	return score_engine.score(context)
+
+
+func get_selected_wild_face_requests() -> Array[Dictionary]:
+	var requests: Array[Dictionary] = []
+	if hand_state == null:
+		return requests
+
+	var context := _build_score_context()
+	var defaults := score_engine.recommend_wild_effective_pips(context)
+	for roll in context.selected_faces:
+		if roll == null or roll.face == null:
+			continue
+		if score_engine.get_effective_ornament_id_for_roll(roll, context) != FaceState.ORN_WILD:
+			continue
+		var key := "%d:%d" % [roll.die_index, roll.face_index]
+		requests.append({
+			"key": key,
+			"die_index": roll.die_index,
+			"face_index": roll.face_index,
+			"original_pip": roll.face.pip,
+			"options": score_engine.get_wild_pip_options(roll, context),
+			"default_pip": int(defaults.get(key, clampi(roll.face.pip, 1, score_engine.get_wild_pip_options(roll, context).size()))),
+		})
+
+	return requests
 
 
 func get_rerolls_left() -> int:
@@ -283,6 +312,22 @@ func get_phase_name() -> String:
 			return "UNKNOWN"
 
 
+func has_free_item_slot() -> bool:
+	return run_state != null and run_state.has_free_item_slot()
+
+
+func add_item_to_inventory_or_pending(item_id: StringName) -> bool:
+	return run_state != null and run_state.add_item_to_inventory_or_pending(item_id)
+
+
+func is_face_protected_by_white_mark(face_ref, negative_rule_id: StringName) -> bool:
+	return score_engine.effect_resolver.is_face_protected_by_white_mark(face_ref, negative_rule_id)
+
+
+func try_apply_face_negative_rule(face_ref, negative_rule_id: StringName, result: ScoreResult = null) -> bool:
+	return score_engine.effect_resolver.try_apply_face_negative_rule(face_ref, negative_rule_id, result)
+
+
 func _create_normal_dice(count: int) -> Array[DieState]:
 	var result: Array[DieState] = []
 
@@ -298,6 +343,9 @@ func _build_score_context() -> ScoreContext:
 	context.all_rolled_faces = hand_state.rolled_faces
 	context.battle_state = battle_state
 	context.hand_state = hand_state
+	context.run_state = run_state
+	context.source_dice = dice
+	context.rng = score_rng
 	context.rerolls_used = hand_state.rerolls_used
 	context.used_reroll = hand_state.rerolls_used > 0
 	context.is_last_hand = _is_last_hand()
@@ -312,6 +360,28 @@ func _selected_pips(selected_faces: Array[RolledFace]) -> Array[int]:
 			pips.append(rolled_face.face.pip)
 
 	return pips
+
+
+func _apply_combo_context(context: ScoreContext) -> void:
+	var resolution := combo_evaluator.resolve(
+		context.selected_faces,
+		context.all_rolled_faces,
+		context.used_reroll,
+		context.is_last_hand,
+		context
+	)
+	context.primary_combo = StringName(str(resolution["primary_combo_id"]))
+	context.combo_id = context.primary_combo
+	context.combo_type = context.primary_combo
+	context.display_combo_ids.clear()
+	context.display_combo_ids.append(context.primary_combo)
+	context.contained_patterns.clear()
+	context.facts = resolution["facts"].duplicate(true)
+	context.active_tags.clear()
+	context.tags.clear()
+	context.condition_tags.clear()
+	context.operation_tags.clear()
+	context.state_tags.clear()
 
 
 func _can_change_dice_flags() -> bool:
@@ -345,6 +415,141 @@ func _is_last_hand() -> bool:
 
 func _emit_score_preview() -> void:
 	score_preview_changed.emit(preview_selected_score())
+
+
+func _trigger_purple_marks_before_reroll() -> void:
+	if hand_state == null or battle_state == null:
+		return
+
+	for roll in hand_state.rolled_faces:
+		if roll == null or roll.face == null or not roll.selected:
+			continue
+		if FaceState.normalize_mark_id(roll.face.mark_id) != FaceState.MARK_PURPLE:
+			continue
+
+		var key := _face_instance_id_for_roll(roll)
+		if bool(battle_state.purple_mark_triggered_this_battle.get(key, false)):
+			continue
+
+		if not has_free_item_slot():
+			_queue_mark_log(&"LOG.MARK_PURPLE_NO_SLOT", {
+				"die": roll.die_index + 1,
+				"face": roll.face_index + 1,
+			}, &"mark_purple", "道具槽位不足", roll)
+			continue
+
+		var battle_index := 0
+		if run_state != null:
+			battle_index = run_state.battle_index
+		var item_id := reward_generator.roll_random_forge_item(battle_index)
+		if item_id == &"":
+			continue
+		if add_item_to_inventory_or_pending(item_id):
+			battle_state.purple_mark_triggered_this_battle[key] = true
+			_queue_mark_log(&"LOG.MARK_PURPLE_GENERATE", {
+				"die": roll.die_index + 1,
+				"face": roll.face_index + 1,
+				"item": item_id,
+			}, &"mark_purple", "紫印：生成铸骰件", roll)
+		else:
+			_queue_mark_log(&"LOG.MARK_PURPLE_NO_SLOT", {
+				"die": roll.die_index + 1,
+				"face": roll.face_index + 1,
+			}, &"mark_purple", "道具槽位不足", roll)
+
+
+func _queue_mark_log(key: StringName, args: Dictionary, category: StringName, floating_text: String, roll: RolledFace) -> void:
+	pending_mark_logs.append(BattleLogEntry.new(key, args, category))
+	if floating_text != "":
+		pending_mark_floating_texts.append({
+			"text": floating_text,
+			"die_index": roll.die_index if roll != null else -1,
+			"face_index": roll.face_index if roll != null else -1,
+		})
+
+
+func _consume_pending_mark_events(result: ScoreResult) -> void:
+	if result == null:
+		pending_mark_logs.clear()
+		pending_mark_floating_texts.clear()
+		return
+
+	for entry in pending_mark_logs:
+		if entry != null:
+			result.add_log(entry)
+	for event in pending_mark_floating_texts:
+		result.add_floating_text(
+			str(event.get("text", "")),
+			int(event.get("die_index", -1)),
+			int(event.get("face_index", -1))
+		)
+	pending_mark_logs.clear()
+	pending_mark_floating_texts.clear()
+
+
+func _mark_battle_finished(victory: bool, result: ScoreResult) -> void:
+	battle_state.victory = victory
+	battle_state.battle_finished = true
+	if battle_state.config.is_boss_battle:
+		_remove_white_marks_after_boss_battle(result)
+
+
+func _emit_battle_finished() -> void:
+	if battle_state.victory:
+		_set_phase(BattlePhase.VICTORY)
+		battle_won.emit()
+	else:
+		_set_phase(BattlePhase.DEFEAT)
+		battle_lost.emit()
+
+
+func _remove_white_marks_after_boss_battle(result: ScoreResult) -> void:
+	for die_index in range(dice.size()):
+		var die := dice[die_index]
+		if die == null:
+			continue
+		for face_index in range(die.faces.size()):
+			var face := die.faces[face_index]
+			if face == null or FaceState.normalize_mark_id(face.mark_id) != FaceState.MARK_WHITE:
+				continue
+			face.mark_id = FaceState.MARK_NONE
+			_clear_matching_white_mark_clones(die_index, face_index)
+			if result != null:
+				result.add_log(BattleLogEntry.new(&"LOG.MARK_WHITE_REMOVED", {
+					"die": die_index + 1,
+					"face": face_index + 1,
+				}, &"mark_white"))
+				result.add_floating_text("白印：Boss 战后移除", die_index, face_index)
+	if battle_state != null:
+		battle_state.refresh_white_mark_active_faces()
+
+
+func _clear_matching_white_mark_clones(die_index: int, face_index: int) -> void:
+	if battle_state != null and die_index >= 0 and die_index < battle_state.dice.size():
+		var battle_die := battle_state.dice[die_index]
+		if battle_die != null and face_index >= 0 and face_index < battle_die.faces.size():
+			var battle_face := battle_die.faces[face_index]
+			if battle_face != null and FaceState.normalize_mark_id(battle_face.mark_id) == FaceState.MARK_WHITE:
+				battle_face.mark_id = FaceState.MARK_NONE
+	if hand_state != null:
+		for roll in hand_state.rolled_faces:
+			if roll != null and roll.die_index == die_index and roll.face_index == face_index and roll.face != null:
+				if FaceState.normalize_mark_id(roll.face.mark_id) == FaceState.MARK_WHITE:
+					roll.face.mark_id = FaceState.MARK_NONE
+
+
+func _face_instance_id_for_roll(roll: RolledFace) -> String:
+	if roll == null:
+		return ""
+	if roll.face_instance_id != "":
+		return roll.face_instance_id
+	if roll.die != null:
+		return RolledFace.make_face_instance_id(roll.die.id, roll.die_index, roll.face_index)
+	if roll.die_index >= 0 and roll.die_index < dice.size():
+		var die := dice[roll.die_index]
+		if die != null:
+			return RolledFace.make_face_instance_id(die.id, roll.die_index, roll.face_index)
+	return RolledFace.make_face_instance_id(&"", roll.die_index, roll.face_index)
 
 
 func _set_phase(new_phase: int) -> void:

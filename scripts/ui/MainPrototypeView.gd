@@ -4,9 +4,8 @@ class_name MainPrototypeView
 
 const BattleConfig = preload("res://scripts/core/battle/BattleConfig.gd")
 const GameFlowController = preload("res://scripts/runtime/GameFlowController.gd")
-const LocalizedButton = preload("res://scripts/i18n/LocalizedButton.gd")
-const LocalizedLabel = preload("res://scripts/i18n/LocalizedLabel.gd")
 const RunState = preload("res://scripts/core/battle/RunState.gd")
+const DisplayNames = preload("res://scripts/ui/DisplayNames.gd")
 
 
 const BATTLE_SCREEN_PATH := "res://scenes/battle/BattleScreen.tscn"
@@ -21,8 +20,6 @@ var current_view_id: StringName = &""
 
 func _ready() -> void:
 	_create_flow_controller()
-	if not Loc.locale_changed.is_connected(_on_locale_changed):
-		Loc.locale_changed.connect(_on_locale_changed)
 	_show_main_menu()
 
 
@@ -53,18 +50,24 @@ func _build_view() -> void:
 	margin.add_theme_constant_override("margin_bottom", 28)
 	add_child(margin)
 
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	margin.add_child(scroll)
+
 	var layout := VBoxContainer.new()
 	layout.add_theme_constant_override("separation", 18)
-	margin.add_child(layout)
+	layout.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(layout)
 
-	layout.add_child(_make_loc_label(&"UI.MAIN.TITLE", {}, 30, Color(0.95, 0.92, 0.84)))
-	layout.add_child(_make_loc_label(&"UI.MAIN.DESCRIPTION", {}, 16, Color(0.78, 0.78, 0.72)))
+	layout.add_child(_make_text_label("骰肉鸽原型", 30, Color(0.95, 0.92, 0.84)))
+	layout.add_child(_make_text_label("投 6 颗骰子，选择、重投、结算，并在战斗后安装铸骰件改造骰面。", 16, Color(0.78, 0.78, 0.72)))
 	layout.add_child(_make_start_button())
-	layout.add_child(_make_panel(&"UI.MAIN.VERSION_TITLE", &"UI.MAIN.VERSION_BODY"))
-	layout.add_child(_make_literal_panel("Target Curve", "1000 / 1150 / 1400 / 1750 / 2300"))
+	layout.add_child(_make_text_panel("v0.1 试玩原型", "线性 5 场战斗\n非最终战胜利后获得铸骰件\n骰面效果已启用\n暂无地图 / 商店 / 首领"))
+	layout.add_child(_make_text_panel("目标曲线", "1000 / 1150 / 1400 / 1750 / 2300"))
 	layout.add_child(_make_rules_panel())
 	layout.add_child(_make_dice_panel())
-	layout.add_child(_make_combo_panel())
+	layout.add_child(_make_text_panel("玩法预览", "选择 1 到 5 颗骰子后，可以重投所选，或直接结算所选。战斗后选择铸骰件并安装到任意骰面。"))
 
 
 func _show_main_menu() -> void:
@@ -72,8 +75,8 @@ func _show_main_menu() -> void:
 
 
 func _make_start_button() -> Button:
-	var button := LocalizedButton.new()
-	button.set_loc_key(&"UI.MAIN.START")
+	var button := Button.new()
+	button.text = "开始一局"
 	button.custom_minimum_size = Vector2(220, 44)
 	button.pressed.connect(_on_start_battle_pressed)
 	return button
@@ -81,13 +84,15 @@ func _make_start_button() -> Button:
 
 func _make_rules_panel() -> Control:
 	var config := BattleConfig.new()
-	return _make_panel(&"UI.MAIN.RULES_TITLE", &"UI.MAIN.RULES_BODY", {
-		"dice": config.dice_count,
-		"max_selected": config.max_selected_dice,
-		"rerolls": config.rerolls_per_hand,
-		"hands": config.hands_per_battle,
-		"target": config.target_score,
-	})
+	return _make_text_panel(
+		"规则",
+		"骰子：%d\n最多选择：%d\n每手重投：%d\n每场手数：%d\n第一场目标战力：1000" % [
+			config.dice_count,
+			config.max_selected_dice,
+			config.rerolls_per_hand,
+			config.hands_per_battle,
+		]
+	)
 
 
 func _make_dice_panel() -> Control:
@@ -100,37 +105,17 @@ func _make_dice_panel() -> Control:
 		var pips := PackedStringArray()
 		for face in die.faces:
 			pips.append(str(face.pip))
-		texts.append(Loc.t(&"UI.MAIN.DIE_LINE", {
-			"die": die_index + 1,
-			"pips": ", ".join(pips),
-		}))
+		texts.append("骰子 %d：%s，%s，当前骰面：%s" % [
+			die_index + 1,
+			DisplayNames.body_name(die.body_id),
+			"D%d" % [die.face_count],
+			" / ".join(pips),
+		])
 
-	return _make_text_panel(&"UI.MAIN.INITIAL_DICE_TITLE", "\n".join(texts))
-
-
-func _make_combo_panel() -> Control:
-	return _make_panel(&"UI.MAIN.PREVIEW_TITLE", &"UI.MAIN.PREVIEW_BODY")
+	return _make_text_panel("初始骰组", "\n".join(texts))
 
 
-func _make_panel(title_key: StringName, body_key: StringName, body_args: Dictionary = {}) -> Control:
-	var panel := _make_panel_container()
-	var box := _make_panel_box(panel)
-
-	box.add_child(_make_loc_label(title_key, {}, 18, Color(0.92, 0.86, 0.68)))
-	box.add_child(_make_loc_label(body_key, body_args, 15, Color(0.86, 0.86, 0.8)))
-	return panel
-
-
-func _make_text_panel(title_key: StringName, body: String) -> Control:
-	var panel := _make_panel_container()
-	var box := _make_panel_box(panel)
-
-	box.add_child(_make_loc_label(title_key, {}, 18, Color(0.92, 0.86, 0.68)))
-	box.add_child(_make_text_label(body, 15, Color(0.86, 0.86, 0.8)))
-	return panel
-
-
-func _make_literal_panel(title: String, body: String) -> Control:
+func _make_text_panel(title: String, body: String) -> Control:
 	var panel := _make_panel_container()
 	var box := _make_panel_box(panel)
 
@@ -148,32 +133,17 @@ func _make_panel_container() -> PanelContainer:
 func _make_panel_box(panel: PanelContainer) -> VBoxContainer:
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 8)
-	box.add_theme_constant_override("margin_left", 14)
-	box.add_theme_constant_override("margin_top", 12)
-	box.add_theme_constant_override("margin_right", 14)
-	box.add_theme_constant_override("margin_bottom", 12)
 	panel.add_child(box)
 	return box
-
-
-func _make_loc_label(key: StringName, args: Dictionary, font_size: int, color: Color) -> Label:
-	var label := LocalizedLabel.new()
-	label.set_loc_key(key, args)
-	_apply_label_theme(label, font_size, color)
-	return label
 
 
 func _make_text_label(text: String, font_size: int, color: Color) -> Label:
 	var label := Label.new()
 	label.text = text
-	_apply_label_theme(label, font_size, color)
-	return label
-
-
-func _apply_label_theme(label: Label, font_size: int, color: Color) -> void:
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", color)
+	return label
 
 
 func _on_start_battle_pressed() -> void:
@@ -213,47 +183,8 @@ func _on_run_result_requested(result_run_state: RunState) -> void:
 
 
 func _on_flow_state_changed(state_id: StringName) -> void:
-	if state_id == &"defeat":
-		_show_defeat_screen()
-	elif state_id == &"main":
+	if state_id == &"main":
 		_show_main_menu()
-
-
-func _show_defeat_screen() -> void:
-	current_view_id = &"defeat"
-	_clear_screen()
-
-	var background := ColorRect.new()
-	background.color = Color(0.075, 0.055, 0.055)
-	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(background)
-
-	var margin := MarginContainer.new()
-	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	margin.add_theme_constant_override("margin_left", 32)
-	margin.add_theme_constant_override("margin_top", 28)
-	margin.add_theme_constant_override("margin_right", 32)
-	margin.add_theme_constant_override("margin_bottom", 28)
-	add_child(margin)
-
-	var layout := VBoxContainer.new()
-	layout.add_theme_constant_override("separation", 18)
-	margin.add_child(layout)
-	layout.add_child(_make_loc_label(&"UI.MAIN.DEFEAT_TITLE", {}, 30, Color(0.95, 0.82, 0.78)))
-	layout.add_child(_make_loc_label(&"UI.MAIN.DEFEAT_BODY", {}, 16, Color(0.86, 0.82, 0.78)))
-
-	var button := LocalizedButton.new()
-	button.set_loc_key(&"UI.MAIN.BACK_TO_MAIN")
-	button.custom_minimum_size = Vector2(220, 44)
-	button.pressed.connect(_show_main_menu)
-	layout.add_child(button)
-
-
-func _on_locale_changed(_locale: String) -> void:
-	if current_view_id == &"main":
-		_build_view()
-	elif current_view_id == &"defeat":
-		_show_defeat_screen()
 
 
 func _clear_screen() -> void:

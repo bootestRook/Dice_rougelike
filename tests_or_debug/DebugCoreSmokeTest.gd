@@ -9,27 +9,34 @@ func _init() -> void:
 	print("--- DebugCoreSmokeTest: start ---")
 
 	var dice: Array[DieState] = []
-
 	for die_index in range(6):
 		dice.append(DieState.create_normal_d6(StringName("debug_d6_%d" % [die_index + 1])))
 
-	for die_index in range(dice.size()):
-		print("Die %d faces: %s" % [die_index + 1, _describe_die(dice[die_index])])
+	var all_passed := true
+	all_passed = _check("creates 6 dice", dice.size() == 6) and all_passed
+	all_passed = _check("normal d6 has face_count 6", dice[0].face_count == 6) and all_passed
+	all_passed = _check("normal d6 has standard body", dice[0].body_id == &"standard") and all_passed
+	all_passed = _check("normal d6 has 6 weights", dice[0].face_weights.size() == 6) and all_passed
 
 	var original := dice[0]
 	var cloned := original.clone()
+	cloned.body_id = &"iron"
+	cloned.face_count = 8
+	cloned.face_weights[0] = 9
 	cloned.faces[0].pip = 6
-	cloned.faces[0].material_id = &"debug_glass"
-	cloned.faces[0].level = 2
+	cloned.faces[0].ornament_id = &"orn_burst"
+	cloned.faces[0].mark_id = &"red"
 
-	print("Original after clone mutation: %s" % [_describe_die(original)])
-	print("Clone after mutation: %s" % [_describe_die(cloned)])
+	all_passed = _check("clone mutation does not change original pip", original.faces[0].pip == 1) and all_passed
+	all_passed = _check("clone mutation does not change original ornament", original.faces[0].ornament_id == &"orn_none") and all_passed
+	all_passed = _check("clone mutation does not change original mark", original.faces[0].mark_id == &"mark_none") and all_passed
+	all_passed = _check("clone mutation does not change original die fields", original.body_id == &"standard" and original.face_count == 6 and original.face_weights[0] == 1) and all_passed
 
-	var original_unchanged := original.faces[0].pip == 1 and original.faces[0].material_id == &"" and original.faces[0].level == 1
-	print("Clone isolation verified: %s" % [str(original_unchanged)])
+	print("Original: %s" % [_describe_die(original)])
+	print("Clone: %s" % [_describe_die(cloned)])
+	print("PASS: DebugCoreSmokeTest" if all_passed else "FAIL: DebugCoreSmokeTest")
 	print("--- DebugCoreSmokeTest: end ---")
-
-	quit(0 if original_unchanged else 1)
+	quit(0 if all_passed else 1)
 
 
 func _describe_die(die: DieState) -> String:
@@ -37,13 +44,24 @@ func _describe_die(die: DieState) -> String:
 
 	for face_index in range(die.faces.size()):
 		var face := die.faces[face_index]
-		face_texts.append("#%d pip=%d material=%s mark=%s rune=%s level=%d" % [
+		face_texts.append("#%d pip=%d ornament=%s mark=%s" % [
 			face_index,
 			face.pip,
-			str(face.material_id),
+			str(face.ornament_id),
 			str(face.mark_id),
-			str(face.rune_id),
-			face.level,
 		])
 
-	return "[" + ", ".join(face_texts) + "]"
+	return "body=%s face_count=%d weights=%s faces=[%s]" % [
+		str(die.body_id),
+		die.face_count,
+		str(die.face_weights),
+		", ".join(face_texts),
+	]
+
+
+func _check(label: String, passed: bool) -> bool:
+	var status := "PASS" if passed else "FAIL"
+	print("%s: %s" % [status, label])
+	if not passed:
+		push_error(label)
+	return passed

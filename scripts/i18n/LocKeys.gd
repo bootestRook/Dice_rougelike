@@ -4,24 +4,24 @@ class_name LocKeys
 
 static func combo_key(combo_id: StringName) -> StringName:
 	match combo_id:
-		&"PAIR":
+		&"scatter", &"HIGH_CARD", &"high_card":
+			return &"COMBO.SCATTER"
+		&"PAIR", &"pair":
 			return &"COMBO.PAIR"
-		&"TWO_PAIR":
+		&"TWO_PAIR", &"two_pair":
 			return &"COMBO.TWO_PAIR"
-		&"THREE_KIND":
+		&"THREE_KIND", &"three_kind":
 			return &"COMBO.THREE_KIND"
-		&"FULL_HOUSE":
+		&"FULL_HOUSE", &"full_house":
 			return &"COMBO.FULL_HOUSE"
-		&"SMALL_STRAIGHT":
-			return &"COMBO.SMALL_STRAIGHT"
-		&"LARGE_STRAIGHT":
-			return &"COMBO.LARGE_STRAIGHT"
-		&"FOUR_KIND":
+		&"straight", &"SMALL_STRAIGHT", &"LARGE_STRAIGHT", &"small_straight", &"large_straight":
+			return &"COMBO.STRAIGHT"
+		&"FOUR_KIND", &"four_kind":
 			return &"COMBO.FOUR_KIND"
-		&"FIVE_KIND":
+		&"FIVE_KIND", &"five_kind":
 			return &"COMBO.FIVE_KIND"
 		_:
-			return &"COMBO.HIGH_CARD"
+			return &"COMBO.SCATTER"
 
 
 static func rarity_key(rarity_id: StringName) -> StringName:
@@ -64,6 +64,24 @@ static func tag_key(tag_id: StringName) -> StringName:
 			return StringName("TAG.%s" % _stable_id(tag_id))
 
 
+static func contained_pattern_key(pattern_id: StringName) -> StringName:
+	match pattern_id:
+		&"contains_pair":
+			return &"CONTAINED_PATTERN.CONTAINS_PAIR"
+		&"contains_two_pair":
+			return &"CONTAINED_PATTERN.CONTAINS_TWO_PAIR"
+		&"contains_three_kind":
+			return &"CONTAINED_PATTERN.CONTAINS_THREE_KIND"
+		&"contains_full_house":
+			return &"CONTAINED_PATTERN.CONTAINS_FULL_HOUSE"
+		&"contains_four_kind":
+			return &"CONTAINED_PATTERN.CONTAINS_FOUR_KIND"
+		&"contains_five_kind":
+			return &"CONTAINED_PATTERN.CONTAINS_FIVE_KIND"
+		_:
+			return StringName("CONTAINED_PATTERN.%s" % _stable_id(pattern_id))
+
+
 static func battle_phase_key(phase_id: StringName) -> StringName:
 	match phase_id:
 		&"INIT":
@@ -89,11 +107,11 @@ static func material_desc_key(material_id: StringName) -> StringName:
 
 
 static func imprint_name_key(imprint_id: StringName) -> StringName:
-	return _typed_name_key(&"IMPRINT", imprint_id)
+	return _typed_name_key(&"IMPRINT", _normalize_imprint_id(imprint_id))
 
 
 static func imprint_desc_key(imprint_id: StringName) -> StringName:
-	return _typed_desc_key(&"IMPRINT", imprint_id)
+	return _typed_desc_key(&"IMPRINT", _normalize_imprint_id(imprint_id))
 
 
 static func rune_name_key(rune_id: StringName) -> StringName:
@@ -144,3 +162,21 @@ static func _stable_id(id: StringName) -> String:
 	if id == &"":
 		return "NONE"
 	return str(id).to_upper()
+
+
+static func _normalize_imprint_id(id: StringName) -> StringName:
+	match id:
+		&"mark_none":
+			return &"none"
+		&"mark_red":
+			return &"red"
+		&"mark_blue":
+			return &"blue"
+		&"mark_purple":
+			return &"purple"
+		&"mark_gold":
+			return &"gold"
+		&"mark_white":
+			return &"white"
+		_:
+			return id

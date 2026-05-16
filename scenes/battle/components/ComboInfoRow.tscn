@@ -1,0 +1,103 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/battle/components/ComboInfoRow.gd" id="1_row"]
+
+[node name="ComboInfoRow" type="PanelContainer"]
+custom_minimum_size = Vector2(0, 58)
+script = ExtResource("1_row")
+
+[node name="RowMargin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 4
+
+[node name="Columns" type="HBoxContainer" parent="RowMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="LevelBadge" type="PanelContainer" parent="RowMargin/Columns"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+
+[node name="LevelLabel" type="Label" parent="RowMargin/Columns/LevelBadge"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "等级1"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ComboLabel" type="Label" parent="RowMargin/Columns"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 42)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "顺子"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="Formula" type="HBoxContainer" parent="RowMargin/Columns"]
+layout_mode = 2
+theme_override_constants/separation = 0
+alignment = 1
+
+[node name="ChipsBadge" type="PanelContainer" parent="RowMargin/Columns/Formula"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(104, 0)
+layout_mode = 2
+
+[node name="ChipsLabel" type="Label" parent="RowMargin/Columns/Formula/ChipsBadge"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="XLabel" type="Label" parent="RowMargin/Columns/Formula"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(28, 0)
+layout_mode = 2
+text = "×"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MultBadge" type="PanelContainer" parent="RowMargin/Columns/Formula"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(84, 0)
+layout_mode = 2
+
+[node name="MultLabel" type="Label" parent="RowMargin/Columns/Formula/MultBadge"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "1"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Count" type="HBoxContainer" parent="RowMargin/Columns"]
+layout_mode = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="HashLabel" type="Label" parent="RowMargin/Columns/Count"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(30, 0)
+layout_mode = 2
+text = "#"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CountBadge" type="PanelContainer" parent="RowMargin/Columns/Count"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+
+[node name="CountLabel" type="Label" parent="RowMargin/Columns/Count/CountBadge"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1

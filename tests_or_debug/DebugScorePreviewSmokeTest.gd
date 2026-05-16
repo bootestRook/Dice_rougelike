@@ -3,6 +3,7 @@ class_name DebugScorePreviewSmokeTest
 
 
 const BattleController = preload("res://scripts/runtime/BattleController.gd")
+const RunState = preload("res://scripts/core/battle/RunState.gd")
 const ScoreResult = preload("res://scripts/core/scoring/ScoreResult.gd")
 
 
@@ -43,6 +44,23 @@ func _init() -> void:
 		all_passed = _check("actual final matches preview final", captured_result.final_score == preview.final_score) and all_passed
 	all_passed = _check("score_selected increases total score", controller.get_total_score() > total_before) and all_passed
 
+	var foil_run := RunState.new()
+	foil_run.setup_new_run()
+	for face in foil_run.dice[0].faces:
+		face.ornament_id = &"orn_foil"
+	var foil_controller := BattleController.new()
+	foil_controller.roll_service.rng.seed = 98765
+	foil_controller.start_battle(null, foil_run)
+	foil_controller.toggle_select(0)
+	var foil_preview := foil_controller.preview_selected_score()
+	var foil_preview_ok := (
+		foil_preview != null
+		and foil_preview.chips == foil_preview.scored_point_sum + foil_preview.combo_chips_bonus + 50
+		and _logs_contain(foil_preview, "ornament_foil")
+	)
+	all_passed = _check("foil preview scores selected ornament", foil_preview_ok) and all_passed
+	foil_controller.free()
+
 	if all_passed:
 		print("PASS: DebugScorePreviewSmokeTest")
 	else:
@@ -63,6 +81,15 @@ func _selected_count(controller: BattleController) -> int:
 		if roll.selected:
 			count += 1
 	return count
+
+
+func _logs_contain(result: ScoreResult, needle: String) -> bool:
+	if result == null:
+		return false
+	for entry in result.logs:
+		if str(entry.key).find(needle) >= 0 or str(entry.category).find(needle) >= 0:
+			return true
+	return false
 
 
 func _check(label: String, passed: bool) -> bool:

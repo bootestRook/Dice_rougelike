@@ -23,6 +23,11 @@ Loc="*res://scripts/i18n/Loc.gd"
 
 project/assembly_name="Dice_Rougelike"
 
+[display]
+
+window/size/viewport_width=1920
+window/size/viewport_height=1080
+
 [internationalization]
 
 locale/translations=PackedStringArray("res://i18n/zh_Hans.po", "res://i18n/en.po")

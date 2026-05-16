@@ -1,0 +1,130 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/battle/components/ComboInfoPopup.gd" id="1_popup"]
+
+[node name="ComboInfoPopup" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+script = ExtResource("1_popup")
+
+[node name="Scrim" type="ColorRect" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0, 0, 0, 0.42)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="WindowPanel" type="PanelContainer" parent="Center"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(960, 820)
+layout_mode = 2
+mouse_filter = 0
+
+[node name="PopupMargin" type="MarginContainer" parent="Center/WindowPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="Rows" type="VBoxContainer" parent="Center/WindowPanel/PopupMargin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="TitleLabel" type="Label" parent="Center/WindowPanel/PopupMargin/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "骰型信息"
+horizontal_alignment = 1
+
+[node name="InfoTabs" type="TabBar" parent="Center/WindowPanel/PopupMargin/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+tab_count = 3
+tab_0/title = "骰型"
+tab_1/title = "面饰"
+tab_2/title = "印记"
+
+[node name="Header" type="HBoxContainer" parent="Center/WindowPanel/PopupMargin/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="HeaderLevel" type="Label" parent="Center/WindowPanel/PopupMargin/Rows/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+text = "等级"
+horizontal_alignment = 1
+
+[node name="HeaderCombo" type="Label" parent="Center/WindowPanel/PopupMargin/Rows/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "骰型"
+horizontal_alignment = 1
+
+[node name="HeaderFormula" type="Label" parent="Center/WindowPanel/PopupMargin/Rows/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(216, 0)
+layout_mode = 2
+text = "基础战力 × 倍率"
+horizontal_alignment = 1
+
+[node name="HeaderCount" type="Label" parent="Center/WindowPanel/PopupMargin/Rows/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(116, 0)
+layout_mode = 2
+text = "出现次数"
+horizontal_alignment = 1
+
+[node name="RowScroll" type="ScrollContainer" parent="Center/WindowPanel/PopupMargin/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="RowsContainer" type="VBoxContainer" parent="Center/WindowPanel/PopupMargin/Rows/RowScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="InfoScroll" type="ScrollContainer" parent="Center/WindowPanel/PopupMargin/Rows"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="InfoRowsContainer" type="VBoxContainer" parent="Center/WindowPanel/PopupMargin/Rows/InfoScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="ReturnButton" type="Button" parent="Center/WindowPanel/PopupMargin/Rows"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+text = "返回"

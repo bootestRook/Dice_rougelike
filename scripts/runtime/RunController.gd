@@ -14,7 +14,7 @@ var run_state: RunState = null
 
 func start_new_run() -> void:
 	run_state = RunState.new()
-	run_state.create_default_loadout()
+	run_state.setup_new_run()
 	run_started.emit(run_state)
 
 

@@ -118,6 +118,9 @@ msgstr "Actual Trigger Log"
 msgid "UI.BATTLE.PREVIEW_EMPTY"
 msgstr "Preview Score (not applied)\nNo face selected."
 
+msgid "UI.BATTLE.PREVIEW_TOO_MANY"
+msgstr "Preview Score (not applied)\nSelected {count} / {max}. Too many to score; you can reroll selected dice."
+
 msgid "UI.BATTLE.PREVIEW"
 msgstr "Preview Score (not applied)\n{summary}"
 
@@ -220,6 +223,9 @@ msgstr "Legendary"
 msgid "COMBO.HIGH_CARD"
 msgstr "High Card"
 
+msgid "COMBO.SCATTER"
+msgstr "Scatter"
+
 msgid "COMBO.PAIR"
 msgstr "Pair"
 
@@ -238,14 +244,38 @@ msgstr "Small Straight"
 msgid "COMBO.LARGE_STRAIGHT"
 msgstr "Large Straight"
 
+msgid "COMBO.STRAIGHT"
+msgstr "Straight"
+
 msgid "COMBO.FOUR_KIND"
 msgstr "Four of a Kind"
 
 msgid "COMBO.FIVE_KIND"
 msgstr "Five of a Kind"
 
+msgid "CONTAINED_PATTERN.CONTAINS_PAIR"
+msgstr "Pair"
+
+msgid "CONTAINED_PATTERN.CONTAINS_TWO_PAIR"
+msgstr "Two Pair"
+
+msgid "CONTAINED_PATTERN.CONTAINS_THREE_KIND"
+msgstr "Three of a Kind"
+
+msgid "CONTAINED_PATTERN.CONTAINS_FULL_HOUSE"
+msgstr "Full House"
+
+msgid "CONTAINED_PATTERN.CONTAINS_FOUR_KIND"
+msgstr "Four of a Kind"
+
+msgid "CONTAINED_PATTERN.CONTAINS_FIVE_KIND"
+msgstr "Five of a Kind"
+
 msgid "LOG.COMBO"
-msgstr "Main combo: {combo}"
+msgstr "Primary combo: {combo}"
+
+msgid "LOG.CONTAINED_PATTERNS"
+msgstr "Contained structures: {patterns}"
 
 msgid "LOG.PIP_SUM"
 msgstr "Pip total: {sum}"
@@ -299,7 +329,7 @@ msgid "LOG.IMPRINT_RED"
 msgstr "Die {die} Face {face} {imprint}: +{count} extra trigger"
 
 msgid "LOG.RUNE_PAIR_RETRIGGER"
-msgstr "Die {die} Face {face} {rune}: matching pip pair, +{count} extra trigger"
+msgstr "Die {die} Face {face} {rune}: hand contains a pair, +{count} extra trigger"
 
 msgid "LOG.EXTRA_TRIGGER_PIP"
 msgstr "Die {die} Face {face} extra trigger {trigger}: +{chips} Chips"
@@ -428,7 +458,7 @@ msgid "RUNE.PAIR.NAME"
 msgstr "Pair"
 
 msgid "RUNE.PAIR.DESC"
-msgstr "If this pip is paired, this face triggers one extra time."
+msgstr "If this hand contains a pair, this face triggers one extra time."
 
 msgid "RUNE.ODD.NAME"
 msgstr "Odd"
@@ -457,6 +487,9 @@ msgstr "A negative rune that can be cleansed."
 msgid "FORGE_OP.SET_PIP"
 msgstr "Set pip to {pip}"
 
+msgid "FORGE_OP.SET_ORNAMENT"
+msgstr "Set ornament to {ornament}"
+
 msgid "FORGE_OP.SET_MATERIAL"
 msgstr "Set material to {material}"
 
@@ -477,6 +510,9 @@ msgstr "Reset face"
 
 msgid "FORGE_OP.COPY_FROM_FACE"
 msgstr "Copy face (not fully supported yet)"
+
+msgid "FORGE_OP.COMBO_UPGRADE"
+msgstr "Combo upgrade"
 
 msgid "FORGE_OP.UNKNOWN"
 msgstr "{op}"
@@ -499,6 +535,30 @@ msgstr "Pip Plate: 3"
 msgid "FORGE_PART.PIP_3.DESC"
 msgstr "Change one face to 3 pips."
 
+msgid "FORGE_PART.ORNAMENT_CHIP.NAME"
+msgstr "Chip Ornament"
+
+msgid "FORGE_PART.ORNAMENT_CHIP.DESC"
+msgstr "Install a chip ornament on one face. It gives extra base chips when scored."
+
+msgid "FORGE_PART.ORNAMENT_MULT.NAME"
+msgstr "Mult Ornament"
+
+msgid "FORGE_PART.ORNAMENT_MULT.DESC"
+msgstr "Install a mult ornament on one face. It gives extra mult when scored."
+
+msgid "FORGE_PART.ORNAMENT_BURST.NAME"
+msgstr "Burst Ornament"
+
+msgid "FORGE_PART.ORNAMENT_BURST.DESC"
+msgstr "Install a burst ornament on one face. It gives x2 XMult when scored."
+
+msgid "FORGE_PART.ORNAMENT_STAY.NAME"
+msgstr "Stay Ornament"
+
+msgid "FORGE_PART.ORNAMENT_STAY.DESC"
+msgstr "Install a stay ornament on one face. When rolled but unscored, it gives +5 Mult."
+
 msgid "FORGE_PART.MARK_RED.NAME"
 msgstr "Red Imprint"
 
@@ -510,6 +570,24 @@ msgstr "Blue Imprint"
 
 msgid "FORGE_PART.MARK_BLUE.DESC"
 msgstr "When rolled but not selected, +3 Mult."
+
+msgid "FORGE_PART.MARK_PURPLE.NAME"
+msgstr "Purple Imprint"
+
+msgid "FORGE_PART.MARK_PURPLE.DESC"
+msgstr "When this die appears after being rerolled this hand, it gives an extra reward."
+
+msgid "FORGE_PART.MARK_GOLD.NAME"
+msgstr "Gold Mark"
+
+msgid "FORGE_PART.MARK_GOLD.DESC"
+msgstr "When this face is scored, gain 1 coin."
+
+msgid "FORGE_PART.MARK_WHITE.NAME"
+msgstr "White Mark"
+
+msgid "FORGE_PART.MARK_WHITE.DESC"
+msgstr "This face ignores Boss or negative face rules, then loses the mark after a Boss battle."
 
 msgid "FORGE_PART.MATERIAL_GLASS.NAME"
 msgstr "Glass"
@@ -539,7 +617,7 @@ msgid "FORGE_PART.RUNE_PAIR.NAME"
 msgstr "Pair Rune"
 
 msgid "FORGE_PART.RUNE_PAIR.DESC"
-msgstr "If this pip is paired, this face triggers one extra time."
+msgstr "If this hand contains a pair, this face triggers one extra time."
 
 msgid "FORGE_PART.RUNE_ODD.NAME"
 msgstr "Odd Rune"
@@ -570,6 +648,18 @@ msgstr "Red 6"
 
 msgid "FORGE_PART.RED_6.DESC"
 msgstr "Change one face to 6 pips and add a red imprint."
+
+msgid "FORGE_PART.BURST_1.NAME"
+msgstr "Burst 1"
+
+msgid "FORGE_PART.BURST_1.DESC"
+msgstr "Change one face to 1 pip and install a burst ornament."
+
+msgid "FORGE_PART.STAY_6.NAME"
+msgstr "Stay 6"
+
+msgid "FORGE_PART.STAY_6.DESC"
+msgstr "Change one face to 6 pips and install a stay ornament."
 
 msgid "FORGE_PART.GLASS_1.NAME"
 msgstr "Low Glass"
@@ -686,7 +776,13 @@ msgid "UI.SCORE_SUMMARY.NONE"
 msgstr "none"
 
 msgid "UI.SCORE_SUMMARY.COMBO"
-msgstr "Combo: {combo}"
+msgstr "Primary combo: {combo}"
+
+msgid "UI.SCORE_SUMMARY.PRIMARY_COMBO"
+msgstr "Primary combo: {combo}"
+
+msgid "UI.SCORE_SUMMARY.CONTAINED_PATTERNS"
+msgstr "Contained structures: {patterns}"
 
 msgid "UI.SCORE_SUMMARY.TAGS"
 msgstr "Tags: {tags}"
@@ -729,6 +825,57 @@ msgstr "Rerolled"
 
 msgid "TAG.LAST_HAND"
 msgstr "Last hand"
+
+msgid "TAG.SIX"
+msgstr "Six"
+
+msgid "TAG.POWER"
+msgstr "Power"
+
+msgid "TAG.LOW"
+msgstr "Low"
+
+msgid "TAG.STRAIGHT"
+msgstr "Straight"
+
+msgid "TAG.ODD"
+msgstr "Odd"
+
+msgid "TAG.ORNAMENT"
+msgstr "Ornament"
+
+msgid "TAG.STABLE"
+msgstr "Stable"
+
+msgid "TAG.CHIPS"
+msgstr "Chips"
+
+msgid "TAG.MULT"
+msgstr "Mult"
+
+msgid "TAG.BURST"
+msgstr "Burst"
+
+msgid "TAG.XMULT"
+msgstr "XMult"
+
+msgid "TAG.STAY"
+msgstr "Stay"
+
+msgid "TAG.MARK"
+msgstr "Mark"
+
+msgid "TAG.GOLD"
+msgstr "Gold"
+
+msgid "TAG.UPGRADE"
+msgstr "Upgrade"
+
+msgid "TAG.EXTRA_TRIGGER"
+msgstr "Extra trigger"
+
+msgid "TAG.REROLL"
+msgstr "Reroll"
 
 msgid "TAG.SIX_BUILD"
 msgstr "Six build"

@@ -84,6 +84,14 @@ func choose_reward(piece: ForgePieceDef) -> void:
 		push_warning("GameFlowController.choose_reward called with null piece.")
 		return
 
+	if run_state.apply_combo_upgrade_piece(piece):
+		run_state.last_reward_choices.clear()
+		run_state.pending_forge_piece = null
+		run_state.advance_battle()
+		run_state_changed.emit(run_state)
+		start_next_battle()
+		return
+
 	run_state.pending_forge_piece = piece
 	set_flow_state(&"forge")
 	run_state_changed.emit(run_state)

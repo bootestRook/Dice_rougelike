@@ -33,7 +33,7 @@ func _init() -> void:
 	all_passed = _check("recent settlement logs are capped at 5", flow.get_run_state().recent_settlement_logs.size() == 5) and all_passed
 	all_passed = _check("oldest settlement log was trimmed", int(flow.get_run_state().recent_settlement_logs[0].get("hand", 0)) == 2) and all_passed
 	all_passed = _check("best hand score records highest actual result", flow.get_run_state().best_hand_score == 105) and all_passed
-	all_passed = _check("effect trigger counts accumulate", int(flow.get_run_state().effect_trigger_counts.get(&"rune_six", 0)) == 6) and all_passed
+	all_passed = _check("effect trigger counts accumulate", int(flow.get_run_state().effect_trigger_counts.get(&"ornament_burst", 0)) == 6) and all_passed
 
 	flow.get_run_state().battle_index = flow.get_run_state().max_battles - 1
 	flow.on_battle_won()
@@ -82,11 +82,10 @@ func _record_sample_settlements(run_state: RunState) -> void:
 	for index in range(6):
 		var result := ScoreResult.new()
 		result.final_score = 100 + index
-		result.add_log(BattleLogEntry.new(&"LOG.RUNE_SIX", {
+		result.add_log(BattleLogEntry.new(&"LOG.ORNAMENT_BURST", {
 			"die": 1,
 			"face": 1,
-			"rune": &"RUNE.SIX.NAME",
-			"trigger": 1,
-			"mult": 8,
-		}, &"rune_six"))
+			"ornament": "爆裂面饰",
+			"xmult": "2",
+		}, &"ornament_burst"))
 		run_state.record_hand_score(result, index + 1)

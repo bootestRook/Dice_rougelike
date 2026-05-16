@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/battle/components/FaceInfoCard.gd" id="1_face"]
+
+[node name="FaceInfoCard" type="PanelContainer"]
+custom_minimum_size = Vector2(220, 170)
+script = ExtResource("1_face")

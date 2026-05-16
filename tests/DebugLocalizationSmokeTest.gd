@@ -5,6 +5,7 @@ class_name DebugLocalizationSmokeTest
 const LocKeys = preload("res://scripts/i18n/LocKeys.gd")
 const LocNode = preload("res://scripts/i18n/Loc.gd")
 const LocService = preload("res://scripts/i18n/LocService.gd")
+const ComboEvaluator = preload("res://scripts/rules/combo/ComboEvaluator.gd")
 const RewardGenerator = preload("res://scripts/rules/reward/RewardGenerator.gd")
 const ScoreResult = preload("res://scripts/core/scoring/ScoreResult.gd")
 
@@ -67,12 +68,15 @@ func _test_core_keys() -> bool:
 		&"UI.BATTLE.LOG_ACTUAL_SCORE",
 		&"UI.BATTLE.LOG_SECTION_TITLE",
 		&"UI.BATTLE.PREVIEW_EMPTY",
+		&"UI.BATTLE.PREVIEW_TOO_MANY",
 		&"UI.BATTLE.PREVIEW",
 		&"UI.BATTLE.DEBUG_INFO",
 		&"UI.BATTLE.VICTORY",
 		&"UI.BATTLE.DEFEAT",
 		&"UI.SCORE_SUMMARY.NONE",
 		&"UI.SCORE_SUMMARY.COMBO",
+		&"UI.SCORE_SUMMARY.PRIMARY_COMBO",
+		&"UI.SCORE_SUMMARY.CONTAINED_PATTERNS",
 		&"UI.SCORE_SUMMARY.TAGS",
 		&"UI.SCORE_SUMMARY.CHIPS",
 		&"UI.SCORE_SUMMARY.MULT",
@@ -101,6 +105,7 @@ func _test_core_keys() -> bool:
 		&"UI.INSTALL.CONFIRM",
 		&"UI.INSTALL.CANCEL",
 		&"LOG.COMBO",
+		&"LOG.CONTAINED_PATTERNS",
 		&"LOG.PIP_SUM",
 		&"LOG.BASE_CHIPS",
 		&"LOG.BASE_MULT",
@@ -114,15 +119,20 @@ func _test_core_keys() -> bool:
 		&"LOG.RELIC_TRIGGER",
 		&"LOG.FORGE_PART_TRIGGER",
 		&"LOG.FINAL_SCORE",
-		&"COMBO.HIGH_CARD",
+		&"COMBO.SCATTER",
 		&"COMBO.PAIR",
 		&"COMBO.TWO_PAIR",
 		&"COMBO.THREE_KIND",
 		&"COMBO.FULL_HOUSE",
-		&"COMBO.SMALL_STRAIGHT",
-		&"COMBO.LARGE_STRAIGHT",
+		&"COMBO.STRAIGHT",
 		&"COMBO.FOUR_KIND",
 		&"COMBO.FIVE_KIND",
+		&"CONTAINED_PATTERN.CONTAINS_PAIR",
+		&"CONTAINED_PATTERN.CONTAINS_TWO_PAIR",
+		&"CONTAINED_PATTERN.CONTAINS_THREE_KIND",
+		&"CONTAINED_PATTERN.CONTAINS_FULL_HOUSE",
+		&"CONTAINED_PATTERN.CONTAINS_FOUR_KIND",
+		&"CONTAINED_PATTERN.CONTAINS_FIVE_KIND",
 		&"RARITY.COMMON",
 		&"RARITY.UNCOMMON",
 		&"RARITY.RARE",
@@ -173,7 +183,8 @@ func _test_localized_runtime_text() -> bool:
 	LocService.set_locale("zh_Hans")
 
 	var result := ScoreResult.new()
-	result.combo_id = &"HIGH_CARD"
+	result.primary_combo = &"scatter"
+	result.combo_id = &"scatter"
 	result.tags = [&"all_odd", &"low_total", &"few_scored"]
 	result.chips = 3
 	result.mult = 1
@@ -186,14 +197,32 @@ func _test_localized_runtime_text() -> bool:
 			push_error("Unlocalized score summary text leaked: %s in %s" % [leaked_text, summary])
 			return false
 
-	result.combo_id = &"SMALL_STRAIGHT"
-	result.display_combo_ids = [&"SMALL_STRAIGHT", &"PAIR"]
+	result.primary_combo = &"straight"
+	result.combo_id = &"straight"
+	result.display_combo_ids = [&"straight"]
+	result.contained_patterns = []
 	summary = result.get_summary_text()
+	for leaked_legacy_id in ["SMALL_STRAIGHT", "LARGE_STRAIGHT", "HIGH_CARD", "contains_pair"]:
+		if summary.contains(leaked_legacy_id):
+			push_error("Score summary leaked legacy combo or contained pattern id: %s in %s" % [leaked_legacy_id, summary])
+			return false
+	if summary.contains("straight") or summary.contains("scatter"):
+		push_error("Score summary leaked raw combo id: %s" % [summary])
+		return false
+
+	var early_phase_text := LocService.t(LocKeys.battle_phase_key(&"WAITING_ACTION"))
+	if early_phase_text == "WAITING_ACTION" or early_phase_text == str(LocKeys.battle_phase_key(&"WAITING_ACTION")):
+		push_error("Unlocalized battle phase leaked: %s" % [early_phase_text])
+		return false
+
+	return true
 	if (
-		not summary.contains(LocService.t(&"COMBO.SMALL_STRAIGHT"))
-		or not summary.contains(LocService.t(&"COMBO.PAIR"))
+		not summary.contains("主骰型")
+		or not summary.contains("包含结构")
+		or not summary.contains("小顺")
+		or not summary.contains("一对")
 	):
-		push_error("Display combo summary missed a matched combo: %s" % [summary])
+		push_error("Score summary missed separated primary combo or contained pattern: %s" % [summary])
 		return false
 
 	var phase_text := LocService.t(LocKeys.battle_phase_key(&"WAITING_ACTION"))

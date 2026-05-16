@@ -118,6 +118,9 @@ msgstr "实际触发日志"
 msgid "UI.BATTLE.PREVIEW_EMPTY"
 msgstr "预览分（尚未计入）\n未选择骰面。"
 
+msgid "UI.BATTLE.PREVIEW_TOO_MANY"
+msgstr "预览分（尚未计入）\n已选择 {count} / {max}。超过上限，无法结算；可以重掷已选骰子。"
+
 msgid "UI.BATTLE.PREVIEW"
 msgstr "预览分（尚未计入）\n{summary}"
 
@@ -220,14 +223,17 @@ msgstr "传说"
 msgid "COMBO.HIGH_CARD"
 msgstr "高牌"
 
+msgid "COMBO.SCATTER"
+msgstr "散点"
+
 msgid "COMBO.PAIR"
-msgstr "对子"
+msgstr "一对"
 
 msgid "COMBO.TWO_PAIR"
 msgstr "两对"
 
 msgid "COMBO.THREE_KIND"
-msgstr "三条"
+msgstr "三同"
 
 msgid "COMBO.FULL_HOUSE"
 msgstr "葫芦"
@@ -238,14 +244,38 @@ msgstr "小顺子"
 msgid "COMBO.LARGE_STRAIGHT"
 msgstr "大顺子"
 
+msgid "COMBO.STRAIGHT"
+msgstr "顺子"
+
 msgid "COMBO.FOUR_KIND"
-msgstr "四条"
+msgstr "四同"
 
 msgid "COMBO.FIVE_KIND"
-msgstr "五条"
+msgstr "五同"
+
+msgid "CONTAINED_PATTERN.CONTAINS_PAIR"
+msgstr "一对"
+
+msgid "CONTAINED_PATTERN.CONTAINS_TWO_PAIR"
+msgstr "两对"
+
+msgid "CONTAINED_PATTERN.CONTAINS_THREE_KIND"
+msgstr "三同"
+
+msgid "CONTAINED_PATTERN.CONTAINS_FULL_HOUSE"
+msgstr "葫芦"
+
+msgid "CONTAINED_PATTERN.CONTAINS_FOUR_KIND"
+msgstr "四同"
+
+msgid "CONTAINED_PATTERN.CONTAINS_FIVE_KIND"
+msgstr "五同"
 
 msgid "LOG.COMBO"
-msgstr "主组合：{combo}"
+msgstr "主骰型：{combo}"
+
+msgid "LOG.CONTAINED_PATTERNS"
+msgstr "包含结构：{patterns}"
 
 msgid "LOG.PIP_SUM"
 msgstr "点数合计：{sum}"
@@ -299,7 +329,7 @@ msgid "LOG.IMPRINT_RED"
 msgstr "骰子 {die} 面 {face} 的{imprint}：额外触发 +{count}"
 
 msgid "LOG.RUNE_PAIR_RETRIGGER"
-msgstr "骰子 {die} 面 {face} 的{rune}：点数成对，额外触发 +{count}"
+msgstr "骰子 {die} 面 {face} 的{rune}：本手包含一对，额外触发 +{count}"
 
 msgid "LOG.EXTRA_TRIGGER_PIP"
 msgstr "骰子 {die} 面 {face} 第 {trigger} 次额外触发：+{chips} 筹码"
@@ -428,7 +458,7 @@ msgid "RUNE.PAIR.NAME"
 msgstr "对子"
 
 msgid "RUNE.PAIR.DESC"
-msgstr "若该点数成对，该面额外触发一次。"
+msgstr "本手包含一对时，该面额外触发一次。"
 
 msgid "RUNE.ODD.NAME"
 msgstr "奇数"
@@ -457,6 +487,9 @@ msgstr "负面符文，可被净化。"
 msgid "FORGE_OP.SET_PIP"
 msgstr "点数变为 {pip}"
 
+msgid "FORGE_OP.SET_ORNAMENT"
+msgstr "面饰变为 {ornament}"
+
 msgid "FORGE_OP.SET_MATERIAL"
 msgstr "材质变为 {material}"
 
@@ -477,6 +510,9 @@ msgstr "重置骰面"
 
 msgid "FORGE_OP.COPY_FROM_FACE"
 msgstr "复制骰面（暂未完整支持）"
+
+msgid "FORGE_OP.COMBO_UPGRADE"
+msgstr "骰型升级"
 
 msgid "FORGE_OP.UNKNOWN"
 msgstr "{op}"
@@ -499,6 +535,30 @@ msgstr "点数片：3"
 msgid "FORGE_PART.PIP_3.DESC"
 msgstr "将一个骰面改为 3 点。"
 
+msgid "FORGE_PART.ORNAMENT_CHIP.NAME"
+msgstr "筹码面饰"
+
+msgid "FORGE_PART.ORNAMENT_CHIP.DESC"
+msgstr "给一个骰面安装筹码面饰。被结算时提供额外基础战力。"
+
+msgid "FORGE_PART.ORNAMENT_MULT.NAME"
+msgstr "倍率面饰"
+
+msgid "FORGE_PART.ORNAMENT_MULT.DESC"
+msgstr "给一个骰面安装倍率面饰。被结算时提供额外倍率。"
+
+msgid "FORGE_PART.ORNAMENT_BURST.NAME"
+msgstr "爆裂面饰"
+
+msgid "FORGE_PART.ORNAMENT_BURST.DESC"
+msgstr "给一个骰面安装爆裂面饰。被结算时提供终倍率 ×2。"
+
+msgid "FORGE_PART.ORNAMENT_STAY.NAME"
+msgstr "留场面饰"
+
+msgid "FORGE_PART.ORNAMENT_STAY.DESC"
+msgstr "给一个骰面安装留场面饰。投出但未结算时，提供 +5 倍率。"
+
 msgid "FORGE_PART.MARK_RED.NAME"
 msgstr "红印"
 
@@ -510,6 +570,24 @@ msgstr "蓝印"
 
 msgid "FORGE_PART.MARK_BLUE.DESC"
 msgstr "当前投出但未被选择时，+3 倍率。"
+
+msgid "FORGE_PART.MARK_PURPLE.NAME"
+msgstr "紫印"
+
+msgid "FORGE_PART.MARK_PURPLE.DESC"
+msgstr "该骰子本手被重投后出现时，触发额外收益。"
+
+msgid "FORGE_PART.MARK_GOLD.NAME"
+msgstr "金印"
+
+msgid "FORGE_PART.MARK_GOLD.DESC"
+msgstr "该骰面被结算并计分时获得 1 金币。"
+
+msgid "FORGE_PART.MARK_WHITE.NAME"
+msgstr "白印"
+
+msgid "FORGE_PART.MARK_WHITE.DESC"
+msgstr "该骰面免疫 Boss 或负面规则；一场 Boss 战结束后移除。"
 
 msgid "FORGE_PART.MATERIAL_GLASS.NAME"
 msgstr "玻璃"
@@ -539,7 +617,7 @@ msgid "FORGE_PART.RUNE_PAIR.NAME"
 msgstr "对子符文"
 
 msgid "FORGE_PART.RUNE_PAIR.DESC"
-msgstr "若该点数成对，该面额外触发一次。"
+msgstr "本手包含一对时，该面额外触发一次。"
 
 msgid "FORGE_PART.RUNE_ODD.NAME"
 msgstr "奇数符文"
@@ -570,6 +648,18 @@ msgstr "红印 6"
 
 msgid "FORGE_PART.RED_6.DESC"
 msgstr "将一个面变为 6 点，并添加红印。"
+
+msgid "FORGE_PART.BURST_1.NAME"
+msgstr "爆裂 1"
+
+msgid "FORGE_PART.BURST_1.DESC"
+msgstr "将一个面变为 1 点，并安装爆裂面饰。"
+
+msgid "FORGE_PART.STAY_6.NAME"
+msgstr "留场 6"
+
+msgid "FORGE_PART.STAY_6.DESC"
+msgstr "将一个面变为 6 点，并安装留场面饰。"
 
 msgid "FORGE_PART.GLASS_1.NAME"
 msgstr "低点玻璃"
@@ -686,7 +776,13 @@ msgid "UI.SCORE_SUMMARY.NONE"
 msgstr "无"
 
 msgid "UI.SCORE_SUMMARY.COMBO"
-msgstr "组合：{combo}"
+msgstr "主骰型：{combo}"
+
+msgid "UI.SCORE_SUMMARY.PRIMARY_COMBO"
+msgstr "主骰型：{combo}"
+
+msgid "UI.SCORE_SUMMARY.CONTAINED_PATTERNS"
+msgstr "包含结构：{patterns}"
 
 msgid "UI.SCORE_SUMMARY.TAGS"
 msgstr "标签：{tags}"
@@ -729,6 +825,57 @@ msgstr "已重掷"
 
 msgid "TAG.LAST_HAND"
 msgstr "最后一手"
+
+msgid "TAG.SIX"
+msgstr "六点"
+
+msgid "TAG.POWER"
+msgstr "战力"
+
+msgid "TAG.LOW"
+msgstr "低点"
+
+msgid "TAG.STRAIGHT"
+msgstr "顺子"
+
+msgid "TAG.ODD"
+msgstr "奇数"
+
+msgid "TAG.ORNAMENT"
+msgstr "面饰"
+
+msgid "TAG.STABLE"
+msgstr "稳定"
+
+msgid "TAG.CHIPS"
+msgstr "筹码"
+
+msgid "TAG.MULT"
+msgstr "倍率"
+
+msgid "TAG.BURST"
+msgstr "爆发"
+
+msgid "TAG.XMULT"
+msgstr "乘算"
+
+msgid "TAG.STAY"
+msgstr "留场"
+
+msgid "TAG.MARK"
+msgstr "印记"
+
+msgid "TAG.GOLD"
+msgstr "金币"
+
+msgid "TAG.UPGRADE"
+msgstr "升级件"
+
+msgid "TAG.EXTRA_TRIGGER"
+msgstr "额外触发"
+
+msgid "TAG.REROLL"
+msgstr "重投"
 
 msgid "TAG.SIX_BUILD"
 msgstr "六点流"
