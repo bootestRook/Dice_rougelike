@@ -82,8 +82,8 @@ func roll_die(die: DieState, die_index: int, external_rng: RandomNumberGenerator
 	var active_rng := _get_rng(external_rng)
 	var face_index := _roll_face_index(die, active_rng)
 	rolled_face.face_index = face_index
-	rolled_face.die_id = die.id
-	rolled_face.face_instance_id = RolledFace.make_face_instance_id(die.id, die_index, face_index)
+	rolled_face.die_id = die.die_id if die.die_id != &"" else die.id
+	rolled_face.face_instance_id = RolledFace.make_face_instance_id(rolled_face.die_id, die_index, face_index)
 	rolled_face.die = die
 	rolled_face.face = die.faces[face_index].clone()
 	rolled_face.rolled_pip = rolled_face.face.pip

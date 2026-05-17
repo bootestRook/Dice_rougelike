@@ -25,8 +25,9 @@ func _init() -> void:
 	all_passed = _check("FaceState constructor accepts legal pip and slots", custom_face.pip == 8 and custom_face.ornament_id == &"orn_chip" and custom_face.mark_id == &"mark_red") and all_passed
 
 	var die := DieState.create_normal_d6(&"smoke_d6")
+	all_passed = _check("create_normal_d6 die_id", die.die_id == &"smoke_d6") and all_passed
 	all_passed = _check("create_normal_d6 face_count", die.face_count == 6) and all_passed
-	all_passed = _check("create_normal_d6 body", die.body_id == &"standard") and all_passed
+	all_passed = _check("create_normal_d6 body", DieState.normalize_body_id(die.body_id) == DieState.BODY_STANDARD) and all_passed
 	all_passed = _check("create_normal_d6 faces", die.faces.size() == 6) and all_passed
 	all_passed = _check("create_normal_d6 weights size", die.face_weights.size() == 6) and all_passed
 	all_passed = _check("create_normal_d6 weights are 1", _all_weights_are_one(die)) and all_passed
@@ -36,20 +37,20 @@ func _init() -> void:
 	all_passed = _check("set_face_pip writes faces[index].pip", die.faces[0].pip == 8) and all_passed
 	die.set_face_pip(0, 1)
 
-	die.body_id = &"iron"
+	die.body_id = DieState.BODY_IRON
 	die.face_count = 6
 	die.face_weights[0] = 3
 	die.faces[0].ornament_id = &"orn_chip"
 	die.faces[0].mark_id = &"mark_red"
 	var cloned := die.clone()
-	cloned.body_id = &"glass"
+	cloned.body_id = DieState.BODY_GLASS
 	cloned.face_count = 8
 	cloned.face_weights[0] = 9
 	cloned.faces[0].pip = 6
 	cloned.faces[0].ornament_id = &"orn_burst"
 	cloned.faces[0].mark_id = &"mark_blue"
 	all_passed = _check("clone copies die fields", cloned.id == die.id and cloned.face_weights.size() == die.face_weights.size() and cloned.faces.size() == die.faces.size()) and all_passed
-	all_passed = _check("clone mutation does not affect original", die.body_id == &"iron" and die.face_count == 6 and die.face_weights[0] == 3 and die.faces[0].pip == 1 and die.faces[0].ornament_id == &"orn_chip" and die.faces[0].mark_id == &"mark_red") and all_passed
+	all_passed = _check("clone mutation does not affect original", DieState.normalize_body_id(die.body_id) == DieState.BODY_IRON and die.face_count == 6 and die.face_weights[0] == 3 and die.faces[0].pip == 1 and die.faces[0].ornament_id == &"orn_chip" and die.faces[0].mark_id == &"mark_red") and all_passed
 
 	var invalid_shape := die.clone()
 	invalid_shape.face_count = 8

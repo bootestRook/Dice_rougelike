@@ -52,7 +52,7 @@ func _init() -> void:
 			chip_target = scoring_area.get_resolution_dice_global_floating_anchor(0)
 			mult_target = scoring_area.get_resolution_dice_global_floating_anchor(1)
 		scoring_area.show_floating_score_at("+2 Chips", chip_target)
-		scoring_area.show_floating_score_at("+4 Mult", mult_target)
+		scoring_area.show_floating_score_at(str(TranslationServer.translate(&"UI.SCORE_FLOAT.MULT_GAIN")) % [4], mult_target)
 		await process_frame
 		await process_frame
 	if _has_arg("combo") and battle_screen.has_method("_show_combo_info_popup"):

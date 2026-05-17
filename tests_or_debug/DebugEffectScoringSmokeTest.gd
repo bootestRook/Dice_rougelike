@@ -49,7 +49,7 @@ func _init() -> void:
 	var selected_stay_test := _make_roll(0, 0, 1)
 	var unselected_stay := _make_roll(1, 0, 5, &"orn_stay", &"mark_none", &"none", 1, false)
 	var stay := _score([selected_stay_test], [selected_stay_test, unselected_stay])
-	all_passed = _check("stay ornament unselected adds x2", is_equal_approx(stay.xmult, 2.0) and stay.final_score == 12) and all_passed
+	all_passed = _check("stay ornament unselected adds x2 xmult without mult bonus", stay.mult == 1 and is_equal_approx(stay.xmult, 2.0) and stay.final_score == 12) and all_passed
 
 	var red_chip := _score([_make_roll(0, 0, 1, &"orn_chip", &"red")])
 	all_passed = _check("red repeats pip and chip", red_chip.chips == 67 and red_chip.final_score == 67) and all_passed
@@ -116,6 +116,13 @@ func _init() -> void:
 	lucky_context.rng = FixedRng.new([0.0, 0.0])
 	var lucky := ScoreEngine.new().score(lucky_context)
 	all_passed = _check("lucky double trigger", lucky.mult == 21 and lucky.coins_delta == 20 and gold_run.coins == 23) and all_passed
+	var lucky_coin_miss_context := ScoreContext.new()
+	lucky_coin_miss_context.selected_faces = [_make_roll(0, 0, 1, &"orn_lucky")]
+	lucky_coin_miss_context.all_rolled_faces = lucky_coin_miss_context.selected_faces
+	lucky_coin_miss_context.run_state = gold_run
+	lucky_coin_miss_context.rng = FixedRng.new([0.99, 0.061])
+	var lucky_coin_miss := ScoreEngine.new().score(lucky_coin_miss_context)
+	all_passed = _check("lucky coins use 6 percent threshold", lucky_coin_miss.coins_delta == 0 and gold_run.coins == 23) and all_passed
 	all_passed = _check("log text has no legacy slots", not _logs_text_contains_legacy(red_burst) and not _logs_text_contains_legacy(legacy_glass) and not _logs_text_contains_legacy(legacy_steel)) and all_passed
 
 	print("PASS: DebugEffectScoringSmokeTest" if all_passed else "FAIL: DebugEffectScoringSmokeTest")

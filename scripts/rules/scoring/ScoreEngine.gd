@@ -177,7 +177,7 @@ func build_resolution_trace(context: ScoreContext) -> ResolutionTrace:
 		primary_combo,
 		trace.primary_combo_display_name,
 		"Primary combo: %s" % [trace.primary_combo_display_name],
-		"Base Chips +%d, Mult set to %d" % [result.combo_chips_bonus, result.combo_mult],
+		_combo_base_detail_text(result.combo_chips_bonus, result.combo_mult),
 		trace.primary_combo_display_name,
 		result.chips,
 		result.mult,
@@ -770,6 +770,10 @@ func _add_log(result: ScoreResult, key: StringName, args: Dictionary = {}, categ
 
 func _format_xmult(value: float) -> String:
 	return ScoreResult.format_multiplier(value)
+
+
+func _combo_base_detail_text(chips_bonus: int, mult_value: int) -> String:
+	return str(TranslationServer.translate(&"UI.SCORE_TRACE.COMBO_BASE_DETAIL")) % [chips_bonus, mult_value]
 
 
 func _has_rerolled(context: ScoreContext) -> bool:

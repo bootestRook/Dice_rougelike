@@ -130,6 +130,7 @@ func reroll() -> void:
 		return
 
 	_trigger_purple_marks_before_reroll()
+	_mark_selected_dice_rerolled()
 	hand_state.rolled_faces = roll_service.reroll_selected(dice, hand_state.rolled_faces)
 	hand_state.rerolls_used += 1
 	dice_changed.emit(get_current_rolls())
@@ -396,6 +397,9 @@ func _build_score_context() -> ScoreContext:
 	context.rerolls_used = hand_state.rerolls_used
 	context.used_reroll = hand_state.rerolls_used > 0
 	context.is_last_hand = _is_last_hand()
+	context.rerolled_die_ids_this_round = hand_state.rerolled_die_ids_this_round
+	context.body_triggered_flags_this_round = hand_state.body_triggered_flags_this_round
+	context.body_triggered_flags_this_battle = battle_state.body_triggered_flags_this_battle
 	return context
 
 
@@ -503,6 +507,14 @@ func _trigger_purple_marks_before_reroll() -> void:
 				"die": roll.die_index + 1,
 				"face": roll.face_index + 1,
 			}, &"mark_purple", str(TranslationServer.translate(&"AUTO.TEXT.E2E7B1D1350D")), roll)
+
+
+func _mark_selected_dice_rerolled() -> void:
+	if hand_state == null:
+		return
+	for roll in hand_state.rolled_faces:
+		if roll != null and roll.selected:
+			hand_state.mark_die_rerolled(roll)
 
 
 func _queue_mark_log(key: StringName, args: Dictionary, category: StringName, floating_text: String, roll: RolledFace) -> void:
@@ -645,11 +657,11 @@ func _face_instance_id_for_roll(roll: RolledFace) -> String:
 	if roll.face_instance_id != "":
 		return roll.face_instance_id
 	if roll.die != null:
-		return RolledFace.make_face_instance_id(roll.die.id, roll.die_index, roll.face_index)
+		return RolledFace.make_face_instance_id(roll.die.die_id if roll.die.die_id != &"" else roll.die.id, roll.die_index, roll.face_index)
 	if roll.die_index >= 0 and roll.die_index < dice.size():
 		var die := dice[roll.die_index]
 		if die != null:
-			return RolledFace.make_face_instance_id(die.id, roll.die_index, roll.face_index)
+			return RolledFace.make_face_instance_id(die.die_id if die.die_id != &"" else die.id, roll.die_index, roll.face_index)
 	return RolledFace.make_face_instance_id(&"", roll.die_index, roll.face_index)
 
 

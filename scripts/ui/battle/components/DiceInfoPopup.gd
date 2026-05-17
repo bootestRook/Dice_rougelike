@@ -5,6 +5,7 @@ class_name DiceInfoPopup
 const DieViewData = preload("res://scripts/ui/battle/view_models/DieViewData.gd")
 const BattleUiStyleConfig = preload("res://scripts/ui/battle/resources/BattleUiStyleConfig.gd")
 const BattleIconLibrary = preload("res://scripts/ui/battle/resources/BattleIconLibrary.gd")
+const RichTextHighlighter = preload("res://scripts/ui/RichTextHighlighter.gd")
 
 
 signal close_requested()
@@ -28,7 +29,7 @@ var install_button: Button = null
 @onready var margin: MarginContainer = %PopupMargin
 @onready var frame_panel: PanelContainer = %FramePanel
 @onready var title_label: Label = %TitleLabel
-@onready var body_label: Label = %BodyLabel
+@onready var body_label: RichTextLabel = %BodyLabel
 @onready var face_scroll: ScrollContainer = $FramePanel/PopupMargin/Rows/FaceScroll
 @onready var face_grid: GridContainer = %FaceGrid
 @onready var close_button: Button = %CloseButton
@@ -104,7 +105,7 @@ func render(die_data: DieViewData) -> void:
 		current_die_index = -1
 		selected_face_index = -1
 		title_label.text = str(TranslationServer.translate(&"AUTO.TEXT.23ADBAE60C54"))
-		body_label.text = str(TranslationServer.translate(&"AUTO.TEXT.DEEF03E6A8A7"))
+		_set_body_text(str(TranslationServer.translate(&"AUTO.TEXT.DEEF03E6A8A7")))
 		_refresh_install_button()
 		return
 
@@ -113,12 +114,13 @@ func render(die_data: DieViewData) -> void:
 	current_die_index = die_data.die_index
 	var die_number := die_data.die_index + 1
 	title_label.text = str(TranslationServer.translate(&"AUTO.TEXT.184D0F87C28C")) % [die_number, die_data.body_name, die_data.face_count]
-	body_label.text = str(TranslationServer.translate(&"AUTO.TEXT.6A1C9F7BDE32")) % [die_number, die_data.body_name]
+	var body_text := _die_body_detail_text(die_data)
 	if install_mode_enabled:
 		var install_line := str(TranslationServer.translate(&"AUTO.TEXT.B6CF819FA0AC"))
 		if install_piece_name != "":
 			install_line = "%s: %s" % [install_line, install_piece_name]
-		body_label.text = "%s\n%s" % [body_label.text, install_line]
+		body_text = "%s\n%s" % [body_text, install_line]
+	_set_body_text(body_text)
 	var face_total := die_data.faces.size()
 	face_grid.columns = mini(3, max(1, face_total)) if face_total <= 6 else 4
 	if selected_face_index >= face_total:
@@ -144,6 +146,19 @@ func render(die_data: DieViewData) -> void:
 	_refresh_install_button()
 
 
+func _die_body_detail_text(die_data: DieViewData) -> String:
+	var lines := PackedStringArray()
+	lines.append("面数：D%d" % [die_data.face_count])
+	lines.append("骰胚：%s" % [die_data.body_name])
+	if die_data.current_face != null:
+		lines.append("当前面位：%d / 面饰：%s / 印记：%s" % [
+			die_data.current_face.pip,
+			die_data.current_face.ornament_name,
+			die_data.current_face.mark_name,
+		])
+	return "\n".join(lines)
+
+
 func set_tail_target_global_x(global_x: float) -> void:
 	var transform := get_global_transform_with_canvas()
 	var local_point := transform.affine_inverse() * Vector2(global_x, transform.origin.y)
@@ -162,7 +177,7 @@ func _apply_style() -> void:
 	frame_panel.add_theme_stylebox_override("panel", style_config.get_popup_style())
 	style_config.apply_margin(margin, style_config.panel_padding)
 	style_config.apply_label(title_label, style_config.title_font_size)
-	style_config.apply_label(body_label, style_config.small_font_size)
+	_apply_body_label_style()
 	style_config.apply_button(close_button)
 	if install_button != null:
 		style_config.apply_button(install_button)
@@ -187,6 +202,28 @@ func _make_face_card() -> Control:
 	var fallback := Label.new()
 	fallback.text = str(TranslationServer.translate(&"AUTO.TEXT.8E7B07850ED5"))
 	return fallback
+
+
+func _apply_body_label_style() -> void:
+	if body_label == null:
+		return
+	body_label.bbcode_enabled = true
+	body_label.fit_content = true
+	body_label.scroll_active = false
+	body_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	body_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var font_size := style_config.small_font_size if style_config != null else 14
+	body_label.add_theme_font_size_override("normal_font_size", font_size)
+	body_label.add_theme_font_size_override("bold_font_size", font_size)
+	body_label.add_theme_color_override("default_color", Color(0.92, 0.9, 0.82))
+	if style_config != null and style_config.font != null:
+		body_label.add_theme_font_override("normal_font", style_config.font)
+		body_label.add_theme_font_override("bold_font", style_config.font)
+
+
+func _set_body_text(text: String) -> void:
+	_apply_body_label_style()
+	RichTextHighlighter.set_rich_text(body_label, text)
 
 
 func _ensure_install_button() -> void:

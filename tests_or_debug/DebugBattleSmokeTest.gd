@@ -3,7 +3,9 @@ class_name DebugBattleSmokeTest
 
 
 const BattleController = preload("res://scripts/runtime/BattleController.gd")
+const FaceState = preload("res://scripts/core/dice/FaceState.gd")
 const RolledFace = preload("res://scripts/core/dice/RolledFace.gd")
+const RunState = preload("res://scripts/core/battle/RunState.gd")
 
 
 func _init() -> void:
@@ -42,6 +44,8 @@ func _init() -> void:
 	controller.score_selected()
 	var score_after := controller.get_total_score()
 	all_passed = _check("score_selected increases total score", score_after > score_before) and all_passed
+	all_passed = _check("purple mark generates once per face per battle", _purple_mark_generates_once_per_face_per_battle()) and all_passed
+	all_passed = _check("purple mark no-slot does not consume face generation", _purple_mark_no_slot_does_not_consume_generation()) and all_passed
 
 	while controller.get_phase() == BattleController.BattlePhase.WAITING_ACTION:
 		_select_first_count(controller, 5)
@@ -93,6 +97,46 @@ func _select_first_count(controller: BattleController, count: int) -> void:
 	for index in range(min(count, rolls.size())):
 		if not rolls[index].selected:
 			controller.toggle_select(index)
+
+
+func _purple_mark_generates_once_per_face_per_battle() -> bool:
+	var run_state := RunState.new()
+	run_state.ensure_starting_dice()
+	run_state.item_slots.clear()
+	run_state.item_ids.clear()
+	run_state.item_slot_capacity = 3
+
+	var controller := BattleController.new()
+	controller.start_battle(null, run_state)
+	var roll := controller.get_current_rolls()[0] as RolledFace
+	roll.face.mark_id = FaceState.MARK_PURPLE
+	roll.selected = true
+	controller._trigger_purple_marks_before_reroll()
+	var first_count := run_state.item_slots.size()
+	var triggered_once := bool(controller.battle_state.purple_mark_triggered_this_battle.get(controller._face_instance_id_for_roll(roll), false))
+	controller._trigger_purple_marks_before_reroll()
+	var second_count := run_state.item_slots.size()
+	controller.free()
+	return first_count == 1 and second_count == 1 and triggered_once
+
+
+func _purple_mark_no_slot_does_not_consume_generation() -> bool:
+	var run_state := RunState.new()
+	run_state.ensure_starting_dice()
+	run_state.item_slots.clear()
+	run_state.item_ids.clear()
+	run_state.item_slot_capacity = 0
+
+	var controller := BattleController.new()
+	controller.start_battle(null, run_state)
+	var roll := controller.get_current_rolls()[0] as RolledFace
+	roll.face.mark_id = FaceState.MARK_PURPLE
+	roll.selected = true
+	controller._trigger_purple_marks_before_reroll()
+	var triggered := bool(controller.battle_state.purple_mark_triggered_this_battle.get(controller._face_instance_id_for_roll(roll), false))
+	var item_count := run_state.item_slots.size()
+	controller.free()
+	return item_count == 0 and not triggered
 
 
 func _check(label: String, passed: bool) -> bool:

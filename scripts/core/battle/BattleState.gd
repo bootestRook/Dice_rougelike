@@ -19,6 +19,7 @@ var battle_finished: bool = false
 var victory: bool = false
 var purple_mark_triggered_this_battle: Dictionary = {}
 var white_mark_active_faces: Dictionary = {}
+var body_triggered_flags_this_battle: Dictionary = {}
 
 
 func setup(new_config: BattleConfig, battle_dice: Array[DieState]) -> void:
@@ -36,6 +37,7 @@ func setup(new_config: BattleConfig, battle_dice: Array[DieState]) -> void:
 	victory = false
 	purple_mark_triggered_this_battle.clear()
 	_refresh_white_mark_active_faces()
+	body_triggered_flags_this_battle.clear()
 
 
 func can_start_next_hand() -> bool:
@@ -57,7 +59,7 @@ func face_instance_id(die_index: int, face_index: int) -> String:
 	if die_index >= 0 and die_index < dice.size():
 		var die := dice[die_index]
 		if die != null:
-			return RolledFace.make_face_instance_id(die.id, die_index, face_index)
+			return RolledFace.make_face_instance_id(die.die_id if die.die_id != &"" else die.id, die_index, face_index)
 	return RolledFace.make_face_instance_id(&"", die_index, face_index)
 
 

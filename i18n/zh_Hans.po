@@ -287,7 +287,7 @@ msgid "LOG.BASE_MULT"
 msgstr "基础倍率：{mult}"
 
 msgid "LOG.BASE_XMULT"
-msgstr "基础乘算倍率：{xmult}"
+msgstr "基础终倍率：{xmult}"
 
 msgid "LOG.CHIPS_GAIN"
 msgstr "{source}：+{chips} 筹码"
@@ -296,7 +296,7 @@ msgid "LOG.MULT_GAIN"
 msgstr "{source}：+{mult} 倍率"
 
 msgid "LOG.XMULT_GAIN"
-msgstr "{source}：×{xmult} 乘算倍率"
+msgstr "{source}：终倍率 ×{xmult}"
 
 msgid "LOG.RETRIGGER"
 msgstr "{source}：额外触发 +{count}"
@@ -338,7 +338,7 @@ msgid "LOG.LEVEL_CHIPS"
 msgstr "骰子 {die} 面 {face} 等级 {level} 第 {trigger} 次触发：+{chips} 筹码"
 
 msgid "LOG.MATERIAL_GLASS"
-msgstr "骰子 {die} 面 {face} 的{material}第 {trigger} 次触发：×{xmult} 乘算倍率"
+msgstr "骰子 {die} 面 {face} 的{material}第 {trigger} 次触发：终倍率 ×{xmult}"
 
 msgid "LOG.RUNE_SIX"
 msgstr "骰子 {die} 面 {face} 的{rune}第 {trigger} 次触发：+{mult} 倍率"
@@ -362,7 +362,7 @@ msgid "MATERIAL.GLASS.NAME"
 msgstr "玻璃"
 
 msgid "MATERIAL.GLASS.DESC"
-msgstr "被选择触发时，×2 乘算倍率；当前版本不会破碎。"
+msgstr "被选择触发时，终倍率 ×2；当前版本不会破碎。"
 
 msgid "MATERIAL.STEEL.NAME"
 msgstr "钢铁"
@@ -581,7 +581,7 @@ msgid "FORGE_PART.ORNAMENT_LUCKY.NAME"
 msgstr "幸运面饰"
 
 msgid "FORGE_PART.ORNAMENT_LUCKY.DESC"
-msgstr "给一个骰面安装幸运面饰。被结算时独立概率获得 +20 Mult 或 +20 金币。"
+msgstr "给一个骰面安装幸运面饰。被结算时，分别判定 20% 获得 +20 倍率、6% 获得 +20 金币。"
 
 msgid "FORGE_PART.ORNAMENT_FOIL.NAME"
 msgstr "箔光强化"
@@ -593,7 +593,7 @@ msgid "FORGE_PART.ORNAMENT_HOLO.NAME"
 msgstr "幻彩强化"
 
 msgid "FORGE_PART.ORNAMENT_HOLO.DESC"
-msgstr "给一个骰面安装幻彩强化。被结算时 +10 Mult。"
+msgstr "给一个骰面安装幻彩强化。被结算时 +10 倍率。"
 
 msgid "FORGE_PART.ORNAMENT_POLY.NAME"
 msgstr "多彩强化"
@@ -617,7 +617,7 @@ msgid "FORGE_PART.MARK_PURPLE.NAME"
 msgstr "紫印"
 
 msgid "FORGE_PART.MARK_PURPLE.DESC"
-msgstr "被选择重投时生成 1 个随机铸骰件；重投后出现并结算时，+4 倍率。每个物理面每场战斗最多成功生成 1 次。"
+msgstr "被选择重投时生成 1 个随机铸骰件；重投后出现并结算时，+4 倍率。每个骰面每场战斗最多生成 1 次。"
 
 msgid "FORGE_PART.MARK_GOLD.NAME"
 msgstr "金印"
@@ -635,7 +635,7 @@ msgid "FORGE_PART.MATERIAL_GLASS.NAME"
 msgstr "玻璃"
 
 msgid "FORGE_PART.MATERIAL_GLASS.DESC"
-msgstr "被选择触发时，×2 乘算倍率；当前版本不会破碎。"
+msgstr "被选择触发时，终倍率 ×2；当前版本不会破碎。"
 
 msgid "FORGE_PART.MATERIAL_STEEL.NAME"
 msgstr "钢铁"
@@ -872,7 +872,7 @@ msgid "UI.SCORE_SUMMARY.PRIMARY_COMBO"
 msgstr "主骰型：{combo}"
 
 msgid "UI.MARK_EFFECT_COMPACT.BLUE"
-msgstr "+2 倍率（留场后 +3）；生成主骰型升级件"
+msgstr "+2 倍率（留场后 +3 倍率）；生成主骰型升级件"
 
 msgid "UI.MARK_EFFECT_COMPACT.PURPLE"
 msgstr "+4 倍率；生成随机铸骰件（每面每战 1 次）"
@@ -893,7 +893,7 @@ msgid "UI.SCORE_SUMMARY.MULT"
 msgstr "倍率：{mult}"
 
 msgid "UI.SCORE_SUMMARY.XMULT"
-msgstr "乘算倍率：{xmult}"
+msgstr "终倍率：{xmult}"
 
 msgid "UI.SCORE_SUMMARY.FINAL"
 msgstr "最终：{score}"
@@ -1064,7 +1064,7 @@ msgid "AUTO.TEXT.04E30DB10857"
 msgstr "战力面贴"
 
 msgid "AUTO.TEXT.05A8FE4EDC14"
-msgstr "给一个骰面添加紫印。被选择重投时生成 1 个随机铸骰件；重投后出现并结算时 +4 倍率。每个物理面每场战斗最多成功生成 1 次，需有道具槽位。"
+msgstr "给一个骰面添加紫印。被选择重投时生成 1 个随机铸骰件；重投后出现并结算时，+4 倍率。每个骰面每场战斗最多生成 1 次，需有道具槽位。"
 
 msgid "AUTO.TEXT.093DDBA0EF5F"
 msgstr "金辉面贴"
@@ -1109,13 +1109,13 @@ msgid "AUTO.TEXT.121A6D93AC00"
 msgstr "出现次数"
 
 msgid "AUTO.TEXT.135A684FBEFC"
-msgstr "终倍率：%.2f"
+msgstr "终倍率：%s"
 
 msgid "AUTO.TEXT.135E3DF5C753"
 msgstr "包含结构：%s"
 
 msgid "AUTO.TEXT.147E1AD7C52E"
-msgstr "被选择重投时生成 1 个随机铸骰件；重投后出现并结算时，+4 倍率。每个物理面每场战斗最多成功生成 1 次，需有道具槽位。"
+msgstr "被选择重投时生成 1 个随机铸骰件；重投后出现并结算时，+4 倍率。每个骰面每场战斗最多生成 1 次，需有道具槽位。"
 
 msgid "AUTO.TEXT.14DDE613ACF4"
 msgstr "被结算时，+30 基础战力。"
@@ -1142,7 +1142,7 @@ msgid "AUTO.TEXT.183A039CC4B1"
 msgstr "偶数重铸片"
 
 msgid "AUTO.TEXT.184D0F87C28C"
-msgstr "骰子 %d · %s (D%d)"
+msgstr "骰子 %d，%s（D%d）"
 
 msgid "AUTO.TEXT.191A3BBC896F"
 msgstr "面饰："
@@ -1250,10 +1250,10 @@ msgid "AUTO.TEXT.296CDB12F677"
 msgstr "被结算时，终倍率 ×2。"
 
 msgid "AUTO.TEXT.296FAC38B168"
-msgstr "被选择重投时生成 1 个随机铸骰件；重投后出现并结算时，+4 倍率。每个物理面每场战斗最多成功生成 1 次，需有道具槽位。"
+msgstr "被选择重投时生成 1 个随机铸骰件；重投后出现并结算时，+4 倍率。每个骰面每场战斗最多生成 1 次，需有道具槽位。"
 
 msgid "AUTO.TEXT.29C0C578392B"
-msgstr "倍率面饰：+%d Mult"
+msgstr "倍率面饰：+%d 倍率"
 
 msgid "AUTO.TEXT.2A2DE5E19D26"
 msgstr "将一个骰面替换为 1。"
@@ -1304,7 +1304,7 @@ msgid "AUTO.TEXT.32B0EAAA1AD6"
 msgstr "生成最多 2 个随机骰型升级件，生成物进入道具槽位。"
 
 msgid "AUTO.TEXT.32D3EE340AE5"
-msgstr "骰子备战区 · 正在查看骰子 %d"
+msgstr "骰子备战区：正在查看骰子 %d"
 
 msgid "AUTO.TEXT.332A22260969"
 msgstr "重投"
@@ -1337,7 +1337,7 @@ msgid "AUTO.TEXT.35E4AB333428"
 msgstr "将最多 2 个选中骰面安装为幸运面饰。"
 
 msgid "AUTO.TEXT.375FB8073275"
-msgstr "被结算时，+10 Mult。"
+msgstr "被结算时，+10 倍率。"
 
 msgid "AUTO.TEXT.37850C43AF0C"
 msgstr "骰面复写完成"
@@ -1472,7 +1472,7 @@ msgid "AUTO.TEXT.53E2DB70167F"
 msgstr "未选择"
 
 msgid "AUTO.TEXT.53F7EEE5CB6F"
-msgstr "幻彩强化：+%d Mult"
+msgstr "幻彩强化：+%d 倍率"
 
 msgid "AUTO.TEXT.543CFD5DFDFE"
 msgstr "稀有"
@@ -1496,7 +1496,7 @@ msgid "AUTO.TEXT.570646958A4D"
 msgstr "+%d 金币"
 
 msgid "AUTO.TEXT.57E72BA166C1"
-msgstr "给一个骰面安装倍率面饰。被结算时 +4 Mult。"
+msgstr "给一个骰面安装倍率面饰。被结算时 +4 倍率。"
 
 msgid "AUTO.TEXT.5811C61314A1"
 msgstr "安装历史：无"
@@ -1574,10 +1574,10 @@ msgid "AUTO.TEXT.692950289178"
 msgstr "骰子结算区"
 
 msgid "AUTO.TEXT.699368E17299"
-msgstr "被结算时，+4 Mult。"
+msgstr "被结算时，+4 倍率。"
 
 msgid "AUTO.TEXT.6A1C9F7BDE32"
-msgstr "正在查看：骰子 %d · 骰胚：%s"
+msgstr "正在查看：骰子 %d，骰胚：%s"
 
 msgid "AUTO.TEXT.6AA9A82B6ED6"
 msgstr "计分预览\n未选择骰子。"
@@ -1676,7 +1676,7 @@ msgid "AUTO.TEXT.7DA5E56079A8"
 msgstr "稀饰校准成功"
 
 msgid "AUTO.TEXT.7EA823B27E5C"
-msgstr "被结算时，分别判定 20% 获得 +20 Mult、1/15 获得 +20 金币。"
+msgstr "被结算时，分别判定 20% 获得 +20 倍率、6% 获得 +20 金币。"
 
 msgid "AUTO.TEXT.7F03BFBC43B6"
 msgstr "本回合结算动画、分数日志和触发文本会显示在这里。"
@@ -2081,7 +2081,7 @@ msgid "AUTO.TEXT.DB4775169C24"
 msgstr "该骰面被结算或未结算留场触发后，额外触发 1 次。"
 
 msgid "AUTO.TEXT.DB56A53169CA"
-msgstr "幸运面饰：触发 +%d Mult"
+msgstr "幸运面饰：触发 +%d 倍率"
 
 msgid "AUTO.TEXT.DBE74CDF4EC4"
 msgstr "印记信息"
@@ -2126,7 +2126,7 @@ msgid "AUTO.TEXT.E62E8CF325CA"
 msgstr "目标骰面无效"
 
 msgid "AUTO.TEXT.E699B4E7996F"
-msgstr "给一个骰面安装幸运面饰。被结算时独立概率获得 +20 Mult 或 +20 金币。"
+msgstr "给一个骰面安装幸运面饰。被结算时，分别判定 20% 获得 +20 倍率、6% 获得 +20 金币。"
 
 msgid "AUTO.TEXT.E69B498FE866"
 msgstr "该骰面没有合法目标点数"
@@ -2138,7 +2138,7 @@ msgid "AUTO.TEXT.E6CD87AA4E74"
 msgstr "复制骰面（暂未启用）"
 
 msgid "AUTO.TEXT.E70A3C6E22B1"
-msgstr "给一个骰面安装幻彩强化。被结算时 +10 Mult。"
+msgstr "给一个骰面安装幻彩强化。被结算时 +10 倍率。"
 
 msgid "AUTO.TEXT.E7B22B2652B2"
 msgstr "没有生成奖励。"
@@ -2238,6 +2238,18 @@ msgstr "当前版本不启用该效果。"
 
 msgid "AUTO.TEXT.FC3405B20424"
 msgstr "多彩强化：X%s 终倍率"
+
+msgid "UI.SCORE_FLOAT.MULT_SUFFIX"
+msgstr "倍率"
+
+msgid "UI.SCORE_FLOAT.MULT_GAIN"
+msgstr "+%d 倍率"
+
+msgid "UI.SCORE_FLOAT.XMULT_GAIN"
+msgstr "X%s 终倍率"
+
+msgid "UI.SCORE_TRACE.COMBO_BASE_DETAIL"
+msgstr "基础战力 +%d，倍率设为 %d"
 
 msgid "AUTO.TEXT.FCF3607DB577"
 msgstr "骰面为空"

@@ -7,6 +7,7 @@ const DieViewData = preload("res://scripts/ui/battle/view_models/DieViewData.gd"
 const BattleUiStyleConfig = preload("res://scripts/ui/battle/resources/BattleUiStyleConfig.gd")
 const BattleIconLibrary = preload("res://scripts/ui/battle/resources/BattleIconLibrary.gd")
 const DiceVisualLibrary = preload("res://scripts/ui/battle/resources/DiceVisualLibrary.gd")
+const RichTextHighlighter = preload("res://scripts/ui/RichTextHighlighter.gd")
 
 
 signal reward_choice_pressed(choice)
@@ -186,14 +187,12 @@ func _make_reward_choice_card(choice) -> Control:
 	meta.max_lines_visible = 2
 	box.add_child(meta)
 
-	var desc := _make_reward_label(_choice_description(choice), 15, Color(0.90, 0.92, 0.84))
+	var desc := _make_reward_rich_label(_choice_description(choice), 15, Color(0.90, 0.92, 0.84))
 	desc.custom_minimum_size = Vector2(0.0, 88.0)
-	desc.max_lines_visible = 4
 	box.add_child(desc)
 
-	var effect := _make_reward_label(_choice_effect_text(choice), 14, Color(1.0, 0.80, 0.42))
+	var effect := _make_reward_rich_label(_choice_effect_text(choice), 14, Color(1.0, 0.80, 0.42))
 	effect.custom_minimum_size = Vector2(0.0, 58.0)
-	effect.max_lines_visible = 3
 	box.add_child(effect)
 
 	var spacer := Control.new()
@@ -224,6 +223,17 @@ func _make_reward_label(text: String, font_size: int, color: Color) -> Label:
 	else:
 		label.add_theme_font_size_override("font_size", font_size)
 		label.add_theme_color_override("font_color", color)
+	return label
+
+
+func _make_reward_rich_label(text: String, font_size: int, color: Color) -> RichTextLabel:
+	var label := RichTextLabel.new()
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label.clip_contents = true
+	if style_config != null:
+		RichTextHighlighter.setup_rich_label(label, text, font_size, color, style_config.font)
+	else:
+		RichTextHighlighter.setup_rich_label(label, text, font_size, color)
 	return label
 
 
@@ -590,18 +600,23 @@ func _resolution_view_at(index: int) -> Control:
 func _floating_display_text(raw_text: String) -> String:
 	var stripped := raw_text.strip_edges()
 	var lower := stripped.to_lower()
+	var mult_suffix := _localized_mult_suffix()
 	if lower.ends_with(" chips"):
 		return stripped.split(" ", false)[0]
 	if lower.ends_with(" mult"):
 		return "X %s" % [_unsigned_number_token(stripped.split(" ", false)[0])]
+	if mult_suffix != "" and stripped.ends_with(mult_suffix):
+		return "X %s" % [_leading_signed_number_token(stripped)]
 	if lower.begins_with("x"):
 		return "X %s" % [_xmult_number_token(stripped)]
 	return stripped
 
 
 func _floating_display_color(raw_text: String) -> Color:
-	var lower := raw_text.strip_edges().to_lower()
-	if lower.ends_with(" mult") or lower.begins_with("x"):
+	var stripped := raw_text.strip_edges()
+	var lower := stripped.to_lower()
+	var mult_suffix := _localized_mult_suffix()
+	if lower.ends_with(" mult") or lower.begins_with("x") or (mult_suffix != "" and stripped.ends_with(mult_suffix)):
 		return style_config.floating_mult_text_color if style_config != null else Color(1.0, 0.78, 0.16)
 	return style_config.floating_chips_text_color if style_config != null else Color(0.96, 0.95, 0.88)
 
@@ -619,6 +634,32 @@ func _xmult_number_token(text: String) -> String:
 	if value.is_valid_float():
 		return str(ceili(value.to_float()))
 	return value if value != "" else "1"
+
+
+func _leading_signed_number_token(text: String) -> String:
+	var stripped := text.strip_edges()
+	var token := ""
+	for index in range(stripped.length()):
+		var code := stripped.unicode_at(index)
+		var character := stripped.substr(index, 1)
+		if index == 0 and (character == "+" or character == "-"):
+			token += character
+			continue
+		if code >= 48 and code <= 57:
+			token += character
+			continue
+		if character == ".":
+			token += character
+			continue
+		break
+	return _unsigned_number_token(token)
+
+
+func _localized_mult_suffix() -> String:
+	var suffix := str(TranslationServer.translate(&"UI.SCORE_FLOAT.MULT_SUFFIX")).strip_edges()
+	if suffix == "UI.SCORE_FLOAT.MULT_SUFFIX":
+		return ""
+	return suffix
 
 
 func _position_floating(floating: Control, global_position: Vector2) -> void:

@@ -581,7 +581,7 @@ msgid "FORGE_PART.ORNAMENT_LUCKY.NAME"
 msgstr "Lucky Ornament"
 
 msgid "FORGE_PART.ORNAMENT_LUCKY.DESC"
-msgstr "Install a lucky ornament on one face. When scored, it can independently grant +20 Mult or +20 coins."
+msgstr "Install a lucky ornament on one face. When scored, independently check 20% to gain +20 Mult and 6% to gain +20 coins."
 
 msgid "FORGE_PART.ORNAMENT_FOIL.NAME"
 msgstr "Foil Upgrade"
@@ -617,7 +617,7 @@ msgid "FORGE_PART.MARK_PURPLE.NAME"
 msgstr "Purple Imprint"
 
 msgid "FORGE_PART.MARK_PURPLE.DESC"
-msgstr "When selected for reroll, generate 1 random forge item; when scored after reroll, +4 Mult. Each physical face can generate successfully once per battle."
+msgstr "When selected for reroll, generate 1 random forge item; when scored after reroll, +4 Mult. Each die face can generate 1 time per battle."
 
 msgid "FORGE_PART.MARK_GOLD.NAME"
 msgstr "Gold Mark"
@@ -1064,7 +1064,7 @@ msgid "AUTO.TEXT.04E30DB10857"
 msgstr "战力面贴"
 
 msgid "AUTO.TEXT.05A8FE4EDC14"
-msgstr "Add a purple imprint to one face. When selected for reroll, generate 1 random forge item; when scored after reroll, +4 Mult. Each physical face can generate successfully once per battle and requires an item slot."
+msgstr "Add a purple imprint to one face. When selected for reroll, generate 1 random forge item; when scored after reroll, +4 Mult. Each die face can generate 1 time per battle and requires an item slot."
 
 msgid "AUTO.TEXT.093DDBA0EF5F"
 msgstr "金辉面贴"
@@ -1109,13 +1109,13 @@ msgid "AUTO.TEXT.121A6D93AC00"
 msgstr "出现次数"
 
 msgid "AUTO.TEXT.135A684FBEFC"
-msgstr "终倍率：%.2f"
+msgstr "终倍率：%s"
 
 msgid "AUTO.TEXT.135E3DF5C753"
 msgstr "包含结构：%s"
 
 msgid "AUTO.TEXT.147E1AD7C52E"
-msgstr "When selected for reroll, generate 1 random forge item; when scored after reroll, +4 Mult. Each physical face can generate successfully once per battle and requires an item slot."
+msgstr "When selected for reroll, generate 1 random forge item; when scored after reroll, +4 Mult. Each die face can generate 1 time per battle and requires an item slot."
 
 msgid "AUTO.TEXT.14DDE613ACF4"
 msgstr "被结算时，+30 基础战力。"
@@ -1142,7 +1142,7 @@ msgid "AUTO.TEXT.183A039CC4B1"
 msgstr "偶数重铸片"
 
 msgid "AUTO.TEXT.184D0F87C28C"
-msgstr "骰子 %d · %s (D%d)"
+msgstr "骰子 %d，%s（D%d）"
 
 msgid "AUTO.TEXT.191A3BBC896F"
 msgstr "面饰："
@@ -1250,7 +1250,7 @@ msgid "AUTO.TEXT.296CDB12F677"
 msgstr "被结算时，终倍率 ×2。"
 
 msgid "AUTO.TEXT.296FAC38B168"
-msgstr "When selected for reroll, generate 1 random forge item; when scored after reroll, +4 Mult. Each physical face can generate successfully once per battle and requires an item slot."
+msgstr "When selected for reroll, generate 1 random forge item; when scored after reroll, +4 Mult. Each die face can generate 1 time per battle and requires an item slot."
 
 msgid "AUTO.TEXT.29C0C578392B"
 msgstr "倍率面饰：+%d Mult"
@@ -1304,7 +1304,7 @@ msgid "AUTO.TEXT.32B0EAAA1AD6"
 msgstr "生成最多 2 个随机骰型升级件，生成物进入道具槽位。"
 
 msgid "AUTO.TEXT.32D3EE340AE5"
-msgstr "骰子备战区 · 正在查看骰子 %d"
+msgstr "骰子备战区：正在查看骰子 %d"
 
 msgid "AUTO.TEXT.332A22260969"
 msgstr "重投"
@@ -1577,7 +1577,7 @@ msgid "AUTO.TEXT.699368E17299"
 msgstr "被结算时，+4 Mult。"
 
 msgid "AUTO.TEXT.6A1C9F7BDE32"
-msgstr "正在查看：骰子 %d · 骰胚：%s"
+msgstr "正在查看：骰子 %d，骰胚：%s"
 
 msgid "AUTO.TEXT.6AA9A82B6ED6"
 msgstr "计分预览\n未选择骰子。"
@@ -1676,7 +1676,7 @@ msgid "AUTO.TEXT.7DA5E56079A8"
 msgstr "稀饰校准成功"
 
 msgid "AUTO.TEXT.7EA823B27E5C"
-msgstr "被结算时，分别判定 20% 获得 +20 Mult、1/15 获得 +20 金币。"
+msgstr "被结算时，分别判定 20% 获得 +20 Mult、6% 获得 +20 金币。"
 
 msgid "AUTO.TEXT.7F03BFBC43B6"
 msgstr "本回合结算动画、分数日志和触发文本会显示在这里。"
@@ -2126,7 +2126,7 @@ msgid "AUTO.TEXT.E62E8CF325CA"
 msgstr "目标骰面无效"
 
 msgid "AUTO.TEXT.E699B4E7996F"
-msgstr "给一个骰面安装幸运面饰。被结算时独立概率获得 +20 Mult 或 +20 金币。"
+msgstr "给一个骰面安装幸运面饰。被结算时，分别判定 20% 获得 +20 Mult、6% 获得 +20 金币。"
 
 msgid "AUTO.TEXT.E69B498FE866"
 msgstr "该骰面没有合法目标点数"
@@ -2238,6 +2238,18 @@ msgstr "当前版本不启用该效果。"
 
 msgid "AUTO.TEXT.FC3405B20424"
 msgstr "多彩强化：X%s 终倍率"
+
+msgid "UI.SCORE_FLOAT.MULT_SUFFIX"
+msgstr "倍率"
+
+msgid "UI.SCORE_FLOAT.MULT_GAIN"
+msgstr "+%d 倍率"
+
+msgid "UI.SCORE_FLOAT.XMULT_GAIN"
+msgstr "X%s 终倍率"
+
+msgid "UI.SCORE_TRACE.COMBO_BASE_DETAIL"
+msgstr "基础战力 +%d，倍率设为 %d"
 
 msgid "AUTO.TEXT.FCF3607DB577"
 msgstr "骰面为空"

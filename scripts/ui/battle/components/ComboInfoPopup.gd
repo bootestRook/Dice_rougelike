@@ -6,6 +6,7 @@ const ComboInfoRowData = preload("res://scripts/ui/battle/view_models/ComboInfoR
 const BattleUiStyleConfig = preload("res://scripts/ui/battle/resources/BattleUiStyleConfig.gd")
 const DisplayNames = preload("res://scripts/ui/DisplayNames.gd")
 const FaceState = preload("res://scripts/core/dice/FaceState.gd")
+const RichTextHighlighter = preload("res://scripts/ui/RichTextHighlighter.gd")
 
 
 signal close_requested()
@@ -33,7 +34,10 @@ var current_tab: int = InfoTab.COMBO
 @onready var combo_header: HBoxContainer = %Header
 @onready var header_level: Label = %HeaderLevel
 @onready var header_combo: Label = %HeaderCombo
-@onready var header_formula: Label = %HeaderFormula
+@onready var header_formula: HBoxContainer = %HeaderFormula
+@onready var header_chips_label: Label = %HeaderChipsLabel
+@onready var header_x_label: Label = %HeaderXLabel
+@onready var header_mult_label: Label = %HeaderMultLabel
 @onready var header_count: Label = %HeaderCount
 @onready var row_scroll: ScrollContainer = %RowScroll
 @onready var rows_container: VBoxContainer = %RowsContainer
@@ -117,7 +121,9 @@ func _apply_static_text() -> void:
 	info_tabs.set_tab_title(InfoTab.MARK, str(TranslationServer.translate(&"AUTO.TEXT.7F31376752FF")))
 	header_level.text = str(TranslationServer.translate(&"AUTO.TEXT.5C42C048EA24"))
 	header_combo.text = str(TranslationServer.translate(&"AUTO.TEXT.1BA8AC01BCAB"))
-	header_formula.text = str(TranslationServer.translate(&"AUTO.TEXT.37C57A0E5090"))
+	header_chips_label.text = "基础战力"
+	header_x_label.text = "×"
+	header_mult_label.text = "倍率"
 	header_count.text = str(TranslationServer.translate(&"AUTO.TEXT.121A6D93AC00"))
 	return_button.text = str(TranslationServer.translate(&"AUTO.TEXT.11D024154013"))
 
@@ -151,7 +157,7 @@ func _apply_style() -> void:
 	window_panel.add_theme_stylebox_override("panel", style_config.get_popup_style())
 	style_config.apply_margin(popup_margin, style_config.panel_padding * 2)
 	style_config.apply_label(title_label, style_config.title_font_size)
-	for label in [header_level, header_combo, header_formula, header_count]:
+	for label in [header_level, header_combo, header_chips_label, header_x_label, header_mult_label, header_count]:
 		style_config.apply_label(label, style_config.small_font_size)
 	style_config.apply_button(return_button)
 	if style_config.options_button_background != null:
@@ -189,24 +195,31 @@ func _make_effect_row(id: StringName, display_name: String, effect_text: String,
 	columns.add_theme_constant_override("separation", 16)
 	margin.add_child(columns)
 
-	var name_label := Label.new()
+	var name_label := RichTextLabel.new()
 	name_label.custom_minimum_size = Vector2(170, 0)
-	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	name_label.text = display_name
+	name_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	columns.add_child(name_label)
 
-	var effect_label := Label.new()
+	var effect_label := RichTextLabel.new()
 	effect_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	effect_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	effect_label.text = effect_text
+	effect_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	effect_label.clip_contents = true
 	columns.add_child(effect_label)
 
 	if style_config != null:
-		style_config.apply_label(name_label, style_config.body_font_size, style_config.info_link_text_color if selected else style_config.combo_info_row_text_color)
+		RichTextHighlighter.setup_plain_label(
+			name_label,
+			display_name,
+			style_config.body_font_size,
+			style_config.info_link_text_color if selected else style_config.combo_info_row_text_color,
+			style_config.font
+		)
 		var effect_color := style_config.combo_info_soft_text_color if selected else style_config.combo_info_row_text_color
-		style_config.apply_label(effect_label, style_config.small_font_size, effect_color)
+		RichTextHighlighter.setup_rich_label(effect_label, effect_text, style_config.small_font_size, effect_color, style_config.font)
+	else:
+		RichTextHighlighter.setup_plain_label(name_label, display_name, 16, Color(0.96, 0.88, 0.62))
+		RichTextHighlighter.setup_rich_label(effect_label, effect_text, 14, Color(0.90, 0.92, 0.84))
 
-	panel.tooltip_text = "%s\n%s\nid: %s" % [display_name, effect_text, str(id)]
 	return panel
 
 

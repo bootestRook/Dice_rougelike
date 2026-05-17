@@ -4,6 +4,7 @@ class_name RewardScreen
 
 const ForgePieceDef = preload("res://scripts/data_defs/ForgePieceDef.gd")
 const GameFlowController = preload("res://scripts/runtime/GameFlowController.gd")
+const RichTextHighlighter = preload("res://scripts/ui/RichTextHighlighter.gd")
 
 
 var game_flow_controller: GameFlowController = null
@@ -64,11 +65,11 @@ func _make_choice_card(piece: ForgePieceDef) -> Control:
 	panel.add_child(box)
 
 	box.add_child(_make_text_label(piece.get_display_name(), 20, Color(0.96, 0.88, 0.62)))
-	box.add_child(_make_text_label(piece.get_description(), 15, Color(0.88, 0.88, 0.82)))
+	box.add_child(_make_rich_text_label(piece.get_description(), 15, Color(0.88, 0.88, 0.82)))
 	box.add_child(_make_text_label(str(TranslationServer.translate(&"AUTO.TEXT.6DB5DF72B910")) % [piece.get_rarity_display_name()], 14, Color(0.72, 0.82, 0.92)))
 	box.add_child(_make_text_label(str(TranslationServer.translate(&"AUTO.TEXT.ABAAFC3C7A71")) % [piece.get_tags_display_text()], 14, Color(0.78, 0.88, 0.72)))
 
-	var operations_label := _make_text_label(piece.get_effect_text(), 14, Color(0.84, 0.84, 0.78))
+	var operations_label := _make_rich_text_label(piece.get_effect_text(), 14, Color(0.84, 0.84, 0.78))
 	operations_label.custom_minimum_size = Vector2(0, 90)
 	box.add_child(operations_label)
 
@@ -97,6 +98,13 @@ func _apply_label_theme(label: Label, font_size: int, color: Color) -> void:
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", color)
+
+
+func _make_rich_text_label(text: String, font_size: int, color: Color) -> RichTextLabel:
+	var label := RichTextLabel.new()
+	RichTextHighlighter.setup_rich_label(label, text, font_size, color)
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	return label
 
 
 func _clear_view() -> void:

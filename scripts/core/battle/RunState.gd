@@ -527,7 +527,7 @@ func _record_effect_triggers(result: ScoreResult) -> void:
 
 func _is_counted_effect_category(category: StringName) -> bool:
 	match category:
-		&"ornament_chip", &"ornament_mult", &"ornament_wild", &"ornament_burst", &"ornament_stay", &"ornament_stone", &"ornament_gold", &"ornament_lucky", &"ornament_foil", &"ornament_holo", &"ornament_poly", &"mark_blue", &"mark_red", &"mark_purple", &"mark_gold", &"mark_white", &"extra_pip":
+		&"ornament_chip", &"ornament_mult", &"ornament_wild", &"ornament_burst", &"ornament_stay", &"ornament_stone", &"ornament_gold", &"ornament_lucky", &"ornament_foil", &"ornament_holo", &"ornament_poly", &"mark_blue", &"mark_red", &"mark_purple", &"mark_gold", &"mark_white", &"extra_pip", &"body_iron", &"body_hollow", &"body_mirror", &"body_cracked", &"body_merchant":
 			return true
 		_:
 			return false
@@ -591,6 +591,16 @@ func _effect_category_text(category: StringName) -> String:
 			return DisplayNames.mark_name(&"mark_white")
 		&"extra_pip":
 			return str(TranslationServer.translate(&"AUTO.TEXT.121760C4E89D"))
+		&"body_iron":
+			return DisplayNames.body_name(DieState.BODY_IRON)
+		&"body_hollow":
+			return DisplayNames.body_name(DieState.BODY_HOLLOW)
+		&"body_mirror":
+			return DisplayNames.body_name(DieState.BODY_MIRROR)
+		&"body_cracked":
+			return DisplayNames.body_name(DieState.BODY_CRACKED)
+		&"body_merchant":
+			return DisplayNames.body_name(DieState.BODY_MERCHANT)
 		_:
 			return str(category)
 

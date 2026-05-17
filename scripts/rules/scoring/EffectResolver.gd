@@ -3,6 +3,7 @@ class_name EffectResolver
 
 
 const RolledFace = preload("res://scripts/core/dice/RolledFace.gd")
+const DieState = preload("res://scripts/core/dice/DieState.gd")
 const FaceState = preload("res://scripts/core/dice/FaceState.gd")
 const ScoreContext = preload("res://scripts/core/scoring/ScoreContext.gd")
 const BattleLogEntry = preload("res://scripts/log/BattleLogEntry.gd")
@@ -10,8 +11,21 @@ const ScoreResult = preload("res://scripts/core/scoring/ScoreResult.gd")
 const DisplayNames = preload("res://scripts/ui/DisplayNames.gd")
 const RewardGenerator = preload("res://scripts/rules/reward/RewardGenerator.gd")
 const ComboUpgradeItem = preload("res://scripts/rules/combo/ComboUpgradeItem.gd")
+const ComboEvaluator = preload("res://scripts/rules/combo/ComboEvaluator.gd")
 const ResolutionTrace = preload("res://scripts/core/scoring/ResolutionTrace.gd")
 const ResolutionStep = preload("res://scripts/core/scoring/ResolutionStep.gd")
+
+
+const BURST_XMULT_PERCENT := 200
+const GLASS_BURST_XMULT_BONUS_PERCENT := 25
+const STAY_XMULT_PERCENT := 200
+const POLY_XMULT_PERCENT := 200
+const LUCKY_MULT_CHANCE := 0.20
+const LUCKY_COINS_CHANCE := 0.06
+const BODY_FLAG_IRON := &"iron_used"
+const BODY_FLAG_HOLLOW := &"hollow_used"
+const BODY_FLAG_MIRROR := &"mirror_used"
+const BODY_FLAG_CRACKED_ABSORB := &"cracked_absorb_used"
 
 
 var reward_generator := RewardGenerator.new()
@@ -68,6 +82,7 @@ func apply_selected_face_effects_for_roll(
 			_apply_gold_mark(roll, context, result, trace)
 		FaceState.MARK_PURPLE:
 			_try_trigger_purple_mark(roll, result, trace)
+	_apply_selected_body_effects_for_roll(roll, context, result, trace)
 
 
 func apply_unselected_effects(context: ScoreContext, result: ScoreResult, trace: ResolutionTrace = null) -> void:
@@ -86,6 +101,8 @@ func apply_post_score_effects(context: ScoreContext, result: ScoreResult) -> Sco
 		if _effective_ornament_id_for_roll(roll, context) != FaceState.ORN_BURST:
 			continue
 		if _active_rng(context).randf() < 0.25:
+			if _try_absorb_burst_break_with_cracked_body(roll, context, result):
+				continue
 			_clear_face_ornament(context, roll)
 			result.add_floating_text(str(TranslationServer.translate(&"AUTO.TEXT.64867FADD655")), roll.die_index, roll.face_index)
 			_add_log(result, &"LOG.ORNAMENT_BURST_BREAK", {
@@ -152,11 +169,183 @@ func _apply_unselected_effects(context: ScoreContext, result: ScoreResult, trace
 			_apply_single_unselected_stay_trigger(roll, context, result, trace, true)
 		elif mark_id == FaceState.MARK_BLUE:
 			_try_trigger_blue_mark(roll, context, result, triggered, trace)
+		_try_trigger_iron_body(roll, context, result, trace)
 
 
 func _apply_selected_face_effects(context: ScoreContext, result: ScoreResult, trace: ResolutionTrace = null) -> void:
 	for roll in context.selected_faces:
 		apply_selected_face_effects_for_roll(roll, context, result, trace)
+
+
+func _apply_selected_body_effects_for_roll(
+	roll: RolledFace,
+	context: ScoreContext,
+	result: ScoreResult,
+	trace: ResolutionTrace = null
+) -> void:
+	_try_trigger_hollow_body(roll, context, result, trace)
+	_try_trigger_mirror_body(roll, context, result, trace)
+
+
+func _try_trigger_iron_body(
+	roll: RolledFace,
+	context: ScoreContext,
+	result: ScoreResult,
+	trace: ResolutionTrace = null
+) -> void:
+	if _normalized_body_id_for_roll(roll, context) != DieState.BODY_IRON:
+		return
+	if _body_flag_used(context, roll, BODY_FLAG_IRON):
+		return
+	var before := _score_snapshot(result)
+	result.chips += 10
+	var mult_bonus := 0
+	if _effective_ornament_id_for_roll(roll, context) == FaceState.ORN_STAY:
+		mult_bonus = 2
+		result.mult += mult_bonus
+	_mark_body_flag(context, roll, BODY_FLAG_IRON)
+	_add_log(result, &"LOG.BODY_IRON", {
+		"die": roll.die_index + 1,
+		"chips": 10,
+		"mult": mult_bonus,
+	}, &"body_iron")
+	var floating := "+10 基础战力"
+	if mult_bonus > 0:
+		floating = "%s / +%d 倍率" % [floating, mult_bonus]
+	result.add_floating_text(floating, roll.die_index, roll.face_index)
+	_append_trace_step(
+		trace,
+		result,
+		before,
+		ResolutionStep.Phase.DIE_BODY,
+		&"body",
+		DieState.BODY_IRON,
+		DisplayNames.body_name(DieState.BODY_IRON),
+		"铁质骰胚",
+		floating,
+		floating,
+		roll
+	)
+
+
+func _try_trigger_hollow_body(
+	roll: RolledFace,
+	context: ScoreContext,
+	result: ScoreResult,
+	trace: ResolutionTrace = null
+) -> void:
+	if _normalized_body_id_for_roll(roll, context) != DieState.BODY_HOLLOW:
+		return
+	if _body_flag_used(context, roll, BODY_FLAG_HOLLOW):
+		return
+	if not _was_die_rerolled_this_round(context, roll):
+		return
+	var before := _score_snapshot(result)
+	result.chips += 5
+	result.mult += 1
+	_mark_body_flag(context, roll, BODY_FLAG_HOLLOW)
+	_add_log(result, &"LOG.BODY_HOLLOW", {
+		"die": roll.die_index + 1,
+		"chips": 5,
+		"mult": 1,
+	}, &"body_hollow")
+	var floating := "+5 基础战力 / +1 倍率"
+	result.add_floating_text(floating, roll.die_index, roll.face_index)
+	_append_trace_step(
+		trace,
+		result,
+		before,
+		ResolutionStep.Phase.DIE_BODY,
+		&"body",
+		DieState.BODY_HOLLOW,
+		DisplayNames.body_name(DieState.BODY_HOLLOW),
+		"空心骰胚",
+		floating,
+		floating,
+		roll
+	)
+
+
+func _try_trigger_mirror_body(
+	roll: RolledFace,
+	context: ScoreContext,
+	result: ScoreResult,
+	trace: ResolutionTrace = null
+) -> void:
+	if _normalized_body_id_for_roll(roll, context) != DieState.BODY_MIRROR:
+		return
+	if _body_flag_used(context, roll, BODY_FLAG_MIRROR):
+		return
+	if not _has_same_effective_pip_match(roll, context):
+		return
+	_mark_body_flag(context, roll, BODY_FLAG_MIRROR)
+	_add_log(result, &"LOG.BODY_MIRROR", {
+		"die": roll.die_index + 1,
+	}, &"body_mirror")
+	result.add_floating_text("面饰额外触发", roll.die_index, roll.face_index)
+	_apply_ornament_only_retrigger(roll, context, result, trace)
+
+
+func _apply_ornament_only_retrigger(
+	roll: RolledFace,
+	context: ScoreContext,
+	result: ScoreResult,
+	trace: ResolutionTrace = null
+) -> void:
+	if roll == null or roll.face == null:
+		return
+	var ornament_id := _effective_ornament_id_for_roll(roll, context)
+	var ornament_name := DisplayNames.ornament_name(ornament_id)
+	var phase := ResolutionStep.Phase.RETRIGGER
+	match ornament_id:
+		FaceState.ORN_CHIP:
+			var before_chip := _score_snapshot(result)
+			result.chips += 30
+			_add_log(result, &"LOG.ORNAMENT_CHIP", {"die": roll.die_index + 1, "face": roll.face_index + 1, "ornament": ornament_name, "chips": 30}, &"ornament_chip")
+			result.add_floating_text("+30 基础战力", roll.die_index, roll.face_index)
+			_append_trace_step(trace, result, before_chip, phase, &"ornament", ornament_id, ornament_name, "镜面额外触发", "+30 基础战力", "+30 基础战力", roll, 1, _resolution_index_for_roll(trace, roll))
+		FaceState.ORN_MULT:
+			var before_mult := _score_snapshot(result)
+			result.mult += 4
+			var mult_text := _mult_gain_text(4)
+			_add_log(result, &"LOG.ORNAMENT_MULT", {"die": roll.die_index + 1, "face": roll.face_index + 1, "ornament": ornament_name, "mult": 4}, &"ornament_mult")
+			result.add_floating_text(mult_text, roll.die_index, roll.face_index)
+			_append_trace_step(trace, result, before_mult, phase, &"ornament", ornament_id, ornament_name, "镜面额外触发", mult_text, mult_text, roll, 1, _resolution_index_for_roll(trace, roll))
+		FaceState.ORN_STONE:
+			var before_stone := _score_snapshot(result)
+			result.chips += 50
+			_add_log(result, &"LOG.ORNAMENT_STONE", {"die": roll.die_index + 1, "face": roll.face_index + 1, "chips": 50}, &"ornament_stone")
+			result.add_floating_text("+50 基础战力", roll.die_index, roll.face_index)
+			_append_trace_step(trace, result, before_stone, phase, &"ornament", ornament_id, ornament_name, "镜面额外触发", "+50 基础战力", "+50 基础战力", roll, 1, _resolution_index_for_roll(trace, roll))
+		FaceState.ORN_BURST:
+			var before_burst := _score_snapshot(result)
+			var burst_factor := _apply_xmult_percent(result, _burst_xmult_percent(roll, context))
+			var burst_text := "X%s" % [_format_xmult(burst_factor)]
+			_add_log(result, &"LOG.ORNAMENT_BURST", {"die": roll.die_index + 1, "face": roll.face_index + 1, "ornament": ornament_name, "xmult": _format_xmult(burst_factor)}, &"ornament_burst")
+			result.add_floating_text(burst_text, roll.die_index, roll.face_index)
+			_append_trace_step(trace, result, before_burst, phase, &"ornament", ornament_id, ornament_name, "镜面额外触发", _xmult_gain_text(burst_factor), burst_text, roll, 1, _resolution_index_for_roll(trace, roll))
+		FaceState.ORN_LUCKY:
+			_apply_lucky(roll, context, result, trace, phase, 1)
+		FaceState.ORN_FOIL:
+			var before_foil := _score_snapshot(result)
+			result.chips += 50
+			_add_log(result, &"LOG.ORNAMENT_FOIL", {"die": roll.die_index + 1, "face": roll.face_index + 1, "chips": 50}, &"ornament_foil")
+			result.add_floating_text("+50 基础战力", roll.die_index, roll.face_index)
+			_append_trace_step(trace, result, before_foil, phase, &"ornament", ornament_id, ornament_name, "镜面额外触发", "+50 基础战力", "+50 基础战力", roll, 1, _resolution_index_for_roll(trace, roll))
+		FaceState.ORN_HOLO:
+			var before_holo := _score_snapshot(result)
+			result.mult += 10
+			var holo_text := _mult_gain_text(10)
+			_add_log(result, &"LOG.ORNAMENT_HOLO", {"die": roll.die_index + 1, "face": roll.face_index + 1, "mult": 10}, &"ornament_holo")
+			result.add_floating_text(holo_text, roll.die_index, roll.face_index)
+			_append_trace_step(trace, result, before_holo, phase, &"ornament", ornament_id, ornament_name, "镜面额外触发", holo_text, holo_text, roll, 1, _resolution_index_for_roll(trace, roll))
+		FaceState.ORN_POLY:
+			var before_poly := _score_snapshot(result)
+			var poly_factor := _apply_xmult_percent(result, POLY_XMULT_PERCENT)
+			var poly_text := "X%s" % [_format_xmult(poly_factor)]
+			_add_log(result, &"LOG.ORNAMENT_POLY", {"die": roll.die_index + 1, "face": roll.face_index + 1, "xmult": _format_xmult(poly_factor)}, &"ornament_poly")
+			result.add_floating_text(poly_text, roll.die_index, roll.face_index)
+			_append_trace_step(trace, result, before_poly, phase, &"ornament", ornament_id, ornament_name, "镜面额外触发", _xmult_gain_text(poly_factor), poly_text, roll, 1, _resolution_index_for_roll(trace, roll))
 
 
 func _apply_single_face_trigger(
@@ -220,8 +409,9 @@ func _apply_single_face_trigger(
 				"ornament": DisplayNames.ornament_name(ornament_id),
 				"mult": 4,
 			}, &"ornament_mult")
-			result.add_floating_text("+4 Mult", roll.die_index, roll.face_index)
-			_append_trace_step(trace, result, before_mult, phase, &"ornament", ornament_id, ornament_name, ornament_name, "+4 Mult", "+4 Mult", roll, trigger_index, _resolution_index_for_roll(trace, roll))
+			var mult_text := _mult_gain_text(4)
+			result.add_floating_text(mult_text, roll.die_index, roll.face_index)
+			_append_trace_step(trace, result, before_mult, phase, &"ornament", ornament_id, ornament_name, ornament_name, mult_text, mult_text, roll, trigger_index, _resolution_index_for_roll(trace, roll))
 		FaceState.ORN_STONE:
 			var before_stone := _score_snapshot(result)
 			result.chips += 50
@@ -234,7 +424,7 @@ func _apply_single_face_trigger(
 			_append_trace_step(trace, result, before_stone, phase, &"ornament", ornament_id, ornament_name, ornament_name, "+50 Chips", "+50 Chips", roll, trigger_index, _resolution_index_for_roll(trace, roll))
 		FaceState.ORN_BURST:
 			var before_burst := _score_snapshot(result)
-			var burst_factor := _apply_xmult_factor(result, 2.0)
+			var burst_factor := _apply_xmult_percent(result, _burst_xmult_percent(roll, context))
 			_add_log(result, &"LOG.ORNAMENT_BURST", {
 				"die": roll.die_index + 1,
 				"face": roll.face_index + 1,
@@ -243,7 +433,8 @@ func _apply_single_face_trigger(
 			}, &"ornament_burst")
 			var burst_text := "X%s" % [_format_xmult(burst_factor)]
 			result.add_floating_text(burst_text, roll.die_index, roll.face_index)
-			_append_trace_step(trace, result, before_burst, phase, &"ornament", ornament_id, ornament_name, ornament_name, "%s XMult" % [burst_text.to_lower()], "%s XMult" % [burst_text.to_lower()], roll, trigger_index, _resolution_index_for_roll(trace, roll))
+			var burst_detail := _xmult_gain_text(burst_factor)
+			_append_trace_step(trace, result, before_burst, phase, &"ornament", ornament_id, ornament_name, ornament_name, burst_detail, burst_text, roll, trigger_index, _resolution_index_for_roll(trace, roll))
 		FaceState.ORN_LUCKY:
 			_apply_lucky(roll, context, result, trace, phase, trigger_index)
 		FaceState.ORN_FOIL:
@@ -264,11 +455,12 @@ func _apply_single_face_trigger(
 				"face": roll.face_index + 1,
 				"mult": 10,
 			}, &"ornament_holo")
-			result.add_floating_text("+10 Mult", roll.die_index, roll.face_index)
-			_append_trace_step(trace, result, before_holo, phase, &"ornament", ornament_id, ornament_name, ornament_name, "+10 Mult", "+10 Mult", roll, trigger_index, _resolution_index_for_roll(trace, roll))
+			var holo_text := _mult_gain_text(10)
+			result.add_floating_text(holo_text, roll.die_index, roll.face_index)
+			_append_trace_step(trace, result, before_holo, phase, &"ornament", ornament_id, ornament_name, ornament_name, holo_text, holo_text, roll, trigger_index, _resolution_index_for_roll(trace, roll))
 		FaceState.ORN_POLY:
 			var before_poly := _score_snapshot(result)
-			var poly_factor := _apply_xmult_factor(result, 2.0)
+			var poly_factor := _apply_xmult_percent(result, POLY_XMULT_PERCENT)
 			_add_log(result, &"LOG.ORNAMENT_POLY", {
 				"die": roll.die_index + 1,
 				"face": roll.face_index + 1,
@@ -276,7 +468,8 @@ func _apply_single_face_trigger(
 			}, &"ornament_poly")
 			var poly_text := "X%s" % [_format_xmult(poly_factor)]
 			result.add_floating_text(poly_text, roll.die_index, roll.face_index)
-			_append_trace_step(trace, result, before_poly, phase, &"ornament", ornament_id, ornament_name, ornament_name, "%s XMult" % [poly_text.to_lower()], "%s XMult" % [poly_text.to_lower()], roll, trigger_index, _resolution_index_for_roll(trace, roll))
+			var poly_detail := _xmult_gain_text(poly_factor)
+			_append_trace_step(trace, result, before_poly, phase, &"ornament", ornament_id, ornament_name, ornament_name, poly_detail, poly_text, roll, trigger_index, _resolution_index_for_roll(trace, roll))
 
 
 func _apply_single_unselected_stay_trigger(
@@ -296,7 +489,7 @@ func _apply_single_unselected_stay_trigger(
 	match ornament_id:
 		FaceState.ORN_STAY:
 			var before_stay := _score_snapshot(result)
-			var stay_factor := _apply_xmult_factor(result, 2.0)
+			var stay_factor := _apply_xmult_percent(result, STAY_XMULT_PERCENT)
 			_add_log(result, &"LOG.ORNAMENT_STAY", {
 				"die": roll.die_index + 1,
 				"face": roll.face_index + 1,
@@ -305,7 +498,8 @@ func _apply_single_unselected_stay_trigger(
 			}, &"ornament_stay")
 			var stay_text := "X%s" % [_format_xmult(stay_factor)]
 			result.add_floating_text(stay_text, roll.die_index, roll.face_index)
-			_append_trace_step(trace, result, before_stay, phase, &"ornament", ornament_id, ornament_name, ornament_name, "Stay %s XMult" % [stay_text.to_lower()], "%s XMult" % [stay_text.to_lower()], roll)
+			var stay_detail := _xmult_gain_text(stay_factor)
+			_append_trace_step(trace, result, before_stay, phase, &"ornament", ornament_id, ornament_name, ornament_name, stay_detail, stay_text, roll)
 			triggered = true
 		FaceState.ORN_GOLD:
 			var before_gold_stay := _score_snapshot(result)
@@ -316,6 +510,7 @@ func _apply_single_unselected_stay_trigger(
 				"coins": 3,
 			}, &"ornament_gold")
 			_append_trace_step(trace, result, before_gold_stay, phase, &"ornament", ornament_id, ornament_name, ornament_name, "Stay +3 Coins", "+3 Coins", roll)
+			_try_apply_merchant_coin_bonus(roll, context, result, trace, _score_snapshot(result))
 			triggered = true
 	return triggered
 
@@ -341,7 +536,8 @@ func _try_trigger_blue_mark(
 		"mark": DisplayNames.mark_name(FaceState.MARK_BLUE),
 		"mult": mult_bonus,
 	}, &"mark_blue")
-	result.add_floating_text("+%d Mult" % [mult_bonus], roll.die_index, roll.face_index)
+	var mult_text := _mult_gain_text(mult_bonus)
+	result.add_floating_text(mult_text, roll.die_index, roll.face_index)
 	_append_trace_step(
 		trace,
 		result,
@@ -351,8 +547,8 @@ func _try_trigger_blue_mark(
 		FaceState.MARK_BLUE,
 		DisplayNames.mark_name(FaceState.MARK_BLUE),
 		DisplayNames.mark_name(FaceState.MARK_BLUE),
-		"+%d Mult" % [mult_bonus],
-		"+%d Mult" % [mult_bonus],
+		mult_text,
+		mult_text,
 		roll
 	)
 
@@ -402,7 +598,8 @@ func _try_trigger_purple_mark(roll: RolledFace, result: ScoreResult, trace: Reso
 		"mark": DisplayNames.mark_name(FaceState.MARK_PURPLE),
 		"mult": mult_bonus,
 	}, &"mark_purple")
-	result.add_floating_text("+%d Mult" % [mult_bonus], roll.die_index, roll.face_index)
+	var mult_text := _mult_gain_text(mult_bonus)
+	result.add_floating_text(mult_text, roll.die_index, roll.face_index)
 	_append_trace_step(
 		trace,
 		result,
@@ -412,8 +609,8 @@ func _try_trigger_purple_mark(roll: RolledFace, result: ScoreResult, trace: Reso
 		FaceState.MARK_PURPLE,
 		DisplayNames.mark_name(FaceState.MARK_PURPLE),
 		DisplayNames.mark_name(FaceState.MARK_PURPLE),
-		"+%d Mult" % [mult_bonus],
-		"+%d Mult" % [mult_bonus],
+		mult_text,
+		mult_text,
 		roll
 	)
 
@@ -439,6 +636,52 @@ func _apply_gold_mark(roll: RolledFace, context: ScoreContext, result: ScoreResu
 		"+1 Coins",
 		roll
 	)
+	_try_apply_merchant_coin_bonus(roll, context, result, trace, _score_snapshot(result))
+
+
+func _try_apply_merchant_coin_bonus(
+	roll: RolledFace,
+	context: ScoreContext,
+	result: ScoreResult,
+	trace: ResolutionTrace = null,
+	before: Dictionary = {}
+) -> void:
+	if _normalized_body_id_for_roll(roll, context) != DieState.BODY_MERCHANT:
+		return
+	_add_coins(context, result, 1, "商人骰胚：金币额外 +1", roll)
+	_add_log(result, &"LOG.BODY_MERCHANT", {
+		"die": roll.die_index + 1,
+		"coins": 1,
+	}, &"body_merchant")
+	result.add_floating_text("+1 金币", roll.die_index, roll.face_index)
+	_append_trace_step(
+		trace,
+		result,
+		before if not before.is_empty() else _score_snapshot(result),
+		ResolutionStep.Phase.DIE_BODY,
+		&"body",
+		DieState.BODY_MERCHANT,
+		DisplayNames.body_name(DieState.BODY_MERCHANT),
+		"商人骰胚",
+		"金币额外 +1",
+		"+1 金币",
+		roll
+	)
+
+
+func _try_absorb_burst_break_with_cracked_body(roll: RolledFace, context: ScoreContext, result: ScoreResult) -> bool:
+	if _normalized_body_id_for_roll(roll, context) != DieState.BODY_CRACKED:
+		return false
+	if _body_flag_used(context, roll, BODY_FLAG_CRACKED_ABSORB, true):
+		return false
+	_mark_body_flag(context, roll, BODY_FLAG_CRACKED_ABSORB, true)
+	if result != null:
+		_add_log(result, &"LOG.BODY_CRACKED_ABSORB", {
+			"die": roll.die_index + 1,
+			"face": roll.face_index + 1,
+		}, &"body_cracked")
+		result.add_floating_text("裂纹吸收", roll.die_index, roll.face_index)
+	return true
 
 
 func _is_face_selected(roll: RolledFace, context: ScoreContext) -> bool:
@@ -476,19 +719,20 @@ func _apply_lucky(
 	var triggered_mult := false
 	var triggered_coins := false
 	var rng = _active_rng(context)
-	if rng.randf() < 0.20:
+	if rng.randf() < LUCKY_MULT_CHANCE:
 		var before_lucky_mult := _score_snapshot(result)
 		triggered_mult = true
 		result.mult += 20
-		result.add_floating_text("+20 Mult", roll.die_index, roll.face_index)
+		var lucky_mult_text := _mult_gain_text(20)
+		result.add_floating_text(lucky_mult_text, roll.die_index, roll.face_index)
 		_add_log(result, &"LOG.ORNAMENT_LUCKY_MULT", {
 			"die": roll.die_index + 1,
 			"face": roll.face_index + 1,
 			"mult": 20,
 		}, &"ornament_lucky")
-		_append_trace_step(trace, result, before_lucky_mult, phase, &"ornament", ornament_id, ornament_name, ornament_name, "+20 Mult", "+20 Mult", roll, trigger_index, _resolution_index_for_roll(trace, roll))
+		_append_trace_step(trace, result, before_lucky_mult, phase, &"ornament", ornament_id, ornament_name, ornament_name, lucky_mult_text, lucky_mult_text, roll, trigger_index, _resolution_index_for_roll(trace, roll))
 
-	if rng.randf() < (1.0 / 15.0):
+	if rng.randf() < LUCKY_COINS_CHANCE:
 		var before_lucky_coins := _score_snapshot(result)
 		triggered_coins = true
 		_add_coins(context, result, 20, str(TranslationServer.translate(&"AUTO.TEXT.34F8E61E22F5")), roll)
@@ -653,11 +897,114 @@ func _score_snapshot(result: ScoreResult) -> Dictionary:
 	}
 
 
-func _apply_xmult_factor(result: ScoreResult, raw_factor: float) -> int:
-	var factor := ScoreResult.ceil_multiplier(raw_factor)
+func _burst_xmult_percent(roll: RolledFace, context: ScoreContext = null) -> int:
+	var percent := BURST_XMULT_PERCENT
+	if _normalized_body_id_for_roll(roll, context) == DieState.BODY_GLASS:
+		percent += GLASS_BURST_XMULT_BONUS_PERCENT
+	return percent
+
+
+func _apply_xmult_percent(result: ScoreResult, percent: int) -> int:
+	var factor := ceili(float(max(0, percent)) / 100.0)
 	if result != null:
 		result.xmult = float(ScoreResult.ceil_multiplier(result.xmult * float(factor)))
 	return factor
+
+
+func _normalized_body_id_for_roll(roll: RolledFace, context: ScoreContext = null) -> StringName:
+	return DieState.normalize_body_id(_body_id_for_roll(roll, context))
+
+
+func _body_id_for_roll(roll: RolledFace, context: ScoreContext = null) -> StringName:
+	if roll != null and roll.die != null:
+		return roll.die.body_id
+	if context != null and roll != null and roll.die_index >= 0 and roll.die_index < context.source_dice.size():
+		var source_die = context.source_dice[roll.die_index]
+		if source_die != null:
+			return source_die.body_id
+	if context != null and context.battle_state != null and roll != null and roll.die_index >= 0 and roll.die_index < context.battle_state.dice.size():
+		var battle_die = context.battle_state.dice[roll.die_index]
+		if battle_die != null:
+			return battle_die.body_id
+	return DieState.BODY_STANDARD
+
+
+func _die_key_for_roll(roll: RolledFace) -> StringName:
+	if roll == null:
+		return &""
+	if roll.die_id != &"":
+		return roll.die_id
+	if roll.die != null:
+		if roll.die.die_id != &"":
+			return roll.die.die_id
+		if roll.die.id != &"":
+			return roll.die.id
+	return StringName("die_%d" % [roll.die_index])
+
+
+func _was_die_rerolled_this_round(context: ScoreContext, roll: RolledFace) -> bool:
+	if roll != null and roll.was_rerolled:
+		return true
+	var die_key := _die_key_for_roll(roll)
+	if die_key == &"":
+		return false
+	if context != null and context.hand_state != null:
+		return bool(context.hand_state.rerolled_die_ids_this_round.get(die_key, false))
+	if context != null:
+		return bool(context.rerolled_die_ids_this_round.get(die_key, false))
+	return false
+
+
+func _body_flag_used(context: ScoreContext, roll: RolledFace, flag_id: StringName, per_battle: bool = false) -> bool:
+	var die_key := _die_key_for_roll(roll)
+	if die_key == &"":
+		return false
+	var flags := _body_flags(context, per_battle)
+	var die_flags = flags.get(die_key, {})
+	if die_flags is Dictionary:
+		return bool(die_flags.get(flag_id, false))
+	return false
+
+
+func _mark_body_flag(context: ScoreContext, roll: RolledFace, flag_id: StringName, per_battle: bool = false) -> void:
+	var die_key := _die_key_for_roll(roll)
+	if die_key == &"":
+		return
+	var flags := _body_flags(context, per_battle)
+	var die_flags = flags.get(die_key, {})
+	if not (die_flags is Dictionary):
+		die_flags = {}
+	die_flags[flag_id] = true
+	flags[die_key] = die_flags
+
+
+func _body_flags(context: ScoreContext, per_battle: bool) -> Dictionary:
+	if context == null:
+		return {}
+	if per_battle:
+		if context.battle_state != null:
+			return context.battle_state.body_triggered_flags_this_battle
+		return context.body_triggered_flags_this_battle
+	if context.hand_state != null:
+		return context.hand_state.body_triggered_flags_this_round
+	return context.body_triggered_flags_this_round
+
+
+func _has_same_effective_pip_match(roll: RolledFace, context: ScoreContext) -> bool:
+	if roll == null or context == null:
+		return false
+	var current_pip = ComboEvaluator.get_effective_pip_for_point_logic(roll, context)
+	if current_pip == null:
+		return false
+	for other in context.selected_faces:
+		if other == null or other == roll:
+			continue
+		if other.die_index == roll.die_index and other.face_index == roll.face_index:
+			continue
+		var other_pip = ComboEvaluator.get_effective_pip_for_point_logic(other, context)
+		if other_pip != null and int(other_pip) == int(current_pip):
+			return true
+	return false
 
 
 func _append_trace_step(
@@ -736,3 +1083,11 @@ func _add_log(result: ScoreResult, key: StringName, args: Dictionary = {}, categ
 
 func _format_xmult(value: float) -> String:
 	return ScoreResult.format_multiplier(value)
+
+
+func _mult_gain_text(amount: int) -> String:
+	return str(TranslationServer.translate(&"UI.SCORE_FLOAT.MULT_GAIN")) % [amount]
+
+
+func _xmult_gain_text(factor: float) -> String:
+	return str(TranslationServer.translate(&"UI.SCORE_FLOAT.XMULT_GAIN")) % [_format_xmult(factor)]

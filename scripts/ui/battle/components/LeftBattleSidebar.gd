@@ -27,6 +27,8 @@ var money_feedback_id: int = 0
 var hand_count_tween: Tween = null
 var money_count_tween: Tween = null
 var victory_target_tween: Tween = null
+var victory_target_layer: Control = null
+var victory_target_label: Label = null
 var victory_target_active: bool = false
 var victory_target_feedback_playing: bool = false
 var combo_header_frame: Control = null
@@ -160,6 +162,9 @@ func play_battle_target_restore_feedback(state: BattleHudState) -> void:
 	if target_value != null:
 		target_value.rotation = 0.0
 		target_value.scale = Vector2.ONE
+	if victory_target_label != null:
+		victory_target_label.rotation = 0.0
+		victory_target_label.scale = Vector2.ONE
 	victory_target_feedback_playing = true
 	await _play_decrease_feedback(
 		target_score_panel,
@@ -186,6 +191,12 @@ func clear_battle_victory_target_feedback() -> void:
 	if target_value != null:
 		target_value.rotation = 0.0
 		target_value.scale = Vector2.ONE
+	if victory_target_label != null:
+		victory_target_label.rotation = 0.0
+		victory_target_label.scale = Vector2.ONE
+		victory_target_label.visible = false
+	if victory_target_layer != null:
+		victory_target_layer.visible = false
 	if target_score_panel != null:
 		target_score_panel.rotation = 0.0
 		target_score_panel.scale = Vector2.ONE
@@ -211,6 +222,8 @@ func play_final_score_pop() -> void:
 
 
 func _apply_normal_target_display(state: BattleHudState) -> void:
+	if victory_target_layer != null:
+		victory_target_layer.visible = false
 	if target_hint != null:
 		target_hint.visible = true
 	if target_value != null:
@@ -231,42 +244,75 @@ func _apply_normal_target_display(state: BattleHudState) -> void:
 
 
 func _apply_victory_target_display() -> void:
+	_ensure_victory_target_layer()
 	if target_hint != null:
 		target_hint.visible = false
 	if reward_label != null:
 		reward_label.visible = false
-	if target_value == null:
+	if target_value != null:
+		target_value.visible = false
+	if victory_target_layer == null or victory_target_label == null:
 		return
-	target_value.visible = true
-	target_value.text = "战斗胜利"
+	victory_target_layer.visible = true
+	victory_target_label.visible = true
+	victory_target_label.text = "战斗胜利"
 	if style_config != null:
-		style_config.apply_label(target_value, 56, Color(1.0, 0.82, 0.08, 1.0))
-	target_value.add_theme_font_override("font", _get_victory_target_font())
-	target_value.add_theme_color_override("font_outline_color", Color(0.20, 0.08, 0.0, 1.0))
-	target_value.add_theme_constant_override("outline_size", 4)
-	_apply_target_value_layout()
-	target_value.clip_text = false
+		style_config.apply_label(victory_target_label, 56, Color(1.0, 0.82, 0.08, 1.0))
+	victory_target_label.add_theme_font_override("font", _get_victory_target_font())
+	victory_target_label.add_theme_color_override("font_outline_color", Color(0.20, 0.08, 0.0, 1.0))
+	victory_target_label.add_theme_constant_override("outline_size", 4)
+	victory_target_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	victory_target_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	victory_target_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	victory_target_label.clip_text = false
+	victory_target_label.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
 	call_deferred("_fit_victory_target_font_size")
 
 
+func _ensure_victory_target_layer() -> void:
+	if target_score_panel == null:
+		return
+	if victory_target_layer == null:
+		victory_target_layer = Control.new()
+		victory_target_layer.name = "VictoryTargetLayer"
+		victory_target_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		victory_target_layer.visible = false
+		victory_target_layer.z_index = 120
+		victory_target_layer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		victory_target_layer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		target_score_panel.add_child(victory_target_layer)
+		victory_target_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	if victory_target_label == null:
+		victory_target_label = Label.new()
+		victory_target_label.name = "VictoryTargetLabel"
+		victory_target_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		victory_target_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		victory_target_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		victory_target_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		victory_target_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		victory_target_layer.add_child(victory_target_label)
+		victory_target_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+
 func _start_victory_target_shake() -> void:
-	if target_value == null:
+	_ensure_victory_target_layer()
+	if victory_target_label == null:
 		return
 	if victory_target_tween != null and victory_target_tween.is_valid():
 		victory_target_tween.kill()
 	await get_tree().process_frame
-	if target_value == null or not is_instance_valid(target_value):
+	if victory_target_label == null or not is_instance_valid(victory_target_label):
 		return
-	target_value.pivot_offset = target_value.size * 0.5
-	target_value.rotation = 0.0
-	target_value.scale = Vector2.ONE
+	victory_target_label.pivot_offset = victory_target_label.size * 0.5
+	victory_target_label.rotation = 0.0
+	victory_target_label.scale = Vector2.ONE
 	victory_target_tween = create_tween()
 	victory_target_tween.set_loops()
-	victory_target_tween.tween_property(target_value, "rotation", deg_to_rad(-1.4), 0.52).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	victory_target_tween.parallel().tween_property(target_value, "scale", Vector2(1.04, 1.04), 0.52).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	victory_target_tween.tween_property(target_value, "rotation", deg_to_rad(1.4), 0.72).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	victory_target_tween.parallel().tween_property(target_value, "scale", Vector2(1.0, 1.0), 0.72).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	victory_target_tween.tween_property(target_value, "rotation", 0.0, 0.46).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	victory_target_tween.tween_property(victory_target_label, "rotation", deg_to_rad(-1.4), 0.52).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	victory_target_tween.parallel().tween_property(victory_target_label, "scale", Vector2(1.04, 1.04), 0.52).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	victory_target_tween.tween_property(victory_target_label, "rotation", deg_to_rad(1.4), 0.72).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	victory_target_tween.parallel().tween_property(victory_target_label, "scale", Vector2(1.0, 1.0), 0.72).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	victory_target_tween.tween_property(victory_target_label, "rotation", 0.0, 0.46).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 
 func _apply_style() -> void:
@@ -282,6 +328,7 @@ func _apply_style() -> void:
 	var card_style := _make_flat_box(Color(0.04, 0.085, 0.075, 0.98), Color(0.22, 0.37, 0.20, 1.0), 2, 6)
 	for panel in [target_score_panel, current_score_panel, core_combo_panel, action_panel, resource_panel]:
 		panel.add_theme_stylebox_override("panel", card_style)
+	_ensure_victory_target_layer()
 	formula_panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	current_score_box.add_theme_stylebox_override("panel", _make_flat_box(Color(0.12, 0.17, 0.16, 1.0), Color(0.27, 0.36, 0.33, 1.0), 2, 8))
 	for panel in [hand_stat_panel, reroll_stat_panel, money_stat_panel, battle_stat_panel, max_battle_stat_panel]:
@@ -816,12 +863,14 @@ func _fit_target_value_font_size() -> void:
 
 
 func _fit_victory_target_font_size() -> void:
-	if target_value == null or target_score_panel == null:
+	if victory_target_label == null or target_score_panel == null:
 		return
 	var available_width := target_score_panel.size.x - 42.0
+	if victory_target_layer != null and victory_target_layer.size.x > 0.0:
+		available_width = victory_target_layer.size.x - 42.0
 	if available_width <= 0.0:
-		available_width = target_value.size.x
-	_fit_label_to_width(target_value, available_width, 56, 34)
+		available_width = victory_target_label.size.x
+	_fit_label_to_width(victory_target_label, available_width, 56, 30)
 
 
 func _remaining_hands(state: BattleHudState) -> int:

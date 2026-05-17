@@ -3,6 +3,7 @@ class_name DebugForgeRewardSmokeTest
 
 
 const BattleController = preload("res://scripts/runtime/BattleController.gd")
+const DieState = preload("res://scripts/core/dice/DieState.gd")
 const ForgeOperationDef = preload("res://scripts/data_defs/ForgeOperationDef.gd")
 const ForgePieceDef = preload("res://scripts/data_defs/ForgePieceDef.gd")
 const ForgeService = preload("res://scripts/rules/forge/ForgeService.gd")
@@ -106,7 +107,7 @@ func _all_dice_have_six_faces(run_state: RunState) -> bool:
 
 func _all_dice_are_standard_d6(run_state: RunState) -> bool:
 	for die in run_state.dice:
-		if die.face_count != 6 or die.body_id != &"standard":
+		if die.face_count != 6 or DieState.normalize_body_id(die.body_id) != DieState.BODY_STANDARD:
 			return false
 	return true
 

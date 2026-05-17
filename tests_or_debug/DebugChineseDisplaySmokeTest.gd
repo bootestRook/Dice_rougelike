@@ -7,6 +7,7 @@ const DisplayNames = preload("res://scripts/ui/DisplayNames.gd")
 const FaceState = preload("res://scripts/core/dice/FaceState.gd")
 const RewardGenerator = preload("res://scripts/rules/reward/RewardGenerator.gd")
 const RolledFace = preload("res://scripts/core/dice/RolledFace.gd")
+const RichTextHighlighter = preload("res://scripts/ui/RichTextHighlighter.gd")
 const ScoreContext = preload("res://scripts/core/scoring/ScoreContext.gd")
 const ScoreEngine = preload("res://scripts/rules/scoring/ScoreEngine.gd")
 const ScoreResult = preload("res://scripts/core/scoring/ScoreResult.gd")
@@ -42,7 +43,21 @@ func _init() -> void:
 	all_passed = _check("body display", DisplayNames.body_name(&"standard") == "标准骰胚") and all_passed
 	all_passed = _check("legacy glass maps to burst ornament display", DisplayNames.ornament_name(&"glass") == "爆裂面饰") and all_passed
 	all_passed = _check("legacy steel maps to stay ornament display", DisplayNames.ornament_name(&"steel") == "留场面饰") and all_passed
+	all_passed = _check("mult ornament effect uses Chinese multiplier", DisplayNames.ornament_effect_text(&"orn_mult").contains("+4 倍率") and not DisplayNames.ornament_effect_text(&"orn_mult").contains("Mult")) and all_passed
+	all_passed = _check("holo ornament effect uses Chinese multiplier", DisplayNames.ornament_effect_text(&"orn_holo").contains("+10 倍率") and not DisplayNames.ornament_effect_text(&"orn_holo").contains("Mult")) and all_passed
+	all_passed = _check("holo forge reward description uses Chinese multiplier", str(TranslationServer.translate(&"AUTO.TEXT.E70A3C6E22B1")).contains("+10 倍率") and not str(TranslationServer.translate(&"AUTO.TEXT.E70A3C6E22B1")).contains("Mult")) and all_passed
+	all_passed = _check("lucky ornament coin chance uses 6 percent", DisplayNames.ornament_effect_text(&"orn_lucky").contains("6% 获得 +20 金币") and not DisplayNames.ornament_effect_text(&"orn_lucky").contains("1/15")) and all_passed
+	all_passed = _check("lucky forge reward description uses 6 percent", str(TranslationServer.translate(&"AUTO.TEXT.E699B4E7996F")).contains("6% 获得 +20 金币") and not str(TranslationServer.translate(&"AUTO.TEXT.E699B4E7996F")).contains("1/15")) and all_passed
+	all_passed = _check("lucky forge part description uses 6 percent", str(TranslationServer.translate(&"FORGE_PART.ORNAMENT_LUCKY.DESC")).contains("6% 获得 +20 金币") and not str(TranslationServer.translate(&"FORGE_PART.ORNAMENT_LUCKY.DESC")).contains("1/15")) and all_passed
+	all_passed = _check("stay ornament effect is final multiplier x2", DisplayNames.ornament_effect_text(&"orn_stay").contains("终倍率 ×2") and not DisplayNames.ornament_effect_text(&"orn_stay").contains("+2")) and all_passed
+	all_passed = _check("stay forge reward description is final multiplier x2", str(TranslationServer.translate(&"AUTO.TEXT.A74D96EFFD75")).contains("终倍率 ×2") and not str(TranslationServer.translate(&"AUTO.TEXT.A74D96EFFD75")).contains("+2")) and all_passed
 	all_passed = _check("red mark display", DisplayNames.mark_name(&"red") == "红印") and all_passed
+	all_passed = _check("purple mark text uses die face wording", DisplayNames.mark_effect_text(&"purple").contains("每个骰面每场战斗最多生成 1 次") and not DisplayNames.mark_effect_text(&"purple").contains("物理面")) and all_passed
+	all_passed = _check("gold mark effect has normalized coin punctuation", DisplayNames.mark_effect_text(&"gold").contains("+1 金币") and not DisplayNames.mark_effect_text(&"gold").contains("+1金币")) and all_passed
+	all_passed = _check("score rich text highlights mult keyword and number", _rich_text_contains("+10 倍率", "[color=#00ff00]+10[/color] [color=#a36b00]倍率[/color]")) and all_passed
+	all_passed = _check("score rich text highlights xmult keyword and symbol number", _rich_text_contains("终倍率 ×2", "[color=#a36b00]终倍率[/color] [color=#00ff00]×2[/color]")) and all_passed
+	all_passed = _check("score rich text highlights chips keyword and number", _rich_text_contains("+50 基础战力", "[color=#00ff00]+50[/color] [color=#a36b00]基础战力[/color]")) and all_passed
+	all_passed = _check("score rich text does not highlight multiplier ornament name", RichTextHighlighter.score_text_to_bbcode("倍率面饰：+4 倍率").begins_with("倍率面饰：")) and all_passed
 
 	print("PASS: DebugChineseDisplaySmokeTest" if all_passed else "FAIL: DebugChineseDisplaySmokeTest")
 	print("--- DebugChineseDisplaySmokeTest: end ---")
@@ -72,7 +87,7 @@ func _make_roll(die_index: int, face_index: int, pip: int) -> RolledFace:
 
 
 func _contains_internal_token(text: String) -> bool:
-	for token in ["ornament_", "mark_", "material_", "rune_", "upgrade_", "xmult", "chips", "mult", "stable", "burst", "reroll"]:
+	for token in ["ornament_", "mark_", "material_", "rune_", "upgrade_", "xmult", "XMult", "chips", "mult", "Mult", "stable", "burst", "reroll"]:
 		if text.contains(token):
 			return true
 	return false
@@ -83,6 +98,14 @@ func _contains_removed_visible_terms(text: String) -> bool:
 		if text.contains(term):
 			return true
 	return false
+
+
+func _rich_text_contains(input_text: String, expected: String) -> bool:
+	var actual := RichTextHighlighter.score_text_to_bbcode(input_text)
+	if not actual.contains(expected):
+		print("RichTextHighlighter expected: %s" % [expected])
+		print("RichTextHighlighter actual: %s" % [actual])
+	return actual.contains(expected)
 
 
 func _check(label: String, passed: bool) -> bool:

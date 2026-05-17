@@ -25,7 +25,7 @@ func set_roll(new_die_index: int, new_face_index: int, new_face: FaceState, new_
 	face_index = new_face_index
 	die = new_die
 	if die != null:
-		die_id = die.id
+		die_id = die.die_id if die.die_id != &"" else die.id
 	else:
 		die_id = StringName("die_%d" % [die_index])
 	face_instance_id = make_face_instance_id(die_id, die_index, face_index)

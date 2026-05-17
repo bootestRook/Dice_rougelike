@@ -3,6 +3,7 @@ class_name DieViewData
 
 
 const DisplayNames = preload("res://scripts/ui/DisplayNames.gd")
+const DieState = preload("res://scripts/core/dice/DieState.gd")
 const FaceViewData = preload("res://scripts/ui/battle/view_models/FaceViewData.gd")
 
 
@@ -36,7 +37,7 @@ func setup_from_die(
 
 	die_id = die.id
 	face_count = int(die.face_count)
-	body_id = die.body_id
+	body_id = DieState.normalize_body_id(die.body_id)
 	body_name = DisplayNames.body_name(body_id)
 
 	for face_index in range(die.faces.size()):

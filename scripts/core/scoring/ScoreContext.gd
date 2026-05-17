@@ -35,6 +35,9 @@ var rerolls_used: int = 0
 var coins_delta: int = 0
 var score_events: Array[Dictionary] = []
 var wild_effective_pips: Dictionary = {}
+var rerolled_die_ids_this_round: Dictionary = {}
+var body_triggered_flags_this_round: Dictionary = {}
+var body_triggered_flags_this_battle: Dictionary = {}
 var rng = null
 var is_preview: bool = false
 var defer_runtime_mutations: bool = false
@@ -67,6 +70,9 @@ func clear() -> void:
 	coins_delta = 0
 	score_events.clear()
 	wild_effective_pips.clear()
+	rerolled_die_ids_this_round.clear()
+	body_triggered_flags_this_round.clear()
+	body_triggered_flags_this_battle.clear()
 	rng = null
 	is_preview = false
 	defer_runtime_mutations = false

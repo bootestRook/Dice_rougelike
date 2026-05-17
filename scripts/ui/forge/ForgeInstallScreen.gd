@@ -6,6 +6,7 @@ const ForgePieceDef = preload("res://scripts/data_defs/ForgePieceDef.gd")
 const DisplayNames = preload("res://scripts/ui/DisplayNames.gd")
 const ForgeService = preload("res://scripts/rules/forge/ForgeService.gd")
 const GameFlowController = preload("res://scripts/runtime/GameFlowController.gd")
+const RichTextHighlighter = preload("res://scripts/ui/RichTextHighlighter.gd")
 const RunState = preload("res://scripts/core/battle/RunState.gd")
 
 
@@ -15,9 +16,9 @@ var piece: ForgePieceDef = null
 var forge_service := ForgeService.new()
 var selected_die_index: int = -1
 var selected_face_index: int = -1
-var target_label: Label = null
-var install_preview_label: Label = null
-var warning_label: Label = null
+var target_label: RichTextLabel = null
+var install_preview_label: RichTextLabel = null
+var warning_label: RichTextLabel = null
 var confirm_install_button: Button = null
 var face_buttons: Dictionary = {}
 
@@ -60,7 +61,7 @@ func _build_view() -> void:
 
 	root.add_child(_make_text_label(str(TranslationServer.translate(&"AUTO.TEXT.B6CF819FA0AC")), 28, Color(0.95, 0.92, 0.84)))
 	root.add_child(_make_text_label(str(TranslationServer.translate(&"AUTO.TEXT.56B08BE6F8EA")), 16, Color(0.78, 0.86, 0.78)))
-	root.add_child(_make_text_label(_piece_text(), 15, Color(0.86, 0.86, 0.8)))
+	root.add_child(_make_piece_info_panel())
 
 	var dice_row := HBoxContainer.new()
 	dice_row.add_theme_constant_override("separation", 10)
@@ -105,10 +106,20 @@ func _make_die_panel(die_index: int) -> Control:
 	return panel
 
 
-func _piece_text() -> String:
+func _make_piece_info_panel() -> Control:
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 6)
+	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	if piece == null:
-		return str(TranslationServer.translate(&"AUTO.TEXT.0E689E7F4286"))
-	return piece.get_display_text()
+		box.add_child(_make_text_label(str(TranslationServer.translate(&"AUTO.TEXT.0E689E7F4286")), 15, Color(0.86, 0.86, 0.8)))
+		return box
+
+	box.add_child(_make_text_label(piece.get_display_name(), 16, Color(0.96, 0.88, 0.62)))
+	box.add_child(_make_rich_text_label(piece.get_description(), 15, Color(0.86, 0.86, 0.8)))
+	box.add_child(_make_text_label(str(TranslationServer.translate(&"AUTO.TEXT.6DB5DF72B910")) % [piece.get_rarity_display_name()], 14, Color(0.72, 0.82, 0.92)))
+	box.add_child(_make_text_label(str(TranslationServer.translate(&"AUTO.TEXT.ABAAFC3C7A71")) % [piece.get_tags_display_text()], 14, Color(0.78, 0.88, 0.72)))
+	box.add_child(_make_rich_text_label(piece.get_effect_text(), 14, Color(0.84, 0.84, 0.78)))
+	return box
 
 
 func _format_face_button(face_index: int, face) -> String:
@@ -158,7 +169,7 @@ func _make_install_preview_panel() -> Control:
 
 	box.add_child(_make_text_label(str(TranslationServer.translate(&"AUTO.TEXT.9F0F3B3AEC00")), 18, Color(0.95, 0.88, 0.66)))
 
-	target_label = _make_text_label("", 15, Color(0.88, 0.88, 0.8))
+	target_label = _make_rich_text_label("", 15, Color(0.88, 0.88, 0.8))
 	box.add_child(target_label)
 
 	var detail_row := HBoxContainer.new()
@@ -171,7 +182,7 @@ func _make_install_preview_panel() -> Control:
 	preview_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	detail_row.add_child(preview_scroll)
 
-	install_preview_label = _make_text_label("", 14, Color(0.9, 0.88, 0.8))
+	install_preview_label = _make_rich_text_label("", 14, Color(0.9, 0.88, 0.8))
 	install_preview_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	preview_scroll.add_child(install_preview_label)
 
@@ -180,7 +191,7 @@ func _make_install_preview_panel() -> Control:
 	warning_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	detail_row.add_child(warning_scroll)
 
-	warning_label = _make_text_label("", 14, Color(0.95, 0.78, 0.58))
+	warning_label = _make_rich_text_label("", 14, Color(0.95, 0.78, 0.58))
 	warning_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	warning_scroll.add_child(warning_label)
 
@@ -198,33 +209,33 @@ func _refresh_install_preview() -> void:
 		return
 
 	if piece == null:
-		target_label.text = str(TranslationServer.translate(&"AUTO.TEXT.4C9A59CFBD20"))
-		install_preview_label.text = str(TranslationServer.translate(&"AUTO.TEXT.2E03906910DE"))
-		warning_label.text = ""
+		_set_rich_text(target_label, str(TranslationServer.translate(&"AUTO.TEXT.4C9A59CFBD20")))
+		_set_rich_text(install_preview_label, str(TranslationServer.translate(&"AUTO.TEXT.2E03906910DE")))
+		_set_rich_text(warning_label, "")
 		_update_confirm_button()
 		return
 
 	var piece_name := piece.get_display_name()
 	if selected_die_index < 0 or selected_face_index < 0:
-		target_label.text = str(TranslationServer.translate(&"AUTO.TEXT.97D68D60CCD1")) % [piece_name]
-		install_preview_label.text = str(TranslationServer.translate(&"AUTO.TEXT.C44738A97251"))
-		warning_label.text = str(TranslationServer.translate(&"AUTO.TEXT.C0469EBB56C8"))
+		_set_rich_text(target_label, str(TranslationServer.translate(&"AUTO.TEXT.97D68D60CCD1")) % [piece_name])
+		_set_rich_text(install_preview_label, str(TranslationServer.translate(&"AUTO.TEXT.C44738A97251")))
+		_set_rich_text(warning_label, str(TranslationServer.translate(&"AUTO.TEXT.C0469EBB56C8")))
 		_update_confirm_button()
 		return
 
 	var face = _selected_face()
-	target_label.text = str(TranslationServer.translate(&"AUTO.TEXT.A211180FE768")) % [
+	_set_rich_text(target_label, str(TranslationServer.translate(&"AUTO.TEXT.A211180FE768")) % [
 		piece_name,
 		selected_die_index + 1,
 		selected_face_index + 1,
-	]
-	install_preview_label.text = forge_service.get_install_preview_text(piece, face)
+	])
+	_set_rich_text(install_preview_label, forge_service.get_install_preview_text(piece, face))
 
 	var warning_text := forge_service.get_install_warning_text(piece, face)
 	if warning_text == "":
-		warning_label.text = str(TranslationServer.translate(&"AUTO.TEXT.D88E4EABA242"))
+		_set_rich_text(warning_label, str(TranslationServer.translate(&"AUTO.TEXT.D88E4EABA242")))
 	else:
-		warning_label.text = str(TranslationServer.translate(&"AUTO.TEXT.59C606C9E3EF")) % [warning_text]
+		_set_rich_text(warning_label, str(TranslationServer.translate(&"AUTO.TEXT.59C606C9E3EF")) % [warning_text])
 
 	_update_confirm_button()
 
@@ -275,6 +286,17 @@ func _apply_label_theme(label: Label, font_size: int, color: Color) -> void:
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", color)
+
+
+func _make_rich_text_label(text: String, font_size: int, color: Color) -> RichTextLabel:
+	var label := RichTextLabel.new()
+	RichTextHighlighter.setup_rich_label(label, text, font_size, color)
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	return label
+
+
+func _set_rich_text(label: RichTextLabel, text: String) -> void:
+	RichTextHighlighter.set_rich_text(label, text)
 
 
 func _clear_view() -> void:

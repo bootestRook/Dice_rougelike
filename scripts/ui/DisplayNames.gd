@@ -2,6 +2,9 @@ extends RefCounted
 class_name DisplayNames
 
 
+const DieState = preload("res://scripts/core/dice/DieState.gd")
+
+
 static func combo_name(id: StringName) -> String:
 	match id:
 		&"scatter", &"SCATTER", &"high_card":
@@ -153,21 +156,25 @@ static func rarity_name(id: StringName) -> String:
 
 
 static func body_name(id: StringName) -> String:
-	match id:
-		&"", &"none":
-			return str(TranslationServer.translate(&"AUTO.TEXT.72077749F794"))
-		&"standard":
+	if id == &"" or id == &"none":
+		return str(TranslationServer.translate(&"AUTO.TEXT.72077749F794"))
+	match DieState.normalize_body_id(id):
+		DieState.BODY_STANDARD:
 			return str(TranslationServer.translate(&"AUTO.TEXT.42C63776B3C2"))
-		&"iron":
+		DieState.BODY_IRON:
 			return str(TranslationServer.translate(&"AUTO.TEXT.FE35ED0F6706"))
-		&"glass":
+		DieState.BODY_GLASS:
 			return str(TranslationServer.translate(&"AUTO.TEXT.DB1E908DDAAB"))
-		&"biased":
+		DieState.BODY_BIASED:
 			return str(TranslationServer.translate(&"AUTO.TEXT.46CDBD4B9F31"))
-		&"hollow":
+		DieState.BODY_HOLLOW:
 			return str(TranslationServer.translate(&"AUTO.TEXT.33C12FCEA8E6"))
-		&"mirror":
+		DieState.BODY_MIRROR:
 			return str(TranslationServer.translate(&"AUTO.TEXT.A542B7CCA535"))
+		DieState.BODY_CRACKED:
+			return "裂纹骰胚"
+		DieState.BODY_MERCHANT:
+			return "商人骰胚"
 		_:
 			return str(id)
 
@@ -330,8 +337,8 @@ static func die_summary(die) -> String:
 	var face_count := int(die.face_count)
 	if face_count <= 0:
 		face_count = die.faces.size()
-	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.6B93A4FA0C5A")) % [body_name(die.body_id)])
-	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.F1D9231A4F77")) % [face_count])
+	lines.append("面数：D%d" % [face_count])
+	lines.append("骰胚：%s" % [body_name(die.body_id)])
 
 	for face_index in range(die.faces.size()):
 		var face = die.faces[face_index]
@@ -456,6 +463,20 @@ static func log_text(key: StringName, args: Dictionary = {}) -> String:
 			return str(TranslationServer.translate(&"AUTO.TEXT.FC3405B20424")) % [_format_multiplier_arg(args, "xmult", 2.0)]
 		&"LOG.ORNAMENT_BURST_BREAK":
 			return str(TranslationServer.translate(&"AUTO.TEXT.5C8EA2E7B281"))
+		&"LOG.BODY_IRON":
+			var iron_text := "铁质骰胚触发：+%d 基础战力" % [int(args.get("chips", 0))]
+			var iron_mult := int(args.get("mult", 0))
+			if iron_mult > 0:
+				iron_text = "%s / +%d 倍率" % [iron_text, iron_mult]
+			return iron_text
+		&"LOG.BODY_HOLLOW":
+			return "空心骰胚触发：+%d 基础战力 / +%d 倍率" % [int(args.get("chips", 0)), int(args.get("mult", 0))]
+		&"LOG.BODY_MIRROR":
+			return "镜面骰胚触发：面饰额外触发"
+		&"LOG.BODY_CRACKED_ABSORB":
+			return "裂纹吸收：取消爆裂破碎"
+		&"LOG.BODY_MERCHANT":
+			return "商人骰胚触发：金币额外 +%d" % [int(args.get("coins", 0))]
 		&"LOG.MARK_RED_RETRIGGER":
 			return str(TranslationServer.translate(&"AUTO.TEXT.FB21BA85CACD"))
 		&"LOG.MARK_BLUE_GENERATE":

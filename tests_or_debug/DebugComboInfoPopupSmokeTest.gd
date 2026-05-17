@@ -30,6 +30,8 @@ func _init() -> void:
 	var rows_container = popup.get_node_or_null("%RowsContainer") if popup != null else null
 	all_passed = _check("骰型窗口显示全部基础骰型行", rows_container != null and rows_container.get_child_count() >= 8) and all_passed
 
+	all_passed = _check("header formula columns align with row formula columns", _header_formula_columns_align(popup)) and all_passed
+
 	var return_button := popup.get_node_or_null("%ReturnButton") as Control if popup != null else null
 	all_passed = _check("返回按钮存在", return_button != null) and all_passed
 	if return_button != null:
@@ -73,6 +75,34 @@ func _is_dice_info_popup_visible(battle_screen: Node) -> bool:
 		return false
 	var popup = dice_bench_area.get("popup")
 	return popup != null and popup.visible
+
+
+func _header_formula_columns_align(popup: Control) -> bool:
+	if popup == null:
+		return false
+	var header_chips := popup.get_node_or_null("%HeaderChipsLabel") as Control
+	var header_x := popup.get_node_or_null("%HeaderXLabel") as Control
+	var header_mult := popup.get_node_or_null("%HeaderMultLabel") as Control
+	var rows_container = popup.get_node_or_null("%RowsContainer")
+	if header_chips == null or header_x == null or header_mult == null:
+		return false
+	if rows_container == null or rows_container.get_child_count() <= 0:
+		return false
+	var first_row := rows_container.get_child(0)
+	var row_chips := first_row.get_node_or_null("%ChipsBadge") as Control
+	var row_x := first_row.get_node_or_null("%XLabel") as Control
+	var row_mult := first_row.get_node_or_null("%MultBadge") as Control
+	if row_chips == null or row_x == null or row_mult == null:
+		return false
+	return (
+		_centers_align(header_chips, row_chips)
+		and _centers_align(header_x, row_x)
+		and _centers_align(header_mult, row_mult)
+	)
+
+
+func _centers_align(a: Control, b: Control) -> bool:
+	return absf(a.get_global_rect().get_center().x - b.get_global_rect().get_center().x) <= 0.5
 
 
 func _find_node_by_name(root_node: Node, node_name: String) -> Node:

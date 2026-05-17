@@ -2,6 +2,9 @@ extends Resource
 class_name DiceVisualLibrary
 
 
+const DieState = preload("res://scripts/core/dice/DieState.gd")
+
+
 @export var fallback_die_texture: Texture2D = null
 @export var body_textures: Dictionary = {}
 @export var placeholder_body_textures: Array[Texture2D] = []
@@ -29,11 +32,16 @@ var _loaded_placeholder_body_textures: Array[Texture2D] = []
 
 
 func get_body_texture(body_id: StringName) -> Texture2D:
-	return _get_texture(body_textures, body_id, _get_fallback_die_texture())
+	var texture := _get_texture(body_textures, body_id, null)
+	if texture != null:
+		return texture
+	return _get_texture(body_textures, _legacy_body_id(body_id), _get_fallback_die_texture())
 
 
 func get_custom_body_texture(body_id: StringName, _die_index: int = -1) -> Texture2D:
 	var texture := _get_texture(body_textures, body_id, null)
+	if texture == null:
+		texture = _get_texture(body_textures, _legacy_body_id(body_id), null)
 	if texture != null:
 		return texture
 	if fallback_die_texture != null:
@@ -99,12 +107,19 @@ func get_die_style(selected: bool, rerollable: bool, scored: bool, disabled: boo
 
 
 func get_body_color(body_id: StringName) -> Color:
-	return _get_color(body_colors, body_id, default_body_color)
+	var color = _get_color_value(body_colors, body_id)
+	if color is Color:
+		return color
+	return _get_color(body_colors, _legacy_body_id(body_id), default_body_color)
 
 
 func get_top_color(body_id: StringName) -> Color:
 	var key := StringName("%s_top" % [str(body_id)])
-	return _get_color(body_colors, key, default_top_color)
+	var color = _get_color_value(body_colors, key)
+	if color is Color:
+		return color
+	var legacy_key := StringName("%s_top" % [str(_legacy_body_id(body_id))])
+	return _get_color(body_colors, legacy_key, default_top_color)
 
 
 func get_pip_color(pip: int) -> Color:
@@ -131,12 +146,19 @@ func _get_texture(source: Dictionary, id: StringName, fallback: Texture2D) -> Te
 
 
 func _get_color(source: Dictionary, id: StringName, fallback: Color) -> Color:
+	var color = _get_color_value(source, id)
+	if color is Color:
+		return color
+	return fallback
+
+
+func _get_color_value(source: Dictionary, id: StringName):
 	if source.has(id) and source[id] is Color:
 		return source[id]
 	var string_id := str(id)
 	if source.has(string_id) and source[string_id] is Color:
 		return source[string_id]
-	return fallback
+	return null
 
 
 func _legacy_ornament_id(id: StringName) -> StringName:
@@ -177,6 +199,28 @@ func _legacy_mark_id(id: StringName) -> StringName:
 			return &"gold"
 		&"mark_white":
 			return &"white"
+		_:
+			return id
+
+
+func _legacy_body_id(id: StringName) -> StringName:
+	match DieState.normalize_body_id(id):
+		DieState.BODY_STANDARD:
+			return &"standard"
+		DieState.BODY_IRON:
+			return &"iron"
+		DieState.BODY_GLASS:
+			return &"glass"
+		DieState.BODY_BIASED:
+			return &"biased"
+		DieState.BODY_HOLLOW:
+			return &"hollow"
+		DieState.BODY_MIRROR:
+			return &"mirror"
+		DieState.BODY_CRACKED:
+			return &"cracked"
+		DieState.BODY_MERCHANT:
+			return &"merchant"
 		_:
 			return id
 

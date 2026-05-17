@@ -15,7 +15,7 @@ func _init() -> void:
 	var all_passed := true
 	all_passed = _check("creates 6 dice", dice.size() == 6) and all_passed
 	all_passed = _check("normal d6 has face_count 6", dice[0].face_count == 6) and all_passed
-	all_passed = _check("normal d6 has standard body", dice[0].body_id == &"standard") and all_passed
+	all_passed = _check("normal d6 has standard body", DieState.normalize_body_id(dice[0].body_id) == DieState.BODY_STANDARD) and all_passed
 	all_passed = _check("normal d6 has 6 weights", dice[0].face_weights.size() == 6) and all_passed
 
 	var original := dice[0]
@@ -30,7 +30,7 @@ func _init() -> void:
 	all_passed = _check("clone mutation does not change original pip", original.faces[0].pip == 1) and all_passed
 	all_passed = _check("clone mutation does not change original ornament", original.faces[0].ornament_id == &"orn_none") and all_passed
 	all_passed = _check("clone mutation does not change original mark", original.faces[0].mark_id == &"mark_none") and all_passed
-	all_passed = _check("clone mutation does not change original die fields", original.body_id == &"standard" and original.face_count == 6 and original.face_weights[0] == 1) and all_passed
+	all_passed = _check("clone mutation does not change original die fields", DieState.normalize_body_id(original.body_id) == DieState.BODY_STANDARD and original.face_count == 6 and original.face_weights[0] == 1) and all_passed
 
 	print("Original: %s" % [_describe_die(original)])
 	print("Clone: %s" % [_describe_die(cloned)])

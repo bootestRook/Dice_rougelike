@@ -8,6 +8,14 @@ const FaceState = preload("res://scripts/core/dice/FaceState.gd")
 const VALID_FACE_COUNTS := [4, 6, 8]
 const LOW_DOMAIN_PIPS := [1, 2, 3, 4]
 const HIGH_DOMAIN_PIPS := [5, 6, 7, 8]
+const BODY_STANDARD := &"body_standard"
+const BODY_IRON := &"body_iron"
+const BODY_GLASS := &"body_glass"
+const BODY_BIASED := &"body_biased"
+const BODY_HOLLOW := &"body_hollow"
+const BODY_MIRROR := &"body_mirror"
+const BODY_CRACKED := &"body_cracked"
+const BODY_MERCHANT := &"body_merchant"
 const PIP_ID_TO_VALUE := {
 	&"pip_1": 1,
 	&"pip_2": 2,
@@ -20,9 +28,10 @@ const PIP_ID_TO_VALUE := {
 }
 
 
+var die_id: StringName = &""
 var id: StringName = &""
 var face_count: int = 6
-var body_id: StringName = &"standard"
+var body_id: StringName = BODY_STANDARD
 var face_weights: Array[int] = []
 var faces: Array[FaceState] = []
 
@@ -30,8 +39,9 @@ var faces: Array[FaceState] = []
 static func create_normal_d6(id: StringName) -> DieState:
 	var die := DieState.new()
 	die.id = id
+	die.die_id = id
 	die.face_count = 6
-	die.body_id = &"standard"
+	die.body_id = BODY_STANDARD
 	die.face_weights.clear()
 
 	for pip in range(1, 7):
@@ -48,6 +58,52 @@ static func is_valid_pip(value: int) -> bool:
 
 static func is_valid_face_count(value: int) -> bool:
 	return VALID_FACE_COUNTS.has(value)
+
+
+static func normalize_body_id(value: StringName) -> StringName:
+	match value:
+		&"", &"none", &"standard", BODY_STANDARD:
+			return BODY_STANDARD
+		&"iron", BODY_IRON:
+			return BODY_IRON
+		&"glass", BODY_GLASS:
+			return BODY_GLASS
+		&"biased", BODY_BIASED:
+			return BODY_BIASED
+		&"hollow", BODY_HOLLOW:
+			return BODY_HOLLOW
+		&"mirror", BODY_MIRROR:
+			return BODY_MIRROR
+		&"cracked", BODY_CRACKED:
+			return BODY_CRACKED
+		&"merchant", BODY_MERCHANT:
+			return BODY_MERCHANT
+		_:
+			return value
+
+
+static func get_legal_pips(value: int) -> Array[int]:
+	var result: Array[int] = []
+	match value:
+		4:
+			result.append_array([1, 2, 3, 4])
+		6:
+			result.append_array([1, 2, 3, 4, 5, 6])
+		8:
+			result.append_array([1, 2, 3, 4, 5, 6, 7, 8])
+		_:
+			push_error("Unsupported face_count: %s" % [value])
+	return result
+
+
+static func clamp_or_reset_pip_for_face_count(pip: int, value: int) -> int:
+	if pip <= value:
+		return pip
+	if value == 4:
+		return 4
+	if value == 6:
+		return 6
+	return pip
 
 
 static func pip_id_to_value(pip_id: StringName) -> int:
@@ -94,6 +150,8 @@ func get_shape_errors() -> PackedStringArray:
 			continue
 		if not is_valid_pip(face.pip):
 			errors.append("faces[%d].pip is out of range: %d" % [face_index, face.pip])
+		elif not get_legal_pips(face_count).has(face.pip):
+			errors.append("faces[%d].pip is illegal for D%d: %d" % [face_index, face_count, face.pip])
 		if not FaceState.is_valid_face_ornament_id(face.ornament_id):
 			errors.append("faces[%d].ornament_id cannot be installed on a face: %s" % [face_index, str(face.ornament_id)])
 
@@ -102,9 +160,10 @@ func get_shape_errors() -> PackedStringArray:
 
 func clone() -> DieState:
 	var cloned := DieState.new()
+	cloned.die_id = die_id if die_id != &"" else id
 	cloned.id = id
 	cloned.face_count = face_count
-	cloned.body_id = body_id
+	cloned.body_id = normalize_body_id(body_id)
 	for weight in face_weights:
 		cloned.face_weights.append(weight)
 

@@ -1307,9 +1307,6 @@ func _should_show_floating_text(text: String) -> bool:
 	var stripped := text.strip_edges()
 	if stripped == "":
 		return false
-	for index in range(stripped.length()):
-		if stripped.unicode_at(index) > 127:
-			return false
 	if stripped.begins_with("+") or stripped.begins_with("-"):
 		return true
 	if stripped.begins_with("X") or stripped.begins_with("x"):
