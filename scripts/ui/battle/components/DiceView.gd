@@ -13,12 +13,29 @@ signal die_hovered(index: int)
 signal die_info_requested(index: int)
 
 
+const HOVER_SHAKE_SECONDS := 0.18
+const HOVER_RESPONSE_SPEED := 18.0
+const HOVER_RETURN_SPEED := 14.0
+const HOVER_PRESS_STRENGTH := 0.055
+const HOVER_CENTER_PRESS := 0.028
+const HOVER_SHIFT_PIXELS := 5.0
+const HOVER_TILT_RADIANS := 0.045
+const HOVER_SHAKE_PIXELS := 4.5
+const HOVER_SHAKE_TILT_RADIANS := 0.055
+
+
 var die_data: DieViewData = null
 var info_focused: bool = false
 var style_config: BattleUiStyleConfig = null
 var icon_library: BattleIconLibrary = null
 var dice_visual_library: DiceVisualLibrary = null
+var hover_effect_active: bool = false
+var hover_shake_time_left: float = 0.0
+var hover_target_position: Vector2 = Vector2.ZERO
+var hover_target_scale: Vector2 = Vector2.ONE
+var hover_target_rotation: float = 0.0
 
+@onready var visual_root: Control = $VisualRoot
 @onready var title_label: Label = %TitleLabel
 @onready var body_icon: TextureRect = %BodyIcon
 @onready var pip_icon: TextureRect = %PipIcon
@@ -35,7 +52,49 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_set_descendant_mouse_filter(self, Control.MOUSE_FILTER_IGNORE)
 	_apply_empty_button_style()
-	mouse_entered.connect(_emit_hovered)
+	mouse_entered.connect(_on_mouse_entered)
+	mouse_exited.connect(_on_mouse_exited)
+	set_process(false)
+
+
+func _process(delta: float) -> void:
+	if visual_root == null:
+		set_process(false)
+		return
+
+	var should_press := hover_effect_active and _can_play_hover_effect()
+	if should_press:
+		_update_hover_press_targets()
+	else:
+		hover_effect_active = false
+		hover_shake_time_left = 0.0
+		hover_target_position = Vector2.ZERO
+		hover_target_scale = Vector2.ONE
+		hover_target_rotation = 0.0
+
+	var shake_position := Vector2.ZERO
+	var shake_rotation := 0.0
+	if hover_shake_time_left > 0.0:
+		hover_shake_time_left = maxf(0.0, hover_shake_time_left - delta)
+		var progress := 1.0 - hover_shake_time_left / HOVER_SHAKE_SECONDS
+		var damp := 1.0 - progress
+		shake_position = Vector2(
+			sin(progress * TAU * 3.0) * HOVER_SHAKE_PIXELS * damp,
+			cos(progress * TAU * 4.0) * HOVER_SHAKE_PIXELS * 0.45 * damp
+		)
+		shake_rotation = sin(progress * TAU * 4.5) * HOVER_SHAKE_TILT_RADIANS * damp
+
+	var target_position := hover_target_position + shake_position
+	var target_rotation := hover_target_rotation + shake_rotation
+	var speed := HOVER_RESPONSE_SPEED if should_press else HOVER_RETURN_SPEED
+	var blend := clampf(delta * speed, 0.0, 1.0)
+	visual_root.position = visual_root.position.lerp(target_position, blend)
+	visual_root.scale = visual_root.scale.lerp(hover_target_scale, blend)
+	visual_root.rotation = lerpf(visual_root.rotation, target_rotation, blend)
+
+	if not should_press and hover_shake_time_left <= 0.0 and _hover_transform_is_at_rest():
+		_reset_hover_transform()
+		set_process(false)
 
 
 func _gui_input(event: InputEvent) -> void:
@@ -50,6 +109,9 @@ func _gui_input(event: InputEvent) -> void:
 			accept_event()
 			if die_data != null:
 				die_info_requested.emit(die_data.die_index)
+	elif event is InputEventMouseMotion:
+		if hover_effect_active and _can_play_hover_effect():
+			_update_hover_press_targets()
 
 
 func render(
@@ -77,6 +139,7 @@ func render(
 	if die_data == null:
 		disabled = true
 		_clear_visuals()
+		_stop_hover_effect(true)
 		return
 
 	title_label.text = str(TranslationServer.translate(&"AUTO.TEXT.F5833D7A3D75")) % [die_data.die_index + 1]
@@ -85,11 +148,19 @@ func render(
 	disabled = die_data.disabled
 	tooltip_text = "%s / D%d" % [die_data.body_name, die_data.face_count]
 	_refresh_visuals()
+	if not _can_play_hover_effect():
+		_stop_hover_effect(false)
 
 
 func set_info_focused(value: bool) -> void:
 	info_focused = value
 	_refresh_visuals()
+
+
+func get_magic_fx_global_rect() -> Rect2:
+	if body_icon != null and body_icon.visible:
+		return body_icon.get_global_rect()
+	return get_global_rect()
 
 
 func _refresh_visuals() -> void:
@@ -202,6 +273,76 @@ func _emit_pressed() -> void:
 func _emit_hovered() -> void:
 	if die_data != null:
 		die_hovered.emit(die_data.die_index)
+
+
+func _on_mouse_entered() -> void:
+	_emit_hovered()
+	if not _can_play_hover_effect():
+		return
+	hover_effect_active = true
+	hover_shake_time_left = HOVER_SHAKE_SECONDS
+	_update_hover_press_targets()
+	set_process(true)
+
+
+func _on_mouse_exited() -> void:
+	_stop_hover_effect(false)
+
+
+func _can_play_hover_effect() -> bool:
+	return die_data != null and die_data.rerollable and not die_data.disabled and not disabled
+
+
+func _stop_hover_effect(immediate: bool) -> void:
+	hover_effect_active = false
+	hover_shake_time_left = 0.0
+	hover_target_position = Vector2.ZERO
+	hover_target_scale = Vector2.ONE
+	hover_target_rotation = 0.0
+	if immediate:
+		_reset_hover_transform()
+		set_process(false)
+	else:
+		set_process(true)
+
+
+func _update_hover_press_targets() -> void:
+	if visual_root == null:
+		return
+	var visual_size := visual_root.size
+	if visual_size.x <= 0.0 or visual_size.y <= 0.0:
+		return
+
+	var local_mouse := get_local_mouse_position()
+	var normalized := Vector2(
+		clampf(local_mouse.x / visual_size.x, 0.0, 1.0) * 2.0 - 1.0,
+		clampf(local_mouse.y / visual_size.y, 0.0, 1.0) * 2.0 - 1.0
+	)
+	var horizontal_press := absf(normalized.x) * HOVER_PRESS_STRENGTH
+	var vertical_press := absf(normalized.y) * HOVER_PRESS_STRENGTH
+	var center_press := (1.0 - clampf(normalized.length() / sqrt(2.0), 0.0, 1.0)) * HOVER_CENTER_PRESS
+	hover_target_scale = Vector2(
+		1.0 - center_press - horizontal_press + vertical_press * 0.36,
+		1.0 - center_press - vertical_press + horizontal_press * 0.36
+	)
+	hover_target_position = -normalized * HOVER_SHIFT_PIXELS
+	hover_target_rotation = -normalized.x * HOVER_TILT_RADIANS
+
+
+func _hover_transform_is_at_rest() -> bool:
+	return (
+		visual_root.position.distance_to(Vector2.ZERO) <= 0.08
+		and visual_root.scale.distance_to(Vector2.ONE) <= 0.002
+		and absf(visual_root.rotation) <= 0.002
+	)
+
+
+func _reset_hover_transform() -> void:
+	if visual_root == null:
+		return
+	visual_root.position = Vector2.ZERO
+	visual_root.scale = Vector2.ONE
+	visual_root.rotation = 0.0
 
 
 func _set_descendant_mouse_filter(node: Node, filter: int) -> void:

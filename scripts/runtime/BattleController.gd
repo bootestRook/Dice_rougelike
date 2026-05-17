@@ -77,7 +77,7 @@ func start_battle(config: BattleConfig = null, run_state: RunState = null) -> vo
 			dice = run_state.dice
 			active_config.dice_count = dice.size()
 			active_config.target_score = run_state.get_target_score()
-			if run_state.is_final_battle():
+			if run_state.is_boss_battle():
 				active_config.is_boss_battle = true
 		else:
 			dice = _create_normal_dice(active_config.dice_count)
@@ -169,6 +169,7 @@ func request_settle_selected(wild_effective_pips: Dictionary = {}, selected_die_
 	var log_count_before_pending_marks := result.logs.size()
 	_consume_pending_mark_events(result)
 	_append_pending_mark_logs_to_trace(trace, result, log_count_before_pending_marks)
+	_clear_selection_after_resolution_request()
 	score_preview_changed.emit(null)
 	return trace
 
@@ -575,6 +576,16 @@ func _clear_pending_resolution() -> void:
 	pending_resolution_trace = null
 	pending_resolution_result = null
 	pending_resolution_context = null
+
+
+func _clear_selection_after_resolution_request() -> void:
+	if hand_state == null:
+		return
+	if hand_state.selected_count() <= 0:
+		return
+	hand_state.clear_selection()
+	selection_changed.emit(0)
+	dice_changed.emit(get_current_rolls())
 
 
 func _mark_battle_finished(victory: bool, result: ScoreResult) -> void:

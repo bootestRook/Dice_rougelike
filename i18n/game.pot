@@ -870,6 +870,15 @@ msgstr ""
 msgid "UI.SCORE_SUMMARY.PRIMARY_COMBO"
 msgstr ""
 
+msgid "UI.MARK_EFFECT_COMPACT.BLUE"
+msgstr ""
+
+msgid "UI.MARK_EFFECT_COMPACT.PURPLE"
+msgstr ""
+
+msgid "UI.MARK_EFFECT_COMPACT.GOLD"
+msgstr ""
+
 msgid "UI.SCORE_SUMMARY.CONTAINED_PATTERNS"
 msgstr ""
 

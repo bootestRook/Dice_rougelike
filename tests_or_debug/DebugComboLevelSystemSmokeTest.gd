@@ -20,6 +20,7 @@ func _init() -> void:
 	var all_passed := true
 	all_passed = _check_scatter_naming() and all_passed
 	all_passed = _check_straight_merge() and all_passed
+	all_passed = _check_combo_value_table() and all_passed
 	all_passed = _check_level_formula() and all_passed
 	all_passed = _check_no_condition_tag_upgrades_in_module() and all_passed
 	all_passed = _check_blue_mark_combo_upgrade_item() and all_passed
@@ -49,11 +50,36 @@ func _check_straight_merge() -> bool:
 	var passed := (
 		result.combo_id == &"straight"
 		and result.level == 1
-		and result.chips_bonus == 80
-		and result.mult == 8
+		and result.chips_bonus == 55
+		and result.mult == 5
 		and DisplayNames.combo_name(result.combo_id) == "顺子"
 	)
-	return _check("straight Lv1 is +80/x8 and displays 顺子", passed)
+	return _check("straight Lv1 is +55/x5 and displays 顺子", passed)
+
+
+func _check_combo_value_table() -> bool:
+	var expected := {
+		&"scatter": [5, 1, 5, 1],
+		&"pair": [10, 2, 6, 1],
+		&"two_pair": [18, 2, 10, 1],
+		&"three_kind": [25, 3, 12, 1],
+		&"full_house": [40, 4, 16, 2],
+		&"four_kind": [65, 6, 26, 2],
+		&"straight": [55, 5, 22, 2],
+		&"five_kind": [120, 10, 40, 3],
+	}
+	var passed := true
+	for combo_id in expected.keys():
+		var def := ComboUpgradeCatalog.get_def(combo_id)
+		var values: Array = expected[combo_id]
+		var combo_passed := (
+			def.lv1_chips_bonus == values[0]
+			and def.lv1_mult == values[1]
+			and def.chips_per_level == values[2]
+			and def.mult_per_level == values[3]
+		)
+		passed = _check("%s combo value table matches rebalance" % [str(combo_id)], combo_passed) and passed
+	return passed
 
 
 func _check_level_formula() -> bool:
@@ -61,10 +87,10 @@ func _check_level_formula() -> bool:
 	var passed := (
 		result.combo_id == &"four_kind"
 		and result.level == 3
-		and result.chips_bonus == 130
-		and result.mult == 14
+		and result.chips_bonus == 117
+		and result.mult == 10
 	)
-	return _check("four_kind Lv3 formula is +130/x14", passed)
+	return _check("four_kind Lv3 formula is +117/x10", passed)
 
 
 func _check_no_condition_tag_upgrades_in_module() -> bool:
@@ -132,12 +158,12 @@ func _check_score_engine_uses_run_combo_levels_once() -> bool:
 	var passed := (
 		result.primary_combo == &"four_kind"
 		and result.combo_level == 3
-		and result.combo_chips_bonus == 130
-		and result.combo_mult == 14
+		and result.combo_chips_bonus == 117
+		and result.combo_mult == 10
 		and result.scored_point_sum == 25
-		and result.chips == 155
-		and result.mult == 14
-		and result.final_score == 2170
+		and result.chips == 142
+		and result.mult == 10
+		and result.final_score == 1420
 	)
 	return _check("ScoreEngine reads run combo level for base chips/mult", passed)
 

@@ -76,12 +76,15 @@ func on_battle_lost() -> void:
 	run_result_requested.emit(run_state)
 
 
-func choose_reward(piece: ForgePieceDef) -> void:
+func choose_reward(reward) -> void:
 	if run_state == null:
 		push_warning("GameFlowController.choose_reward without run_state.")
 		return
+	var piece := reward as ForgePieceDef
 	if piece == null:
-		push_warning("GameFlowController.choose_reward called with null piece.")
+		if _choose_direct_item_reward(reward):
+			return
+		push_warning("GameFlowController.choose_reward called with unsupported reward.")
 		return
 
 	if run_state.apply_combo_upgrade_piece(piece):
@@ -98,28 +101,63 @@ func choose_reward(piece: ForgePieceDef) -> void:
 	forge_install_requested.emit(piece)
 
 
-func install_pending_piece(die_index: int, face_index: int) -> void:
-	if run_state == null:
-		push_warning("GameFlowController.install_pending_piece without run_state.")
-		return
-	if run_state.pending_forge_piece == null:
-		push_warning("GameFlowController.install_pending_piece without pending piece.")
-		return
-	if die_index < 0 or die_index >= run_state.dice.size():
-		push_warning("GameFlowController.install_pending_piece die_index out of range: %d" % [die_index])
-		return
-
-	var piece := run_state.pending_forge_piece
-	if not forge_service.can_apply_piece(piece, run_state.dice[die_index], face_index):
-		push_warning("GameFlowController.install_pending_piece cannot apply piece.")
-		return
-
-	forge_service.apply_piece(piece, run_state.dice[die_index], face_index)
-	run_state.record_installed_piece(piece, die_index, face_index)
+func _choose_direct_item_reward(reward) -> bool:
+	var item_id := _reward_item_id(reward)
+	if item_id == &"":
+		return false
+	if not run_state.add_item_to_inventory_or_pending(item_id):
+		push_warning("GameFlowController.choose_reward could not add item reward: %s" % [str(item_id)])
+		return false
+	run_state.last_reward_choices.clear()
 	run_state.pending_forge_piece = null
 	run_state.advance_battle()
 	run_state_changed.emit(run_state)
 	start_next_battle()
+	return true
+
+
+func _reward_item_id(reward) -> StringName:
+	if reward is StringName:
+		return reward
+	if reward is String:
+		return StringName(reward)
+	var object := reward as Object
+	if object == null:
+		return &""
+	for property in object.get_property_list():
+		if str(property.get("name", "")) != "id":
+			continue
+		var raw_id = object.get("id")
+		if raw_id == null:
+			return &""
+		return StringName(str(raw_id))
+	return &""
+
+
+func install_pending_piece(die_index: int, face_index: int) -> bool:
+	if run_state == null:
+		push_warning("GameFlowController.install_pending_piece without run_state.")
+		return false
+	if run_state.pending_forge_piece == null:
+		push_warning("GameFlowController.install_pending_piece without pending piece.")
+		return false
+	if die_index < 0 or die_index >= run_state.dice.size():
+		push_warning("GameFlowController.install_pending_piece die_index out of range: %d" % [die_index])
+		return false
+
+	var piece := run_state.pending_forge_piece
+	if not forge_service.can_apply_piece(piece, run_state.dice[die_index], face_index):
+		push_warning("GameFlowController.install_pending_piece cannot apply piece.")
+		return false
+
+	forge_service.apply_piece(piece, run_state.dice[die_index], face_index)
+	run_state.record_installed_piece(piece, die_index, face_index)
+	run_state.pending_forge_piece = null
+	run_state.last_reward_choices.clear()
+	run_state.advance_battle()
+	run_state_changed.emit(run_state)
+	start_next_battle()
+	return true
 
 
 func record_hand_score(score_or_result, hand_number: int = 0) -> void:

@@ -31,10 +31,12 @@ func _init() -> void:
 	controller.toggle_select(0)
 	controller.toggle_select(2)
 	var selected_before_score := _selected_indices(controller.get_current_rolls())
-	controller.score_selected()
+	var trace = controller.request_settle_selected()
+	all_passed = _check("settle request clears selected state", trace != null and _selected_indices(controller.get_current_rolls()).is_empty()) and all_passed
+	controller.commit_pending_resolution()
 	var result = captured_result
-	all_passed = _check("score_selected produces result", result != null) and all_passed
-	all_passed = _check("score_selected only used selected dice", result != null and result.logs.size() > 0 and selected_before_score == [0, 2]) and all_passed
+	all_passed = _check("settle commit produces result", result != null) and all_passed
+	all_passed = _check("settle only used selected dice", result != null and result.logs.size() > 0 and selected_before_score == [0, 2]) and all_passed
 	all_passed = _check("controller did not require locked state", true) and all_passed
 
 	controller.free()

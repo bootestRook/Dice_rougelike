@@ -19,6 +19,7 @@ func _init() -> void:
 	all_passed = _check("starting run has 6 dice", flow.get_run_state().dice.size() == 6) and all_passed
 	all_passed = _check("battle_index starts at 0", flow.get_run_state().battle_index == 0) and all_passed
 	all_passed = _check_target_curve() and all_passed
+	all_passed = _check_boss_schedule() and all_passed
 
 	flow.on_battle_won()
 	all_passed = _check("non-final win generates 3 rewards", flow.get_run_state().last_reward_choices.size() == 3) and all_passed
@@ -66,14 +67,53 @@ func _check_target_curve() -> bool:
 	var run_state := RunState.new()
 	run_state.setup_new_run()
 
-	var expected_scores: Array[int] = [1000, 1150, 1400, 1750, 2300]
+	var expected_scores: Array[int] = [
+		850,
+		1100,
+		1400,
+		1900,
+		2200,
+		3000,
+		3900,
+		5200,
+		6000,
+		7800,
+		10200,
+		13500,
+		15500,
+		20000,
+		26000,
+		34500,
+		39000,
+		50000,
+		64000,
+		85000,
+	]
 	var all_passed := true
+	all_passed = _check("run has 20 battles", run_state.max_battles == expected_scores.size()) and all_passed
 	for index in range(expected_scores.size()):
 		if index > 0:
 			run_state.advance_battle()
 		all_passed = _check(
 			"battle %d target_score == %d" % [index + 1, expected_scores[index]],
 			run_state.get_target_score() == expected_scores[index]
+		) and all_passed
+	return all_passed
+
+
+func _check_boss_schedule() -> bool:
+	var run_state := RunState.new()
+	run_state.setup_new_run()
+
+	var boss_battles := [4, 8, 12, 16, 20]
+	var all_passed := true
+	for index in range(run_state.max_battles):
+		run_state.battle_index = index
+		var battle_number := index + 1
+		var expected_boss := boss_battles.has(battle_number)
+		all_passed = _check(
+			"battle %d boss flag == %s" % [battle_number, str(expected_boss)],
+			run_state.is_boss_battle() == expected_boss
 		) and all_passed
 	return all_passed
 

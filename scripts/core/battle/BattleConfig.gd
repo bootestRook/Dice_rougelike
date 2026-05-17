@@ -6,7 +6,7 @@ var dice_count: int = 6
 var max_selected_dice: int = 5
 var rerolls_per_hand: int = 2
 var hands_per_battle: int = 4
-var target_score: int = 1000
+var target_score: int = 850
 var is_boss_battle: bool = false
 
 

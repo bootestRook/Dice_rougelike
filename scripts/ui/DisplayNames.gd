@@ -280,6 +280,18 @@ static func mark_effect_text(id: StringName) -> String:
 			return str(TranslationServer.translate(&"AUTO.TEXT.6F29AFF3D8BB"))
 
 
+static func mark_compact_effect_text(id: StringName) -> String:
+	match _legacy_mark_id(id):
+		&"mark_blue", &"blue":
+			return str(TranslationServer.translate(&"UI.MARK_EFFECT_COMPACT.BLUE"))
+		&"mark_purple", &"purple":
+			return str(TranslationServer.translate(&"UI.MARK_EFFECT_COMPACT.PURPLE"))
+		&"mark_gold", &"gold":
+			return str(TranslationServer.translate(&"UI.MARK_EFFECT_COMPACT.GOLD"))
+		_:
+			return ""
+
+
 static func face_summary(face) -> String:
 	if face == null:
 		return str(TranslationServer.translate(&"AUTO.TEXT.9FC761A95140"))

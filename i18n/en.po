@@ -14,7 +14,7 @@ msgid "UI.MAIN.VERSION_TITLE"
 msgstr "v0.1 Playtest Prototype"
 
 msgid "UI.MAIN.VERSION_BODY"
-msgstr "- 5 linear battles\n- Forge piece after each non-final victory\n- Dice face effects enabled\n- No map / shop / boss yet"
+msgstr "- 20 linear battles\n- Boss gates at battles 4 / 8 / 12 / 16 / 20\n- Bosses currently have no special skills\n- Forge piece after each non-final victory"
 
 msgid "UI.MAIN.START"
 msgstr "Start Run"
@@ -611,13 +611,13 @@ msgid "FORGE_PART.MARK_BLUE.NAME"
 msgstr "Blue Imprint"
 
 msgid "FORGE_PART.MARK_BLUE.DESC"
-msgstr "When rolled but not selected, +3 Mult."
+msgstr "When rolled but not scored, +2 Mult and generate a primary combo upgrade."
 
 msgid "FORGE_PART.MARK_PURPLE.NAME"
 msgstr "Purple Imprint"
 
 msgid "FORGE_PART.MARK_PURPLE.DESC"
-msgstr "When this die appears after being rerolled this hand, it gives an extra reward."
+msgstr "When selected for reroll, generate 1 random forge item; when scored after reroll, +4 Mult."
 
 msgid "FORGE_PART.MARK_GOLD.NAME"
 msgstr "Gold Mark"
@@ -871,6 +871,15 @@ msgstr "Primary combo: {combo}"
 msgid "UI.SCORE_SUMMARY.PRIMARY_COMBO"
 msgstr "Primary combo: {combo}"
 
+msgid "UI.MARK_EFFECT_COMPACT.BLUE"
+msgstr "+2 Mult; generate primary combo upgrade"
+
+msgid "UI.MARK_EFFECT_COMPACT.PURPLE"
+msgstr "+4 Mult; generate random forge item"
+
+msgid "UI.MARK_EFFECT_COMPACT.GOLD"
+msgstr "+1 Coin"
+
 msgid "UI.SCORE_SUMMARY.CONTAINED_PATTERNS"
 msgstr "Contained structures: {patterns}"
 
@@ -1055,7 +1064,7 @@ msgid "AUTO.TEXT.04E30DB10857"
 msgstr "战力面贴"
 
 msgid "AUTO.TEXT.05A8FE4EDC14"
-msgstr "给一个骰面添加紫印。该骰子本手被重投后出现时，触发额外收益。"
+msgstr "给一个骰面添加紫印。被选择重投时生成 1 个随机铸骰件；重投后出现并结算时 +4 倍率。"
 
 msgid "AUTO.TEXT.093DDBA0EF5F"
 msgstr "金辉面贴"
@@ -1106,7 +1115,7 @@ msgid "AUTO.TEXT.135E3DF5C753"
 msgstr "包含结构：%s"
 
 msgid "AUTO.TEXT.147E1AD7C52E"
-msgstr "该骰子本手被重投后出现时，触发额外收益。"
+msgstr "被选择重投时生成 1 个随机铸骰件；重投后出现并结算时，+4 倍率。"
 
 msgid "AUTO.TEXT.14DDE613ACF4"
 msgstr "被结算时，+30 基础战力。"
@@ -1157,7 +1166,7 @@ msgid "AUTO.TEXT.1BD96BB61B7F"
 msgstr "物品负片强化，不属于骰面面饰。"
 
 msgid "AUTO.TEXT.1CA08BEA94D3"
-msgstr "给一个骰面安装金辉面饰。投出但未结算且本手成功结算后 +3 金币。"
+msgstr "给一个骰面安装金辉面饰。投出但未结算且本回合成功结算后 +3 金币。"
 
 msgid "AUTO.TEXT.1D11D52F2398"
 msgstr "将 1 个选中骰面安装为通配面饰。"
@@ -1358,7 +1367,7 @@ msgid "AUTO.TEXT.3F474E4F22E5"
 msgstr "将最多 3 个选中骰面随机改为合法高域点数；D4 骰面不可作为目标。"
 
 msgid "AUTO.TEXT.3FDF9FEFC7A8"
-msgstr "给一个骰面添加蓝印。该面投出但未结算时触发留场收益。"
+msgstr "给一个骰面添加蓝印。该面投出但未结算时 +2 倍率，并生成主骰型升级件。"
 
 msgid "AUTO.TEXT.402052AA36CD"
 msgstr "确认安装"
@@ -1436,7 +1445,7 @@ msgid "AUTO.TEXT.4FEED9B9B772"
 msgstr "效果：无"
 
 msgid "AUTO.TEXT.50D8E8DFB926"
-msgstr "投出但未结算且本手成功结算后，+3 金币。"
+msgstr "投出但未结算且本回合成功结算后，+3 金币。"
 
 msgid "AUTO.TEXT.513FE245BC0D"
 msgstr "负片强化"
@@ -1448,7 +1457,7 @@ msgid "AUTO.TEXT.51C2E5D71139"
 msgstr "面 %d"
 
 msgid "AUTO.TEXT.51C417CBC24C"
-msgstr "触发时提供资源。当前版本暂未启用经济系统。"
+msgstr "该骰面被结算并计分时，+1 金币。"
 
 msgid "AUTO.TEXT.51F26FB0850B"
 msgstr "将一个骰面替换为 6，并添加红印。"
@@ -1544,7 +1553,7 @@ msgid "AUTO.TEXT.64867FADD655"
 msgstr "爆裂破碎"
 
 msgid "AUTO.TEXT.648BA894F98E"
-msgstr "投出但未结算时，触发留场收益。"
+msgstr "投出但未结算时，+2 倍率，并生成主骰型升级件。"
 
 msgid "AUTO.TEXT.64A75BA1FD38"
 msgstr "效果：%s"
@@ -1652,7 +1661,7 @@ msgid "AUTO.TEXT.79C2CA946E6B"
 msgstr "红印"
 
 msgid "AUTO.TEXT.7BB3EF323E38"
-msgstr "为每个万能面饰选择本手临时点数"
+msgstr "为每个万能面饰选择本回合临时点数"
 
 msgid "AUTO.TEXT.7C5B19F7D25E"
 msgstr "没有当前局状态。"
@@ -1670,7 +1679,7 @@ msgid "AUTO.TEXT.7EA823B27E5C"
 msgstr "被结算时，分别判定 20% 获得 +20 Mult、1/15 获得 +20 金币。"
 
 msgid "AUTO.TEXT.7F03BFBC43B6"
-msgstr "本手结算动画、分数日志和触发文本会显示在这里。"
+msgstr "本回合结算动画、分数日志和触发文本会显示在这里。"
 
 msgid "AUTO.TEXT.7F31376752FF"
 msgstr "印记"
@@ -2021,7 +2030,7 @@ msgid "AUTO.TEXT.CE8CE780E5BD"
 msgstr "基础战力总数 × 基础倍率"
 
 msgid "AUTO.TEXT.CF5532730BC5"
-msgstr "万能面饰：原始 %d，本手视作 %d"
+msgstr "万能面饰：原始 %d，本回合视作 %d"
 
 msgid "AUTO.TEXT.CFBB1A03E628"
 msgstr "白印：免疫"
@@ -2147,7 +2156,7 @@ msgid "AUTO.TEXT.EBBDEA8ACEFD"
 msgstr "负面印记。当前版本仅用于测试或净化。"
 
 msgid "AUTO.TEXT.EDE4E88DE3D0"
-msgstr "若该骰面本手最终投出但未被选择结算，本手结束时生成主骰型升级件。"
+msgstr "若该骰面本回合最终投出但未被选择结算，本回合结束时生成主骰型升级件。"
 
 msgid "AUTO.TEXT.EE01EF7E6EA2"
 msgstr "等待行动"

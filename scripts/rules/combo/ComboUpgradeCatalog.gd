@@ -42,14 +42,14 @@ static func has_combo(primary_combo_id: StringName) -> bool:
 
 static func get_all_defs() -> Array[ComboLevelDef]:
 	var defs: Array[ComboLevelDef] = []
-	defs.append(_make_def(&"combo_five_kind", str(TranslationServer.translate(&"AUTO.TEXT.7FDD1CDCF1BE")), FIVE_KIND, 1, 100, 15, 45, 4))
-	defs.append(_make_def(&"combo_straight", str(TranslationServer.translate(&"AUTO.TEXT.287EC954DA38")), STRAIGHT, 2, 80, 8, 40, 4))
-	defs.append(_make_def(&"combo_four_kind", str(TranslationServer.translate(&"AUTO.TEXT.267A5D4096BE")), FOUR_KIND, 3, 60, 8, 35, 3))
-	defs.append(_make_def(&"combo_full_house", str(TranslationServer.translate(&"AUTO.TEXT.66311348D7E0")), FULL_HOUSE, 4, 40, 5, 30, 2))
-	defs.append(_make_def(&"combo_three_kind", str(TranslationServer.translate(&"AUTO.TEXT.B1296780A94C")), THREE_KIND, 5, 30, 4, 25, 2))
-	defs.append(_make_def(&"combo_two_pair", str(TranslationServer.translate(&"AUTO.TEXT.4391622EE4DF")), TWO_PAIR, 6, 20, 3, 20, 1))
-	defs.append(_make_def(&"combo_pair", str(TranslationServer.translate(&"AUTO.TEXT.46216CA5837D")), PAIR, 7, 10, 2, 15, 1))
-	defs.append(_make_def(&"combo_scatter", str(TranslationServer.translate(&"AUTO.TEXT.EF4C86E15258")), SCATTER, 8, 5, 1, 10, 1))
+	defs.append(_make_def(&"combo_five_kind", str(TranslationServer.translate(&"AUTO.TEXT.7FDD1CDCF1BE")), FIVE_KIND, 1, 120, 10, 40, 3))
+	defs.append(_make_def(&"combo_straight", str(TranslationServer.translate(&"AUTO.TEXT.287EC954DA38")), STRAIGHT, 2, 55, 5, 22, 2))
+	defs.append(_make_def(&"combo_four_kind", str(TranslationServer.translate(&"AUTO.TEXT.267A5D4096BE")), FOUR_KIND, 3, 65, 6, 26, 2))
+	defs.append(_make_def(&"combo_full_house", str(TranslationServer.translate(&"AUTO.TEXT.66311348D7E0")), FULL_HOUSE, 4, 40, 4, 16, 2))
+	defs.append(_make_def(&"combo_three_kind", str(TranslationServer.translate(&"AUTO.TEXT.B1296780A94C")), THREE_KIND, 5, 25, 3, 12, 1))
+	defs.append(_make_def(&"combo_two_pair", str(TranslationServer.translate(&"AUTO.TEXT.4391622EE4DF")), TWO_PAIR, 6, 18, 2, 10, 1))
+	defs.append(_make_def(&"combo_pair", str(TranslationServer.translate(&"AUTO.TEXT.46216CA5837D")), PAIR, 7, 10, 2, 6, 1))
+	defs.append(_make_def(&"combo_scatter", str(TranslationServer.translate(&"AUTO.TEXT.EF4C86E15258")), SCATTER, 8, 5, 1, 5, 1))
 	return defs
 
 
@@ -117,7 +117,7 @@ static func normalize_combo_id(combo_id: StringName) -> StringName:
 
 
 static func _scatter_def() -> ComboLevelDef:
-	return _make_def(&"combo_scatter", str(TranslationServer.translate(&"AUTO.TEXT.EF4C86E15258")), SCATTER, 8, 5, 1, 10, 1)
+	return _make_def(&"combo_scatter", str(TranslationServer.translate(&"AUTO.TEXT.EF4C86E15258")), SCATTER, 8, 5, 1, 5, 1)
 
 
 static func _make_def(

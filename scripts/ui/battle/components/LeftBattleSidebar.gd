@@ -25,6 +25,10 @@ var reroll_feedback_id: int = 0
 var money_feedback_id: int = 0
 var hand_count_tween: Tween = null
 var money_count_tween: Tween = null
+var victory_target_tween: Tween = null
+var victory_target_active: bool = false
+var victory_target_feedback_playing: bool = false
+var combo_header_frame: Control = null
 
 @onready var margin: MarginContainer = %SidebarMargin
 @onready var rows: VBoxContainer = %Rows
@@ -90,8 +94,10 @@ func render(state: BattleHudState) -> void:
 	if state == null:
 		return
 
-	target_value.text = _format_number(state.target_score)
-	reward_label.text = str(TranslationServer.translate(&"AUTO.TEXT.2091A36B7297")) % [state.reward_level]
+	if victory_target_active:
+		_apply_victory_target_display()
+	else:
+		_apply_normal_target_display(state)
 	current_score_value.text = _format_number(state.current_score)
 	combo_level_label.visible = false
 	if state.final_score_display_visible:
@@ -111,12 +117,77 @@ func render(state: BattleHudState) -> void:
 		combo_level_label.text = ""
 		combo_level_label.visible = false
 	_update_combo_label_min_widths()
+	var hand_changed_for_refresh := last_rendered_hand >= 0 and state.current_hand != last_rendered_hand
 	_set_formula_text(state)
 	_set_hand_counter_text(state.current_hand, state.max_hands)
-	_set_reroll_text(state.rerolls_left)
+	_set_reroll_text(state.rerolls_left, hand_changed_for_refresh)
 	battle_value.text = "1"
-	max_battle_value.text = str(state.max_battles)
+	max_battle_value.text = str(maxi(1, state.battle_number))
 	_set_money_text(state.money)
+	info_button.disabled = state.controls_locked
+	options_button.disabled = state.controls_locked
+
+
+func play_battle_victory_target_feedback() -> void:
+	if victory_target_active or victory_target_feedback_playing:
+		return
+	if not is_node_ready():
+		await ready
+	victory_target_feedback_playing = true
+	await _play_decrease_feedback(
+		target_score_panel,
+		"",
+		Color(1.0, 0.72, 0.02, 0.96),
+		Color(1.0, 0.92, 0.18, 1.0)
+	)
+	victory_target_feedback_playing = false
+	victory_target_active = true
+	_apply_victory_target_display()
+	_start_victory_target_shake()
+
+
+func play_battle_target_restore_feedback(state: BattleHudState) -> void:
+	if not is_node_ready():
+		await ready
+	if not victory_target_active and not victory_target_feedback_playing:
+		if state != null:
+			_apply_normal_target_display(state)
+		return
+	if victory_target_tween != null and victory_target_tween.is_valid():
+		victory_target_tween.kill()
+	victory_target_tween = null
+	if target_value != null:
+		target_value.rotation = 0.0
+		target_value.scale = Vector2.ONE
+	victory_target_feedback_playing = true
+	await _play_decrease_feedback(
+		target_score_panel,
+		"",
+		Color(1.0, 0.72, 0.02, 0.96),
+		Color(1.0, 0.92, 0.18, 1.0)
+	)
+	victory_target_feedback_playing = false
+	victory_target_active = false
+	if state != null:
+		_apply_normal_target_display(state)
+
+
+func is_battle_victory_target_active() -> bool:
+	return victory_target_active or victory_target_feedback_playing
+
+
+func clear_battle_victory_target_feedback() -> void:
+	victory_target_active = false
+	victory_target_feedback_playing = false
+	if victory_target_tween != null and victory_target_tween.is_valid():
+		victory_target_tween.kill()
+	victory_target_tween = null
+	if target_value != null:
+		target_value.rotation = 0.0
+		target_value.scale = Vector2.ONE
+	if target_score_panel != null:
+		target_score_panel.rotation = 0.0
+		target_score_panel.scale = Vector2.ONE
 
 
 func play_final_score_pop() -> void:
@@ -136,6 +207,65 @@ func play_final_score_pop() -> void:
 	if is_instance_valid(combo_value):
 		combo_value.scale = Vector2.ONE
 		combo_value.modulate.a = 1.0
+
+
+func _apply_normal_target_display(state: BattleHudState) -> void:
+	if target_hint != null:
+		target_hint.visible = true
+	if target_value != null:
+		target_value.visible = true
+		target_value.text = _format_number(state.target_score)
+		target_value.rotation = 0.0
+		target_value.scale = Vector2.ONE
+		target_value.remove_theme_font_override("font")
+		target_value.remove_theme_color_override("font_outline_color")
+		target_value.remove_theme_constant_override("outline_size")
+		if style_config != null:
+			style_config.apply_label(target_value, style_config.score_font_size, Color(1.0, 0.22, 0.20, 1.0))
+		_apply_target_value_layout()
+		call_deferred("_fit_target_value_font_size")
+	if reward_label != null:
+		reward_label.visible = true
+		reward_label.text = str(TranslationServer.translate(&"AUTO.TEXT.2091A36B7297")) % [state.reward_level]
+
+
+func _apply_victory_target_display() -> void:
+	if target_hint != null:
+		target_hint.visible = false
+	if reward_label != null:
+		reward_label.visible = false
+	if target_value == null:
+		return
+	target_value.visible = true
+	target_value.text = "战斗胜利"
+	if style_config != null:
+		style_config.apply_label(target_value, 56, Color(1.0, 0.82, 0.08, 1.0))
+	target_value.add_theme_font_override("font", _get_hand_current_font())
+	target_value.add_theme_color_override("font_outline_color", Color(0.20, 0.08, 0.0, 1.0))
+	target_value.add_theme_constant_override("outline_size", 4)
+	target_value.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	target_value.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	target_value.clip_text = false
+
+
+func _start_victory_target_shake() -> void:
+	if target_value == null:
+		return
+	if victory_target_tween != null and victory_target_tween.is_valid():
+		victory_target_tween.kill()
+	await get_tree().process_frame
+	if target_value == null or not is_instance_valid(target_value):
+		return
+	target_value.pivot_offset = target_value.size * 0.5
+	target_value.rotation = 0.0
+	target_value.scale = Vector2.ONE
+	victory_target_tween = create_tween()
+	victory_target_tween.set_loops()
+	victory_target_tween.tween_property(target_value, "rotation", deg_to_rad(-1.4), 0.52).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	victory_target_tween.parallel().tween_property(target_value, "scale", Vector2(1.04, 1.04), 0.52).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	victory_target_tween.tween_property(target_value, "rotation", deg_to_rad(1.4), 0.72).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	victory_target_tween.parallel().tween_property(target_value, "scale", Vector2(1.0, 1.0), 0.72).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	victory_target_tween.tween_property(target_value, "rotation", 0.0, 0.46).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 
 func _apply_style() -> void:
@@ -159,6 +289,7 @@ func _apply_style() -> void:
 	current_icon.texture = style_config.current_score_icon
 	current_icon.visible = current_icon.texture != null
 	current_icon.modulate = Color(1.0, 0.22, 0.20, 1.0)
+	_ensure_fixed_combo_header_frame()
 	_ensure_hand_counter_nodes()
 
 	style_config.apply_label(target_hint, 18, Color(0.95, 0.94, 0.86, 1.0))
@@ -166,11 +297,15 @@ func _apply_style() -> void:
 	style_config.apply_label(combo_title, style_config.title_font_size)
 	formula_title.visible = false
 	style_config.apply_label(target_value, style_config.score_font_size, Color(1.0, 0.22, 0.20, 1.0))
+	_apply_target_value_layout()
 	style_config.apply_label(reward_label, 20, Color(0.95, 0.94, 0.86, 1.0))
 	style_config.apply_label(current_score_value, 42, Color(0.95, 0.94, 0.86, 1.0))
 	style_config.apply_label(combo_value, 44, Color(1.0, 0.22, 0.20, 1.0))
 	style_config.apply_label(combo_level_label, 16, Color(0.95, 0.94, 0.86, 1.0))
 	combo_header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	combo_header_frame.custom_minimum_size = Vector2(0.0, 44.0)
+	combo_header_frame.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	combo_header_frame.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	combo_header.custom_minimum_size.y = 44
 	combo_header.alignment = BoxContainer.ALIGNMENT_CENTER
 	combo_value.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -265,6 +400,30 @@ func _update_combo_label_min_widths() -> void:
 		_set_label_minimum_width_to_text(combo_level_label, 6.0)
 	else:
 		combo_level_label.custom_minimum_size.x = 0.0
+
+
+func _ensure_fixed_combo_header_frame() -> void:
+	if combo_header == null:
+		return
+	if combo_header_frame != null:
+		return
+	var parent := combo_header.get_parent()
+	if parent == null:
+		return
+	var header_index := combo_header.get_index()
+	parent.remove_child(combo_header)
+	combo_header_frame = Control.new()
+	combo_header_frame.name = "ComboHeaderFrame"
+	combo_header_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	combo_header_frame.custom_minimum_size = Vector2(0.0, 44.0)
+	combo_header_frame.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	combo_header_frame.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	parent.add_child(combo_header_frame)
+	parent.move_child(combo_header_frame, header_index)
+	combo_header_frame.add_child(combo_header)
+	combo_header.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	combo_header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	combo_header.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
 
 func _set_label_minimum_width_to_text(label: Label, horizontal_padding: float) -> void:
@@ -393,7 +552,7 @@ func _set_money_text(money: int) -> void:
 	last_rendered_money = money
 
 
-func _set_reroll_text(rerolls: int) -> void:
+func _set_reroll_text(rerolls: int, hand_refreshed: bool = false) -> void:
 	if last_rendered_rerolls < 0:
 		last_rendered_rerolls = rerolls
 		reroll_value.text = str(rerolls)
@@ -412,6 +571,11 @@ func _set_reroll_text(rerolls: int) -> void:
 		reroll_feedback_id += 1
 		pending_reroll_target = rerolls
 		_play_reroll_decrease(last_rendered_rerolls - rerolls, rerolls, reroll_feedback_id)
+		return
+	if rerolls > last_rendered_rerolls or hand_refreshed:
+		reroll_feedback_id += 1
+		pending_reroll_target = rerolls
+		_play_reroll_refresh(rerolls, reroll_feedback_id)
 		return
 	reroll_value.text = str(rerolls)
 	last_rendered_rerolls = rerolls
@@ -435,7 +599,26 @@ func _play_reroll_decrease(amount: int, target_rerolls: int, feedback_id: int) -
 	reroll_value.text = str(target_rerolls)
 
 
-func _play_decrease_feedback(target_panel: Control, text: String) -> void:
+func _play_reroll_refresh(target_rerolls: int, feedback_id: int) -> void:
+	await _play_decrease_feedback(
+		reroll_stat_panel,
+		"",
+		Color(1.0, 0.72, 0.02, 0.96),
+		Color(1.0, 0.90, 0.18, 1.0)
+	)
+	if feedback_id != reroll_feedback_id:
+		return
+	pending_reroll_target = -1
+	last_rendered_rerolls = target_rerolls
+	reroll_value.text = str(target_rerolls)
+
+
+func _play_decrease_feedback(
+	target_panel: Control,
+	text: String,
+	fill_color: Color = Color(0.92, 0.05, 0.04, 0.96),
+	border_color: Color = Color(1.0, 0.32, 0.18, 1.0)
+) -> void:
 	if not is_node_ready():
 		await ready
 	if target_panel == null:
@@ -461,34 +644,38 @@ func _play_decrease_feedback(target_panel: Control, text: String) -> void:
 	fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fill.size = panel_size
 	fill.position = Vector2(-panel_size.x, 0.0)
-	fill.add_theme_stylebox_override("panel", _make_flat_box(Color(0.92, 0.05, 0.04, 0.96), Color(1.0, 0.32, 0.18, 1.0), 2, 7))
+	fill.add_theme_stylebox_override("panel", _make_flat_box(fill_color, border_color, 2, 7))
 	overlay.add_child(fill)
 
-	var floating := Label.new()
-	floating.text = text
-	floating.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	floating.size = panel_size
-	floating.position = Vector2.ZERO
-	floating.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	floating.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	overlay.add_child(floating)
-	if style_config != null:
-		style_config.apply_label(floating, 40, Color(1.0, 0.96, 0.92, 1.0))
-	floating.add_theme_font_override("font", _get_hand_current_font())
-	floating.add_theme_color_override("font_outline_color", Color(0.34, 0.0, 0.0, 1.0))
-	floating.add_theme_constant_override("outline_size", 4)
-	floating.pivot_offset = floating.size * 0.5
-	floating.scale = Vector2(0.62, 0.62)
-	floating.modulate.a = 0.0
+	var floating: Label = null
+	if text != "":
+		floating = Label.new()
+		floating.text = text
+		floating.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		floating.size = panel_size
+		floating.position = Vector2.ZERO
+		floating.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		floating.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		overlay.add_child(floating)
+		if style_config != null:
+			style_config.apply_label(floating, 40, Color(1.0, 0.96, 0.92, 1.0))
+		floating.add_theme_font_override("font", _get_hand_current_font())
+		floating.add_theme_color_override("font_outline_color", Color(0.34, 0.0, 0.0, 1.0))
+		floating.add_theme_constant_override("outline_size", 4)
+		floating.pivot_offset = floating.size * 0.5
+		floating.scale = Vector2(0.62, 0.62)
+		floating.modulate.a = 0.0
 
 	var tween := create_tween()
 	tween.tween_property(fill, "position:x", 0.0, 0.14).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tween.parallel().tween_property(floating, "scale", Vector2(1.28, 1.28), 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tween.parallel().tween_property(floating, "modulate:a", 1.0, 0.07)
+	if floating != null:
+		tween.parallel().tween_property(floating, "scale", Vector2(1.28, 1.28), 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tween.parallel().tween_property(floating, "modulate:a", 1.0, 0.07)
 	tween.tween_interval(0.08)
 	tween.tween_property(fill, "position:x", panel_size.x, 0.2).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
-	tween.parallel().tween_property(floating, "position:x", panel_size.x, 0.2).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
-	tween.parallel().tween_property(floating, "modulate:a", 0.0, 0.12).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	if floating != null:
+		tween.parallel().tween_property(floating, "position:x", panel_size.x, 0.2).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+		tween.parallel().tween_property(floating, "modulate:a", 0.0, 0.12).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
 	await tween.finished
 	if is_instance_valid(overlay):
 		overlay.queue_free()
@@ -544,9 +731,21 @@ func _apply_fixed_height(control: Control, height: int) -> void:
 func _apply_value_label_constraints() -> void:
 	for label in [target_value, reward_label, current_score_value, combo_value, combo_level_label, formula_chips_value, formula_mult_value, formula_xmult_value, formula_x_label, formula_xmult_label, hand_current_value, hand_separator_value, hand_total_value]:
 		_apply_single_line_label(label)
+	_apply_target_value_layout()
 	_apply_single_line_label(formula_value)
 	formula_value.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	formula_value.custom_minimum_size.y = style_config.score_font_size + 10
+
+
+func _apply_target_value_layout() -> void:
+	if target_value == null:
+		return
+	_apply_single_line_label(target_value)
+	target_value.custom_minimum_size.y = maxf(62.0, float(style_config.score_font_size + 12 if style_config != null else 62))
+	target_value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	target_value.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	target_value.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	target_value.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 
 
 func _apply_single_line_label(label: Label) -> void:
@@ -587,6 +786,15 @@ func _fit_formula_badge_font_sizes() -> void:
 	_fit_label_to_width(formula_chips_value, formula_chips_badge.size.x - 16.0, style_config.formula_badge_font_size, style_config.body_font_size)
 	_fit_label_to_width(formula_mult_value, formula_mult_badge.size.x - 16.0, style_config.formula_badge_font_size, style_config.body_font_size)
 	_fit_label_to_width(formula_xmult_value, formula_xmult_badge.size.x - 16.0, style_config.formula_badge_font_size, style_config.body_font_size)
+
+
+func _fit_target_value_font_size() -> void:
+	if style_config == null or target_value == null or target_score_panel == null:
+		return
+	var available_width := target_score_panel.size.x - 48.0
+	if available_width <= 0.0:
+		available_width = target_value.size.x
+	_fit_label_to_width(target_value, available_width, style_config.score_font_size, style_config.body_font_size)
 
 
 func _remaining_hands(state: BattleHudState) -> int:

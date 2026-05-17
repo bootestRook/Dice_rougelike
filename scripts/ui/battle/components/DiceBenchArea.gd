@@ -16,6 +16,8 @@ signal ornament_link_requested(id: StringName)
 signal mark_link_requested(id: StringName)
 signal reroll_pressed()
 signal score_pressed()
+signal install_face_selected(die_index: int, face_index: int)
+signal install_requested(die_index: int, face_index: int)
 
 
 var style_config: BattleUiStyleConfig = null
@@ -26,6 +28,7 @@ var dice_info_popup_scene: PackedScene = null
 var face_info_card_scene: PackedScene = null
 var current_state: BattleHudState = null
 var focused_die_index: int = 0
+var popup_die_index: int = -1
 var popup: Control = null
 var pending_info_die_index: int = -1
 var info_request_queued: bool = false
@@ -34,6 +37,10 @@ var highlighted_die_indices: Array[int] = []
 var display_die_order: Array[int] = []
 var dice_signature: String = ""
 var is_sorting_dice: bool = false
+var selection_counter_layer: Control = null
+var selection_counter_label: Label = null
+var install_mode_active: bool = false
+var install_piece_name: String = ""
 
 @onready var margin: MarginContainer = %BenchMargin
 @onready var title_label: Label = %TitleLabel
@@ -71,6 +78,8 @@ func _ready() -> void:
 	reroll_button.pressed.connect(func() -> void: reroll_pressed.emit())
 	organize_button.pressed.connect(_on_organize_pressed)
 	score_button.pressed.connect(func() -> void: score_pressed.emit())
+	_ensure_selection_counter()
+	_apply_selection_counter_style()
 	_apply_style()
 
 
@@ -81,8 +90,9 @@ func render(state: BattleHudState) -> void:
 
 	hint_label.text = "%s  |  %s" % [state.phase_text, state.status_text]
 	reroll_button.disabled = not state.can_reroll
-	organize_button.disabled = is_sorting_dice or _organize_disabled(state)
+	organize_button.disabled = install_mode_active or state.controls_locked or is_sorting_dice or _organize_disabled(state)
 	score_button.disabled = not state.can_score
+	_set_selection_counter_text(state)
 	var next_signature := _dice_order_signature(state)
 	if next_signature != dice_signature:
 		dice_signature = next_signature
@@ -97,7 +107,7 @@ func render(state: BattleHudState) -> void:
 
 
 func show_info_for_selected_or_focused() -> void:
-	if current_state == null or current_state.dice_results.is_empty():
+	if current_state == null or (current_state.controls_locked and not install_mode_active) or current_state.dice_results.is_empty():
 		return
 	var target_index := focused_die_index
 	if not current_state.selected_dice_indices.is_empty():
@@ -106,6 +116,8 @@ func show_info_for_selected_or_focused() -> void:
 
 
 func request_info_for_die(index: int) -> void:
+	if current_state != null and current_state.controls_locked and not install_mode_active:
+		return
 	pending_info_die_index = index
 	if info_request_queued:
 		return
@@ -136,10 +148,13 @@ func show_info_for_die(index: int) -> void:
 	if die_data == null:
 		return
 	focused_die_index = index
+	popup_die_index = index
 	_ensure_popup()
 	if popup == null:
 		return
 	popup.visible = true
+	if popup.has_method("set_install_context"):
+		popup.set_install_context(install_mode_active, install_piece_name)
 	if popup.has_method("render"):
 		popup.render(die_data)
 	_position_popup(die_data)
@@ -153,8 +168,22 @@ func hide_info() -> void:
 		popup.visible = false
 		if popup.has_method("clear_tail"):
 			popup.clear_tail()
+	popup_die_index = -1
 	_update_info_focus()
 	_update_viewing_title()
+
+
+func set_install_mode(enabled: bool, piece_name: String = "") -> void:
+	install_mode_active = enabled
+	install_piece_name = piece_name
+	if popup != null and popup.has_method("set_install_context"):
+		popup.set_install_context(install_mode_active, install_piece_name)
+		if popup.visible:
+			show_info_for_die(focused_die_index)
+
+
+func is_install_mode_active() -> bool:
+	return install_mode_active
 
 
 func is_info_visible() -> bool:
@@ -185,6 +214,8 @@ func _apply_style() -> void:
 	style_config.apply_button(score_button)
 	_position_dice_row_near_top()
 	_position_action_buttons()
+	_position_selection_counter()
+	_apply_selection_counter_style()
 	dice_row.add_theme_constant_override("separation", style_config.layout_gap)
 
 
@@ -229,6 +260,71 @@ func _position_action_buttons() -> void:
 	action_buttons_row.alignment = BoxContainer.ALIGNMENT_CENTER
 
 
+func _ensure_selection_counter() -> void:
+	if selection_counter_layer != null or bench_overlay == null:
+		return
+
+	selection_counter_layer = Control.new()
+	selection_counter_layer.name = "SelectionCounterLayer"
+	selection_counter_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	selection_counter_layer.visible = false
+	selection_counter_layer.z_index = 2
+	bench_overlay.add_child(selection_counter_layer)
+	_position_selection_counter()
+
+	selection_counter_label = Label.new()
+	selection_counter_label.name = "SelectionCounterLabel"
+	selection_counter_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	selection_counter_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	selection_counter_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	selection_counter_layer.add_child(selection_counter_label)
+	selection_counter_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+
+func _position_selection_counter() -> void:
+	if selection_counter_layer == null:
+		return
+	var counter_size := Vector2(230.0, 44.0)
+	selection_counter_layer.anchor_left = 1.0
+	selection_counter_layer.anchor_top = 0.0
+	selection_counter_layer.anchor_right = 1.0
+	selection_counter_layer.anchor_bottom = 0.0
+	selection_counter_layer.offset_left = -counter_size.x - 34.0
+	selection_counter_layer.offset_top = 62.0
+	selection_counter_layer.offset_right = -34.0
+	selection_counter_layer.offset_bottom = 62.0 + counter_size.y
+
+
+func _apply_selection_counter_style() -> void:
+	_ensure_selection_counter()
+	if selection_counter_label == null:
+		return
+	if style_config != null:
+		style_config.apply_label(selection_counter_label, style_config.body_font_size, Color(0.95, 0.94, 0.86, 1.0))
+	else:
+		selection_counter_label.add_theme_font_size_override("font_size", 22)
+		selection_counter_label.add_theme_color_override("font_color", Color(0.95, 0.94, 0.86, 1.0))
+	selection_counter_label.add_theme_color_override("font_outline_color", Color(0.02, 0.05, 0.04, 0.78))
+	selection_counter_label.add_theme_constant_override("outline_size", 3)
+	selection_counter_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	selection_counter_label.clip_text = true
+	selection_counter_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+
+
+func _set_selection_counter_text(state: BattleHudState) -> void:
+	_ensure_selection_counter()
+	if selection_counter_layer == null or selection_counter_label == null:
+		return
+	if state == null or state.max_selected_dice <= 0:
+		selection_counter_layer.visible = false
+		return
+	selection_counter_layer.visible = true
+	selection_counter_label.text = str(TranslationServer.translate(&"AUTO.TEXT.34EB0A73B9C4")) % [
+		state.selected_dice_indices.size(),
+		state.max_selected_dice,
+	]
+
+
 func _render_dice(dice: Array[DieViewData]) -> void:
 	_clear_children(dice_row)
 	for die_data in _ordered_dice(dice):
@@ -249,6 +345,8 @@ func _render_dice(dice: Array[DieViewData]) -> void:
 
 func _on_organize_pressed() -> void:
 	if current_state == null or is_sorting_dice:
+		return
+	if current_state.controls_locked:
 		return
 
 	var sorted_order := _sorted_die_order(current_state.dice_results)
@@ -443,6 +541,15 @@ func get_die_view_global_rect(index: int) -> Rect2:
 	return die_view.get_global_rect()
 
 
+func get_die_magic_fx_global_rect(index: int) -> Rect2:
+	var die_view := _die_view_at(index)
+	if die_view == null:
+		return Rect2()
+	if die_view.has_method("get_magic_fx_global_rect"):
+		return die_view.get_magic_fx_global_rect()
+	return die_view.get_global_rect()
+
+
 func get_display_die_order() -> Array[int]:
 	var order := _current_display_order()
 	if not order.is_empty():
@@ -457,6 +564,14 @@ func get_display_die_order() -> Array[int]:
 		if die_data != null:
 			fallback.append(die_data.die_index)
 	return fallback
+
+
+func reset_display_order() -> void:
+	display_die_order.clear()
+	dice_signature = ""
+	if current_state != null:
+		_render_dice(current_state.dice_results)
+	_apply_transient_states_to_current_views()
 
 
 func _make_dice_view(die_data: DieViewData) -> Control:
@@ -490,6 +605,14 @@ func _ensure_popup() -> void:
 		popup.ornament_link_requested.connect(func(id: StringName) -> void: ornament_link_requested.emit(id))
 	if popup.has_signal("mark_link_requested"):
 		popup.mark_link_requested.connect(func(id: StringName) -> void: mark_link_requested.emit(id))
+	if popup.has_signal("face_selected"):
+		popup.face_selected.connect(func(face_index: int) -> void:
+			install_face_selected.emit(_current_popup_die_index(), face_index)
+		)
+	if popup.has_signal("install_requested"):
+		popup.install_requested.connect(func(face_index: int) -> void:
+			install_requested.emit(_current_popup_die_index(), face_index)
+		)
 	popup.visible = false
 
 
@@ -561,6 +684,12 @@ func _die_data_at(index: int) -> DieViewData:
 		if die_data.die_index == index:
 			return die_data
 	return null
+
+
+func _current_popup_die_index() -> int:
+	if popup_die_index >= 0:
+		return popup_die_index
+	return focused_die_index
 
 
 func _on_die_view_pressed(index: int) -> void:

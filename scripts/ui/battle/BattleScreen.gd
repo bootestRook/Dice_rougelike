@@ -11,7 +11,9 @@ const ResolutionTrace = preload("res://scripts/core/scoring/ResolutionTrace.gd")
 const ResolutionStep = preload("res://scripts/core/scoring/ResolutionStep.gd")
 const ComboEvaluator = preload("res://scripts/rules/combo/ComboEvaluator.gd")
 const ComboUpgradeItem = preload("res://scripts/rules/combo/ComboUpgradeItem.gd")
+const ForgePieceDef = preload("res://scripts/data_defs/ForgePieceDef.gd")
 const ForgeItemCatalog = preload("res://scripts/rules/forge/ForgeItemCatalog.gd")
+const ForgeService = preload("res://scripts/rules/forge/ForgeService.gd")
 const ScoreEngine = preload("res://scripts/rules/scoring/ScoreEngine.gd")
 const BattleHudState = preload("res://scripts/ui/battle/view_models/BattleHudState.gd")
 const DieViewData = preload("res://scripts/ui/battle/view_models/DieViewData.gd")
@@ -20,6 +22,7 @@ const ComboInfoRowData = preload("res://scripts/ui/battle/view_models/ComboInfoR
 const BattleUiStyleConfig = preload("res://scripts/ui/battle/resources/BattleUiStyleConfig.gd")
 const BattleIconLibrary = preload("res://scripts/ui/battle/resources/BattleIconLibrary.gd")
 const DiceVisualLibrary = preload("res://scripts/ui/battle/resources/DiceVisualLibrary.gd")
+const RoundIntroBanner = preload("res://scripts/ui/battle/components/RoundIntroBanner.gd")
 
 
 @export var style_config: BattleUiStyleConfig = preload("res://scenes/battle/resources/BattleUiStyleConfig.tres")
@@ -37,6 +40,8 @@ const DiceVisualLibrary = preload("res://scripts/ui/battle/resources/DiceVisualL
 @export var combo_info_row_scene: PackedScene = preload("res://scenes/battle/components/ComboInfoRow.tscn")
 @export var score_log_row_scene: PackedScene = preload("res://scenes/battle/components/ScoreLogRow.tscn")
 @export var floating_score_text_scene: PackedScene = preload("res://scenes/battle/components/FloatingScoreText.tscn")
+@export var reroll_magic_fx_scene: PackedScene = preload("res://scenes/battle/components/RerollMagicFx.tscn")
+@export var round_intro_banner_scene: PackedScene = preload("res://scenes/battle/components/RoundIntroBanner.tscn")
 @export var design_resolution: Vector2 = Vector2(1920, 1080)
 @export var relic_capacity: int = 6
 @export var item_capacity: int = 3
@@ -45,6 +50,7 @@ const DiceVisualLibrary = preload("res://scripts/ui/battle/resources/DiceVisualL
 var controller: BattleController = null
 var game_flow_controller: GameFlowController = null
 var run_state: RunState = null
+var forge_service := ForgeService.new()
 var left_sidebar: Control = null
 var top_inventory_bar: Control = null
 var scoring_area: Control = null
@@ -52,6 +58,9 @@ var dice_bench_area: Control = null
 var combo_info_popup: Control = null
 var layout_root: Control = null
 var animation_layer: Control = null
+var options_menu_overlay: Control = null
+var options_menu_previous_pause_state: bool = false
+var install_focus_overlay: Control = null
 var last_score_result: ScoreResult = null
 var current_preview_result: ScoreResult = null
 var status_text: String = str(TranslationServer.translate(&"AUTO.TEXT.DE7851F4F172"))
@@ -60,6 +69,11 @@ var wild_button_rows: Dictionary = {}
 var local_combo_appearance_counts: Dictionary = {}
 var local_combo_last_formula_by_id: Dictionary = {}
 var is_resolution_playing: bool = false
+var is_reroll_playing: bool = false
+var is_battle_intro_playing: bool = false
+var battle_intro_pending: bool = false
+var battle_intro_dice_revealed: bool = false
+var battle_intro_die_indices: Array[int] = []
 var suppress_next_hand_scored_fx: bool = false
 var active_resolution_trace: ResolutionTrace = null
 var resolution_log_lines: Array[String] = []
@@ -73,6 +87,14 @@ var resolution_display_formula_score: int = 0
 var resolution_final_score_visible: bool = false
 var resolution_fast_mode: bool = false
 var resolution_visual_index_by_trace_index: Dictionary = {}
+var resolution_return_rect_by_die_index: Dictionary = {}
+var reward_phase_active: bool = false
+var reward_install_active: bool = false
+var victory_reward_showcase_active: bool = false
+var victory_target_restore_pending: bool = false
+var pending_install_piece: ForgePieceDef = null
+var selected_install_die_index: int = -1
+var selected_install_face_index: int = -1
 
 
 enum BattleUiState {
@@ -94,6 +116,24 @@ func setup(new_game_flow_controller: GameFlowController = null, new_run_state: R
 	run_state = new_run_state
 
 
+func start_battle_with_run_state(new_game_flow_controller: GameFlowController = null, new_run_state: RunState = null) -> void:
+	if new_game_flow_controller != null:
+		game_flow_controller = new_game_flow_controller
+	run_state = new_run_state
+	_clear_reward_phase_ui()
+	_clear_battle_animation_layer()
+	cleanup_resolution_area()
+	current_preview_result = null
+	last_score_result = null
+	active_resolution_trace = null
+	resolution_log_lines.clear()
+	resolution_return_rect_by_die_index.clear()
+	if combo_info_popup != null:
+		combo_info_popup.visible = false
+	if controller != null:
+		controller.start_battle(null, run_state)
+
+
 func _ready() -> void:
 	_ensure_resources()
 	_build_view()
@@ -105,9 +145,15 @@ func _ready() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_RESIZED:
 		_apply_resolution_scale()
+		_update_install_focus_overlay_layout()
 
 
 func _input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel") and _is_options_menu_visible():
+		_hide_options_menu()
+		get_viewport().set_input_as_handled()
+		return
+
 	if event is InputEventMouseButton:
 		var mouse_event := event as InputEventMouseButton
 		if not mouse_event.pressed or mouse_event.button_index != MOUSE_BUTTON_LEFT:
@@ -186,6 +232,8 @@ func _build_view() -> void:
 			icon_library,
 			dice_visual_library
 		)
+	if scoring_area.has_signal("reward_choice_pressed"):
+		scoring_area.reward_choice_pressed.connect(_on_reward_choice_pressed)
 
 	dice_bench_area = _instantiate_control(dice_bench_area_scene, PanelContainer.new())
 	main_area.add_child(dice_bench_area)
@@ -212,6 +260,10 @@ func _build_view() -> void:
 		dice_bench_area.reroll_pressed.connect(_on_reroll_pressed)
 	if dice_bench_area.has_signal("score_pressed"):
 		dice_bench_area.score_pressed.connect(_on_score_pressed)
+	if dice_bench_area.has_signal("install_face_selected"):
+		dice_bench_area.install_face_selected.connect(_on_install_face_selected)
+	if dice_bench_area.has_signal("install_requested"):
+		dice_bench_area.install_requested.connect(_on_install_requested)
 
 	_ensure_combo_info_popup()
 
@@ -233,6 +285,7 @@ func _apply_resolution_scale() -> void:
 	layout_root.size = design_resolution
 	layout_root.scale = Vector2(scale_factor, scale_factor)
 	layout_root.position = (viewport_size - design_resolution * scale_factor) * 0.5
+	_update_install_focus_overlay_layout()
 
 
 func _create_controller() -> void:
@@ -256,14 +309,26 @@ func _on_battle_started() -> void:
 	current_preview_result = null
 	local_combo_appearance_counts.clear()
 	local_combo_last_formula_by_id.clear()
+	victory_reward_showcase_active = false
+	battle_intro_die_indices.clear()
+	battle_intro_pending = false
+	battle_intro_dice_revealed = false
+	is_battle_intro_playing = false
+	victory_target_restore_pending = _has_victory_target_feedback()
+	if not victory_target_restore_pending:
+		_clear_victory_target_feedback()
 	status_text = str(TranslationServer.translate(&"AUTO.TEXT.FB26E473E039"))
 	_refresh_hud()
 
 
 func _on_hand_started(_hand_index: int) -> void:
 	current_preview_result = null
+	victory_reward_showcase_active = false
 	status_text = str(TranslationServer.translate(&"AUTO.TEXT.629A9098C25D"))
+	_prepare_hand_intro_magic()
 	_refresh_hud()
+	if battle_intro_pending:
+		call_deferred("_play_battle_intro_magic")
 
 
 func _on_dice_changed(_rolls: Array) -> void:
@@ -320,16 +385,236 @@ func _on_score_preview_changed(result: ScoreResult) -> void:
 
 
 func _on_info_pressed() -> void:
+	if is_battle_intro_playing:
+		return
 	_show_combo_info_popup()
 
 
 func _on_options_pressed() -> void:
-	status_text = str(TranslationServer.translate(&"AUTO.TEXT.BE260021E2DD"))
-	_refresh_hud()
+	if is_battle_intro_playing:
+		return
+	_show_options_menu()
+
+
+func _show_options_menu() -> void:
+	if _is_options_menu_visible() or layout_root == null:
+		return
+
+	options_menu_overlay = Control.new()
+	options_menu_overlay.name = "OptionsMenuOverlay"
+	options_menu_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	options_menu_overlay.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+	options_menu_overlay.focus_mode = Control.FOCUS_ALL
+	options_menu_overlay.z_index = 720
+	options_menu_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	options_menu_overlay.gui_input.connect(_on_options_overlay_gui_input)
+	layout_root.add_child(options_menu_overlay)
+
+	var scrim := ColorRect.new()
+	scrim.name = "OptionsMenuScrim"
+	scrim.color = Color(0.0, 0.0, 0.0, 0.64)
+	scrim.mouse_filter = Control.MOUSE_FILTER_STOP
+	scrim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	scrim.gui_input.connect(_on_options_scrim_gui_input)
+	options_menu_overlay.add_child(scrim)
+
+	var panel := PanelContainer.new()
+	panel.name = "OptionsMenuPanel"
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	panel.custom_minimum_size = Vector2(560.0, 310.0)
+	panel.add_theme_stylebox_override("panel", _make_options_menu_panel_style())
+	panel.anchor_left = 0.5
+	panel.anchor_top = 0.5
+	panel.anchor_right = 0.5
+	panel.anchor_bottom = 0.5
+	panel.offset_left = -280.0
+	panel.offset_top = -155.0
+	panel.offset_right = 280.0
+	panel.offset_bottom = 155.0
+	options_menu_overlay.add_child(panel)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 42)
+	margin.add_theme_constant_override("margin_top", 32)
+	margin.add_theme_constant_override("margin_right", 42)
+	margin.add_theme_constant_override("margin_bottom", 32)
+	panel.add_child(margin)
+
+	var content := VBoxContainer.new()
+	content.alignment = BoxContainer.ALIGNMENT_CENTER
+	content.add_theme_constant_override("separation", 22)
+	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	margin.add_child(content)
+
+	var title := Label.new()
+	title.text = "选项"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 42)
+	title.add_theme_color_override("font_color", Color(1.0, 0.96, 0.82, 1.0))
+	title.add_theme_color_override("font_outline_color", Color(0.02, 0.06, 0.04, 0.95))
+	title.add_theme_constant_override("outline_size", 5)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content.add_child(title)
+
+	var restart_button := _make_options_menu_button("再来一局", Color(0.86, 0.08, 0.06, 1.0), Color(1.0, 0.18, 0.14, 1.0))
+	restart_button.pressed.connect(_on_options_restart_pressed)
+	content.add_child(restart_button)
+
+	var main_menu_button := _make_options_menu_button("主菜单", Color(0.92, 0.50, 0.0, 1.0), Color(1.0, 0.64, 0.06, 1.0))
+	main_menu_button.pressed.connect(_on_options_main_menu_pressed)
+	content.add_child(main_menu_button)
+
+	options_menu_previous_pause_state = get_tree().paused
+	get_tree().paused = true
+	options_menu_overlay.modulate.a = 0.0
+	var tween := create_tween()
+	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	tween.tween_property(options_menu_overlay, "modulate:a", 1.0, 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	options_menu_overlay.grab_focus()
+
+
+func _hide_options_menu(restore_pause_state: bool = true) -> void:
+	if not _is_options_menu_visible():
+		options_menu_overlay = null
+		if restore_pause_state:
+			_restore_options_menu_pause_state()
+		return
+
+	var overlay := options_menu_overlay
+	options_menu_overlay = null
+	var tween := create_tween()
+	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	tween.tween_property(overlay, "modulate:a", 0.0, 0.10).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	tween.finished.connect(func() -> void:
+		if is_instance_valid(overlay):
+			overlay.queue_free()
+		if restore_pause_state:
+			_restore_options_menu_pause_state()
+	)
+
+
+func _is_options_menu_visible() -> bool:
+	return options_menu_overlay != null and is_instance_valid(options_menu_overlay) and not options_menu_overlay.is_queued_for_deletion()
+
+
+func _on_options_scrim_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		var mouse_event := event as InputEventMouseButton
+		if mouse_event.pressed and mouse_event.button_index == MOUSE_BUTTON_LEFT:
+			_hide_options_menu()
+
+
+func _on_options_overlay_gui_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):
+		_hide_options_menu()
+		get_viewport().set_input_as_handled()
+
+
+func _on_options_restart_pressed() -> void:
+	_hide_options_menu(false)
+	_force_options_menu_unpause()
+	if game_flow_controller != null:
+		game_flow_controller.start_new_run()
+		return
+	_restart_battle_locally()
+
+
+func _on_options_main_menu_pressed() -> void:
+	_hide_options_menu(false)
+	_force_options_menu_unpause()
+	if game_flow_controller != null:
+		game_flow_controller.back_to_main()
+		return
+	get_tree().change_scene_to_file("res://scenes/main/Main.tscn")
+
+
+func _restore_options_menu_pause_state() -> void:
+	get_tree().paused = options_menu_previous_pause_state
+
+
+func _force_options_menu_unpause() -> void:
+	options_menu_previous_pause_state = false
+	get_tree().paused = false
+
+
+func _restart_battle_locally() -> void:
+	_clear_reward_phase_ui()
+	_clear_battle_animation_layer()
+	cleanup_resolution_area()
+	current_preview_result = null
+	last_score_result = null
+	if run_state != null:
+		run_state.setup_new_run()
+	if controller != null:
+		controller.start_battle(null, run_state)
+
+
+func _clear_battle_animation_layer() -> void:
+	if animation_layer == null:
+		return
+	for child in animation_layer.get_children():
+		child.queue_free()
+
+
+func _make_options_menu_panel_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.025, 0.095, 0.075, 0.96)
+	style.border_color = Color(0.80, 1.0, 0.88, 0.86)
+	style.set_border_width_all(3)
+	style.set_corner_radius_all(8)
+	style.shadow_color = Color(0.0, 0.0, 0.0, 0.55)
+	style.shadow_size = 28
+	style.shadow_offset = Vector2(0.0, 8.0)
+	return style
+
+
+func _make_options_menu_button(text: String, normal_color: Color, hover_color: Color) -> Button:
+	var button := Button.new()
+	button.text = text
+	button.focus_mode = Control.FOCUS_NONE
+	button.clip_text = true
+	button.custom_minimum_size = Vector2(390.0, 66.0)
+	button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	button.add_theme_font_size_override("font_size", 34)
+	button.add_theme_color_override("font_color", Color(1.0, 1.0, 0.93, 1.0))
+	button.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 0.93, 1.0))
+	button.add_theme_color_override("font_pressed_color", Color(1.0, 1.0, 0.93, 1.0))
+	button.add_theme_color_override("font_shadow_color", Color(0.02, 0.04, 0.03, 0.95))
+	button.add_theme_constant_override("shadow_offset_x", 2)
+	button.add_theme_constant_override("shadow_offset_y", 3)
+	button.add_theme_stylebox_override("normal", _make_options_button_style(normal_color, Color(1.0, 0.88, 0.58, 0.72), 0.0))
+	button.add_theme_stylebox_override("hover", _make_options_button_style(hover_color, Color(1.0, 0.95, 0.68, 0.92), -2.0))
+	button.add_theme_stylebox_override("pressed", _make_options_button_style(normal_color.darkened(0.20), Color(1.0, 0.80, 0.44, 0.82), 2.0))
+	button.add_theme_stylebox_override("disabled", _make_options_button_style(normal_color.darkened(0.35), Color(0.55, 0.55, 0.50, 0.45), 0.0))
+	button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	return button
+
+
+func _make_options_button_style(fill: Color, border: Color, shadow_y: float) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = fill
+	style.border_color = border
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(6)
+	style.content_margin_left = 18.0
+	style.content_margin_right = 18.0
+	style.content_margin_top = 8.0
+	style.content_margin_bottom = 8.0
+	style.shadow_color = Color(0.0, 0.0, 0.0, 0.42)
+	style.shadow_size = 8
+	style.shadow_offset = Vector2(0.0, shadow_y + 5.0)
+	return style
 
 
 func _on_die_pressed(index: int) -> void:
-	if is_resolution_playing:
+	if is_resolution_playing or is_reroll_playing or is_battle_intro_playing:
+		return
+	if reward_install_active:
+		_request_install_info_for_die(index)
+		return
+	if reward_phase_active or victory_reward_showcase_active:
 		return
 	if controller == null:
 		return
@@ -337,6 +622,13 @@ func _on_die_pressed(index: int) -> void:
 
 
 func _on_die_info_requested(index: int) -> void:
+	if is_reroll_playing or is_battle_intro_playing:
+		return
+	if reward_install_active:
+		_request_install_info_for_die(index)
+		return
+	if reward_phase_active or victory_reward_showcase_active:
+		return
 	if controller == null:
 		return
 	if dice_bench_area == null:
@@ -360,14 +652,15 @@ func _on_die_hovered(_index: int) -> void:
 
 
 func _on_reroll_pressed() -> void:
-	if is_resolution_playing:
+	if is_resolution_playing or is_reroll_playing or is_battle_intro_playing:
 		return
-	if controller != null:
-		controller.reroll()
+	if controller == null or not controller.can_reroll():
+		return
+	await _play_reroll_magic()
 
 
 func _on_score_pressed() -> void:
-	if is_resolution_playing:
+	if is_resolution_playing or is_reroll_playing or is_battle_intro_playing:
 		return
 	if controller == null:
 		return
@@ -378,8 +671,264 @@ func _on_score_pressed() -> void:
 	_show_wild_selection_dialog(wild_requests)
 
 
+func show_reward_choices(choices: Array) -> void:
+	reward_phase_active = true
+	reward_install_active = false
+	pending_install_piece = null
+	selected_install_die_index = -1
+	selected_install_face_index = -1
+	status_text = str(TranslationServer.translate(&"AUTO.TEXT.BD9FEA62A9DC"))
+	_hide_install_focus_overlay()
+	if scoring_area != null and scoring_area.has_method("show_reward_choices"):
+		scoring_area.show_reward_choices(choices)
+	if dice_bench_area != null:
+		if dice_bench_area.has_method("hide_info"):
+			dice_bench_area.hide_info()
+		if dice_bench_area.has_method("set_install_mode"):
+			dice_bench_area.set_install_mode(false)
+	_refresh_hud()
+
+
+func begin_reward_install(piece) -> void:
+	var forge_piece := piece as ForgePieceDef
+	if forge_piece == null:
+		_clear_reward_phase_ui()
+		return
+
+	reward_phase_active = true
+	reward_install_active = true
+	pending_install_piece = forge_piece
+	selected_install_die_index = -1
+	selected_install_face_index = -1
+	status_text = str(TranslationServer.translate(&"AUTO.TEXT.56B08BE6F8EA"))
+	if scoring_area != null and scoring_area.has_method("hide_reward_choices"):
+		scoring_area.hide_reward_choices()
+	if dice_bench_area != null:
+		if dice_bench_area.has_method("set_install_mode"):
+			dice_bench_area.set_install_mode(true, pending_install_piece.get_display_name())
+		if dice_bench_area.has_method("set_highlighted_die_indices"):
+			dice_bench_area.set_highlighted_die_indices(_all_dice_indices())
+	_show_install_focus_overlay()
+	_refresh_hud()
+
+
+func _on_reward_choice_pressed(choice) -> void:
+	if game_flow_controller == null:
+		return
+	game_flow_controller.choose_reward(choice)
+
+
+func _request_install_info_for_die(index: int) -> void:
+	if dice_bench_area == null:
+		return
+	if dice_bench_area.has_method("request_info_for_die"):
+		dice_bench_area.request_info_for_die(index)
+	elif dice_bench_area.has_method("show_info_for_die"):
+		dice_bench_area.show_info_for_die(index)
+
+
+func _on_install_face_selected(die_index: int, face_index: int) -> void:
+	if not reward_install_active:
+		return
+	selected_install_die_index = die_index
+	selected_install_face_index = face_index
+	if pending_install_piece != null:
+		status_text = str(TranslationServer.translate(&"AUTO.TEXT.A211180FE768")) % [
+			pending_install_piece.get_display_name(),
+			die_index + 1,
+			face_index + 1,
+		]
+	_refresh_hud()
+
+
+func _on_install_requested(die_index: int, face_index: int) -> void:
+	if not reward_install_active or pending_install_piece == null:
+		return
+	var target := _resolve_install_target(die_index, face_index)
+	var target_die_index := int(target.get("die_index", -1))
+	var target_face_index := int(target.get("face_index", -1))
+	if not _can_install_pending_piece(target_die_index, target_face_index):
+		return
+	if game_flow_controller != null:
+		if not game_flow_controller.install_pending_piece(target_die_index, target_face_index):
+			status_text = str(TranslationServer.translate(&"AUTO.TEXT.C0469EBB56C8"))
+			_refresh_hud()
+		return
+	_install_pending_piece_locally(target_die_index, target_face_index)
+
+
+func _resolve_install_target(die_index: int, face_index: int) -> Dictionary:
+	var target_die_index := die_index
+	var target_face_index := face_index
+	if target_die_index < 0 and selected_install_die_index >= 0:
+		target_die_index = selected_install_die_index
+	if target_face_index < 0 and selected_install_face_index >= 0:
+		target_face_index = selected_install_face_index
+	return {
+		"die_index": target_die_index,
+		"face_index": target_face_index,
+	}
+
+
+func _can_install_pending_piece(die_index: int, face_index: int) -> bool:
+	if pending_install_piece == null:
+		return false
+	var dice := _get_dice()
+	if die_index < 0 or die_index >= dice.size():
+		return false
+	var die = dice[die_index]
+	if die == null:
+		return false
+	if not forge_service.can_apply_piece(pending_install_piece, die, face_index):
+		status_text = str(TranslationServer.translate(&"AUTO.TEXT.C0469EBB56C8"))
+		_refresh_hud()
+		return false
+	return true
+
+
+func _install_pending_piece_locally(die_index: int, face_index: int) -> void:
+	if pending_install_piece == null:
+		return
+	var dice := _get_dice()
+	if die_index < 0 or die_index >= dice.size():
+		return
+	var piece := pending_install_piece
+	forge_service.apply_piece(piece, dice[die_index], face_index)
+	if run_state != null:
+		run_state.record_installed_piece(piece, die_index, face_index)
+		run_state.pending_forge_piece = null
+		run_state.last_reward_choices.clear()
+		run_state.advance_battle()
+	_clear_reward_phase_ui()
+	_refresh_hud()
+
+
+func _clear_reward_phase_ui() -> void:
+	reward_phase_active = false
+	reward_install_active = false
+	victory_reward_showcase_active = false
+	pending_install_piece = null
+	selected_install_die_index = -1
+	selected_install_face_index = -1
+	_hide_install_focus_overlay()
+	if scoring_area != null and scoring_area.has_method("hide_reward_choices"):
+		scoring_area.hide_reward_choices()
+	if dice_bench_area != null:
+		if dice_bench_area.has_method("set_install_mode"):
+			dice_bench_area.set_install_mode(false)
+		if dice_bench_area.has_method("clear_highlights"):
+			dice_bench_area.clear_highlights()
+		if dice_bench_area.has_method("hide_info"):
+			dice_bench_area.hide_info()
+
+
+func _show_install_focus_overlay() -> void:
+	_ensure_install_focus_overlay()
+	if install_focus_overlay == null:
+		return
+	install_focus_overlay.visible = true
+	_update_install_focus_overlay_layout()
+
+
+func _hide_install_focus_overlay() -> void:
+	if install_focus_overlay != null:
+		install_focus_overlay.visible = false
+
+
+func _ensure_install_focus_overlay() -> void:
+	if install_focus_overlay != null or layout_root == null:
+		return
+	install_focus_overlay = Control.new()
+	install_focus_overlay.name = "InstallFocusOverlay"
+	install_focus_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	install_focus_overlay.z_index = 25
+	install_focus_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	layout_root.add_child(install_focus_overlay)
+
+	for rect_name in ["DimTop", "DimLeft", "DimRight", "DimBottom"]:
+		var dim := ColorRect.new()
+		dim.name = rect_name
+		dim.color = _install_focus_scrim_color()
+		dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		install_focus_overlay.add_child(dim)
+
+	var border := Panel.new()
+	border.name = "FocusBorder"
+	border.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	border.add_theme_stylebox_override("panel", _make_install_focus_border_style())
+	install_focus_overlay.add_child(border)
+	install_focus_overlay.visible = false
+
+
+func _update_install_focus_overlay_layout() -> void:
+	if install_focus_overlay == null or layout_root == null or dice_bench_area == null:
+		return
+	if not install_focus_overlay.visible:
+		return
+
+	install_focus_overlay.size = layout_root.size
+	var root_size := layout_root.size
+	var bench_rect := _control_rect_in_layout_root(dice_bench_area).grow(8.0)
+	bench_rect.position.x = clampf(bench_rect.position.x, 0.0, root_size.x)
+	bench_rect.position.y = clampf(bench_rect.position.y, 0.0, root_size.y)
+	bench_rect.size.x = clampf(bench_rect.size.x, 0.0, root_size.x - bench_rect.position.x)
+	bench_rect.size.y = clampf(bench_rect.size.y, 0.0, root_size.y - bench_rect.position.y)
+
+	_set_overlay_child_rect("DimTop", Rect2(Vector2.ZERO, Vector2(root_size.x, bench_rect.position.y)))
+	_set_overlay_child_rect("DimLeft", Rect2(
+		Vector2(0.0, bench_rect.position.y),
+		Vector2(bench_rect.position.x, bench_rect.size.y)
+	))
+	_set_overlay_child_rect("DimRight", Rect2(
+		Vector2(bench_rect.position.x + bench_rect.size.x, bench_rect.position.y),
+		Vector2(maxf(0.0, root_size.x - bench_rect.position.x - bench_rect.size.x), bench_rect.size.y)
+	))
+	_set_overlay_child_rect("DimBottom", Rect2(
+		Vector2(0.0, bench_rect.position.y + bench_rect.size.y),
+		Vector2(root_size.x, maxf(0.0, root_size.y - bench_rect.position.y - bench_rect.size.y))
+	))
+	_set_overlay_child_rect("FocusBorder", bench_rect)
+
+
+func _set_overlay_child_rect(child_name: String, rect: Rect2) -> void:
+	if install_focus_overlay == null:
+		return
+	var child := install_focus_overlay.get_node_or_null(child_name) as Control
+	if child == null:
+		return
+	child.position = rect.position
+	child.size = rect.size
+
+
+func _control_rect_in_layout_root(control: Control) -> Rect2:
+	if control == null or layout_root == null:
+		return Rect2()
+	var global_rect := control.get_global_rect()
+	var inverse := layout_root.get_global_transform_with_canvas().affine_inverse()
+	var local_position: Vector2 = inverse * global_rect.position
+	var local_end: Vector2 = inverse * (global_rect.position + global_rect.size)
+	return Rect2(local_position, local_end - local_position)
+
+
+func _install_focus_scrim_color() -> Color:
+	if style_config != null:
+		var color := style_config.modal_scrim_color
+		color.a = maxf(color.a, 0.58)
+		return color
+	return Color(0.0, 0.0, 0.0, 0.62)
+
+
+func _make_install_focus_border_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.0, 0.0, 0.0, 0.0)
+	style.border_color = Color(1.0, 0.66, 0.05, 0.95)
+	style.set_border_width_all(3)
+	style.set_corner_radius_all(8)
+	return style
+
+
 func _settle_selected(wild_effective_pips: Dictionary = {}) -> void:
-	if controller == null or is_resolution_playing:
+	if controller == null or is_resolution_playing or is_reroll_playing or is_battle_intro_playing:
 		return
 	if not controller.can_score():
 		return
@@ -388,11 +937,54 @@ func _settle_selected(wild_effective_pips: Dictionary = {}) -> void:
 	if trace == null:
 		return
 
+	var will_win := _trace_will_win_battle(trace)
 	await play_resolution(trace)
+	if will_win:
+		await _play_victory_target_feedback()
+	await return_resolution_dice_to_bench_by_trace(trace, will_win)
+	if will_win:
+		await _play_victory_reward_showcase()
 	suppress_next_hand_scored_fx = true
 	controller.commit_pending_resolution()
 	cleanup_resolution_area()
 	_refresh_hud()
+
+
+func _trace_will_win_battle(trace: ResolutionTrace) -> bool:
+	if trace == null or controller == null:
+		return false
+	return controller.get_total_score() + maxi(0, trace.hand_score_final) >= controller.get_target_score()
+
+
+func _play_victory_target_feedback() -> void:
+	if left_sidebar == null or not left_sidebar.has_method("play_battle_victory_target_feedback"):
+		return
+	await left_sidebar.play_battle_victory_target_feedback()
+
+
+func _clear_victory_target_feedback() -> void:
+	victory_target_restore_pending = false
+	if left_sidebar != null and left_sidebar.has_method("clear_battle_victory_target_feedback"):
+		left_sidebar.clear_battle_victory_target_feedback()
+
+
+func _has_victory_target_feedback() -> bool:
+	if left_sidebar == null or not left_sidebar.has_method("is_battle_victory_target_active"):
+		return false
+	return bool(left_sidebar.is_battle_victory_target_active())
+
+
+func _restore_victory_target_feedback_if_needed() -> void:
+	if not victory_target_restore_pending:
+		return
+	victory_target_restore_pending = false
+	if left_sidebar == null:
+		return
+	if left_sidebar.has_method("play_battle_target_restore_feedback"):
+		await left_sidebar.play_battle_target_restore_feedback(_build_hud_state())
+	elif left_sidebar.has_method("clear_battle_victory_target_feedback"):
+		left_sidebar.clear_battle_victory_target_feedback()
+		_refresh_hud()
 
 
 func play_resolution(trace: ResolutionTrace) -> void:
@@ -420,7 +1012,6 @@ func play_resolution(trace: ResolutionTrace) -> void:
 
 	battle_ui_state = BattleUiState.COMMITTING_SCORE
 	await play_final_score_fly(trace)
-	is_resolution_playing = false
 
 
 func move_selected_dice_to_resolution_by_trace(trace: ResolutionTrace) -> void:
@@ -433,6 +1024,7 @@ func move_selected_dice_to_resolution_by_trace(trace: ResolutionTrace) -> void:
 	if scoring_area.has_method("show_resolution_dice"):
 		scoring_area.show_resolution_dice(dice_datas, true)
 	await get_tree().process_frame
+	_cache_resolution_return_rects(visual_slot_indices)
 
 	if dice_bench_area != null and dice_bench_area.has_method("set_hidden_die_indices"):
 		dice_bench_area.set_hidden_die_indices(trace.selected_slot_indices)
@@ -472,9 +1064,81 @@ func move_selected_dice_to_resolution_by_trace(trace: ResolutionTrace) -> void:
 		if scoring_area.has_method("set_resolution_index_visible"):
 			scoring_area.set_resolution_index_visible(index, true)
 		if index < clones.size() - 1:
-			await get_tree().create_timer(0.03 if resolution_fast_mode else 0.08).timeout
+			await _create_battle_timer(0.03 if resolution_fast_mode else 0.08).timeout
 	if not scoring_area.has_method("set_resolution_index_visible") and scoring_area.has_method("set_resolution_dice_visible"):
 		scoring_area.set_resolution_dice_visible(true)
+
+
+func return_resolution_dice_to_bench_by_trace(trace: ResolutionTrace, simultaneous: bool = false) -> void:
+	if trace == null:
+		return
+
+	battle_ui_state = BattleUiState.CLEANUP
+	_clear_resolution_highlights()
+	var visual_slot_indices := _visual_selected_slot_indices(trace)
+	var dice_datas := _resolution_die_view_data_for_slots(visual_slot_indices)
+	var clones: Array[Control] = []
+	for index in range(visual_slot_indices.size()):
+		var die_index := visual_slot_indices[index]
+		var data: DieViewData = dice_datas[index] if index < dice_datas.size() else null
+		var start_rect := _resolution_dice_global_rect(index)
+		if data == null or start_rect.size == Vector2.ZERO or animation_layer == null:
+			continue
+		var clone := _make_animation_dice_view()
+		clone.set_meta("die_index", die_index)
+		animation_layer.add_child(clone)
+		if not clone.is_node_ready():
+			await clone.ready
+		if clone.has_method("render"):
+			clone.render(data, style_config, icon_library, dice_visual_library)
+		clone.global_position = start_rect.position
+		clone.size = start_rect.size
+		clones.append(clone)
+		if scoring_area != null and scoring_area.has_method("set_resolution_index_visible"):
+			scoring_area.set_resolution_index_visible(index, false)
+
+	var remaining_hidden: Array[int] = []
+	remaining_hidden.append_array(trace.selected_slot_indices)
+	if clones.is_empty():
+		_clear_returning_resolution_state()
+		return
+
+	if simultaneous:
+		var tween := create_tween()
+		tween.set_parallel(true)
+		for clone in clones:
+			var die_index := int(clone.get_meta("die_index", -1))
+			var target_rect := _bench_die_global_rect(die_index)
+			var move_duration := 0.08 if resolution_fast_mode else 0.22
+			tween.tween_property(clone, "global_position", target_rect.position, move_duration).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+			tween.tween_property(clone, "size", target_rect.size, move_duration).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+		await tween.finished
+		for clone in clones:
+			if is_instance_valid(clone):
+				clone.queue_free()
+		_clear_returning_resolution_state()
+		await _create_battle_timer(0.025 if resolution_fast_mode else 0.08).timeout
+		return
+
+	for index in range(clones.size()):
+		var clone := clones[index]
+		var die_index := int(clone.get_meta("die_index", -1))
+		var target_rect := _bench_die_global_rect(die_index)
+		var move_duration := 0.08 if resolution_fast_mode else 0.22
+		var tween := create_tween()
+		tween.tween_property(clone, "global_position", target_rect.position, move_duration).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+		tween.parallel().tween_property(clone, "size", target_rect.size, move_duration).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+		await tween.finished
+		if is_instance_valid(clone):
+			clone.queue_free()
+		remaining_hidden.erase(die_index)
+		if dice_bench_area != null and dice_bench_area.has_method("set_hidden_die_indices"):
+			dice_bench_area.set_hidden_die_indices(remaining_hidden)
+		if index < clones.size() - 1:
+			await _create_battle_timer(0.02 if resolution_fast_mode else 0.045).timeout
+
+	_clear_returning_resolution_state()
+	await _create_battle_timer(0.025 if resolution_fast_mode else 0.08).timeout
 
 
 func play_resolution_step(step: ResolutionStep) -> void:
@@ -493,7 +1157,7 @@ func play_resolution_step(step: ResolutionStep) -> void:
 	if step.phase != ResolutionStep.Phase.FINAL_SCORE and _should_show_floating_text(floating_text):
 		await _show_step_floating_text(step, floating_text)
 	else:
-		await get_tree().create_timer(_resolution_step_duration()).timeout
+		await _create_battle_timer(_resolution_step_duration()).timeout
 	_clear_resolution_highlights()
 
 
@@ -510,7 +1174,7 @@ func play_final_score_fly(trace: ResolutionTrace) -> void:
 	if final_score > 0 and not resolution_fast_mode and left_sidebar != null and left_sidebar.has_method("play_final_score_pop"):
 		await left_sidebar.play_final_score_pop()
 	else:
-		await get_tree().create_timer(0.05 if resolution_fast_mode else 0.5).timeout
+		await _create_battle_timer(0.05 if resolution_fast_mode else 0.5).timeout
 	await _play_score_transfer_countdown(final_score)
 
 
@@ -546,6 +1210,7 @@ func cleanup_resolution_area() -> void:
 	battle_ui_state = BattleUiState.CLEANUP
 	active_resolution_trace = null
 	resolution_visual_index_by_trace_index.clear()
+	resolution_return_rect_by_die_index.clear()
 	resolution_log_lines.clear()
 	if scoring_area != null and scoring_area.has_method("clear_resolution_dice"):
 		scoring_area.clear_resolution_dice()
@@ -556,6 +1221,7 @@ func cleanup_resolution_area() -> void:
 			dice_bench_area.clear_highlights()
 	resolution_final_score_visible = false
 	resolution_fast_mode = false
+	is_resolution_playing = false
 	battle_ui_state = BattleUiState.IDLE
 
 
@@ -663,6 +1329,8 @@ func _resolution_state_text() -> String:
 			return "Playing resolution..."
 		BattleUiState.COMMITTING_SCORE:
 			return "Committing score..."
+		BattleUiState.CLEANUP:
+			return "Returning dice..."
 		_:
 			return "Resolution..."
 
@@ -759,10 +1427,57 @@ func _make_animation_dice_view() -> Control:
 	return view
 
 
+func _resolution_dice_global_rect(index: int) -> Rect2:
+	var fallback_size := style_config.dice_display_size if style_config != null else Vector2(96.0, 96.0)
+	if scoring_area == null:
+		return Rect2(Vector2.ZERO, fallback_size)
+	if scoring_area.has_method("get_resolution_dice_global_rect"):
+		var rect: Rect2 = scoring_area.get_resolution_dice_global_rect(index)
+		if rect.size != Vector2.ZERO:
+			return rect
+	if scoring_area.has_method("get_resolution_dice_global_position"):
+		return Rect2(scoring_area.get_resolution_dice_global_position(index), fallback_size)
+	return Rect2(Vector2.ZERO, fallback_size)
+
+
+func _bench_die_global_rect(die_index: int) -> Rect2:
+	var fallback_size := style_config.dice_display_size if style_config != null else Vector2(96.0, 96.0)
+	if resolution_return_rect_by_die_index.has(die_index):
+		var cached_rect: Rect2 = resolution_return_rect_by_die_index[die_index]
+		return cached_rect
+	var rect := _live_bench_die_global_rect(die_index)
+	if rect.size == Vector2.ZERO:
+		rect.size = fallback_size
+	return rect
+
+
+func _live_bench_die_global_rect(die_index: int) -> Rect2:
+	if dice_bench_area == null or not dice_bench_area.has_method("get_die_view_global_rect"):
+		return Rect2()
+	var rect: Rect2 = dice_bench_area.get_die_view_global_rect(die_index)
+	return rect
+
+
+func _cache_resolution_return_rects(slot_indices: Array[int]) -> void:
+	resolution_return_rect_by_die_index.clear()
+	for die_index in slot_indices:
+		var rect := _live_bench_die_global_rect(die_index)
+		if rect.size != Vector2.ZERO:
+			resolution_return_rect_by_die_index[die_index] = rect
+
+
+func _clear_returning_resolution_state() -> void:
+	if scoring_area != null and scoring_area.has_method("clear_resolution_dice"):
+		scoring_area.clear_resolution_dice()
+	if dice_bench_area != null and dice_bench_area.has_method("clear_hidden_die_indices"):
+		dice_bench_area.clear_hidden_die_indices()
+
+
 func _refresh_hud() -> void:
 	if left_sidebar == null or top_inventory_bar == null or scoring_area == null or dice_bench_area == null:
 		return
 
+	_sync_battle_intro_hidden_dice()
 	var state := _build_hud_state()
 	if left_sidebar.has_method("render"):
 		left_sidebar.render(state)
@@ -772,8 +1487,34 @@ func _refresh_hud() -> void:
 		scoring_area.render(state)
 	if dice_bench_area.has_method("render"):
 		dice_bench_area.render(state)
+	_sync_battle_intro_hidden_dice()
 	if _is_combo_info_popup_visible() and combo_info_popup.has_method("render"):
 		combo_info_popup.render(_build_combo_info_rows())
+	_update_install_focus_overlay_layout()
+
+
+func _sync_battle_intro_hidden_dice() -> void:
+	if dice_bench_area == null:
+		return
+	if battle_intro_dice_revealed:
+		return
+	if not battle_intro_pending and not is_battle_intro_playing:
+		return
+	if battle_intro_die_indices.is_empty():
+		battle_intro_die_indices = _all_dice_indices()
+	if battle_intro_die_indices.is_empty():
+		return
+	if dice_bench_area.has_method("set_hidden_die_indices"):
+		dice_bench_area.set_hidden_die_indices(battle_intro_die_indices)
+
+
+func _prepare_hand_intro_magic() -> void:
+	battle_intro_die_indices = _all_dice_indices()
+	battle_intro_pending = not battle_intro_die_indices.is_empty()
+	battle_intro_dice_revealed = false
+	is_battle_intro_playing = battle_intro_pending
+	if dice_bench_area != null and dice_bench_area.has_method("set_hidden_die_indices"):
+		dice_bench_area.set_hidden_die_indices(battle_intro_die_indices)
 
 
 func _build_hud_state() -> BattleHudState:
@@ -800,9 +1541,11 @@ func _build_hud_state() -> BattleHudState:
 	state.rerolls_total = controller.get_rerolls_per_hand()
 	state.current_hand = controller.get_current_hand_number()
 	state.max_hands = controller.get_hands_per_battle()
+	state.max_selected_dice = controller.get_max_selected_dice()
 	state.phase_text = DisplayNames.phase_name(controller.get_phase_name())
-	state.can_reroll = controller.can_reroll() and not is_resolution_playing
-	state.can_score = controller.can_score() and not is_resolution_playing
+	state.controls_locked = is_battle_intro_playing
+	state.can_reroll = controller.can_reroll() and not is_resolution_playing and not is_reroll_playing and not is_battle_intro_playing and not reward_phase_active
+	state.can_score = controller.can_score() and not is_resolution_playing and not is_reroll_playing and not is_battle_intro_playing and not reward_phase_active
 	state.dice_results = _build_die_view_data()
 	state.selected_dice_indices = _selected_dice_indices()
 	state.score_log = _score_log_lines()
@@ -843,16 +1586,42 @@ func _build_die_view_data() -> Array[DieViewData]:
 	var dice := _get_dice()
 	var rolled_by_die := _current_rolls_by_die()
 	var dice_enabled := controller != null and controller.get_phase() == BattleController.BattlePhase.WAITING_ACTION and not is_resolution_playing
+	var dice_interactive := dice_enabled or reward_install_active
 	var hand_scored := controller != null and controller.hand_state != null and controller.hand_state.scored and not is_resolution_playing
 
 	for die_index in range(dice.size()):
 		var rolled_face = rolled_by_die.get(die_index, null)
-		var disabled := rolled_face == null or (not dice_enabled and not is_resolution_playing)
+		var disabled := (rolled_face == null and not reward_install_active) or (not dice_interactive and not is_resolution_playing)
 		var die_data = DieViewData.new()
 		die_data.setup_from_die(dice[die_index], die_index, rolled_face, dice_enabled, hand_scored, disabled)
+		if reward_phase_active or victory_reward_showcase_active:
+			die_data.disabled = false
+			die_data.rerollable = false
+			die_data.selected = false
+			die_data.scored = false
+			if victory_reward_showcase_active:
+				_set_die_data_to_max_face(die_data)
+			elif die_data.current_face == null and not die_data.faces.is_empty():
+				die_data.current_face_index = 0
+				die_data.current_face = die_data.faces[0]
 		result.append(die_data)
 
 	return result
+
+
+func _set_die_data_to_max_face(die_data: DieViewData) -> void:
+	if die_data == null or die_data.faces.is_empty():
+		return
+	var max_face = die_data.faces[0]
+	for face_data in die_data.faces:
+		if face_data == null:
+			continue
+		if max_face == null or face_data.pip > max_face.pip:
+			max_face = face_data
+	if max_face == null:
+		return
+	die_data.current_face_index = max_face.face_index
+	die_data.current_face = max_face
 
 
 func _build_relic_slots() -> Array[SlotViewData]:
@@ -898,6 +1667,14 @@ func _selected_dice_indices() -> Array[int]:
 	for rolled_face in controller.get_current_rolls():
 		if rolled_face.selected:
 			result.append(rolled_face.die_index)
+	return result
+
+
+func _all_dice_indices() -> Array[int]:
+	var result: Array[int] = []
+	var dice := _get_dice()
+	for die_index in range(dice.size()):
+		result.append(die_index)
 	return result
 
 
@@ -1189,6 +1966,231 @@ func _show_wild_selection_dialog(requests: Array[Dictionary]) -> void:
 		wild_button_rows[key] = row_buttons
 
 	wild_selection_dialog.popup_centered()
+
+
+func _play_reroll_magic() -> void:
+	var selected_indices: Array[int] = _selected_dice_indices()
+	if selected_indices.is_empty():
+		return
+
+	is_reroll_playing = true
+	battle_ui_state = BattleUiState.ROLLING
+	status_text = str(TranslationServer.translate(&"AUTO.TEXT.332A22260969"))
+	if dice_bench_area != null and dice_bench_area.has_method("hide_info"):
+		dice_bench_area.hide_info()
+	var effects: Array[Control] = _spawn_reroll_magic_effects(selected_indices)
+	_refresh_hud()
+
+	var cover_wait: float = 0.28 if resolution_fast_mode else 0.52
+	await _create_battle_timer(cover_wait).timeout
+
+	if controller != null:
+		controller.reroll()
+
+	var reveal_fade_duration: float = 0.38 if resolution_fast_mode else 0.66
+	_begin_magic_reveal_fade(effects, reveal_fade_duration)
+	var finish_wait: float = reveal_fade_duration + (0.04 if resolution_fast_mode else 0.08)
+	await _create_battle_timer(finish_wait).timeout
+	for effect in effects:
+		if is_instance_valid(effect):
+			effect.queue_free()
+
+	is_reroll_playing = false
+	resolution_fast_mode = false
+	battle_ui_state = BattleUiState.IDLE
+	_refresh_hud()
+
+
+func _play_victory_reward_showcase() -> void:
+	var die_indices := _all_dice_indices()
+	if die_indices.is_empty():
+		victory_reward_showcase_active = true
+		_refresh_hud()
+		return
+
+	if dice_bench_area != null:
+		if dice_bench_area.has_method("hide_info"):
+			dice_bench_area.hide_info()
+		if dice_bench_area.has_method("clear_highlights"):
+			dice_bench_area.clear_highlights()
+
+	is_battle_intro_playing = true
+	battle_intro_pending = false
+	battle_intro_dice_revealed = false
+	battle_intro_die_indices = die_indices.duplicate()
+	status_text = str(TranslationServer.translate(&"AUTO.TEXT.BD9FEA62A9DC"))
+	if dice_bench_area != null and dice_bench_area.has_method("set_hidden_die_indices"):
+		dice_bench_area.set_hidden_die_indices(battle_intro_die_indices)
+	_refresh_hud()
+	await get_tree().process_frame
+	await get_tree().process_frame
+
+	var effects := _spawn_reroll_magic_effects(battle_intro_die_indices)
+	var reveal_wait: float = 0.32 if resolution_fast_mode else 0.58
+	await _create_battle_timer(reveal_wait).timeout
+
+	victory_reward_showcase_active = true
+	_reset_bench_display_order()
+	var reveal_fade_duration: float = 0.34 if resolution_fast_mode else 0.62
+	_begin_magic_reveal_fade(effects, reveal_fade_duration)
+	battle_intro_dice_revealed = true
+	if dice_bench_area != null and dice_bench_area.has_method("clear_hidden_die_indices"):
+		dice_bench_area.clear_hidden_die_indices()
+	_refresh_hud()
+
+	var fade_tail_wait: float = reveal_fade_duration + (0.04 if resolution_fast_mode else 0.08)
+	await _create_battle_timer(fade_tail_wait).timeout
+
+	for effect in effects:
+		if is_instance_valid(effect):
+			effect.queue_free()
+	is_battle_intro_playing = false
+	battle_intro_dice_revealed = false
+	battle_intro_die_indices.clear()
+	_refresh_hud()
+
+
+func _reset_bench_display_order() -> void:
+	if dice_bench_area == null:
+		return
+	if dice_bench_area.has_method("reset_display_order"):
+		dice_bench_area.reset_display_order()
+
+
+func _play_battle_intro_magic() -> void:
+	if not battle_intro_pending:
+		return
+	battle_intro_pending = false
+	is_battle_intro_playing = true
+	battle_intro_dice_revealed = false
+	await _restore_victory_target_feedback_if_needed()
+	if battle_intro_die_indices.is_empty():
+		battle_intro_die_indices = _all_dice_indices()
+	if battle_intro_die_indices.is_empty():
+		is_battle_intro_playing = false
+		battle_intro_dice_revealed = false
+		_refresh_hud()
+		return
+
+	if dice_bench_area != null and dice_bench_area.has_method("set_hidden_die_indices"):
+		dice_bench_area.set_hidden_die_indices(battle_intro_die_indices)
+	_refresh_hud()
+	await get_tree().process_frame
+	await get_tree().process_frame
+
+	var round_number := controller.get_current_hand_number() if controller != null else 1
+	await _play_round_intro_banner(round_number)
+
+	var effects: Array[Control] = _spawn_reroll_magic_effects(battle_intro_die_indices)
+	var reveal_wait: float = 0.32 if resolution_fast_mode else 0.58
+	await _create_battle_timer(reveal_wait).timeout
+
+	var reveal_fade_duration: float = 0.34 if resolution_fast_mode else 0.62
+	_begin_magic_reveal_fade(effects, reveal_fade_duration)
+	battle_intro_dice_revealed = true
+	if dice_bench_area != null and dice_bench_area.has_method("clear_hidden_die_indices"):
+		dice_bench_area.clear_hidden_die_indices()
+	_refresh_hud()
+
+	var fade_tail_wait: float = reveal_fade_duration + (0.04 if resolution_fast_mode else 0.08)
+	await _create_battle_timer(fade_tail_wait).timeout
+
+	for effect in effects:
+		if is_instance_valid(effect):
+			effect.queue_free()
+	is_battle_intro_playing = false
+	battle_intro_dice_revealed = false
+	battle_intro_die_indices.clear()
+	resolution_fast_mode = false
+	_refresh_hud()
+
+
+func _play_round_intro_banner(round_number: int) -> void:
+	if animation_layer == null:
+		var fallback_hold := 0.45 if resolution_fast_mode else 1.5
+		await _create_battle_timer(fallback_hold).timeout
+		return
+
+	var banner_control: Control = _instantiate_control(round_intro_banner_scene, Control.new())
+	animation_layer.add_child(banner_control)
+	banner_control.z_index = 430
+	banner_control.size = animation_layer.size
+	if not banner_control.is_node_ready():
+		await banner_control.ready
+
+	var target_rect := _round_intro_banner_target_rect()
+	var banner := banner_control as RoundIntroBanner
+	if banner != null:
+		await banner.play_at_rect(round_number, target_rect, resolution_fast_mode)
+	elif banner_control.has_method("play_at_rect"):
+		await banner_control.call("play_at_rect", round_number, target_rect, resolution_fast_mode)
+	elif banner_control.has_method("play"):
+		await banner_control.call("play", round_number, resolution_fast_mode)
+	else:
+		var fallback_hold := 0.45 if resolution_fast_mode else 1.5
+		await _create_battle_timer(fallback_hold).timeout
+
+	if is_instance_valid(banner_control) and not banner_control.is_queued_for_deletion():
+		banner_control.queue_free()
+
+
+func _round_intro_banner_target_rect() -> Rect2:
+	if animation_layer == null:
+		return Rect2()
+	if scoring_area != null:
+		var scoring_rect := _global_rect_to_animation_layer_local(scoring_area.get_global_rect())
+		if scoring_rect.size != Vector2.ZERO:
+			return scoring_rect
+	return Rect2(Vector2.ZERO, animation_layer.size)
+
+
+func _begin_magic_reveal_fade(effects: Array[Control], duration: float) -> void:
+	for effect in effects:
+		if is_instance_valid(effect) and effect.has_method("begin_reveal_fade"):
+			effect.call("begin_reveal_fade", duration)
+
+
+func _spawn_reroll_magic_effects(die_indices: Array[int]) -> Array[Control]:
+	var result: Array[Control] = []
+	if animation_layer == null or dice_bench_area == null:
+		return result
+
+	for die_index in die_indices:
+		var rect: Rect2 = Rect2()
+		if dice_bench_area.has_method("get_die_magic_fx_global_rect"):
+			rect = dice_bench_area.get_die_magic_fx_global_rect(die_index)
+		elif dice_bench_area.has_method("get_die_view_global_rect"):
+			rect = dice_bench_area.get_die_view_global_rect(die_index)
+		if rect.size == Vector2.ZERO:
+			continue
+
+		var effect: Control = _instantiate_control(reroll_magic_fx_scene, Control.new())
+		animation_layer.add_child(effect)
+		var local_rect: Rect2 = _global_rect_to_animation_layer_local(rect)
+		if effect.has_method("play_at_rect"):
+			if effect.has_method("play_at_local_rect"):
+				effect.play_at_local_rect(local_rect, resolution_fast_mode)
+			else:
+				effect.play_at_rect(rect, resolution_fast_mode)
+		else:
+			effect.position = local_rect.position
+			effect.size = local_rect.size
+		result.append(effect)
+
+	return result
+
+
+func _global_rect_to_animation_layer_local(global_rect: Rect2) -> Rect2:
+	if animation_layer == null:
+		return global_rect
+	var inverse: Transform2D = animation_layer.get_global_transform_with_canvas().affine_inverse()
+	var local_position: Vector2 = inverse * global_rect.position
+	var local_end: Vector2 = inverse * (global_rect.position + global_rect.size)
+	return Rect2(local_position, local_end - local_position)
+
+
+func _create_battle_timer(duration: float) -> SceneTreeTimer:
+	return get_tree().create_timer(maxf(0.0, duration), false)
 
 
 func _ensure_wild_selection_dialog() -> void:

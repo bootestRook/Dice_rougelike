@@ -2,6 +2,10 @@
 class_name DebugLeftSidebarFixedLayoutSmokeTest
 
 
+const RunState = preload("res://scripts/core/battle/RunState.gd")
+const BattleHudState = preload("res://scripts/ui/battle/view_models/BattleHudState.gd")
+
+
 func _init() -> void:
 	print("--- DebugLeftSidebarFixedLayoutSmokeTest: start ---")
 
@@ -9,8 +13,13 @@ func _init() -> void:
 	DisplayServer.window_set_size(Vector2i(1920, 1080))
 	root.size = Vector2i(1920, 1080)
 
+	var run_state := RunState.new()
+	run_state.setup_new_run()
+	run_state.battle_index = 2
+
 	var scene := load("res://scenes/battle/BattleScreen.tscn")
 	var battle_screen = scene.instantiate()
+	battle_screen.setup(null, run_state)
 	root.add_child(battle_screen)
 
 	await process_frame
@@ -26,10 +35,12 @@ func _init() -> void:
 	var chips_value := _find_node_by_name(battle_screen, "FormulaChipsValue") as Label
 	var mult_value := _find_node_by_name(battle_screen, "FormulaMultValue") as Label
 	var x_label := _find_node_by_name(battle_screen, "FormulaXLabel") as Label
+	var target_value := _find_node_by_name(battle_screen, "TargetValue") as Label
 	var chips_texture := _find_node_by_name(battle_screen, "FormulaChipsTexture") as TextureRect
 	var mult_texture := _find_node_by_name(battle_screen, "FormulaMultTexture") as TextureRect
+	var max_battle_value := _find_node_by_name(battle_screen, "MaxBattleValue") as Label
 	var left_sidebar = battle_screen.get("left_sidebar")
-	all_passed = _check("sidebar nodes exist", formula_panel != null and resource_panel != null and formula_value != null and formula_badges != null and chips_badge != null and mult_badge != null and chips_value != null and mult_value != null and x_label != null and left_sidebar != null) and all_passed
+	all_passed = _check("sidebar nodes exist", formula_panel != null and resource_panel != null and formula_value != null and formula_badges != null and chips_badge != null and mult_badge != null and chips_value != null and mult_value != null and x_label != null and target_value != null and max_battle_value != null and left_sidebar != null) and all_passed
 
 	var base_formula_height := formula_panel.size.y
 	var base_resource_y := resource_panel.global_position.y
@@ -40,6 +51,7 @@ func _init() -> void:
 		left_sidebar._fit_formula_badge_font_sizes()
 	await process_frame
 	await process_frame
+	var base_badges_position := formula_badges.global_position
 
 	all_passed = _check("formula panel height does not grow", formula_panel.size.y <= base_formula_height + 1.0) and all_passed
 	all_passed = _check("formula panel uses configured height", _near(formula_panel.size.y, float(battle_screen.style_config.left_score_formula_panel_height), 2.0)) and all_passed
@@ -51,6 +63,19 @@ func _init() -> void:
 	all_passed = _check("formula chips badge stays inside formula panel", _rect_contains(formula_panel.get_global_rect(), chips_badge.get_global_rect(), 1.0)) and all_passed
 	all_passed = _check("formula mult badge stays inside formula panel", _rect_contains(formula_panel.get_global_rect(), mult_badge.get_global_rect(), 1.0)) and all_passed
 	all_passed = _check("formula separator stays inside formula panel", _rect_contains(formula_panel.get_global_rect(), x_label.get_global_rect(), 1.0)) and all_passed
+	all_passed = _check("target score value is visible", target_value.visible and target_value.text != "" and target_value.size.y >= 50.0) and all_passed
+	all_passed = _check("target score value stays inside target panel", _rect_contains((_find_node_by_name(battle_screen, "TargetScorePanel") as Control).get_global_rect(), target_value.get_global_rect(), 1.0)) and all_passed
+	all_passed = _check("stage value follows battle index", max_battle_value.text == "3") and all_passed
+
+	if left_sidebar.has_method("render") and battle_screen.has_method("_build_hud_state"):
+		var final_score_state: BattleHudState = battle_screen._build_hud_state()
+		final_score_state.combo_display_visible = false
+		final_score_state.final_score_display_visible = true
+		final_score_state.formula_score = 12345
+		left_sidebar.render(final_score_state)
+		await process_frame
+		await process_frame
+		all_passed = _check("formula badge row does not move when final score appears", formula_badges.global_position.distance_to(base_badges_position) <= 1.0) and all_passed
 
 	battle_screen.queue_free()
 	print("PASS: DebugLeftSidebarFixedLayoutSmokeTest" if all_passed else "FAIL: DebugLeftSidebarFixedLayoutSmokeTest")

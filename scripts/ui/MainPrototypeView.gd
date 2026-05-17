@@ -340,6 +340,12 @@ func _on_exit_pressed() -> void:
 
 func _on_battle_requested(requested_run_state: RunState) -> void:
 	current_view_id = &"battle"
+	var existing_battle_screen := _current_battle_screen()
+	if existing_battle_screen != null:
+		if existing_battle_screen.has_method("start_battle_with_run_state"):
+			existing_battle_screen.call("start_battle_with_run_state", game_flow_controller, requested_run_state)
+			return
+
 	_clear_screen()
 	var battle_screen = load(BATTLE_SCREEN_PATH).instantiate()
 	battle_screen.setup(game_flow_controller, requested_run_state)
@@ -347,6 +353,12 @@ func _on_battle_requested(requested_run_state: RunState) -> void:
 
 
 func _on_reward_requested(choices: Array) -> void:
+	var existing_battle_screen := _current_battle_screen()
+	if existing_battle_screen != null and existing_battle_screen.has_method("show_reward_choices"):
+		current_view_id = &"battle_reward"
+		existing_battle_screen.call("show_reward_choices", choices)
+		return
+
 	current_view_id = &"reward"
 	_clear_screen()
 	var reward_screen = load(REWARD_SCREEN_PATH).instantiate()
@@ -355,6 +367,12 @@ func _on_reward_requested(choices: Array) -> void:
 
 
 func _on_forge_install_requested(piece) -> void:
+	var existing_battle_screen := _current_battle_screen()
+	if existing_battle_screen != null and existing_battle_screen.has_method("begin_reward_install"):
+		current_view_id = &"battle_forge"
+		existing_battle_screen.call("begin_reward_install", piece)
+		return
+
 	current_view_id = &"forge"
 	_clear_screen()
 	var forge_screen = load(FORGE_INSTALL_SCREEN_PATH).instantiate()
@@ -380,3 +398,10 @@ func _clear_screen() -> void:
 		if child != game_flow_controller:
 			remove_child(child)
 			child.queue_free()
+
+
+func _current_battle_screen() -> Control:
+	for child in get_children():
+		if child is Control and child.has_method("start_battle_with_run_state") and child.has_method("show_reward_choices"):
+			return child as Control
+	return null

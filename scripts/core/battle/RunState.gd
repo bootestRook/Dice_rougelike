@@ -35,8 +35,30 @@ var battle_index: int = 0
 var current_battle: BattleState = null
 var last_reward_choices: Array[ForgePieceDef] = []
 var pending_forge_piece: ForgePieceDef = null
-var max_battles: int = 5
-var target_scores: Array[int] = [1000, 1150, 1400, 1750, 2300]
+var max_battles: int = 20
+var target_scores: Array[int] = [
+	850,
+	1100,
+	1400,
+	1900,
+	2200,
+	3000,
+	3900,
+	5200,
+	6000,
+	7800,
+	10200,
+	13500,
+	15500,
+	20000,
+	26000,
+	34500,
+	39000,
+	50000,
+	64000,
+	85000,
+]
+var boss_battle_numbers: Array[int] = [4, 8, 12, 16, 20]
 var run_won: bool = false
 var run_lost: bool = false
 var total_hands_scored: int = 0
@@ -103,7 +125,7 @@ func advance_battle() -> void:
 
 func get_target_score() -> int:
 	if target_scores.is_empty():
-		return 1000
+		return 850
 
 	var index: int = clampi(battle_index, 0, target_scores.size() - 1)
 	return target_scores[index]
@@ -212,6 +234,10 @@ func install_dice_tool_item(item_id: StringName) -> bool:
 
 func is_final_battle() -> bool:
 	return battle_index >= max_battles - 1
+
+
+func is_boss_battle() -> bool:
+	return boss_battle_numbers.has(battle_index + 1)
 
 
 func mark_run_won() -> void:
