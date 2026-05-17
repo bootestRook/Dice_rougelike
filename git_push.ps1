@@ -21,25 +21,47 @@ function Test-GitCommand {
     }
 }
 
+function Invoke-Git {
+    param(
+        [Parameter(ValueFromRemainingArguments = $true)]
+        [string[]]$Arguments
+    )
+
+    $previousErrorActionPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = "Continue"
+        $output = @(& git @Arguments 2>&1 | ForEach-Object { $_.ToString() })
+        $exitCode = $LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+
+    [pscustomobject]@{
+        ExitCode = $exitCode
+        Output   = $output
+    }
+}
+
 function Test-GitRepository {
-    & git rev-parse --is-inside-work-tree *> $null
-    if ($LASTEXITCODE -ne 0) {
+    $result = Invoke-Git rev-parse --is-inside-work-tree
+    if ($result.ExitCode -ne 0) {
         throw "This folder is not a Git repository: $PSScriptRoot"
     }
 }
 
 function Ensure-Origin {
-    $originOutput = @(& git remote get-url $RemoteName 2>$null)
-    if ($LASTEXITCODE -ne 0) {
-        & git remote add $RemoteName $TargetRemoteUrl
-        if ($LASTEXITCODE -ne 0) {
+    $originResult = Invoke-Git remote get-url $RemoteName
+    if ($originResult.ExitCode -ne 0) {
+        $addResult = Invoke-Git remote add $RemoteName $TargetRemoteUrl
+        if ($addResult.ExitCode -ne 0) {
             throw "Failed to add remote: $TargetRemoteUrl"
         }
         Write-Host "Remote added: $TargetRemoteUrl"
         return
     }
 
-    $originUrl = ($originOutput | Select-Object -First 1).Trim()
+    $originUrl = ($originResult.Output | Select-Object -First 1).Trim()
     if ($originUrl -ne $TargetRemoteUrl) {
         throw "origin does not match the target repo. Current: $originUrl Target: $TargetRemoteUrl"
     }
@@ -54,9 +76,10 @@ function Test-NeedsPullFirst {
 function Invoke-PullBeforePush {
     Write-Host ""
     Write-Host "Remote has commits that are not local. Trying pull before the next push..."
-    & git pull --rebase --autostash $RemoteName $BranchName
+    $pullResult = Invoke-Git pull --rebase --autostash $RemoteName $BranchName
+    $pullResult.Output | ForEach-Object { Write-Host $_ }
 
-    if ($LASTEXITCODE -ne 0) {
+    if ($pullResult.ExitCode -ne 0) {
         Write-Host ""
         Write-Host "Pull before push did not finish. Resolve any conflicts if needed; this script will keep retrying."
     }
@@ -71,7 +94,8 @@ try {
     Write-Host "Remote repo: $TargetRemoteUrl"
     Write-Host "Push branch: $BranchName -> $RemoteName/$BranchName"
 
-    $status = @(& git status --short)
+    $statusResult = Invoke-Git status --short
+    $status = $statusResult.Output
     if ($status.Count -gt 0) {
         Write-Host ""
         Write-Host "There are uncommitted files. This script only pushes committed changes:"
@@ -85,8 +109,9 @@ try {
     $attempt = 1
     while ($true) {
         Write-Host "Push attempt $attempt..."
-        $output = @(& git push -u $RemoteName $BranchName 2>&1)
-        $exitCode = $LASTEXITCODE
+        $pushResult = Invoke-Git push -u $RemoteName $BranchName
+        $output = $pushResult.Output
+        $exitCode = $pushResult.ExitCode
         $output | ForEach-Object { Write-Host $_ }
 
         if ($exitCode -eq 0) {
