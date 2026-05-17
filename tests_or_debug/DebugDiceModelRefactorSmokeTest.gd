@@ -22,7 +22,7 @@ func _init() -> void:
 	all_passed = _check("FaceState default ornament", face.ornament_id == &"orn_none") and all_passed
 	all_passed = _check("FaceState default mark", face.mark_id == &"mark_none") and all_passed
 	var custom_face := FaceState.new(8, &"orn_chip", &"red")
-	all_passed = _check("FaceState constructor accepts legal pip and slots", custom_face.pip == 8 and custom_face.ornament_id == &"orn_chip" and custom_face.mark_id == &"red") and all_passed
+	all_passed = _check("FaceState constructor accepts legal pip and slots", custom_face.pip == 8 and custom_face.ornament_id == &"orn_chip" and custom_face.mark_id == &"mark_red") and all_passed
 
 	var die := DieState.create_normal_d6(&"smoke_d6")
 	all_passed = _check("create_normal_d6 face_count", die.face_count == 6) and all_passed
@@ -40,16 +40,16 @@ func _init() -> void:
 	die.face_count = 6
 	die.face_weights[0] = 3
 	die.faces[0].ornament_id = &"orn_chip"
-	die.faces[0].mark_id = &"red"
+	die.faces[0].mark_id = &"mark_red"
 	var cloned := die.clone()
 	cloned.body_id = &"glass"
 	cloned.face_count = 8
 	cloned.face_weights[0] = 9
 	cloned.faces[0].pip = 6
 	cloned.faces[0].ornament_id = &"orn_burst"
-	cloned.faces[0].mark_id = &"blue"
+	cloned.faces[0].mark_id = &"mark_blue"
 	all_passed = _check("clone copies die fields", cloned.id == die.id and cloned.face_weights.size() == die.face_weights.size() and cloned.faces.size() == die.faces.size()) and all_passed
-	all_passed = _check("clone mutation does not affect original", die.body_id == &"iron" and die.face_count == 6 and die.face_weights[0] == 3 and die.faces[0].pip == 1 and die.faces[0].ornament_id == &"orn_chip" and die.faces[0].mark_id == &"red") and all_passed
+	all_passed = _check("clone mutation does not affect original", die.body_id == &"iron" and die.face_count == 6 and die.face_weights[0] == 3 and die.faces[0].pip == 1 and die.faces[0].ornament_id == &"orn_chip" and die.faces[0].mark_id == &"mark_red") and all_passed
 
 	var invalid_shape := die.clone()
 	invalid_shape.face_count = 8

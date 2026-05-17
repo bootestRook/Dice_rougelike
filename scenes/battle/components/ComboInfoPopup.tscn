@@ -53,16 +53,16 @@ theme_override_constants/separation = 16
 [node name="TitleLabel" type="Label" parent="Center/WindowPanel/PopupMargin/Rows"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "骰型信息"
+text = "AUTO.TEXT.3A7FB8F6A252"
 horizontal_alignment = 1
 
 [node name="InfoTabs" type="TabBar" parent="Center/WindowPanel/PopupMargin/Rows"]
 unique_name_in_owner = true
 layout_mode = 2
 tab_count = 3
-tab_0/title = "骰型"
-tab_1/title = "面饰"
-tab_2/title = "印记"
+tab_0/title = "AUTO.TEXT.1BA8AC01BCAB"
+tab_1/title = "AUTO.TEXT.6D536C9ECF3E"
+tab_2/title = "AUTO.TEXT.7F31376752FF"
 
 [node name="Header" type="HBoxContainer" parent="Center/WindowPanel/PopupMargin/Rows"]
 unique_name_in_owner = true
@@ -73,7 +73,7 @@ theme_override_constants/separation = 12
 unique_name_in_owner = true
 custom_minimum_size = Vector2(130, 0)
 layout_mode = 2
-text = "等级"
+text = "AUTO.TEXT.5C42C048EA24"
 horizontal_alignment = 1
 
 [node name="HeaderCombo" type="Label" parent="Center/WindowPanel/PopupMargin/Rows/Header"]
@@ -81,21 +81,21 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_horizontal = 3
-text = "骰型"
+text = "AUTO.TEXT.1BA8AC01BCAB"
 horizontal_alignment = 1
 
 [node name="HeaderFormula" type="Label" parent="Center/WindowPanel/PopupMargin/Rows/Header"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(216, 0)
 layout_mode = 2
-text = "基础战力 × 倍率"
+text = "AUTO.TEXT.37C57A0E5090"
 horizontal_alignment = 1
 
 [node name="HeaderCount" type="Label" parent="Center/WindowPanel/PopupMargin/Rows/Header"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(116, 0)
 layout_mode = 2
-text = "出现次数"
+text = "AUTO.TEXT.121A6D93AC00"
 horizontal_alignment = 1
 
 [node name="RowScroll" type="ScrollContainer" parent="Center/WindowPanel/PopupMargin/Rows"]
@@ -127,4 +127,4 @@ theme_override_constants/separation = 8
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 58)
 layout_mode = 2
-text = "返回"
+text = "AUTO.TEXT.11D024154013"

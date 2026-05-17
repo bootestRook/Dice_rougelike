@@ -45,13 +45,13 @@ func _build_view() -> void:
 	var button_row := HBoxContainer.new()
 	button_row.add_theme_constant_override("separation", 10)
 	var restart_button := Button.new()
-	restart_button.text = "重新开始"
+	restart_button.text = str(TranslationServer.translate(&"AUTO.TEXT.F17FC9B7F685"))
 	restart_button.custom_minimum_size = Vector2(180, 38)
 	restart_button.pressed.connect(_on_restart_pressed)
 	button_row.add_child(restart_button)
 
 	var main_button := Button.new()
-	main_button.text = "返回主界面"
+	main_button.text = str(TranslationServer.translate(&"AUTO.TEXT.F83BC723B03A"))
 	main_button.custom_minimum_size = Vector2(180, 38)
 	main_button.pressed.connect(_on_back_to_main_pressed)
 	button_row.add_child(main_button)
@@ -78,25 +78,25 @@ func _build_view() -> void:
 
 func _title_text() -> String:
 	if run_state != null and run_state.run_won:
-		return "通关成功"
-	return "挑战失败"
+		return str(TranslationServer.translate(&"AUTO.TEXT.4B966F6C094D"))
+	return str(TranslationServer.translate(&"AUTO.TEXT.FD9FAA58F841"))
 
 
 func _summary_text() -> String:
 	if run_state == null:
-		return "没有当前局状态。"
+		return str(TranslationServer.translate(&"AUTO.TEXT.7C5B19F7D25E"))
 	return run_state.get_run_summary_text()
 
 
 func _dice_collection_text() -> String:
 	if run_state == null:
-		return "没有骰子。"
+		return str(TranslationServer.translate(&"AUTO.TEXT.6FD2AC5246BC"))
 
 	var lines := PackedStringArray()
-	lines.append("最终骰组")
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.F328AB6F08A8")))
 	for die_index in range(run_state.dice.size()):
 		lines.append("")
-		lines.append("骰子 %d" % [die_index + 1])
+		lines.append(str(TranslationServer.translate(&"AUTO.TEXT.F5833D7A3D75")) % [die_index + 1])
 		lines.append(DisplayNames.die_summary(run_state.dice[die_index]))
 	return "\n".join(lines)
 

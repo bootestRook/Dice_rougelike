@@ -21,14 +21,14 @@ func render(face_data: FaceViewData, _icon_library: BattleIconLibrary, style_con
 	_rebuild_layout(style_config)
 
 	if face_data == null:
-		title_label.text = "面 -"
-		pip_label.text = "点数：-"
-		_set_link_value(ornament_value_container, &"", "无", &"ornament", style_config)
-		_set_link_value(mark_value_container, &"", "无", &"mark", style_config)
+		title_label.text = str(TranslationServer.translate(&"AUTO.TEXT.9C931D7AD49C"))
+		pip_label.text = str(TranslationServer.translate(&"AUTO.TEXT.EA4600C595EC"))
+		_set_link_value(ornament_value_container, &"", str(TranslationServer.translate(&"AUTO.TEXT.72077749F794")), &"ornament", style_config)
+		_set_link_value(mark_value_container, &"", str(TranslationServer.translate(&"AUTO.TEXT.72077749F794")), &"mark", style_config)
 		return
 
-	title_label.text = "面 %d" % [face_data.face_index + 1]
-	pip_label.text = "点数：%d" % [face_data.pip]
+	title_label.text = str(TranslationServer.translate(&"AUTO.TEXT.51C2E5D71139")) % [face_data.face_index + 1]
+	pip_label.text = str(TranslationServer.translate(&"AUTO.TEXT.3BD4F422F927")) % [face_data.pip]
 	_set_link_value(
 		ornament_value_container,
 		face_data.ornament_id,
@@ -71,11 +71,11 @@ func _rebuild_layout(style_config: BattleUiStyleConfig) -> void:
 	rows.add_child(title_label)
 	rows.add_child(pip_label)
 
-	var ornament_row := _make_value_row("面饰：", style_config)
+	var ornament_row := _make_value_row(str(TranslationServer.translate(&"AUTO.TEXT.191A3BBC896F")), style_config)
 	ornament_value_container = ornament_row.get_node("ValueContainer")
 	rows.add_child(ornament_row)
 
-	var mark_row := _make_value_row("印记：", style_config)
+	var mark_row := _make_value_row(str(TranslationServer.translate(&"AUTO.TEXT.A4CA68633FD1")), style_config)
 	mark_value_container = mark_row.get_node("ValueContainer")
 	rows.add_child(mark_row)
 
@@ -162,7 +162,7 @@ func _on_link_clicked(meta) -> void:
 
 
 func _none_text(id: StringName, fallback: String) -> String:
-	return "无" if _is_none_id(id) else fallback
+	return str(TranslationServer.translate(&"AUTO.TEXT.72077749F794")) if _is_none_id(id) else fallback
 
 
 func _is_none_id(id: StringName) -> bool:

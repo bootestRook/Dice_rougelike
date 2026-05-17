@@ -44,7 +44,7 @@ func _init() -> void:
 
 	if red_6 != null:
 		forge_service.apply_piece(red_6, run_state.dice[1], 1)
-	var red_face_ok := run_state.dice[1].faces[1].pip == 6 and run_state.dice[1].faces[1].mark_id == &"red"
+	var red_face_ok := run_state.dice[1].faces[1].pip == 6 and run_state.dice[1].faces[1].mark_id == &"mark_red"
 	all_passed = _check("red_6 sets pip and mark", red_face_ok) and all_passed
 
 	if burst_1 != null:
@@ -63,7 +63,7 @@ func _init() -> void:
 	all_passed = _check("legacy set_material maps to burst ornament", slot_die.faces[0].ornament_id == &"orn_burst") and all_passed
 	forge_service.apply_piece(_make_piece(&"slot_red", [_make_id_op(ForgeOperationDef.OP_SET_MARK, &"red")]), slot_die, 0)
 	forge_service.apply_piece(_make_piece(&"slot_blue", [_make_id_op(ForgeOperationDef.OP_SET_MARK, &"blue")]), slot_die, 0)
-	all_passed = _check("mark slot replaces previous mark", slot_die.faces[0].mark_id == &"blue") and all_passed
+	all_passed = _check("mark slot replaces previous mark", slot_die.faces[0].mark_id == &"mark_blue") and all_passed
 
 	var disabled_face = slot_die.faces[0]
 	disabled_face.rune_id = &"six"
@@ -87,7 +87,7 @@ func _init() -> void:
 	controller.roll_service.rng.seed = 13579
 	controller.start_battle(null, run_state)
 	var uses_run_dice := controller.dice.size() == run_state.dice.size() and controller.dice[0] == run_state.dice[0]
-	var keeps_forge_changes := controller.dice[0].faces[0].pip == 6 and controller.dice[1].faces[1].mark_id == &"red"
+	var keeps_forge_changes := controller.dice[0].faces[0].pip == 6 and controller.dice[1].faces[1].mark_id == &"mark_red"
 	all_passed = _check("BattleController uses RunState.dice objects", uses_run_dice) and all_passed
 	all_passed = _check("BattleController sees forged faces", keeps_forge_changes) and all_passed
 

@@ -17,11 +17,11 @@ func _init() -> void:
 
 	var pip_face := _make_base_face()
 	service.apply_piece(_make_piece(&"test_pip_6", [_make_int_op(ForgeOperationDef.OP_SET_PIP, 6)]), _die_with_face(pip_face), 0)
-	all_passed = _check("set_pip replaces only pip", pip_face.pip == 6 and pip_face.ornament_id == &"orn_chip" and pip_face.mark_id == &"red") and all_passed
+	all_passed = _check("set_pip replaces only pip", pip_face.pip == 6 and pip_face.ornament_id == &"orn_chip" and pip_face.mark_id == &"mark_red") and all_passed
 
 	var ornament_face := _make_base_face()
 	service.apply_piece(_make_piece(&"test_stay", [_make_id_op(ForgeOperationDef.OP_SET_ORNAMENT, &"stay")]), _die_with_face(ornament_face), 0)
-	all_passed = _check("set_ornament replaces only ornament", ornament_face.ornament_id == &"orn_stay" and ornament_face.pip == 1 and ornament_face.mark_id == &"red") and all_passed
+	all_passed = _check("set_ornament replaces only ornament", ornament_face.ornament_id == &"orn_stay" and ornament_face.pip == 1 and ornament_face.mark_id == &"mark_red") and all_passed
 
 	var legacy_material_face := _make_base_face()
 	service.apply_piece(_make_piece(&"test_legacy_glass", [_make_id_op(ForgeOperationDef.OP_SET_MATERIAL, &"glass")]), _die_with_face(legacy_material_face), 0)
@@ -29,7 +29,7 @@ func _init() -> void:
 
 	var mark_face := _make_base_face()
 	service.apply_piece(_make_piece(&"test_blue", [_make_id_op(ForgeOperationDef.OP_SET_MARK, &"blue")]), _die_with_face(mark_face), 0)
-	all_passed = _check("set_mark replaces only mark", mark_face.mark_id == &"blue" and mark_face.pip == 1 and mark_face.ornament_id == &"orn_chip") and all_passed
+	all_passed = _check("set_mark replaces only mark", mark_face.mark_id == &"mark_blue" and mark_face.pip == 1 and mark_face.ornament_id == &"orn_chip") and all_passed
 
 	var disabled_face := _make_base_face()
 	disabled_face.rune_id = &"six"
@@ -60,12 +60,12 @@ func _init() -> void:
 		_die_with_face(compound_face),
 		0
 	)
-	all_passed = _check("compound red_6 changes only declared slots", compound_face.pip == 6 and compound_face.mark_id == &"red" and compound_face.ornament_id == &"orn_chip") and all_passed
+	all_passed = _check("compound red_6 changes only declared slots", compound_face.pip == 6 and compound_face.mark_id == &"mark_red" and compound_face.ornament_id == &"orn_chip") and all_passed
 
 	var preview_source := _make_base_face()
 	var preview := service.preview_face_after_apply(_make_piece(&"preview_pip_6", [_make_int_op(ForgeOperationDef.OP_SET_PIP, 6)]), preview_source)
-	all_passed = _check("preview does not mutate original", preview_source.pip == 1 and preview_source.ornament_id == &"orn_chip" and preview_source.mark_id == &"red") and all_passed
-	all_passed = _check("preview shows modified result", preview.pip == 6 and preview.ornament_id == &"orn_chip" and preview.mark_id == &"red") and all_passed
+	all_passed = _check("preview does not mutate original", preview_source.pip == 1 and preview_source.ornament_id == &"orn_chip" and preview_source.mark_id == &"mark_red") and all_passed
+	all_passed = _check("preview shows modified result", preview.pip == 6 and preview.ornament_id == &"orn_chip" and preview.mark_id == &"mark_red") and all_passed
 
 	var warning_face := _make_base_face()
 	var ornament_warning := service.get_install_warning_text(_make_piece(&"warn_burst", [_make_id_op(ForgeOperationDef.OP_SET_ORNAMENT, &"burst")]), warning_face)
@@ -94,7 +94,7 @@ func _make_base_face() -> FaceState:
 	var face := FaceState.new()
 	face.pip = 1
 	face.ornament_id = &"orn_chip"
-	face.mark_id = &"red"
+	face.mark_id = &"mark_red"
 	face.rune_id = &"six"
 	face.level = 2
 	return face

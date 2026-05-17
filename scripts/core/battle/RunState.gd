@@ -352,14 +352,14 @@ func has_installed_piece_on_face(die_index: int, face_index: int) -> bool:
 
 func get_run_summary_text() -> String:
 	var lines := PackedStringArray()
-	lines.append("已通过战斗：%d / %d" % [min(battle_index + (1 if run_won else 0), max_battles), max_battles])
-	lines.append("当前战斗序号：%d" % [battle_index + 1])
-	lines.append("总结算手数：%d" % [total_hands_scored])
-	lines.append("总获得战力：%d" % [total_score_scored])
-	lines.append("最高单手战力：%d" % [best_hand_score])
-	lines.append("金币：%d" % [coins])
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.799A766B4D0D")) % [min(battle_index + (1 if run_won else 0), max_battles), max_battles])
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.CDE75A9B4341")) % [battle_index + 1])
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.AAD002B83E9D")) % [total_hands_scored])
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.2444EE1FC9E1")) % [total_score_scored])
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.F31F59CBCB2C")) % [best_hand_score])
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.220EE7ACC516")) % [coins])
 	lines.append(_most_triggered_effect_summary_text())
-	lines.append("已安装铸骰件：%d" % [installed_piece_count])
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.E69FDA851F52")) % [installed_piece_count])
 	lines.append(get_installed_piece_history_text())
 	lines.append("")
 	_append_recent_settlement_text(lines)
@@ -368,18 +368,18 @@ func get_run_summary_text() -> String:
 
 func get_installed_piece_history_text() -> String:
 	if installed_piece_history.is_empty():
-		return "安装历史：无"
+		return str(TranslationServer.translate(&"AUTO.TEXT.5811C61314A1"))
 
 	var lines := PackedStringArray()
-	lines.append("安装历史：")
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.B5D005020079")))
 	for item in installed_piece_history:
-		lines.append("第 %d 场后：%s 安装到 骰子 %d / 面 %d" % [
+		lines.append(str(TranslationServer.translate(&"AUTO.TEXT.1DE727CACA95")) % [
 			int(item.get("battle", 0)),
 			str(item.get("piece_name", "")),
 			int(item.get("die", 0)),
 			int(item.get("face", 0)),
 		])
-		lines.append("标签：%s" % [str(item.get("piece_tags_text", "无"))])
+		lines.append(str(TranslationServer.translate(&"AUTO.TEXT.ABAAFC3C7A71")) % [str(item.get("piece_tags_text", str(TranslationServer.translate(&"AUTO.TEXT.72077749F794"))))])
 	return "\n".join(lines)
 
 
@@ -405,7 +405,7 @@ func _record_settlement_result(result: ScoreResult, hand_number: int) -> void:
 		"score": result.final_score,
 		"result": result,
 	})
-	recent_hand_summaries.append("第 %d 场 / 第 %d 手：最终战力 %d\n%s" % [
+	recent_hand_summaries.append(str(TranslationServer.translate(&"AUTO.TEXT.91E79785325C")) % [
 		battle_index + 1,
 		hand_number,
 		result.final_score,
@@ -485,9 +485,9 @@ func _is_counted_effect_category(category: StringName) -> bool:
 func _most_triggered_effect_summary_text() -> String:
 	var category := _most_triggered_effect_category()
 	if category == &"":
-		return "最常触发效果：无"
+		return str(TranslationServer.translate(&"AUTO.TEXT.1B8190006657"))
 
-	return "最常触发效果：%s（%d 次）" % [
+	return str(TranslationServer.translate(&"AUTO.TEXT.35BAEA2DB315")) % [
 		_effect_category_text(category),
 		int(effect_trigger_counts.get(category, 0)),
 	]
@@ -539,7 +539,7 @@ func _effect_category_text(category: StringName) -> String:
 		&"mark_white":
 			return DisplayNames.mark_name(&"mark_white")
 		&"extra_pip":
-			return "额外触发点数"
+			return str(TranslationServer.translate(&"AUTO.TEXT.121760C4E89D"))
 		_:
 			return str(category)
 
@@ -581,16 +581,16 @@ func _is_copyable_item_id(item_id: StringName) -> bool:
 
 func _append_recent_settlement_text(lines: PackedStringArray) -> void:
 	if recent_settlement_logs.is_empty():
-		lines.append("最近结算摘要：无")
+		lines.append(str(TranslationServer.translate(&"AUTO.TEXT.883EA5139D05")))
 		return
 
-	lines.append("最近结算摘要（%d / %d）：" % [recent_settlement_logs.size(), MAX_RECENT_SETTLEMENT_LOGS])
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.1F6C99CA29E0")) % [recent_settlement_logs.size(), MAX_RECENT_SETTLEMENT_LOGS])
 	for item in recent_settlement_logs:
 		var result: ScoreResult = item.get("result") as ScoreResult
 		if result == null:
 			continue
 
-		lines.append("第 %d 场 / 第 %d 手：最终战力 %d" % [
+		lines.append(str(TranslationServer.translate(&"AUTO.TEXT.2B299868C5C9")) % [
 			int(item.get("battle", 0)),
 			int(item.get("hand", 0)),
 			int(item.get("score", 0)),

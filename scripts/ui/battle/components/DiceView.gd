@@ -79,7 +79,7 @@ func render(
 		_clear_visuals()
 		return
 
-	title_label.text = "骰子 %d" % [die_data.die_index + 1]
+	title_label.text = str(TranslationServer.translate(&"AUTO.TEXT.F5833D7A3D75")) % [die_data.die_index + 1]
 	title_label.visible = false
 	button_pressed = die_data.selected
 	disabled = die_data.disabled
@@ -165,13 +165,13 @@ func _render_state() -> void:
 		state_label.text = ""
 		return
 	if die_data.disabled:
-		state_label.text = "禁用"
+		state_label.text = str(TranslationServer.translate(&"AUTO.TEXT.BE70BE5A2E12"))
 	elif die_data.scored:
-		state_label.text = "已结算"
+		state_label.text = str(TranslationServer.translate(&"AUTO.TEXT.4C8D3F952240"))
 	elif info_focused:
-		state_label.text = "查看中"
+		state_label.text = str(TranslationServer.translate(&"AUTO.TEXT.BAF2E11995C5"))
 	elif die_data.selected:
-		state_label.text = "已选择"
+		state_label.text = str(TranslationServer.translate(&"AUTO.TEXT.743AAF951E5D"))
 	else:
 		state_label.text = ""
 

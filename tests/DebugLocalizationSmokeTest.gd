@@ -12,6 +12,7 @@ const ScoreResult = preload("res://scripts/core/scoring/ScoreResult.gd")
 
 const REQUIRED_LOCALES := ["zh_Hans", "en"]
 const SOURCE_EXTENSIONS := ["gd", "tscn", "tres", "json"]
+const TEXT_INTEGRITY_EXTENSIONS := ["gd", "tscn", "tres", "json", "po", "pot"]
 
 
 func _init() -> void:
@@ -22,6 +23,7 @@ func _init() -> void:
 	all_passed = _run_check("core keys", _test_core_keys()) and all_passed
 	all_passed = _run_check("data keys", _test_data_keys()) and all_passed
 	all_passed = _run_check("localized runtime text", _test_localized_runtime_text()) and all_passed
+	all_passed = _run_check("UTF-8 and mojibake integrity", _test_text_integrity()) and all_passed
 	all_passed = _run_check("no visible CJK in player text sources", _test_no_visible_chinese_in_player_text_sources()) and all_passed
 
 	if all_passed:
@@ -216,21 +218,6 @@ func _test_localized_runtime_text() -> bool:
 		return false
 
 	return true
-	if (
-		not summary.contains("主骰型")
-		or not summary.contains("包含结构")
-		or not summary.contains("小顺")
-		or not summary.contains("一对")
-	):
-		push_error("Score summary missed separated primary combo or contained pattern: %s" % [summary])
-		return false
-
-	var phase_text := LocService.t(LocKeys.battle_phase_key(&"WAITING_ACTION"))
-	if phase_text == "WAITING_ACTION" or phase_text == str(LocKeys.battle_phase_key(&"WAITING_ACTION")):
-		push_error("Unlocalized battle phase leaked: %s" % [phase_text])
-		return false
-
-	return true
 
 
 func _test_data_keys() -> bool:
@@ -325,14 +312,71 @@ func _test_data_resource_files() -> bool:
 func _test_no_visible_chinese_in_player_text_sources() -> bool:
 	var paths: Array[String] = []
 	_collect_files("res://", SOURCE_EXTENSIONS, paths)
+	var failing_paths: PackedStringArray = []
 	for path in paths:
 		if _source_path_excluded(path):
 			continue
 		var text := FileAccess.get_file_as_string(path)
 		if _contains_cjk(text):
-			push_error("CJK player text found outside localization resources: %s" % [path])
-			return false
-	return true
+			failing_paths.append(path)
+
+	if failing_paths.is_empty():
+		return true
+
+	for path in failing_paths:
+		push_error("CJK player text found outside localization resources: %s" % [path])
+	return false
+
+
+func _test_text_integrity() -> bool:
+	var paths: Array[String] = []
+	_collect_files("res://", TEXT_INTEGRITY_EXTENSIONS, paths)
+	var invalid_paths: PackedStringArray = []
+	var mojibake_paths: PackedStringArray = []
+
+	for path in paths:
+		if path.begins_with("res://.git/") or path.begins_with("res://.godot/"):
+			continue
+		var text := FileAccess.get_file_as_string(path)
+		if FileAccess.get_open_error() != OK:
+			invalid_paths.append(path)
+			continue
+		var pattern := _first_mojibake_pattern(text)
+		if pattern != "":
+			mojibake_paths.append("%s (%s)" % [path, pattern])
+
+	for path in invalid_paths:
+		push_error("Could not read text file as UTF-8: %s" % [path])
+	for path in mojibake_paths:
+		push_error("Possible mojibake text found: %s" % [path])
+	return invalid_paths.is_empty() and mojibake_paths.is_empty()
+
+
+func _first_mojibake_pattern(text: String) -> String:
+	for pattern in _mojibake_patterns():
+		if text.contains(pattern):
+			return pattern
+	return ""
+
+
+func _mojibake_patterns() -> Array[String]:
+	return [
+		String.chr(0x951B),
+		String.chr(0x8133),
+		String.chr(0x9416),
+		String.chr(0x9369),
+		String.chr(0x7EDB),
+		String.chr(0x95B2),
+		String.chr(0x9483),
+		String.chr(0x7EF1),
+		String.chr(0x9427),
+		String.chr(0x59B2),
+		String.chr(0x74D2),
+		String.chr(0x6960) + String.chr(0x677F),
+		String.chr(0x95C8) + String.chr(0x3224) + String.chr(0x30B0),
+		String.chr(0x9357) + String.chr(0x62CC),
+		String.chr(0xFFFD),
+	]
 
 
 func _key_translates(key: StringName) -> bool:

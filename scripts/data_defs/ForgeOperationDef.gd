@@ -95,23 +95,23 @@ func get_debug_text() -> String:
 func get_display_text() -> String:
 	match get_effective_op():
 		OP_SET_PIP:
-			return "点数变为 %d" % [get_effective_value_int()]
+			return str(TranslationServer.translate(&"AUTO.TEXT.6DD5779493A0")) % [get_effective_value_int()]
 		OP_SET_ORNAMENT:
-			return "面饰变为 %s" % [DisplayNames.ornament_name(get_effective_value_id())]
+			return str(TranslationServer.translate(&"AUTO.TEXT.D4AE8B2936A5")) % [DisplayNames.ornament_name(get_effective_value_id())]
 		OP_SET_MARK:
-			return "印记变为 %s" % [DisplayNames.mark_name(get_effective_value_id())]
+			return str(TranslationServer.translate(&"AUTO.TEXT.2E05F223A24E")) % [DisplayNames.mark_name(get_effective_value_id())]
 		OP_SET_BODY:
-			return "骰胚变为 %s" % [DisplayNames.body_name(get_effective_value_id())]
+			return str(TranslationServer.translate(&"AUTO.TEXT.37DE58A32A38")) % [DisplayNames.body_name(get_effective_value_id())]
 		OP_COMBO_UPGRADE:
-			return "骰型升级：%s" % [DisplayNames.combo_name(get_effective_value_id())]
+			return str(TranslationServer.translate(&"AUTO.TEXT.7933F65671B8")) % [DisplayNames.combo_name(get_effective_value_id())]
 		OP_SET_RUNE, OP_UPGRADE:
-			return "当前版本不启用该效果"
+			return str(TranslationServer.translate(&"AUTO.TEXT.6F063F9A720B"))
 		OP_CLEANSE:
-			return "清除负面面饰或负面印记"
+			return str(TranslationServer.translate(&"AUTO.TEXT.C9CA5741CA3A"))
 		OP_RESET_FACE:
-			return "重置面饰和印记"
+			return str(TranslationServer.translate(&"AUTO.TEXT.45C08F3B5E42"))
 		OP_COPY_FROM_FACE:
-			return "复制骰面（暂未启用）"
+			return str(TranslationServer.translate(&"AUTO.TEXT.E6CD87AA4E74"))
 		_:
 			return str(get_effective_op())
 

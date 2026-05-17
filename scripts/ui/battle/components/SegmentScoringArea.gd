@@ -82,7 +82,7 @@ func _apply_style() -> void:
 func _render_log(lines: Array[String]) -> void:
 	_clear_children(log_rows)
 	if lines.is_empty():
-		_add_log_row("结算日志会显示在这里。")
+		_add_log_row(str(TranslationServer.translate(&"AUTO.TEXT.FA5D45A99246")))
 		return
 
 	for line in lines:

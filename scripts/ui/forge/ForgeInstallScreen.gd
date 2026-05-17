@@ -58,8 +58,8 @@ func _build_view() -> void:
 	root.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	main_scroll.add_child(root)
 
-	root.add_child(_make_text_label("安装铸骰件", 28, Color(0.95, 0.92, 0.84)))
-	root.add_child(_make_text_label("选择一个骰面", 16, Color(0.78, 0.86, 0.78)))
+	root.add_child(_make_text_label(str(TranslationServer.translate(&"AUTO.TEXT.B6CF819FA0AC")), 28, Color(0.95, 0.92, 0.84)))
+	root.add_child(_make_text_label(str(TranslationServer.translate(&"AUTO.TEXT.56B08BE6F8EA")), 16, Color(0.78, 0.86, 0.78)))
 	root.add_child(_make_text_label(_piece_text(), 15, Color(0.86, 0.86, 0.8)))
 
 	var dice_row := HBoxContainer.new()
@@ -67,7 +67,7 @@ func _build_view() -> void:
 	root.add_child(dice_row)
 
 	if run_state == null:
-		root.add_child(_make_text_label("没有当前局状态。", 16, Color(0.95, 0.78, 0.72)))
+		root.add_child(_make_text_label(str(TranslationServer.translate(&"AUTO.TEXT.7C5B19F7D25E")), 16, Color(0.95, 0.78, 0.72)))
 		return
 
 	run_state.ensure_starting_dice()
@@ -87,7 +87,7 @@ func _make_die_panel(die_index: int) -> Control:
 	panel.add_child(box)
 
 	var die := run_state.dice[die_index]
-	box.add_child(_make_text_label("骰子 %d\n骰胚：%s\n面数：D%d" % [
+	box.add_child(_make_text_label(str(TranslationServer.translate(&"AUTO.TEXT.5C0A3E2E5B09")) % [
 		die_index + 1,
 		DisplayNames.body_name(die.body_id),
 		die.face_count,
@@ -107,12 +107,12 @@ func _make_die_panel(die_index: int) -> Control:
 
 func _piece_text() -> String:
 	if piece == null:
-		return "尚未选择铸骰件。"
+		return str(TranslationServer.translate(&"AUTO.TEXT.0E689E7F4286"))
 	return piece.get_display_text()
 
 
 func _format_face_button(face_index: int, face) -> String:
-	return "面 %d：%s" % [face_index + 1, DisplayNames.face_summary(face).replace("\n", " / ")]
+	return str(TranslationServer.translate(&"AUTO.TEXT.6F4FAC813D23")) % [face_index + 1, DisplayNames.face_summary(face).replace("\n", " / ")]
 
 
 func _on_face_pressed(die_index: int, face_index: int) -> void:
@@ -156,7 +156,7 @@ func _make_install_preview_panel() -> Control:
 	box.add_theme_constant_override("separation", 10)
 	panel.add_child(box)
 
-	box.add_child(_make_text_label("安装预览", 18, Color(0.95, 0.88, 0.66)))
+	box.add_child(_make_text_label(str(TranslationServer.translate(&"AUTO.TEXT.9F0F3B3AEC00")), 18, Color(0.95, 0.88, 0.66)))
 
 	target_label = _make_text_label("", 15, Color(0.88, 0.88, 0.8))
 	box.add_child(target_label)
@@ -185,7 +185,7 @@ func _make_install_preview_panel() -> Control:
 	warning_scroll.add_child(warning_label)
 
 	confirm_install_button = Button.new()
-	confirm_install_button.text = "确认安装"
+	confirm_install_button.text = str(TranslationServer.translate(&"AUTO.TEXT.402052AA36CD"))
 	confirm_install_button.custom_minimum_size = Vector2(160, 36)
 	confirm_install_button.pressed.connect(_on_confirm_install_pressed)
 	box.add_child(confirm_install_button)
@@ -198,22 +198,22 @@ func _refresh_install_preview() -> void:
 		return
 
 	if piece == null:
-		target_label.text = "当前铸骰件：无"
-		install_preview_label.text = "请先选择铸骰件。"
+		target_label.text = str(TranslationServer.translate(&"AUTO.TEXT.4C9A59CFBD20"))
+		install_preview_label.text = str(TranslationServer.translate(&"AUTO.TEXT.2E03906910DE"))
 		warning_label.text = ""
 		_update_confirm_button()
 		return
 
 	var piece_name := piece.get_display_name()
 	if selected_die_index < 0 or selected_face_index < 0:
-		target_label.text = "当前铸骰件：%s\n安装目标：未选择" % [piece_name]
-		install_preview_label.text = "点击一个骰面后，会在这里显示安装前和安装后。"
-		warning_label.text = "替换提示：\n未选择目标。"
+		target_label.text = str(TranslationServer.translate(&"AUTO.TEXT.97D68D60CCD1")) % [piece_name]
+		install_preview_label.text = str(TranslationServer.translate(&"AUTO.TEXT.C44738A97251"))
+		warning_label.text = str(TranslationServer.translate(&"AUTO.TEXT.C0469EBB56C8"))
 		_update_confirm_button()
 		return
 
 	var face = _selected_face()
-	target_label.text = "当前铸骰件：%s\n安装目标：骰子 %d / 面 %d" % [
+	target_label.text = str(TranslationServer.translate(&"AUTO.TEXT.A211180FE768")) % [
 		piece_name,
 		selected_die_index + 1,
 		selected_face_index + 1,
@@ -222,9 +222,9 @@ func _refresh_install_preview() -> void:
 
 	var warning_text := forge_service.get_install_warning_text(piece, face)
 	if warning_text == "":
-		warning_label.text = "替换提示：\n不会替换已有面饰或印记。"
+		warning_label.text = str(TranslationServer.translate(&"AUTO.TEXT.D88E4EABA242"))
 	else:
-		warning_label.text = "注意：\n%s" % [warning_text]
+		warning_label.text = str(TranslationServer.translate(&"AUTO.TEXT.59C606C9E3EF")) % [warning_text]
 
 	_update_confirm_button()
 

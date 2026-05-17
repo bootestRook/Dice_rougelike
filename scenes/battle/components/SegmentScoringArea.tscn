@@ -20,7 +20,7 @@ theme_override_constants/separation = 10
 [node name="TitleLabel" type="Label" parent="ScoringMargin/Rows"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "骰子结算区"
+text = "AUTO.TEXT.692950289178"
 horizontal_alignment = 1
 
 [node name="StagePanel" type="PanelContainer" parent="ScoringMargin/Rows"]
@@ -70,7 +70,7 @@ layout_mode = 2
 [node name="StatusLabel" type="Label" parent="ScoringMargin/Rows/StagePanel/StageMargin/StageRows"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "选择骰子后，点击「结算所选」放入此处并计算得分"
+text = "AUTO.TEXT.34067D466299"
 horizontal_alignment = 1
 autowrap_mode = 2
 
@@ -78,7 +78,7 @@ autowrap_mode = 2
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
-text = "计分预览"
+text = "AUTO.TEXT.8D9B4074FD1C"
 horizontal_alignment = 1
 autowrap_mode = 2
 clip_text = true

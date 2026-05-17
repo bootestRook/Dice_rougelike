@@ -7,6 +7,7 @@ const FaceState = preload("res://scripts/core/dice/FaceState.gd")
 const RolledFace = preload("res://scripts/core/dice/RolledFace.gd")
 const ScoreContext = preload("res://scripts/core/scoring/ScoreContext.gd")
 const ScoreEngine = preload("res://scripts/rules/scoring/ScoreEngine.gd")
+const ResolutionTrace = preload("res://scripts/core/scoring/ResolutionTrace.gd")
 const ResolutionStep = preload("res://scripts/core/scoring/ResolutionStep.gd")
 
 
@@ -19,6 +20,7 @@ func _init() -> void:
 	all_passed = _check("score is committed once", test_score_is_committed_once()) and all_passed
 	all_passed = _check("trace contains combo and pip steps", test_trace_contains_combo_and_pip_steps()) and all_passed
 	all_passed = _check("retrigger steps are explicit", test_retrigger_steps_are_explicit()) and all_passed
+	all_passed = _check("selected dice resolve fully before next die", test_selected_dice_resolve_fully_before_next_die()) and all_passed
 
 	print("PASS: DebugResolutionTraceSmokeTest" if all_passed else "FAIL: DebugResolutionTraceSmokeTest")
 	print("--- DebugResolutionTraceSmokeTest: end ---")
@@ -46,8 +48,8 @@ func test_selected_dice_order_is_bench_order() -> bool:
 	controller.start_battle()
 	controller.toggle_select(2)
 	controller.toggle_select(0)
-	var trace = controller.request_settle_selected()
-	var passed := trace != null and trace.selected_slot_indices == [0, 2]
+	var trace: ResolutionTrace = controller.request_settle_selected()
+	var passed: bool = trace != null and trace.selected_slot_indices == [0, 2]
 	controller.free()
 	return passed
 
@@ -58,7 +60,7 @@ func test_score_is_committed_once() -> bool:
 	controller.start_battle()
 	controller.toggle_select(0)
 	var score_before := controller.get_total_score()
-	var trace = controller.request_settle_selected()
+	var trace: ResolutionTrace = controller.request_settle_selected()
 	if trace == null:
 		controller.free()
 		return false
@@ -67,7 +69,7 @@ func test_score_is_committed_once() -> bool:
 	var score_after_commit := controller.get_total_score()
 	controller.commit_pending_resolution()
 	var score_after_second_commit := controller.get_total_score()
-	var passed := (
+	var passed: bool = (
 		request_kept_score
 		and score_after_commit == score_before + trace.hand_score_final
 		and score_after_second_commit == score_after_commit
@@ -103,6 +105,25 @@ func test_retrigger_steps_are_explicit() -> bool:
 	return false
 
 
+func test_selected_dice_resolve_fully_before_next_die() -> bool:
+	var trace := ScoreEngine.new().build_resolution_trace(_context_for_rolls([
+		_make_roll(0, 0, 1, FaceState.ORN_CHIP, FaceState.MARK_RED),
+		_make_roll(1, 0, 2, FaceState.ORN_MULT),
+	]))
+	var die_0_pip := _find_step_index(trace, ResolutionStep.Phase.PIP_SCORE, 0)
+	var die_0_ornament := _find_step_index(trace, ResolutionStep.Phase.ORNAMENT_ON_SCORE, 0, &"ornament")
+	var die_0_mark := _find_step_index(trace, ResolutionStep.Phase.MARK_ON_SCORE, 0, &"mark")
+	var die_0_retrigger_ornament := _find_step_index(trace, ResolutionStep.Phase.RETRIGGER, 0, &"ornament")
+	var die_1_pip := _find_step_index(trace, ResolutionStep.Phase.PIP_SCORE, 1)
+	return (
+		die_0_pip >= 0
+		and die_0_ornament > die_0_pip
+		and die_0_mark > die_0_ornament
+		and die_0_retrigger_ornament > die_0_mark
+		and die_1_pip > die_0_retrigger_ornament
+	)
+
+
 func _context_for_rolls(rolls: Array) -> ScoreContext:
 	var context := ScoreContext.new()
 	var typed_rolls: Array[RolledFace] = []
@@ -131,6 +152,28 @@ func _make_roll(
 	roll.set_roll(die_index, face_index, face)
 	roll.selected = true
 	return roll
+
+
+func _find_step_index(
+	trace: ResolutionTrace,
+	phase: int,
+	bench_slot_index: int,
+	source_type: StringName = &""
+) -> int:
+	if trace == null:
+		return -1
+	for index in range(trace.steps.size()):
+		var step = trace.steps[index]
+		if step == null:
+			continue
+		if step.phase != phase:
+			continue
+		if step.bench_slot_index != bench_slot_index:
+			continue
+		if source_type != &"" and step.source_type != source_type:
+			continue
+		return index
+	return -1
 
 
 class FixedRng:

@@ -8,9 +8,9 @@ const DisplayNames = preload("res://scripts/ui/DisplayNames.gd")
 var face_index: int = -1
 var pip: int = 0
 var ornament_id: StringName = &"orn_none"
-var ornament_name: String = "无"
+var ornament_name: String = str(TranslationServer.translate(&"AUTO.TEXT.72077749F794"))
 var mark_id: StringName = &"mark_none"
-var mark_name: String = "无"
+var mark_name: String = str(TranslationServer.translate(&"AUTO.TEXT.72077749F794"))
 
 
 func setup_from_face(new_face_index: int, face) -> void:

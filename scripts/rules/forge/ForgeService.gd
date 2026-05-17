@@ -45,7 +45,7 @@ func apply_piece(piece: ForgePieceDef, die: DieState, face_index: int) -> void:
 
 func get_face_preview_after_apply(piece: ForgePieceDef, face: FaceState) -> String:
 	if face == null:
-		return "无骰面"
+		return str(TranslationServer.translate(&"AUTO.TEXT.9FC761A95140"))
 	return DisplayNames.face_summary(preview_face_after_apply(piece, face))
 
 
@@ -77,7 +77,7 @@ func get_install_warning_text(piece: ForgePieceDef, face: FaceState) -> String:
 			ForgeOperationDef.OP_SET_ORNAMENT:
 				_append_slot_warning(
 					warnings,
-					"面饰",
+					str(TranslationServer.translate(&"AUTO.TEXT.6D536C9ECF3E")),
 					preview.get_effective_ornament_id(),
 					operation.get_effective_value_id(),
 					DisplayNames.ornament_name(preview.get_effective_ornament_id()),
@@ -86,7 +86,7 @@ func get_install_warning_text(piece: ForgePieceDef, face: FaceState) -> String:
 			ForgeOperationDef.OP_SET_MARK:
 				_append_slot_warning(
 					warnings,
-					"印记",
+					str(TranslationServer.translate(&"AUTO.TEXT.7F31376752FF")),
 					preview.mark_id,
 					operation.get_effective_value_id(),
 					DisplayNames.mark_name(preview.mark_id),
@@ -100,10 +100,10 @@ func get_install_warning_text(piece: ForgePieceDef, face: FaceState) -> String:
 
 func get_install_preview_text(piece: ForgePieceDef, face: FaceState) -> String:
 	if face == null:
-		return "安装前：\n无骰面\n\n安装后：\n无骰面"
+		return str(TranslationServer.translate(&"AUTO.TEXT.A4E11E7BCF16"))
 
 	var preview := preview_face_after_apply(piece, face)
-	return "安装前：\n%s\n\n安装后：\n%s" % [
+	return str(TranslationServer.translate(&"AUTO.TEXT.AE948A62B02F")) % [
 		_face_slot_text(face),
 		_face_slot_text(preview),
 	]
@@ -174,13 +174,13 @@ func _apply_operation(operation: ForgeOperationDef, face: FaceState, die: DieSta
 
 func _face_slot_text(face: FaceState) -> String:
 	if face == null:
-		return "无骰面"
+		return str(TranslationServer.translate(&"AUTO.TEXT.9FC761A95140"))
 
 	var lines := PackedStringArray()
 	var ornament_id := face.get_effective_ornament_id()
-	lines.append("点数：%d" % [face.pip])
-	lines.append("面饰：%s" % [DisplayNames.ornament_name(ornament_id)])
-	lines.append("印记：%s" % [DisplayNames.mark_name(face.mark_id)])
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.3BD4F422F927")) % [face.pip])
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.51AA50FCBAD9")) % [DisplayNames.ornament_name(ornament_id)])
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.6711FCB746E3")) % [DisplayNames.mark_name(face.mark_id)])
 	return "\n".join(lines)
 
 
@@ -197,7 +197,7 @@ func _append_slot_warning(
 	if old_id == new_id:
 		return
 
-	warnings.append("将替换%s：%s → %s" % [slot_name, old_name, new_name])
+	warnings.append(str(TranslationServer.translate(&"AUTO.TEXT.7681BC6BE994")) % [slot_name, old_name, new_name])
 
 
 func _is_none_id(value: StringName) -> bool:

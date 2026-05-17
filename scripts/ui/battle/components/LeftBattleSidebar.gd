@@ -91,7 +91,7 @@ func render(state: BattleHudState) -> void:
 		return
 
 	target_value.text = _format_number(state.target_score)
-	reward_label.text = "奖励: %s" % [state.reward_level]
+	reward_label.text = str(TranslationServer.translate(&"AUTO.TEXT.2091A36B7297")) % [state.reward_level]
 	current_score_value.text = _format_number(state.current_score)
 	combo_level_label.visible = false
 	if state.final_score_display_visible:
@@ -102,7 +102,7 @@ func render(state: BattleHudState) -> void:
 	elif state.combo_display_visible:
 		var combo_font_size := 30
 		combo_value.text = state.core_combo_name
-		combo_level_label.text = "等级%d" % [maxi(1, state.core_combo_level)]
+		combo_level_label.text = str(TranslationServer.translate(&"AUTO.TEXT.2219F266B80D")) % [maxi(1, state.core_combo_level)]
 		combo_level_label.visible = true
 		_apply_runtime_label_style(combo_value, combo_font_size, Color(0.95, 0.94, 0.86, 1.0))
 		_apply_runtime_label_style(combo_level_label, roundi(float(combo_font_size) * 0.75), Color(0.95, 0.94, 0.86, 1.0))

@@ -53,6 +53,7 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	return_button.pressed.connect(func() -> void: close_requested.emit())
 	info_tabs.tab_changed.connect(_on_tab_changed)
+	_apply_static_text()
 	_apply_style()
 	_apply_tab()
 
@@ -93,6 +94,7 @@ func _on_tab_changed(tab: int) -> void:
 func _apply_tab() -> void:
 	if not is_node_ready():
 		return
+	_apply_static_text()
 	info_tabs.current_tab = current_tab
 	var combo_visible := current_tab == InfoTab.COMBO
 	combo_header.visible = combo_visible
@@ -100,11 +102,24 @@ func _apply_tab() -> void:
 	info_scroll.visible = not combo_visible
 	match current_tab:
 		InfoTab.ORNAMENT:
-			title_label.text = "面饰信息"
+			title_label.text = str(TranslationServer.translate(&"AUTO.TEXT.6FC540C2D9D3"))
 		InfoTab.MARK:
-			title_label.text = "印记信息"
+			title_label.text = str(TranslationServer.translate(&"AUTO.TEXT.DBE74CDF4EC4"))
 		_:
-			title_label.text = "骰型信息"
+			title_label.text = str(TranslationServer.translate(&"AUTO.TEXT.3A7FB8F6A252"))
+
+
+func _apply_static_text() -> void:
+	if not is_node_ready():
+		return
+	info_tabs.set_tab_title(InfoTab.COMBO, str(TranslationServer.translate(&"AUTO.TEXT.1BA8AC01BCAB")))
+	info_tabs.set_tab_title(InfoTab.ORNAMENT, str(TranslationServer.translate(&"AUTO.TEXT.6D536C9ECF3E")))
+	info_tabs.set_tab_title(InfoTab.MARK, str(TranslationServer.translate(&"AUTO.TEXT.7F31376752FF")))
+	header_level.text = str(TranslationServer.translate(&"AUTO.TEXT.5C42C048EA24"))
+	header_combo.text = str(TranslationServer.translate(&"AUTO.TEXT.1BA8AC01BCAB"))
+	header_formula.text = str(TranslationServer.translate(&"AUTO.TEXT.37C57A0E5090"))
+	header_count.text = str(TranslationServer.translate(&"AUTO.TEXT.121A6D93AC00"))
+	return_button.text = str(TranslationServer.translate(&"AUTO.TEXT.11D024154013"))
 
 
 func _render_combo_rows() -> void:
@@ -152,7 +167,7 @@ func _make_combo_row() -> Control:
 		if row is Control:
 			return row
 	var fallback := Label.new()
-	fallback.text = "骰型"
+	fallback.text = str(TranslationServer.translate(&"AUTO.TEXT.1BA8AC01BCAB"))
 	return fallback
 
 

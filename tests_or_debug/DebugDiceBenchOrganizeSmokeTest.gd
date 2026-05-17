@@ -3,6 +3,9 @@ extends SceneTree
 
 var battle_screen: Node = null
 var bench_area: Node = null
+var controller = null
+var organized_order: Array[int] = []
+var organized_order_was_descending: bool = false
 var step: int = 0
 var wait_frames: int = 0
 
@@ -23,10 +26,11 @@ func _process(_delta: float) -> bool:
 	if step == 1:
 		wait_frames += 1
 		bench_area = _find_node_by_name(battle_screen, "DiceBenchArea")
-		if bench_area == null and wait_frames < 30:
+		controller = battle_screen.get("controller")
+		if (bench_area == null or controller == null) and wait_frames < 30:
 			return false
-		if bench_area == null:
-			print("FAIL: DiceBenchArea missing")
+		if bench_area == null or controller == null:
+			print("FAIL: battle UI missing")
 			quit(1)
 			return true
 		bench_area._on_organize_pressed()
@@ -40,9 +44,29 @@ func _process(_delta: float) -> bool:
 			return false
 		if wait_frames < 40:
 			return false
-		var passed := _display_order_is_descending()
+		organized_order_was_descending = _display_order_is_descending()
+		organized_order = _display_order()
+		if organized_order.is_empty():
+			print("FAIL: organized order empty")
+			quit(1)
+			return true
+		controller.toggle_select(organized_order[0])
+		controller.reroll()
+		step = 3
+		wait_frames = 0
+		return false
+
+	if step == 3:
+		wait_frames += 1
+		if wait_frames < 6:
+			return false
+		var reroll_kept_order := _same_int_order(_display_order(), organized_order)
+		var passed := organized_order_was_descending and reroll_kept_order
 		print("display_order=%s" % [str(_display_order())])
 		print("display_pips=%s" % [str(_display_pips())])
+		print("organized_order=%s" % [str(organized_order)])
+		print("organized_order_was_descending=%s" % [str(organized_order_was_descending)])
+		print("reroll_kept_order=%s" % [str(reroll_kept_order)])
 		print("PASS: DebugDiceBenchOrganizeSmokeTest" if passed else "FAIL: DebugDiceBenchOrganizeSmokeTest")
 		print("--- end ---")
 		quit(0 if passed else 1)
@@ -83,6 +107,15 @@ func _display_order() -> Array[int]:
 	for child in dice_row.get_children():
 		order.append(int(child.get_meta("die_index", -1)))
 	return order
+
+
+func _same_int_order(a: Array[int], b: Array[int]) -> bool:
+	if a.size() != b.size():
+		return false
+	for index in range(a.size()):
+		if a[index] != b[index]:
+			return false
+	return true
 
 
 func _find_node_by_name(root_node: Node, node_name: String) -> Node:

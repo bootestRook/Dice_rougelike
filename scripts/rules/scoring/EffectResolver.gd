@@ -30,6 +30,52 @@ func apply_effects(context: ScoreContext, result: ScoreResult, trace: Resolution
 	return result
 
 
+func apply_selected_face_effects_for_roll(
+	roll: RolledFace,
+	context: ScoreContext,
+	result: ScoreResult,
+	trace: ResolutionTrace = null
+) -> void:
+	if context == null or result == null or roll == null or roll.face == null:
+		return
+
+	_apply_single_face_trigger(roll, result, 0, context, trace)
+
+	var mark_id := _normalized_mark_id(roll.face.mark_id)
+	match mark_id:
+		FaceState.MARK_RED:
+			var before := _score_snapshot(result)
+			_add_log(result, &"LOG.MARK_RED_RETRIGGER", {
+				"die": roll.die_index + 1,
+				"face": roll.face_index + 1,
+			}, &"mark_red")
+			result.add_floating_text(str(TranslationServer.translate(&"AUTO.TEXT.FB21BA85CACD")), roll.die_index, roll.face_index)
+			_append_trace_step(
+				trace,
+				result,
+				before,
+				ResolutionStep.Phase.MARK_ON_SCORE,
+				&"mark",
+				mark_id,
+				DisplayNames.mark_name(mark_id),
+				"Retrigger",
+				"Red mark registers one extra trigger.",
+				"Retrigger x1",
+				roll
+			)
+			_apply_single_face_trigger(roll, result, 1, context, trace)
+		FaceState.MARK_GOLD:
+			_apply_gold_mark(roll, context, result, trace)
+		FaceState.MARK_PURPLE:
+			_try_trigger_purple_mark(roll, result, trace)
+
+
+func apply_unselected_effects(context: ScoreContext, result: ScoreResult, trace: ResolutionTrace = null) -> void:
+	if context == null or result == null:
+		return
+	_apply_unselected_effects(context, result, trace)
+
+
 func apply_post_score_effects(context: ScoreContext, result: ScoreResult) -> ScoreResult:
 	if context == null or result == null or context.is_preview or context.defer_runtime_mutations:
 		return result
@@ -41,7 +87,7 @@ func apply_post_score_effects(context: ScoreContext, result: ScoreResult) -> Sco
 			continue
 		if _active_rng(context).randf() < 0.25:
 			_clear_face_ornament(context, roll)
-			result.add_floating_text("爆裂破碎", roll.die_index, roll.face_index)
+			result.add_floating_text(str(TranslationServer.translate(&"AUTO.TEXT.64867FADD655")), roll.die_index, roll.face_index)
 			_add_log(result, &"LOG.ORNAMENT_BURST_BREAK", {
 				"die": roll.die_index + 1,
 				"face": roll.face_index + 1,
@@ -72,7 +118,7 @@ func try_apply_face_negative_rule(face_ref, negative_rule_id: StringName, result
 			"face": _face_index_from_ref(face_ref) + 1,
 			"rule": negative_rule_id,
 		}, &"mark_white")
-		result.add_floating_text("白印：免疫", _die_index_from_ref(face_ref), _face_index_from_ref(face_ref))
+		result.add_floating_text(str(TranslationServer.translate(&"AUTO.TEXT.CFBB1A03E628")), _die_index_from_ref(face_ref), _face_index_from_ref(face_ref))
 	return false
 
 
@@ -89,7 +135,7 @@ func _apply_unselected_effects(context: ScoreContext, result: ScoreResult, trace
 				"die": roll.die_index + 1,
 				"face": roll.face_index + 1,
 			}, &"mark_red")
-			result.add_floating_text("红印：额外触发", roll.die_index, roll.face_index)
+			result.add_floating_text(str(TranslationServer.translate(&"AUTO.TEXT.FB21BA85CACD")), roll.die_index, roll.face_index)
 			_append_trace_step(
 				trace,
 				result,
@@ -110,38 +156,7 @@ func _apply_unselected_effects(context: ScoreContext, result: ScoreResult, trace
 
 func _apply_selected_face_effects(context: ScoreContext, result: ScoreResult, trace: ResolutionTrace = null) -> void:
 	for roll in context.selected_faces:
-		if roll == null or roll.face == null:
-			continue
-
-		_apply_single_face_trigger(roll, result, 0, context, trace)
-
-		var mark_id := _normalized_mark_id(roll.face.mark_id)
-		match mark_id:
-			FaceState.MARK_RED:
-				var before := _score_snapshot(result)
-				_add_log(result, &"LOG.MARK_RED_RETRIGGER", {
-					"die": roll.die_index + 1,
-					"face": roll.face_index + 1,
-				}, &"mark_red")
-				result.add_floating_text("红印：额外触发", roll.die_index, roll.face_index)
-				_append_trace_step(
-					trace,
-					result,
-					before,
-					ResolutionStep.Phase.MARK_ON_SCORE,
-					&"mark",
-					mark_id,
-					DisplayNames.mark_name(mark_id),
-					"Retrigger",
-					"Red mark registers one extra trigger.",
-					"Retrigger x1",
-					roll
-				)
-				_apply_single_face_trigger(roll, result, 1, context, trace)
-			FaceState.MARK_GOLD:
-				_apply_gold_mark(roll, context, result, trace)
-			FaceState.MARK_PURPLE:
-				_try_trigger_purple_mark(roll, result, trace)
+		apply_selected_face_effects_for_roll(roll, context, result, trace)
 
 
 func _apply_single_face_trigger(
@@ -291,7 +306,7 @@ func _apply_single_unselected_stay_trigger(
 			triggered = true
 		FaceState.ORN_GOLD:
 			var before_gold_stay := _score_snapshot(result)
-			_add_coins(context, result, 3, "金辉面饰：+3 金币", roll)
+			_add_coins(context, result, 3, str(TranslationServer.translate(&"AUTO.TEXT.02D1C09BF663")), roll)
 			_add_log(result, &"LOG.ORNAMENT_GOLD", {
 				"die": roll.die_index + 1,
 				"face": roll.face_index + 1,
@@ -352,7 +367,7 @@ func _try_trigger_blue_mark(
 			"die": roll.die_index + 1,
 			"face": roll.face_index + 1,
 		}, &"mark_blue")
-		result.add_floating_text("道具槽位不足", roll.die_index, roll.face_index)
+		result.add_floating_text(str(TranslationServer.translate(&"AUTO.TEXT.E2E7B1D1350D")), roll.die_index, roll.face_index)
 		return
 
 	if _add_item_to_inventory_or_pending(context, item_id):
@@ -362,13 +377,13 @@ func _try_trigger_blue_mark(
 			"item": item_id,
 			"item_name": _upgrade_item_name(context.primary_combo),
 		}, &"mark_blue")
-		result.add_floating_text("蓝印：生成", roll.die_index, roll.face_index)
+		result.add_floating_text(str(TranslationServer.translate(&"AUTO.TEXT.B9C0222B691C")), roll.die_index, roll.face_index)
 	else:
 		_add_log(result, &"LOG.MARK_BLUE_NO_SLOT", {
 			"die": roll.die_index + 1,
 			"face": roll.face_index + 1,
 		}, &"mark_blue")
-		result.add_floating_text("道具槽位不足", roll.die_index, roll.face_index)
+		result.add_floating_text(str(TranslationServer.translate(&"AUTO.TEXT.E2E7B1D1350D")), roll.die_index, roll.face_index)
 
 
 func _try_trigger_purple_mark(roll: RolledFace, result: ScoreResult, trace: ResolutionTrace = null) -> void:
@@ -402,7 +417,7 @@ func _try_trigger_purple_mark(roll: RolledFace, result: ScoreResult, trace: Reso
 
 func _apply_gold_mark(roll: RolledFace, context: ScoreContext, result: ScoreResult, trace: ResolutionTrace = null) -> void:
 	var before := _score_snapshot(result)
-	_add_coins(context, result, 1, "金印：+1 金币", roll)
+	_add_coins(context, result, 1, str(TranslationServer.translate(&"AUTO.TEXT.8FB1BCFCA352")), roll)
 	_add_log(result, &"LOG.MARK_GOLD_COINS", {
 		"die": roll.die_index + 1,
 		"face": roll.face_index + 1,
@@ -473,7 +488,7 @@ func _apply_lucky(
 	if rng.randf() < (1.0 / 15.0):
 		var before_lucky_coins := _score_snapshot(result)
 		triggered_coins = true
-		_add_coins(context, result, 20, "幸运面饰：+20 金币", roll)
+		_add_coins(context, result, 20, str(TranslationServer.translate(&"AUTO.TEXT.34F8E61E22F5")), roll)
 		_add_log(result, &"LOG.ORNAMENT_LUCKY_COINS", {
 			"die": roll.die_index + 1,
 			"face": roll.face_index + 1,
@@ -511,7 +526,7 @@ func _add_coins(context: ScoreContext, result: ScoreResult, amount: int, event_t
 		result.coins_delta += amount
 		var die_index: int = roll.die_index if roll != null else -1
 		var face_index: int = roll.face_index if roll != null else -1
-		result.add_floating_text("+%d 金币" % [amount], die_index, face_index)
+		result.add_floating_text(str(TranslationServer.translate(&"AUTO.TEXT.570646958A4D")) % [amount], die_index, face_index)
 
 
 func _has_free_item_slot(context: ScoreContext) -> bool:
@@ -618,7 +633,7 @@ func _upgrade_item_name(combo_id: StringName) -> String:
 	var item := ComboUpgradeItem.create_for_combo(combo_id)
 	if item != null:
 		return item.display_name
-	return "%s升级件" % [DisplayNames.combo_name(combo_id)]
+	return str(TranslationServer.translate(&"AUTO.TEXT.F5D5B726DC8E")) % [DisplayNames.combo_name(combo_id)]
 
 
 func _score_snapshot(result: ScoreResult) -> Dictionary:

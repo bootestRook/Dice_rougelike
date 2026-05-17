@@ -42,7 +42,7 @@ func _build_view() -> void:
 	root.add_theme_constant_override("separation", 18)
 	margin.add_child(root)
 
-	root.add_child(_make_text_label("选择一个铸骰件", 28, Color(0.95, 0.92, 0.84)))
+	root.add_child(_make_text_label(str(TranslationServer.translate(&"AUTO.TEXT.B8CBB985D0FD")), 28, Color(0.95, 0.92, 0.84)))
 
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 14)
@@ -52,7 +52,7 @@ func _build_view() -> void:
 		row.add_child(_make_choice_card(choices[index]))
 
 	if choices.is_empty():
-		root.add_child(_make_text_label("没有生成奖励。", 16, Color(0.9, 0.82, 0.78)))
+		root.add_child(_make_text_label(str(TranslationServer.translate(&"AUTO.TEXT.E7B22B2652B2")), 16, Color(0.9, 0.82, 0.78)))
 
 
 func _make_choice_card(piece: ForgePieceDef) -> Control:
@@ -65,15 +65,15 @@ func _make_choice_card(piece: ForgePieceDef) -> Control:
 
 	box.add_child(_make_text_label(piece.get_display_name(), 20, Color(0.96, 0.88, 0.62)))
 	box.add_child(_make_text_label(piece.get_description(), 15, Color(0.88, 0.88, 0.82)))
-	box.add_child(_make_text_label("稀有度：%s" % [piece.get_rarity_display_name()], 14, Color(0.72, 0.82, 0.92)))
-	box.add_child(_make_text_label("标签：%s" % [piece.get_tags_display_text()], 14, Color(0.78, 0.88, 0.72)))
+	box.add_child(_make_text_label(str(TranslationServer.translate(&"AUTO.TEXT.6DB5DF72B910")) % [piece.get_rarity_display_name()], 14, Color(0.72, 0.82, 0.92)))
+	box.add_child(_make_text_label(str(TranslationServer.translate(&"AUTO.TEXT.ABAAFC3C7A71")) % [piece.get_tags_display_text()], 14, Color(0.78, 0.88, 0.72)))
 
 	var operations_label := _make_text_label(piece.get_effect_text(), 14, Color(0.84, 0.84, 0.78))
 	operations_label.custom_minimum_size = Vector2(0, 90)
 	box.add_child(operations_label)
 
 	var choose_button := Button.new()
-	choose_button.text = "选择"
+	choose_button.text = str(TranslationServer.translate(&"AUTO.TEXT.70B208202CE5"))
 	choose_button.custom_minimum_size = Vector2(0, 38)
 	choose_button.pressed.connect(_on_choice_pressed.bind(piece))
 	box.add_child(choose_button)

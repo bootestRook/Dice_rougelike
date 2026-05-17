@@ -5,9 +5,9 @@ class_name DisplayNames
 static func combo_name(id: StringName) -> String:
 	match id:
 		&"scatter", &"SCATTER", &"high_card":
-			return "散点"
+			return str(TranslationServer.translate(&"AUTO.TEXT.EF4C86E15258"))
 		&"straight", &"STRAIGHT", &"small_straight", &"large_straight":
-			return "顺子"
+			return str(TranslationServer.translate(&"AUTO.TEXT.287EC954DA38"))
 		&"pair":
 			return combo_name(&"PAIR")
 		&"two_pair":
@@ -21,23 +21,23 @@ static func combo_name(id: StringName) -> String:
 		&"five_kind":
 			return combo_name(&"FIVE_KIND")
 		&"HIGH_CARD":
-			return "高点"
+			return str(TranslationServer.translate(&"AUTO.TEXT.0BB2D2BDE559"))
 		&"PAIR":
-			return "一对"
+			return str(TranslationServer.translate(&"AUTO.TEXT.46216CA5837D"))
 		&"TWO_PAIR":
-			return "两对"
+			return str(TranslationServer.translate(&"AUTO.TEXT.4391622EE4DF"))
 		&"THREE_KIND":
-			return "三同"
+			return str(TranslationServer.translate(&"AUTO.TEXT.B1296780A94C"))
 		&"SMALL_STRAIGHT":
-			return "小顺"
+			return str(TranslationServer.translate(&"AUTO.TEXT.F26608E9DBEA"))
 		&"FULL_HOUSE":
-			return "葫芦"
+			return str(TranslationServer.translate(&"AUTO.TEXT.66311348D7E0"))
 		&"FOUR_KIND":
-			return "四同"
+			return str(TranslationServer.translate(&"AUTO.TEXT.267A5D4096BE"))
 		&"LARGE_STRAIGHT":
-			return "大顺"
+			return str(TranslationServer.translate(&"AUTO.TEXT.8024C1DC23A5"))
 		&"FIVE_KIND":
-			return "五同"
+			return str(TranslationServer.translate(&"AUTO.TEXT.7FDD1CDCF1BE"))
 		_:
 			return str(id)
 
@@ -45,17 +45,17 @@ static func combo_name(id: StringName) -> String:
 static func contained_pattern_name(id: StringName) -> String:
 	match id:
 		&"contains_pair":
-			return "一对"
+			return str(TranslationServer.translate(&"AUTO.TEXT.46216CA5837D"))
 		&"contains_two_pair":
-			return "两对"
+			return str(TranslationServer.translate(&"AUTO.TEXT.4391622EE4DF"))
 		&"contains_three_kind":
-			return "三同"
+			return str(TranslationServer.translate(&"AUTO.TEXT.B1296780A94C"))
 		&"contains_full_house":
-			return "葫芦"
+			return str(TranslationServer.translate(&"AUTO.TEXT.66311348D7E0"))
 		&"contains_four_kind":
-			return "四同"
+			return str(TranslationServer.translate(&"AUTO.TEXT.267A5D4096BE"))
 		&"contains_five_kind":
-			return "五同"
+			return str(TranslationServer.translate(&"AUTO.TEXT.7FDD1CDCF1BE"))
 		_:
 			return str(id)
 
@@ -63,23 +63,23 @@ static func contained_pattern_name(id: StringName) -> String:
 static func tag_name(id: StringName) -> String:
 	match id:
 		&"all_odd":
-			return "全奇"
+			return str(TranslationServer.translate(&"AUTO.TEXT.DA53AE041865"))
 		&"all_even":
-			return "全偶"
+			return str(TranslationServer.translate(&"AUTO.TEXT.93EBECF8CECD"))
 		&"low_total":
-			return "低点合计"
+			return str(TranslationServer.translate(&"AUTO.TEXT.E836750721A5"))
 		&"high_total":
-			return "高点合计"
+			return str(TranslationServer.translate(&"AUTO.TEXT.20A87E1FBD1E"))
 		&"contains_six":
-			return "包含 6"
+			return str(TranslationServer.translate(&"AUTO.TEXT.610C37A76491"))
 		&"many_sixes":
-			return "多个 6"
+			return str(TranslationServer.translate(&"AUTO.TEXT.BE2465538832"))
 		&"few_scored":
-			return "少量结算"
+			return str(TranslationServer.translate(&"AUTO.TEXT.A1D476072362"))
 		&"rerolled":
-			return "使用过重投"
+			return str(TranslationServer.translate(&"AUTO.TEXT.D4D96AFD037F"))
 		&"last_hand":
-			return "最后一手"
+			return str(TranslationServer.translate(&"AUTO.TEXT.BCC672A44DB4"))
 		_:
 			return forge_tag_name(id)
 
@@ -87,51 +87,51 @@ static func tag_name(id: StringName) -> String:
 static func forge_tag_name(id: StringName) -> String:
 	match id:
 		&"ornament":
-			return "面饰"
+			return str(TranslationServer.translate(&"AUTO.TEXT.6D536C9ECF3E"))
 		&"mark":
-			return "印记"
+			return str(TranslationServer.translate(&"AUTO.TEXT.7F31376752FF"))
 		&"stay":
-			return "留场"
+			return str(TranslationServer.translate(&"AUTO.TEXT.446EFF18E772"))
 		&"reroll":
-			return "重投"
+			return str(TranslationServer.translate(&"AUTO.TEXT.332A22260969"))
 		&"xmult":
-			return "终倍率"
+			return str(TranslationServer.translate(&"AUTO.TEXT.D19E1EFF6391"))
 		&"chips":
-			return "基础战力"
+			return str(TranslationServer.translate(&"AUTO.TEXT.038CDAFC55EF"))
 		&"mult":
-			return "倍率"
+			return str(TranslationServer.translate(&"AUTO.TEXT.8482E1E532B0"))
 		&"burst":
-			return "爆发"
+			return str(TranslationServer.translate(&"AUTO.TEXT.E3D30EF5898B"))
 		&"wild":
-			return "万能"
+			return str(TranslationServer.translate(&"AUTO.TEXT.B7CD1829C0EC"))
 		&"stone":
-			return "石质"
+			return str(TranslationServer.translate(&"AUTO.TEXT.043D46E4F6CD"))
 		&"gold":
-			return "金币"
+			return str(TranslationServer.translate(&"AUTO.TEXT.61F608B0D90E"))
 		&"lucky":
-			return "幸运"
+			return str(TranslationServer.translate(&"AUTO.TEXT.B824742329E0"))
 		&"foil":
-			return "箔光"
+			return str(TranslationServer.translate(&"AUTO.TEXT.7755578B11E2"))
 		&"holo":
-			return "幻彩"
+			return str(TranslationServer.translate(&"AUTO.TEXT.A9A4A4AB8CAF"))
 		&"poly":
-			return "多彩"
+			return str(TranslationServer.translate(&"AUTO.TEXT.1943D2CAFB6A"))
 		&"stable":
-			return "稳定"
+			return str(TranslationServer.translate(&"AUTO.TEXT.4024BD5E2322"))
 		&"power":
-			return "战力"
+			return str(TranslationServer.translate(&"AUTO.TEXT.63A0E9B5803D"))
 		&"six":
-			return "六点"
+			return str(TranslationServer.translate(&"AUTO.TEXT.A93AED7A90F4"))
 		&"low":
-			return "低点"
+			return str(TranslationServer.translate(&"AUTO.TEXT.6197FE1A0676"))
 		&"straight":
-			return "顺子"
+			return str(TranslationServer.translate(&"AUTO.TEXT.287EC954DA38"))
 		&"odd":
-			return "奇数"
+			return str(TranslationServer.translate(&"AUTO.TEXT.0CF1D841BD73"))
 		&"even":
-			return "偶数"
+			return str(TranslationServer.translate(&"AUTO.TEXT.A3685EA6FAFC"))
 		&"extra_trigger":
-			return "额外触发"
+			return str(TranslationServer.translate(&"AUTO.TEXT.22CE35BEF3DF"))
 		_:
 			return str(id)
 
@@ -139,15 +139,15 @@ static func forge_tag_name(id: StringName) -> String:
 static func rarity_name(id: StringName) -> String:
 	match id:
 		&"", &"common":
-			return "普通"
+			return str(TranslationServer.translate(&"AUTO.TEXT.7CDA072D452B"))
 		&"uncommon":
-			return "罕见"
+			return str(TranslationServer.translate(&"AUTO.TEXT.8FCB7811D446"))
 		&"rare":
-			return "稀有"
+			return str(TranslationServer.translate(&"AUTO.TEXT.543CFD5DFDFE"))
 		&"epic":
-			return "史诗"
+			return str(TranslationServer.translate(&"AUTO.TEXT.A18EBC607F7F"))
 		&"legendary":
-			return "传说"
+			return str(TranslationServer.translate(&"AUTO.TEXT.E60ACDC62872"))
 		_:
 			return str(id)
 
@@ -155,19 +155,19 @@ static func rarity_name(id: StringName) -> String:
 static func body_name(id: StringName) -> String:
 	match id:
 		&"", &"none":
-			return "无"
+			return str(TranslationServer.translate(&"AUTO.TEXT.72077749F794"))
 		&"standard":
-			return "标准骰胚"
+			return str(TranslationServer.translate(&"AUTO.TEXT.42C63776B3C2"))
 		&"iron":
-			return "铁质骰胚"
+			return str(TranslationServer.translate(&"AUTO.TEXT.FE35ED0F6706"))
 		&"glass":
-			return "玻璃骰胚"
+			return str(TranslationServer.translate(&"AUTO.TEXT.DB1E908DDAAB"))
 		&"biased":
-			return "偏心骰胚"
+			return str(TranslationServer.translate(&"AUTO.TEXT.46CDBD4B9F31"))
 		&"hollow":
-			return "空心骰胚"
+			return str(TranslationServer.translate(&"AUTO.TEXT.33C12FCEA8E6"))
 		&"mirror":
-			return "镜面骰胚"
+			return str(TranslationServer.translate(&"AUTO.TEXT.A542B7CCA535"))
 		_:
 			return str(id)
 
@@ -175,33 +175,33 @@ static func body_name(id: StringName) -> String:
 static func ornament_name(id: StringName) -> String:
 	match _legacy_ornament_id(id):
 		&"", &"none", &"orn_none":
-			return "无"
+			return str(TranslationServer.translate(&"AUTO.TEXT.72077749F794"))
 		&"orn_chip":
-			return "筹码面饰"
+			return str(TranslationServer.translate(&"AUTO.TEXT.117883B0EBE1"))
 		&"orn_mult":
-			return "倍率面饰"
+			return str(TranslationServer.translate(&"AUTO.TEXT.C500FA399240"))
 		&"orn_wild":
-			return "万能面饰"
+			return str(TranslationServer.translate(&"AUTO.TEXT.AC2FB8965804"))
 		&"orn_burst":
-			return "爆裂面饰"
+			return str(TranslationServer.translate(&"AUTO.TEXT.97FB92DB432F"))
 		&"orn_stay":
-			return "留场面饰"
+			return str(TranslationServer.translate(&"AUTO.TEXT.5C1FC3B3DE4C"))
 		&"orn_stone":
-			return "石质面饰"
+			return str(TranslationServer.translate(&"AUTO.TEXT.7D507BD3C533"))
 		&"orn_gold":
-			return "金辉面饰"
+			return str(TranslationServer.translate(&"AUTO.TEXT.0C170134B33B"))
 		&"orn_lucky":
-			return "幸运面饰"
+			return str(TranslationServer.translate(&"AUTO.TEXT.9B44878F713C"))
 		&"orn_foil":
-			return "箔光强化"
+			return str(TranslationServer.translate(&"AUTO.TEXT.EF8326246CC6"))
 		&"orn_holo":
-			return "幻彩强化"
+			return str(TranslationServer.translate(&"AUTO.TEXT.71057C7B06AE"))
 		&"orn_poly":
-			return "多彩强化"
+			return str(TranslationServer.translate(&"AUTO.TEXT.C7D719D6CF7B"))
 		&"orn_negative":
-			return "负片强化"
+			return str(TranslationServer.translate(&"AUTO.TEXT.513FE245BC0D"))
 		&"curse":
-			return "诅咒面饰"
+			return str(TranslationServer.translate(&"AUTO.TEXT.85162D1409CC"))
 		_:
 			return str(id)
 
@@ -209,53 +209,53 @@ static func ornament_name(id: StringName) -> String:
 static func ornament_effect_text(id: StringName) -> String:
 	match _legacy_ornament_id(id):
 		&"", &"none", &"orn_none":
-			return "无面饰效果。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.1706DBBA86F9"))
 		&"orn_chip":
-			return "被结算时，+30 基础战力。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.14DDE613ACF4"))
 		&"orn_mult":
-			return "被结算时，+4 Mult。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.699368E17299"))
 		&"orn_wild":
-			return "结算前可临时选择点数参与点数判断，点数总和仍按原始点数。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.2A707C088E48"))
 		&"orn_burst":
-			return "被结算时，终倍率 ×2；结算后有 25% 概率破碎为无面饰。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.B6A38FDF50AC"))
 		&"orn_stay":
-			return "投出但未结算时，终倍率 ×1.5。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.1DC0AB17E3A0"))
 		&"orn_stone":
-			return "被结算时，+50 基础战力；不参与点数判断与点数总和。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.5598B4374A82"))
 		&"orn_gold":
-			return "投出但未结算且本手成功结算后，+3 金币。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.50D8E8DFB926"))
 		&"orn_lucky":
-			return "被结算时，分别判定 20% 获得 +20 Mult、1/15 获得 +20 金币。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.7EA823B27E5C"))
 		&"orn_foil":
-			return "被结算时，+50 基础战力。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.1E604A9DCA44"))
 		&"orn_holo":
-			return "被结算时，+10 Mult。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.375FB8073275"))
 		&"orn_poly":
-			return "被结算时，终倍率 ×1.5。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.296CDB12F677"))
 		&"orn_negative":
-			return "物品负片强化，不属于骰面面饰。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.1BD96BB61B7F"))
 		&"curse":
-			return "负面面饰，可被净化。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.42398AEA87B6"))
 		_:
-			return "未知面饰效果。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.55F0E3DF4A53"))
 
 
 static func mark_name(id: StringName) -> String:
 	match _legacy_mark_id(id):
 		&"", &"none", &"mark_none":
-			return "无"
+			return str(TranslationServer.translate(&"AUTO.TEXT.72077749F794"))
 		&"mark_red", &"red":
-			return "红印"
+			return str(TranslationServer.translate(&"AUTO.TEXT.79C2CA946E6B"))
 		&"mark_blue", &"blue":
-			return "蓝印"
+			return str(TranslationServer.translate(&"AUTO.TEXT.DF9F6D1541D3"))
 		&"mark_purple", &"purple":
-			return "紫印"
+			return str(TranslationServer.translate(&"AUTO.TEXT.8EBB318D3D60"))
 		&"black":
-			return "黑印"
+			return str(TranslationServer.translate(&"AUTO.TEXT.0FEA7E823183"))
 		&"mark_gold", &"gold":
-			return "金印"
+			return str(TranslationServer.translate(&"AUTO.TEXT.C95B7D8DF883"))
 		&"mark_white", &"white":
-			return "白印"
+			return str(TranslationServer.translate(&"AUTO.TEXT.2E1D574ED743"))
 		_:
 			return str(id)
 
@@ -263,63 +263,63 @@ static func mark_name(id: StringName) -> String:
 static func mark_effect_text(id: StringName) -> String:
 	match _legacy_mark_id(id):
 		&"mark_red", &"red":
-			return "被结算时，该面额外触发一次。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.C017F153E6FB"))
 		&"mark_blue", &"blue":
-			return "投出但未结算时，触发留场收益。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.648BA894F98E"))
 		&"mark_purple", &"purple":
-			return "该骰子本手被重投后出现时，触发额外收益。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.147E1AD7C52E"))
 		&"mark_gold", &"gold":
-			return "触发时提供资源。当前版本暂未启用经济系统。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.51C417CBC24C"))
 		&"mark_white", &"white":
-			return "该骰面不受 Boss 禁用或负面规则影响；一场 Boss 战结束后移除。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.CD048469AC0B"))
 		&"black":
-			return "负面印记。当前版本仅用于测试或净化。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.EBBDEA8ACEFD"))
 		&"", &"none", &"mark_none":
-			return "无印记效果。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.A11B7784CCC8"))
 		_:
-			return "未知印记效果。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.6F29AFF3D8BB"))
 
 
 static func face_summary(face) -> String:
 	if face == null:
-		return "无骰面"
+		return str(TranslationServer.translate(&"AUTO.TEXT.9FC761A95140"))
 
 	var lines := PackedStringArray()
 	lines.append(str(face.pip))
 
 	var ornament_id := _effective_face_ornament_id(face)
 	if not _is_none_id(ornament_id):
-		lines.append("面饰：%s" % [ornament_name(ornament_id)])
+		lines.append(str(TranslationServer.translate(&"AUTO.TEXT.51AA50FCBAD9")) % [ornament_name(ornament_id)])
 	if not _is_none_id(face.mark_id):
-		lines.append("印记：%s" % [mark_name(face.mark_id)])
+		lines.append(str(TranslationServer.translate(&"AUTO.TEXT.6711FCB746E3")) % [mark_name(face.mark_id)])
 
 	return "\n".join(lines)
 
 
 static func face_detail_text(face) -> String:
 	if face == null:
-		return "无骰面"
+		return str(TranslationServer.translate(&"AUTO.TEXT.9FC761A95140"))
 
 	var ornament_id := _effective_face_ornament_id(face)
 	var lines := PackedStringArray()
-	lines.append("点数：%d" % [face.pip])
-	lines.append("面饰：%s" % [ornament_name(ornament_id)])
-	lines.append("效果：%s" % [ornament_effect_text(ornament_id)])
-	lines.append("印记：%s" % [mark_name(face.mark_id)])
-	lines.append("效果：%s" % [mark_effect_text(face.mark_id)])
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.3BD4F422F927")) % [face.pip])
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.51AA50FCBAD9")) % [ornament_name(ornament_id)])
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.64A75BA1FD38")) % [ornament_effect_text(ornament_id)])
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.6711FCB746E3")) % [mark_name(face.mark_id)])
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.64A75BA1FD38")) % [mark_effect_text(face.mark_id)])
 	return "\n".join(lines)
 
 
 static func die_summary(die) -> String:
 	if die == null:
-		return "无骰子"
+		return str(TranslationServer.translate(&"AUTO.TEXT.DF10F8387066"))
 
 	var lines := PackedStringArray()
 	var face_count := int(die.face_count)
 	if face_count <= 0:
 		face_count = die.faces.size()
-	lines.append("骰胚：%s" % [body_name(die.body_id)])
-	lines.append("面数：D%d" % [face_count])
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.6B93A4FA0C5A")) % [body_name(die.body_id)])
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.F1D9231A4F77")) % [face_count])
 
 	for face_index in range(die.faces.size()):
 		var face = die.faces[face_index]
@@ -327,10 +327,10 @@ static func die_summary(die) -> String:
 		parts.append(str(face.pip))
 		var ornament_id := _effective_face_ornament_id(face)
 		if not _is_none_id(ornament_id):
-			parts.append("面饰：%s" % [ornament_name(ornament_id)])
+			parts.append(str(TranslationServer.translate(&"AUTO.TEXT.51AA50FCBAD9")) % [ornament_name(ornament_id)])
 		if not _is_none_id(face.mark_id):
-			parts.append("印记：%s" % [mark_name(face.mark_id)])
-		lines.append("面 %d：%s" % [face_index + 1, " / ".join(parts)])
+			parts.append(str(TranslationServer.translate(&"AUTO.TEXT.6711FCB746E3")) % [mark_name(face.mark_id)])
+		lines.append(str(TranslationServer.translate(&"AUTO.TEXT.6F4FAC813D23")) % [face_index + 1, " / ".join(parts)])
 
 	return "\n".join(lines)
 
@@ -339,15 +339,15 @@ static func phase_name(phase) -> String:
 	var phase_id := StringName(str(phase))
 	match phase_id:
 		&"INIT":
-			return "初始化"
+			return str(TranslationServer.translate(&"AUTO.TEXT.196E11130931"))
 		&"WAITING_ACTION":
-			return "等待行动"
+			return str(TranslationServer.translate(&"AUTO.TEXT.EE01EF7E6EA2"))
 		&"SCORING":
-			return "结算中"
+			return str(TranslationServer.translate(&"AUTO.TEXT.0327CD3D96EB"))
 		&"VICTORY":
-			return "战斗胜利"
+			return str(TranslationServer.translate(&"AUTO.TEXT.BD9FEA62A9DC"))
 		&"DEFEAT":
-			return "战斗失败"
+			return str(TranslationServer.translate(&"AUTO.TEXT.D2C21A5E1F56"))
 		_:
 			return str(phase)
 
@@ -359,7 +359,7 @@ static func join_names(names: Array, separator: String = " / ") -> String:
 		if text != "":
 			parts.append(text)
 	if parts.is_empty():
-		return "无"
+		return str(TranslationServer.translate(&"AUTO.TEXT.72077749F794"))
 	return separator.join(parts)
 
 
@@ -390,98 +390,98 @@ static func log_text(key: StringName, args: Dictionary = {}) -> String:
 			var combo_text := str(args.get("combo", ""))
 			var level := int(args.get("level", 0))
 			if level > 0:
-				return "主骰型：%s Lv%d" % [combo_text, level]
-			return "主骰型：%s" % [combo_text]
+				return str(TranslationServer.translate(&"AUTO.TEXT.9455DA31503B")) % [combo_text, level]
+			return str(TranslationServer.translate(&"AUTO.TEXT.EF0721A4BAA9")) % [combo_text]
 		&"LOG.CONTAINED_PATTERNS":
-			return "包含结构：%s" % [args.get("patterns", "无")]
+			return str(TranslationServer.translate(&"AUTO.TEXT.135E3DF5C753")) % [args.get("patterns", str(TranslationServer.translate(&"AUTO.TEXT.72077749F794")))]
 		&"LOG.COMBO_CHIPS_BONUS":
-			return "骰型基础战力：+%d" % [int(args.get("chips", 0))]
+			return str(TranslationServer.translate(&"AUTO.TEXT.DC6B0A9293A8")) % [int(args.get("chips", 0))]
 		&"LOG.COMBO_MULT":
-			return "骰型倍率：x%d" % [int(args.get("mult", 1))]
+			return str(TranslationServer.translate(&"AUTO.TEXT.C5FFC0D889DE")) % [int(args.get("mult", 1))]
 		&"LOG.PIP_SUM":
-			return "点数总和：%d" % [int(args.get("sum", 0))]
+			return str(TranslationServer.translate(&"AUTO.TEXT.2392B1DFA2A1")) % [int(args.get("sum", 0))]
 		&"LOG.BASE_CHIPS":
-			return "基础战力：%d" % [int(args.get("chips", 0))]
+			return str(TranslationServer.translate(&"AUTO.TEXT.4175E1B87B17")) % [int(args.get("chips", 0))]
 		&"LOG.BASE_MULT":
-			return "倍率：%d" % [int(args.get("mult", 0))]
+			return str(TranslationServer.translate(&"AUTO.TEXT.B57562D610C0")) % [int(args.get("mult", 0))]
 		&"LOG.BASE_XMULT":
-			return "终倍率：%s" % [str(args.get("xmult", "1.00"))]
+			return str(TranslationServer.translate(&"AUTO.TEXT.C39ACC391607")) % [str(args.get("xmult", "1.00"))]
 		&"LOG.FINAL_SCORE":
-			return "最终：%d × %d × %s = %d" % [
+			return str(TranslationServer.translate(&"AUTO.TEXT.481853976CD4")) % [
 				int(args.get("chips", 0)),
 				int(args.get("mult", 0)),
 				str(args.get("xmult", "1.00")),
 				int(args.get("score", 0)),
 			]
 		&"LOG.ORNAMENT_CHIP":
-			return "筹码面饰：+%d 基础战力" % [int(args.get("chips", 0))]
+			return str(TranslationServer.translate(&"AUTO.TEXT.01573E10E71B")) % [int(args.get("chips", 0))]
 		&"LOG.ORNAMENT_MULT":
-			return "倍率面饰：+%d Mult" % [int(args.get("mult", 0))]
+			return str(TranslationServer.translate(&"AUTO.TEXT.29C0C578392B")) % [int(args.get("mult", 0))]
 		&"LOG.ORNAMENT_BURST":
-			return "爆裂面饰：X%s 终倍率" % [str(args.get("xmult", "2"))]
+			return str(TranslationServer.translate(&"AUTO.TEXT.35285A7CDA47")) % [str(args.get("xmult", "2"))]
 		&"LOG.ORNAMENT_STAY":
-			return "留场面饰：X%s 终倍率" % [str(args.get("xmult", "1.5"))]
+			return str(TranslationServer.translate(&"AUTO.TEXT.B144C1DD3DD0")) % [str(args.get("xmult", "1.5"))]
 		&"LOG.ORNAMENT_WILD":
-			return "万能面饰：原始 %d，本手视作 %d" % [
+			return str(TranslationServer.translate(&"AUTO.TEXT.CF5532730BC5")) % [
 				int(args.get("original", 0)),
 				int(args.get("pip", 0)),
 			]
 		&"LOG.ORNAMENT_STONE":
-			return "石质面饰：+%d 基础战力；不参与点数判断" % [int(args.get("chips", 0))]
+			return str(TranslationServer.translate(&"AUTO.TEXT.C77871423FEA")) % [int(args.get("chips", 0))]
 		&"LOG.ORNAMENT_GOLD":
-			return "金辉面饰：+%d 金币" % [int(args.get("coins", 0))]
+			return str(TranslationServer.translate(&"AUTO.TEXT.2B928EF5366D")) % [int(args.get("coins", 0))]
 		&"LOG.ORNAMENT_LUCKY_MULT":
-			return "幸运面饰：触发 +%d Mult" % [int(args.get("mult", 0))]
+			return str(TranslationServer.translate(&"AUTO.TEXT.DB56A53169CA")) % [int(args.get("mult", 0))]
 		&"LOG.ORNAMENT_LUCKY_COINS":
-			return "幸运面饰：触发 +%d 金币" % [int(args.get("coins", 0))]
+			return str(TranslationServer.translate(&"AUTO.TEXT.F4E270D49C8E")) % [int(args.get("coins", 0))]
 		&"LOG.ORNAMENT_LUCKY_MISS":
-			return "幸运面饰：未触发"
+			return str(TranslationServer.translate(&"AUTO.TEXT.5CD950781956"))
 		&"LOG.ORNAMENT_FOIL":
-			return "箔光强化：+%d 基础战力" % [int(args.get("chips", 0))]
+			return str(TranslationServer.translate(&"AUTO.TEXT.222171072F44")) % [int(args.get("chips", 0))]
 		&"LOG.ORNAMENT_HOLO":
-			return "幻彩强化：+%d Mult" % [int(args.get("mult", 0))]
+			return str(TranslationServer.translate(&"AUTO.TEXT.53F7EEE5CB6F")) % [int(args.get("mult", 0))]
 		&"LOG.ORNAMENT_POLY":
-			return "多彩强化：X%s 终倍率" % [str(args.get("xmult", "1.5"))]
+			return str(TranslationServer.translate(&"AUTO.TEXT.FC3405B20424")) % [str(args.get("xmult", "1.5"))]
 		&"LOG.ORNAMENT_BURST_BREAK":
-			return "爆裂面饰破碎：面饰变为无面饰"
+			return str(TranslationServer.translate(&"AUTO.TEXT.5C8EA2E7B281"))
 		&"LOG.MARK_RED_RETRIGGER":
-			return "红印：额外触发"
+			return str(TranslationServer.translate(&"AUTO.TEXT.FB21BA85CACD"))
 		&"LOG.MARK_BLUE_GENERATE":
-			return "蓝印：生成【%s】" % [str(args.get("item_name", args.get("item", "骰型升级件")))]
+			return str(TranslationServer.translate(&"AUTO.TEXT.E941ADF91E56")) % [str(args.get("item_name", args.get("item", str(TranslationServer.translate(&"AUTO.TEXT.8F10CCA653DA")))))]
 		&"LOG.MARK_BLUE_NO_SLOT":
-			return "蓝印：道具槽位不足"
+			return str(TranslationServer.translate(&"AUTO.TEXT.6F0EF6ABE0EC"))
 		&"LOG.MARK_PURPLE_GENERATE":
-			return "紫印：生成【随机铸骰件】"
+			return str(TranslationServer.translate(&"AUTO.TEXT.922669C45622"))
 		&"LOG.MARK_PURPLE_NO_SLOT":
-			return "紫印：道具槽位不足"
+			return str(TranslationServer.translate(&"AUTO.TEXT.B14D78BB3065"))
 		&"LOG.MARK_GOLD_COINS":
-			return "金印：+1 金币"
+			return str(TranslationServer.translate(&"AUTO.TEXT.8FB1BCFCA352"))
 		&"LOG.MARK_WHITE_IMMUNE":
-			return "白印：免疫"
+			return str(TranslationServer.translate(&"AUTO.TEXT.CFBB1A03E628"))
 		&"LOG.MARK_WHITE_REMOVED":
-			return "白印：Boss 战后移除"
+			return str(TranslationServer.translate(&"AUTO.TEXT.BAD8CA5F8C4F"))
 		&"LOG.MARK_RED":
-			return "骰子 %d / 面 %d：%s，额外触发一次。" % [
+			return str(TranslationServer.translate(&"AUTO.TEXT.BC067D3E77C9")) % [
 				int(args.get("die", 0)),
 				int(args.get("face", 0)),
 				str(args.get("mark", "")),
 			]
 		&"LOG.MARK_BLUE":
-			return "骰子 %d / 面 %d：%s留场触发，+%d 倍率。" % [
+			return str(TranslationServer.translate(&"AUTO.TEXT.D2D13E787E4F")) % [
 				int(args.get("die", 0)),
 				int(args.get("face", 0)),
 				str(args.get("mark", "")),
 				int(args.get("mult", 0)),
 			]
 		&"LOG.MARK_PURPLE":
-			return "骰子 %d / 面 %d：%s重投后结算，+%d 倍率。" % [
+			return str(TranslationServer.translate(&"AUTO.TEXT.9C193E41AF49")) % [
 				int(args.get("die", 0)),
 				int(args.get("face", 0)),
 				str(args.get("mark", "")),
 				int(args.get("mult", 0)),
 			]
 		&"LOG.EXTRA_TRIGGER_PIP":
-			return "骰子 %d / 面 %d：额外触发点数，+%d 基础战力。" % [
+			return str(TranslationServer.translate(&"AUTO.TEXT.264C241CE51B")) % [
 				int(args.get("die", 0)),
 				int(args.get("face", 0)),
 				int(args.get("chips", 0)),
@@ -509,13 +509,13 @@ static func material_effect_text(id: StringName) -> String:
 static func rune_name(id: StringName) -> String:
 	match id:
 		&"", &"none":
-			return "无"
+			return str(TranslationServer.translate(&"AUTO.TEXT.72077749F794"))
 		_:
 			return str(id)
 
 
 static func rune_effect_text(_id: StringName) -> String:
-	return "当前版本不启用该效果。"
+	return str(TranslationServer.translate(&"AUTO.TEXT.FB4D12C8E49C"))
 
 
 static func _effective_face_ornament_id(face) -> StringName:

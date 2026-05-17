@@ -26,13 +26,13 @@ theme_override_constants/separation = 10
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "骰子备战区"
+text = "AUTO.TEXT.F490EA5EF76E"
 
 [node name="HintLabel" type="Label" parent="BenchMargin/Rows/Header" unique_id=71888742]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "等待行动"
+text = "AUTO.TEXT.EE01EF7E6EA2"
 horizontal_alignment = 1
 clip_text = true
 
@@ -76,19 +76,19 @@ alignment = 1
 unique_name_in_owner = true
 custom_minimum_size = Vector2(124, 54)
 layout_mode = 2
-text = "重投"
+text = "AUTO.TEXT.332A22260969"
 
 [node name="OrganizeButton" type="Button" parent="BenchMargin/Rows/BenchOverlay/ActionButtonsCenter/ActionButtonsRow"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(124, 54)
 layout_mode = 2
-text = "整理"
+text = "AUTO.TEXT.BD63F469A7E6"
 
 [node name="ScoreButton" type="Button" parent="BenchMargin/Rows/BenchOverlay/ActionButtonsCenter/ActionButtonsRow" unique_id=1318457388]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(124, 54)
 layout_mode = 2
-text = "结算"
+text = "AUTO.TEXT.4C506E4EF106"
 
 [node name="PopupMount" type="CenterContainer" parent="BenchMargin/Rows/BenchOverlay" unique_id=1264297876]
 unique_name_in_owner = true

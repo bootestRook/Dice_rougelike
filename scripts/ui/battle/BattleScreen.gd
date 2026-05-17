@@ -54,7 +54,7 @@ var layout_root: Control = null
 var animation_layer: Control = null
 var last_score_result: ScoreResult = null
 var current_preview_result: ScoreResult = null
-var status_text: String = "战斗准备中。"
+var status_text: String = str(TranslationServer.translate(&"AUTO.TEXT.DE7851F4F172"))
 var wild_selection_dialog: ConfirmationDialog = null
 var wild_button_rows: Dictionary = {}
 var local_combo_appearance_counts: Dictionary = {}
@@ -256,13 +256,13 @@ func _on_battle_started() -> void:
 	current_preview_result = null
 	local_combo_appearance_counts.clear()
 	local_combo_last_formula_by_id.clear()
-	status_text = "战斗开始。选择骰子后，可以重投所选，或直接结算所选。"
+	status_text = str(TranslationServer.translate(&"AUTO.TEXT.FB26E473E039"))
 	_refresh_hud()
 
 
 func _on_hand_started(_hand_index: int) -> void:
 	current_preview_result = null
-	status_text = "选择要重投或结算的骰子。"
+	status_text = str(TranslationServer.translate(&"AUTO.TEXT.629A9098C25D"))
 	_refresh_hud()
 
 
@@ -279,7 +279,7 @@ func _on_score_changed(_total_score: int, _target_score: int) -> void:
 
 
 func _on_selection_changed(selected_count: int) -> void:
-	status_text = "已选择：%d / %d" % [selected_count, controller.get_max_selected_dice() if controller != null else 0]
+	status_text = str(TranslationServer.translate(&"AUTO.TEXT.34EB0A73B9C4")) % [selected_count, controller.get_max_selected_dice() if controller != null else 0]
 	_refresh_hud()
 
 
@@ -297,14 +297,14 @@ func _on_hand_scored(result: ScoreResult) -> void:
 
 
 func _on_battle_won() -> void:
-	status_text = "战斗胜利"
+	status_text = str(TranslationServer.translate(&"AUTO.TEXT.BD9FEA62A9DC"))
 	_refresh_hud()
 	if game_flow_controller != null:
 		call_deferred("_notify_battle_won")
 
 
 func _on_battle_lost() -> void:
-	status_text = "战斗失败"
+	status_text = str(TranslationServer.translate(&"AUTO.TEXT.D2C21A5E1F56"))
 	_refresh_hud()
 	if game_flow_controller != null:
 		call_deferred("_notify_battle_lost")
@@ -324,7 +324,7 @@ func _on_info_pressed() -> void:
 
 
 func _on_options_pressed() -> void:
-	status_text = "选项暂未开放。"
+	status_text = str(TranslationServer.translate(&"AUTO.TEXT.BE260021E2DD"))
 	_refresh_hud()
 
 
@@ -384,7 +384,7 @@ func _settle_selected(wild_effective_pips: Dictionary = {}) -> void:
 	if not controller.can_score():
 		return
 
-	var trace := controller.request_settle_selected(wild_effective_pips)
+	var trace := controller.request_settle_selected(wild_effective_pips, _selected_die_order_for_resolution())
 	if trace == null:
 		return
 
@@ -692,6 +692,28 @@ func _visual_selected_slot_indices(trace: ResolutionTrace) -> Array[int]:
 	return result
 
 
+func _selected_die_order_for_resolution() -> Array[int]:
+	var result: Array[int] = []
+	if dice_bench_area == null or not dice_bench_area.has_method("get_display_die_order"):
+		return result
+
+	var selected_lookup: Dictionary = {}
+	for die_index in _selected_dice_indices():
+		selected_lookup[die_index] = true
+
+	for die_index in dice_bench_area.get_display_die_order():
+		var resolved_index := int(die_index)
+		if selected_lookup.has(resolved_index):
+			result.append(resolved_index)
+			selected_lookup.erase(resolved_index)
+
+	for die_index in _selected_dice_indices():
+		if selected_lookup.has(die_index):
+			result.append(die_index)
+			selected_lookup.erase(die_index)
+	return result
+
+
 func _set_resolution_visual_index_map(trace: ResolutionTrace, visual_slot_indices: Array[int]) -> void:
 	resolution_visual_index_by_trace_index.clear()
 	if trace == null:
@@ -769,7 +791,7 @@ func _build_hud_state() -> BattleHudState:
 		state.item_capacity = run_state.item_slot_capacity
 
 	if controller == null:
-		state.preview_text = "计分预览\n等待战斗开始。"
+		state.preview_text = str(TranslationServer.translate(&"AUTO.TEXT.83C19741CC0F"))
 		return state
 
 	state.target_score = controller.get_target_score()
@@ -890,13 +912,13 @@ func _is_die_selected(index: int) -> bool:
 
 func _preview_text() -> String:
 	if current_preview_result != null:
-		return "计分预览\n%s" % [current_preview_result.get_summary_text_zh()]
+		return str(TranslationServer.translate(&"AUTO.TEXT.8E9702E096F5")) % [current_preview_result.get_summary_text_zh()]
 
 	var selected_count := _selected_dice_indices().size()
 	var max_selected: int = controller.get_max_selected_dice() if controller != null else 0
 	if max_selected > 0 and selected_count > max_selected:
-		return "计分预览\n已选择 %d / %d，最多只能结算 %d 颗骰子。" % [selected_count, max_selected, max_selected]
-	return "计分预览\n未选择骰子。"
+		return str(TranslationServer.translate(&"AUTO.TEXT.C235DFAE61D5")) % [selected_count, max_selected, max_selected]
+	return str(TranslationServer.translate(&"AUTO.TEXT.6AA9A82B6ED6"))
 
 
 func _score_log_lines() -> Array[String]:
@@ -905,15 +927,15 @@ func _score_log_lines() -> Array[String]:
 
 	var lines: Array[String] = []
 	if last_score_result == null:
-		lines.append("选择骰子后，可以重投所选，或直接结算所选。")
-		lines.append("本手结算动画、分数日志和触发文本会显示在这里。")
+		lines.append(str(TranslationServer.translate(&"AUTO.TEXT.546DB6CEBB67")))
+		lines.append(str(TranslationServer.translate(&"AUTO.TEXT.7F03BFBC43B6")))
 		return lines
 
-	lines.append("上次结算")
-	lines.append("实际结算战力：%d" % [last_score_result.final_score])
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.CA6BB100A6B7")))
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.4788FB34D315")) % [last_score_result.final_score])
 	for line in last_score_result.get_summary_text_zh().split("\n"):
 		lines.append(line)
-	lines.append("结算日志")
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.8BC289567504")))
 	for entry in last_score_result.logs:
 		lines.append(entry.get_text())
 	return lines
@@ -921,11 +943,11 @@ func _score_log_lines() -> Array[String]:
 
 func _combo_name(result: ScoreResult) -> String:
 	if result == null:
-		return "未选择"
+		return str(TranslationServer.translate(&"AUTO.TEXT.53E2DB70167F"))
 	var combo_id := result.primary_combo
 	if combo_id == &"":
 		combo_id = result.combo_id
-	return DisplayNames.combo_name(combo_id) if combo_id != &"" else "无"
+	return DisplayNames.combo_name(combo_id) if combo_id != &"" else str(TranslationServer.translate(&"AUTO.TEXT.72077749F794"))
 
 
 func _show_combo_info_popup() -> void:
@@ -1128,7 +1150,7 @@ func _show_wild_selection_dialog(requests: Array[Dictionary]) -> void:
 	_clear_children(root)
 
 	var title := Label.new()
-	title.text = "为每个万能面饰选择本手临时点数"
+	title.text = str(TranslationServer.translate(&"AUTO.TEXT.7BB3EF323E38"))
 	root.add_child(title)
 
 	for request in requests:
@@ -1138,7 +1160,7 @@ func _show_wild_selection_dialog(requests: Array[Dictionary]) -> void:
 		root.add_child(row)
 
 		var label := Label.new()
-		label.text = "骰子 %d / 面 %d，原始点数 %d" % [
+		label.text = str(TranslationServer.translate(&"AUTO.TEXT.D7707C2686A7")) % [
 			int(request.get("die_index", -1)) + 1,
 			int(request.get("face_index", -1)) + 1,
 			int(request.get("original_pip", 0)),
@@ -1174,9 +1196,9 @@ func _ensure_wild_selection_dialog() -> void:
 		return
 	wild_selection_dialog = ConfirmationDialog.new()
 	wild_selection_dialog.name = "WildSelectionDialog"
-	wild_selection_dialog.title = "万能面饰点数选择"
-	wild_selection_dialog.ok_button_text = "确认"
-	wild_selection_dialog.cancel_button_text = "取消"
+	wild_selection_dialog.title = str(TranslationServer.translate(&"AUTO.TEXT.8349FDE42757"))
+	wild_selection_dialog.ok_button_text = str(TranslationServer.translate(&"AUTO.TEXT.B56D9AC6C5A0"))
+	wild_selection_dialog.cancel_button_text = str(TranslationServer.translate(&"AUTO.TEXT.4D0B4688C787"))
 	wild_selection_dialog.exclusive = true
 	wild_selection_dialog.confirmed.connect(_confirm_wild_selection)
 	add_child(wild_selection_dialog)

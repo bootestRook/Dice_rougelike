@@ -13,6 +13,7 @@ var selected_faces: Array[RolledFace] = []
 var scored_faces: Array[RolledFace] = []
 var all_rolled_faces: Array[RolledFace] = []
 var unscored_faces: Array[RolledFace] = []
+var selected_die_order: Array[int] = []
 var battle_state: BattleState = null
 var hand_state: HandState = null
 var run_state: RunState = null
@@ -44,6 +45,7 @@ func clear() -> void:
 	scored_faces.clear()
 	all_rolled_faces.clear()
 	unscored_faces.clear()
+	selected_die_order.clear()
 	battle_state = null
 	hand_state = null
 	run_state = null

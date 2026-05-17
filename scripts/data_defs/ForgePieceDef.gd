@@ -80,9 +80,9 @@ func get_effect_text() -> String:
 		op_texts.append(op_def.get_display_text())
 
 	if op_texts.is_empty():
-		return "效果：无"
+		return str(TranslationServer.translate(&"AUTO.TEXT.4FEED9B9B772"))
 
-	return "效果：\n%s" % ["\n".join(op_texts)]
+	return str(TranslationServer.translate(&"AUTO.TEXT.C21AF8D28311")) % ["\n".join(op_texts)]
 
 
 func get_display_name() -> String:
@@ -121,7 +121,7 @@ func get_tags_display_text() -> String:
 	for tag in get_tags():
 		tag_texts.append(get_tag_display_name(tag))
 	if tag_texts.is_empty():
-		return "无"
+		return str(TranslationServer.translate(&"AUTO.TEXT.72077749F794"))
 	return " / ".join(tag_texts)
 
 
@@ -137,8 +137,8 @@ func get_display_text() -> String:
 	var lines := PackedStringArray()
 	lines.append(get_display_name())
 	lines.append(get_description())
-	lines.append("稀有度：%s" % [get_rarity_display_name()])
-	lines.append("标签：%s" % [get_tags_display_text()])
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.6DB5DF72B910")) % [get_rarity_display_name()])
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.ABAAFC3C7A71")) % [get_tags_display_text()])
 	lines.append(get_effect_text())
 	return "\n".join(lines)
 

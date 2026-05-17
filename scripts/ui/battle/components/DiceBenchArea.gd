@@ -83,7 +83,7 @@ func render(state: BattleHudState) -> void:
 	reroll_button.disabled = not state.can_reroll
 	organize_button.disabled = is_sorting_dice or _organize_disabled(state)
 	score_button.disabled = not state.can_score
-	var next_signature := _dice_signature(state.dice_results)
+	var next_signature := _dice_order_signature(state)
 	if next_signature != dice_signature:
 		dice_signature = next_signature
 		display_die_order.clear()
@@ -213,9 +213,9 @@ func _position_action_buttons() -> void:
 		button.custom_minimum_size = button_size
 		button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	reroll_button.text = "重投"
-	organize_button.text = "整理"
-	score_button.text = "结算"
+	reroll_button.text = str(TranslationServer.translate(&"AUTO.TEXT.332A22260969"))
+	organize_button.text = str(TranslationServer.translate(&"AUTO.TEXT.BD63F469A7E6"))
+	score_button.text = str(TranslationServer.translate(&"AUTO.TEXT.4C506E4EF106"))
 
 	action_buttons_center.anchor_left = 0.0
 	action_buttons_center.anchor_top = 0.0
@@ -394,12 +394,16 @@ func _same_int_order(a: Array[int], b: Array[int]) -> bool:
 	return true
 
 
-func _dice_signature(dice: Array[DieViewData]) -> String:
+func _dice_order_signature(state: BattleHudState) -> String:
+	if state == null:
+		return ""
+
 	var parts := PackedStringArray()
-	for die_data in dice:
+	parts.append("hand:%d" % [state.current_hand])
+	for die_data in state.dice_results:
 		if die_data == null:
 			continue
-		parts.append("%d:%d:%d" % [die_data.die_index, die_data.current_face_index, _current_pip(die_data)])
+		parts.append("%d:%s:%d" % [die_data.die_index, str(die_data.die_id), die_data.face_count])
 	return "|".join(parts)
 
 
@@ -462,7 +466,7 @@ func _make_dice_view(die_data: DieViewData) -> Control:
 			return view
 
 	var fallback := Button.new()
-	fallback.text = "骰子 %d" % [die_data.die_index + 1]
+	fallback.text = str(TranslationServer.translate(&"AUTO.TEXT.F5833D7A3D75")) % [die_data.die_index + 1]
 	fallback.pressed.connect(_on_die_view_pressed.bind(die_data.die_index))
 	return fallback
 
@@ -620,9 +624,9 @@ func _update_info_focus() -> void:
 func _update_viewing_title() -> void:
 	title_label.visible = false
 	if popup != null and popup.visible:
-		title_label.text = "骰子备战区 · 正在查看骰子 %d" % [focused_die_index + 1]
+		title_label.text = str(TranslationServer.translate(&"AUTO.TEXT.32D3EE340AE5")) % [focused_die_index + 1]
 	else:
-		title_label.text = "骰子备战区"
+		title_label.text = str(TranslationServer.translate(&"AUTO.TEXT.F490EA5EF76E"))
 
 
 func _clear_children(node: Node) -> void:

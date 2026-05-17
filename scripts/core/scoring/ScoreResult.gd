@@ -54,19 +54,19 @@ func get_summary_text() -> String:
 
 func get_summary_text_zh() -> String:
 	var lines := PackedStringArray()
-	lines.append("主骰型：%s" % [_primary_combo_text()])
-	lines.append("骰型基础战力：+%d" % [combo_chips_bonus])
-	lines.append("骰型倍率：x%d" % [combo_mult])
-	lines.append("点数总和：%d" % [scored_point_sum])
-	lines.append("包含结构：%s" % [_contained_patterns_text()])
-	lines.append("标签：%s" % [_tags_text()])
-	lines.append("基础战力：%d" % [chips])
-	lines.append("倍率：%d" % [mult])
-	lines.append("终倍率：%.2f" % [xmult])
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.EF0721A4BAA9")) % [_primary_combo_text()])
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.DC6B0A9293A8")) % [combo_chips_bonus])
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.C5FFC0D889DE")) % [combo_mult])
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.2392B1DFA2A1")) % [scored_point_sum])
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.135E3DF5C753")) % [_contained_patterns_text()])
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.ABAAFC3C7A71")) % [_tags_text()])
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.4175E1B87B17")) % [chips])
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.B57562D610C0")) % [mult])
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.135A684FBEFC")) % [xmult])
 	if coins_delta != 0:
 		var coin_prefix := "+" if coins_delta > 0 else ""
-		lines.append("金币：%s%d" % [coin_prefix, coins_delta])
-	lines.append("最终战力：%d" % [final_score])
+		lines.append(str(TranslationServer.translate(&"AUTO.TEXT.2D4DC8F81EEF")) % [coin_prefix, coins_delta])
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.6B7CB54D478C")) % [final_score])
 	return "\n".join(lines)
 
 
@@ -78,7 +78,7 @@ func _primary_combo_text() -> String:
 		return "%s Lv%d" % [DisplayNames.combo_name(combo), max(1, combo_level)]
 	if combo_name_key != &"":
 		return DisplayNames.display_from_key_or_id(combo_name_key)
-	return "无"
+	return str(TranslationServer.translate(&"AUTO.TEXT.72077749F794"))
 
 
 func _combo_text() -> String:
@@ -87,7 +87,7 @@ func _combo_text() -> String:
 
 func _contained_patterns_text() -> String:
 	if contained_patterns.is_empty():
-		return "无"
+		return str(TranslationServer.translate(&"AUTO.TEXT.72077749F794"))
 
 	var pattern_parts := PackedStringArray()
 	for pattern in contained_patterns:
@@ -97,7 +97,7 @@ func _contained_patterns_text() -> String:
 
 func _tags_text() -> String:
 	if tags.is_empty():
-		return "无"
+		return str(TranslationServer.translate(&"AUTO.TEXT.72077749F794"))
 
 	var tag_parts := PackedStringArray()
 	for tag in tags:

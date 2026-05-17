@@ -176,7 +176,7 @@ func _add_button_bar(root: Control, art: MainMenuArtConfig) -> void:
 	margin.add_child(buttons)
 
 	buttons.add_child(_make_art_button(
-		"开始游戏",
+		str(TranslationServer.translate(&"AUTO.TEXT.2857A3704A65")),
 		art.start_button_size,
 		art.start_button_normal_texture,
 		art.start_button_hover_texture,
@@ -188,7 +188,7 @@ func _add_button_bar(root: Control, art: MainMenuArtConfig) -> void:
 		_on_start_battle_pressed
 	))
 	buttons.add_child(_make_art_button(
-		"退出",
+		str(TranslationServer.translate(&"AUTO.TEXT.FEECB1E6ADEC")),
 		art.exit_button_size,
 		art.exit_button_normal_texture,
 		art.exit_button_hover_texture,

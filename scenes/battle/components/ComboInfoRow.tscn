@@ -26,7 +26,7 @@ layout_mode = 2
 [node name="LevelLabel" type="Label" parent="RowMargin/Columns/LevelBadge"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "等级1"
+text = "AUTO.TEXT.F0623EEFFFA7"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -35,7 +35,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(300, 42)
 layout_mode = 2
 size_flags_horizontal = 3
-text = "顺子"
+text = "AUTO.TEXT.287EC954DA38"
 horizontal_alignment = 1
 vertical_alignment = 1
 clip_text = true

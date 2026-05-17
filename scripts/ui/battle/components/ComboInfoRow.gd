@@ -41,7 +41,7 @@ func render(row_data: ComboInfoRowData, style_config: BattleUiStyleConfig) -> vo
 		for label in [x_label, hash_label]:
 			style_config.apply_label(label, style_config.body_font_size, style_config.combo_info_soft_text_color)
 
-	level_label.text = "等级%d" % [row_data.level]
+	level_label.text = str(TranslationServer.translate(&"AUTO.TEXT.2219F266B80D")) % [row_data.level]
 	combo_label.text = row_data.combo_name
 	chips_label.text = _format_number(row_data.chips)
 	x_label.text = "×"

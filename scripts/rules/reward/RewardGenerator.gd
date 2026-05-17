@@ -278,121 +278,121 @@ func _display_name_for_id(id: StringName) -> String:
 
 	match id:
 		&"pip_6":
-			return "点数片：6"
+			return str(TranslationServer.translate(&"AUTO.TEXT.C02DD5A6CE94"))
 		&"pip_1":
-			return "点数片：1"
+			return str(TranslationServer.translate(&"AUTO.TEXT.D6015166CA43"))
 		&"pip_3":
-			return "点数片：3"
+			return str(TranslationServer.translate(&"AUTO.TEXT.5831FA30C96E"))
 		&"ornament_chip":
-			return "筹码面饰"
+			return str(TranslationServer.translate(&"AUTO.TEXT.117883B0EBE1"))
 		&"ornament_mult":
-			return "倍率面饰"
+			return str(TranslationServer.translate(&"AUTO.TEXT.C500FA399240"))
 		&"ornament_wild":
-			return "万能面饰"
+			return str(TranslationServer.translate(&"AUTO.TEXT.AC2FB8965804"))
 		&"ornament_burst", &"material_glass":
-			return "爆裂面饰"
+			return str(TranslationServer.translate(&"AUTO.TEXT.97FB92DB432F"))
 		&"ornament_stay", &"material_steel":
-			return "留场面饰"
+			return str(TranslationServer.translate(&"AUTO.TEXT.5C1FC3B3DE4C"))
 		&"ornament_stone":
-			return "石质面饰"
+			return str(TranslationServer.translate(&"AUTO.TEXT.7D507BD3C533"))
 		&"ornament_gold":
-			return "金辉面饰"
+			return str(TranslationServer.translate(&"AUTO.TEXT.0C170134B33B"))
 		&"ornament_lucky":
-			return "幸运面饰"
+			return str(TranslationServer.translate(&"AUTO.TEXT.9B44878F713C"))
 		&"ornament_foil":
-			return "箔光强化"
+			return str(TranslationServer.translate(&"AUTO.TEXT.EF8326246CC6"))
 		&"ornament_holo":
-			return "幻彩强化"
+			return str(TranslationServer.translate(&"AUTO.TEXT.71057C7B06AE"))
 		&"ornament_poly":
-			return "多彩强化"
+			return str(TranslationServer.translate(&"AUTO.TEXT.C7D719D6CF7B"))
 		&"mark_red":
-			return "红印"
+			return str(TranslationServer.translate(&"AUTO.TEXT.79C2CA946E6B"))
 		&"mark_blue":
-			return "蓝印"
+			return str(TranslationServer.translate(&"AUTO.TEXT.DF9F6D1541D3"))
 		&"mark_purple":
-			return "紫印"
+			return str(TranslationServer.translate(&"AUTO.TEXT.8EBB318D3D60"))
 		&"mark_gold":
-			return "金印"
+			return str(TranslationServer.translate(&"AUTO.TEXT.C95B7D8DF883"))
 		&"mark_white":
-			return "白印"
+			return str(TranslationServer.translate(&"AUTO.TEXT.2E1D574ED743"))
 		&"red_6":
-			return "红印 6"
+			return str(TranslationServer.translate(&"AUTO.TEXT.3EA7BBD5DA04"))
 		&"burst_1", &"glass_1":
-			return "爆裂 1"
+			return str(TranslationServer.translate(&"AUTO.TEXT.BC7DA19E882B"))
 		&"stay_6":
-			return "留场 6"
+			return str(TranslationServer.translate(&"AUTO.TEXT.712EB6CA9E9D"))
 		&"cleanse":
-			return "净化件"
+			return str(TranslationServer.translate(&"AUTO.TEXT.16544158C110"))
 		&"rune_six", &"rune_straight", &"rune_pair", &"rune_odd", &"rune_even", &"upgrade_1":
-			return "已停用铸骰件"
+			return str(TranslationServer.translate(&"AUTO.TEXT.CBF70592C60C"))
 		_:
 			return str(id)
 
 
 func _description_for_id(id: StringName) -> String:
 	if id == &"mark_red":
-		return "该骰面被结算或未结算留场触发后，额外触发 1 次。"
+		return str(TranslationServer.translate(&"AUTO.TEXT.DB4775169C24"))
 	if id == &"mark_blue":
-		return "若该骰面本手最终投出但未被选择结算，本手结束时生成主骰型升级件。"
+		return str(TranslationServer.translate(&"AUTO.TEXT.EDE4E88DE3D0"))
 	if id == &"mark_purple":
-		return "该骰面被重投时生成 1 个随机铸骰件；每场战斗每个物理面最多成功触发 1 次。"
+		return str(TranslationServer.translate(&"AUTO.TEXT.296FAC38B168"))
 	if id == &"mark_gold":
-		return "该骰面被结算并计分时获得 1 金币。"
+		return str(TranslationServer.translate(&"AUTO.TEXT.547F36B364AF"))
 	if id == &"mark_white":
-		return "该骰面免疫 Boss 或负面规则；一场 Boss 战结束后移除。"
+		return str(TranslationServer.translate(&"AUTO.TEXT.48C725A7FD3F"))
 	if ComboUpgradeItem.from_item_id(id) != null:
-		return "骰型升级件。由蓝印生成，占用 1 个道具槽位。"
+		return str(TranslationServer.translate(&"AUTO.TEXT.B147441759D4"))
 	match id:
 		&"pip_6":
-			return "将一个骰面替换为 6。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.24E797AEACB8"))
 		&"pip_1":
-			return "将一个骰面替换为 1。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.2A2DE5E19D26"))
 		&"pip_3":
-			return "将一个骰面替换为 3。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.BC90445D994E"))
 		&"ornament_chip":
-			return "给一个骰面安装筹码面饰。被结算时 +30 基础战力。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.98262A372A55"))
 		&"ornament_mult":
-			return "给一个骰面安装倍率面饰。被结算时 +4 Mult。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.57E72BA166C1"))
 		&"ornament_wild":
-			return "给一个骰面安装万能面饰。结算前可选择临时点数参与点数判断。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.11582CECE2E0"))
 		&"ornament_burst", &"material_glass":
-			return "给一个骰面安装爆裂面饰。被结算时终倍率 ×2，结算后可能破碎。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.DC80A8298359"))
 		&"ornament_stay", &"material_steel":
-			return "给一个骰面安装留场面饰。投出但未结算时，终倍率 ×1.5。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.A74D96EFFD75"))
 		&"ornament_stone":
-			return "给一个骰面安装石质面饰。被结算时 +50 基础战力，但不参与点数判断。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.18257B5FA85D"))
 		&"ornament_gold":
-			return "给一个骰面安装金辉面饰。投出但未结算且本手成功结算后 +3 金币。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.1CA08BEA94D3"))
 		&"ornament_lucky":
-			return "给一个骰面安装幸运面饰。被结算时独立概率获得 +20 Mult 或 +20 金币。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.E699B4E7996F"))
 		&"ornament_foil":
-			return "给一个骰面安装箔光强化。被结算时 +50 基础战力。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.CB14C28C4282"))
 		&"ornament_holo":
-			return "给一个骰面安装幻彩强化。被结算时 +10 Mult。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.E70A3C6E22B1"))
 		&"ornament_poly":
-			return "给一个骰面安装多彩强化。被结算时终倍率 ×1.5。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.2BF754A09305"))
 		&"mark_red":
-			return "给一个骰面添加红印。该面被结算时额外触发一次。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.955AC7EBFC11"))
 		&"mark_blue":
-			return "给一个骰面添加蓝印。该面投出但未结算时触发留场收益。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.3FDF9FEFC7A8"))
 		&"mark_purple":
-			return "给一个骰面添加紫印。该骰子本手被重投后出现时，触发额外收益。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.05A8FE4EDC14"))
 		&"mark_gold":
-			return "给一个骰面添加金印。该面被结算并计分时获得 1 金币。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.D5E268A322C9"))
 		&"mark_white":
-			return "给一个骰面添加白印。该面免疫 Boss 或负面规则，一场 Boss 战后移除。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.DA4587CAAA98"))
 		&"upgrade_combo_scatter", &"upgrade_combo_pair", &"upgrade_combo_two_pair", &"upgrade_combo_three_kind", &"upgrade_combo_full_house", &"upgrade_combo_four_kind", &"upgrade_combo_straight", &"upgrade_combo_five_kind":
-			return "骰型升级件。由蓝印生成，占用 1 个道具槽位。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.B147441759D4"))
 		&"red_6":
-			return "将一个骰面替换为 6，并添加红印。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.51F26FB0850B"))
 		&"burst_1", &"glass_1":
-			return "将一个骰面替换为 1，并安装爆裂面饰。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.3A3EE1B5AB90"))
 		&"stay_6":
-			return "将一个骰面替换为 6，并安装留场面饰。投出但未结算时提供收益。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.B3DE28F6E415"))
 		&"cleanse":
-			return "清除该骰面的负面面饰或负面印记。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.8D4E7410F9F2"))
 		&"rune_six", &"rune_straight", &"rune_pair", &"rune_odd", &"rune_even", &"upgrade_1":
-			return "当前版本不启用该普通铸骰效果。"
+			return str(TranslationServer.translate(&"AUTO.TEXT.594EF392D12F"))
 		_:
 			return ""
 

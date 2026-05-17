@@ -62,7 +62,7 @@ func score(context: ScoreContext) -> ScoreResult:
 	result.combo_level = int(base_values["level"])
 	result.combo_chips_bonus = int(base_values["chips_bonus"])
 	result.combo_mult = int(base_values["mult"])
-	result.chips = int(base_values["chips"])
+	result.chips = result.combo_chips_bonus
 	result.mult = int(base_values["mult"])
 	result.xmult = 1.0
 
@@ -71,12 +71,13 @@ func score(context: ScoreContext) -> ScoreResult:
 	_add_log(result, &"LOG.COMBO_CHIPS_BONUS", {"chips": result.combo_chips_bonus}, &"base")
 	_add_log(result, &"LOG.COMBO_MULT", {"mult": result.combo_mult}, &"base")
 	_add_log(result, &"LOG.PIP_SUM", {"sum": total_pips}, &"base")
-	_add_log(result, &"LOG.BASE_CHIPS", {"chips": result.chips}, &"base")
+	_add_log(result, &"LOG.BASE_CHIPS", {"chips": int(base_values["chips"])}, &"base")
 	_add_log(result, &"LOG.BASE_MULT", {"mult": result.mult}, &"base")
 	_add_log(result, &"LOG.BASE_XMULT", {"xmult": _format_xmult(result.xmult)}, &"base")
 	_add_wild_choice_logs(context, result)
 
-	effect_resolver.apply_effects(context, result)
+	_apply_selected_rolls_for_resolution(context, result)
+	effect_resolver.apply_unselected_effects(context, result)
 	result.final_score = roundi(float(result.chips * result.mult) * result.xmult)
 	_add_log(result, &"LOG.FINAL_SCORE", {
 		"chips": result.chips,
@@ -106,7 +107,7 @@ func build_resolution_trace(context: ScoreContext) -> ResolutionTrace:
 	context.defer_runtime_mutations = true
 	_prepare_context(context)
 	_ensure_wild_effective_pips(context)
-	context.selected_faces = _sorted_rolls_by_bench_order(context.selected_faces)
+	context.selected_faces = _sorted_rolls_for_resolution(context.selected_faces, context.selected_die_order)
 	context.scored_faces = context.selected_faces
 	_mark_scored_and_unscored(context)
 	_capture_trace_snapshots(trace, context)
@@ -187,38 +188,14 @@ func build_resolution_trace(context: ScoreContext) -> ResolutionTrace:
 	result.mult = result.combo_mult
 
 	_add_wild_choice_logs(context, result)
-	for index in range(context.selected_faces.size()):
-		var roll: RolledFace = context.selected_faces[index]
-		var pip = get_pip_for_sum(roll, context)
-		var pip_value: int = int(pip) if pip != null else 0
-		var before := _score_snapshot(result)
-		result.chips += pip_value
-		_append_manual_step(
-			trace,
-			result,
-			ResolutionStep.Phase.PIP_SCORE,
-			&"face",
-			&"pip",
-			"Pip",
-			"Die %d pip" % [roll.die_index + 1],
-			"+%d Chips" % [pip_value],
-			"+%d Chips" % [pip_value],
-			int(before.get("chips", 0)),
-			int(before.get("mult", 1)),
-			float(before.get("xmult", 1.0)),
-			result.chips,
-			result.mult,
-			result.xmult,
-			roll.die_index,
-			index
-		)
 
 	_add_log(result, &"LOG.PIP_SUM", {"sum": total_pips}, &"base")
-	_add_log(result, &"LOG.BASE_CHIPS", {"chips": result.chips}, &"base")
+	_add_log(result, &"LOG.BASE_CHIPS", {"chips": int(base_values["chips"])}, &"base")
 	_add_log(result, &"LOG.BASE_MULT", {"mult": result.mult}, &"base")
 	_add_log(result, &"LOG.BASE_XMULT", {"xmult": _format_xmult(result.xmult)}, &"base")
 
-	effect_resolver.apply_effects(context, result, trace)
+	_apply_selected_rolls_for_resolution(context, result, trace)
+	effect_resolver.apply_unselected_effects(context, result, trace)
 	result.final_score = roundi(float(result.chips * result.mult) * result.xmult)
 	_add_log(result, &"LOG.FINAL_SCORE", {
 		"chips": result.chips,
@@ -313,13 +290,24 @@ func get_effective_ornament_id_for_roll(roll: RolledFace, context: ScoreContext 
 	return _effective_ornament_id_for_roll(roll, context)
 
 
-func _sorted_rolls_by_bench_order(rolls: Array[RolledFace]) -> Array[RolledFace]:
+func _sorted_rolls_for_resolution(rolls: Array[RolledFace], selected_die_order: Array[int] = []) -> Array[RolledFace]:
 	var sorted: Array[RolledFace] = []
 	for roll in rolls:
 		if roll != null:
 			sorted.append(roll)
-	sorted.sort_custom(func(a, b) -> bool:
-		return _bench_slot_index(a) < _bench_slot_index(b)
+
+	var order_lookup: Dictionary = {}
+	for order_index in range(selected_die_order.size()):
+		var die_index := int(selected_die_order[order_index])
+		if not order_lookup.has(die_index):
+			order_lookup[die_index] = order_index
+
+	sorted.sort_custom(func(a: RolledFace, b: RolledFace) -> bool:
+		var order_a := int(order_lookup.get(_bench_slot_index(a), 999999))
+		var order_b := int(order_lookup.get(_bench_slot_index(b), 999999))
+		if order_a == order_b:
+			return _bench_slot_index(a) < _bench_slot_index(b)
+		return order_a < order_b
 	)
 	return sorted
 
@@ -379,6 +367,58 @@ func _score_snapshot(result: ScoreResult) -> Dictionary:
 		"mult": result.mult if result != null else 1,
 		"xmult": result.xmult if result != null else 1.0,
 	}
+
+
+func _apply_selected_rolls_for_resolution(
+	context: ScoreContext,
+	result: ScoreResult,
+	trace: ResolutionTrace = null
+) -> void:
+	if context == null or result == null:
+		return
+
+	for index in range(context.selected_faces.size()):
+		var roll: RolledFace = context.selected_faces[index]
+		_apply_roll_pip_score(roll, context, result, trace, index)
+		effect_resolver.apply_selected_face_effects_for_roll(roll, context, result, trace)
+
+
+func _apply_roll_pip_score(
+	roll: RolledFace,
+	context: ScoreContext,
+	result: ScoreResult,
+	trace: ResolutionTrace = null,
+	resolution_index: int = -1
+) -> void:
+	if roll == null or result == null:
+		return
+
+	var pip = get_pip_for_sum(roll, context)
+	var pip_value: int = int(pip) if pip != null else 0
+	var before := _score_snapshot(result)
+	result.chips += pip_value
+	if trace == null:
+		return
+
+	_append_manual_step(
+		trace,
+		result,
+		ResolutionStep.Phase.PIP_SCORE,
+		&"face",
+		&"pip",
+		"Pip",
+		"Die %d pip" % [roll.die_index + 1],
+		"+%d Chips" % [pip_value],
+		"+%d Chips" % [pip_value],
+		int(before.get("chips", 0)),
+		int(before.get("mult", 1)),
+		float(before.get("xmult", 1.0)),
+		result.chips,
+		result.mult,
+		result.xmult,
+		roll.die_index,
+		resolution_index
+	)
 
 
 func _append_manual_step(

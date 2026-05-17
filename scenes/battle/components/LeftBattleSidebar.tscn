@@ -45,7 +45,7 @@ alignment = 1
 [node name="TargetHint" type="Label" parent="SidebarMargin/Rows/TargetScorePanel/TargetMargin/TargetCenter/TargetScoreRows" unique_id=1516187820]
 unique_name_in_owner = true
 layout_mode = 2
-text = "至少得分"
+text = "AUTO.TEXT.D710E12E8D49"
 horizontal_alignment = 1
 
 [node name="TargetValue" type="Label" parent="SidebarMargin/Rows/TargetScorePanel/TargetMargin/TargetCenter/TargetScoreRows" unique_id=2034368020]
@@ -57,7 +57,7 @@ horizontal_alignment = 1
 [node name="RewardLabel" type="Label" parent="SidebarMargin/Rows/TargetScorePanel/TargetMargin/TargetCenter/TargetScoreRows" unique_id=1665490163]
 unique_name_in_owner = true
 layout_mode = 2
-text = "奖励: $$$$"
+text = "AUTO.TEXT.CCA257E7F7C3"
 horizontal_alignment = 1
 
 [node name="CurrentScorePanel" type="PanelContainer" parent="SidebarMargin/Rows" unique_id=495251575]
@@ -81,8 +81,7 @@ alignment = 1
 unique_name_in_owner = true
 custom_minimum_size = Vector2(118, 0)
 layout_mode = 2
-text = "本场
-总分"
+text = "AUTO.TEXT.455EA5D8FD85"
 vertical_alignment = 1
 
 [node name="CurrentScoreBox" type="PanelContainer" parent="SidebarMargin/Rows/CurrentScorePanel/CurrentMargin/CurrentRow" unique_id=1854435327]
@@ -144,7 +143,7 @@ alignment = 1
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
-text = "核心骰型"
+text = "AUTO.TEXT.ACA89D478331"
 
 [node name="ComboValue" type="Label" parent="SidebarMargin/Rows/CoreComboPanel/ComboMargin/ComboRows/ComboHeader" unique_id=1037540440]
 unique_name_in_owner = true
@@ -183,7 +182,7 @@ alignment = 1
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
-text = "基础战力总数 × 基础倍率"
+text = "AUTO.TEXT.CE8CE780E5BD"
 horizontal_alignment = 1
 
 [node name="FormulaValue" type="Label" parent="SidebarMargin/Rows/CoreComboPanel/ComboMargin/ComboRows/ScoreFormulaPanel/FormulaMargin/FormulaRows" unique_id=930251507]
@@ -332,15 +331,14 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(124, 154)
 layout_mode = 2
 size_flags_vertical = 3
-text = "比赛
-信息"
+text = "AUTO.TEXT.F80CC17A4BA6"
 
 [node name="OptionsButton" type="Button" parent="SidebarMargin/Rows/BottomRow/ActionButtonPanel/ActionMargin/ActionButtons" unique_id=512745795]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(124, 154)
 layout_mode = 2
 size_flags_vertical = 3
-text = "选项"
+text = "AUTO.TEXT.221EE0CC9460"
 
 [node name="BattleResourcePanel" type="PanelContainer" parent="SidebarMargin/Rows/BottomRow" unique_id=601864637]
 unique_name_in_owner = true
@@ -386,7 +384,7 @@ alignment = 1
 [node name="HandTitle" type="Label" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows/ActionResourceRow/HandStatPanel/HandStatMargin/HandStatRows" unique_id=963090610]
 unique_name_in_owner = true
 layout_mode = 2
-text = "回合"
+text = "AUTO.TEXT.52D27A21F811"
 horizontal_alignment = 1
 
 [node name="HandValue" type="Label" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows/ActionResourceRow/HandStatPanel/HandStatMargin/HandStatRows" unique_id=1437918757]
@@ -416,7 +414,7 @@ alignment = 1
 [node name="RerollTitle" type="Label" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows/ActionResourceRow/RerollStatPanel/RerollStatMargin/RerollStatRows" unique_id=1858579316]
 unique_name_in_owner = true
 layout_mode = 2
-text = "重投"
+text = "AUTO.TEXT.332A22260969"
 horizontal_alignment = 1
 
 [node name="RerollValue" type="Label" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows/ActionResourceRow/RerollStatPanel/RerollStatMargin/RerollStatRows" unique_id=859674557]
@@ -471,7 +469,7 @@ alignment = 1
 [node name="BattleTitle" type="Label" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows/BattleProgressRow/BattleStatPanel/BattleStatMargin/BattleStatRows" unique_id=1630329322]
 unique_name_in_owner = true
 layout_mode = 2
-text = "难度"
+text = "AUTO.TEXT.205AFF990BC5"
 horizontal_alignment = 1
 
 [node name="BattleValue" type="Label" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows/BattleProgressRow/BattleStatPanel/BattleStatMargin/BattleStatRows" unique_id=1265957258]
@@ -501,7 +499,7 @@ alignment = 1
 [node name="MaxBattleTitle" type="Label" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows/BattleProgressRow/MaxBattleStatPanel/MaxBattleStatMargin/MaxBattleStatRows" unique_id=1774478053]
 unique_name_in_owner = true
 layout_mode = 2
-text = "关卡"
+text = "AUTO.TEXT.23CC91624DF3"
 horizontal_alignment = 1
 
 [node name="MaxBattleValue" type="Label" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows/BattleProgressRow/MaxBattleStatPanel/MaxBattleStatMargin/MaxBattleStatRows" unique_id=1012238598]

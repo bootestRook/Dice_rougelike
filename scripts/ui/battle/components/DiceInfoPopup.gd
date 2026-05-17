@@ -51,13 +51,13 @@ func render(die_data: DieViewData) -> void:
 	_clear_children(face_grid)
 
 	if die_data == null:
-		title_label.text = "骰子信息"
-		body_label.text = "正在查看：无"
+		title_label.text = str(TranslationServer.translate(&"AUTO.TEXT.23ADBAE60C54"))
+		body_label.text = str(TranslationServer.translate(&"AUTO.TEXT.DEEF03E6A8A7"))
 		return
 
 	var die_number := die_data.die_index + 1
-	title_label.text = "骰子 %d · %s (D%d)" % [die_number, die_data.body_name, die_data.face_count]
-	body_label.text = "正在查看：骰子 %d · 骰胚：%s" % [die_number, die_data.body_name]
+	title_label.text = str(TranslationServer.translate(&"AUTO.TEXT.184D0F87C28C")) % [die_number, die_data.body_name, die_data.face_count]
+	body_label.text = str(TranslationServer.translate(&"AUTO.TEXT.6A1C9F7BDE32")) % [die_number, die_data.body_name]
 	var face_total := die_data.faces.size()
 	face_grid.columns = mini(3, max(1, face_total)) if face_total <= 6 else 4
 
@@ -106,7 +106,7 @@ func _make_face_card() -> Control:
 			return card
 
 	var fallback := Label.new()
-	fallback.text = "面信息"
+	fallback.text = str(TranslationServer.translate(&"AUTO.TEXT.8E7B07850ED5"))
 	return fallback
 
 

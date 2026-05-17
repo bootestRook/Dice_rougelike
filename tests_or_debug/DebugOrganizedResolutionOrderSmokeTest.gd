@@ -1,6 +1,9 @@
 extends SceneTree
 
 
+const ResolutionStep = preload("res://scripts/core/scoring/ResolutionStep.gd")
+
+
 var battle_screen: Node = null
 var bench_area: Node = null
 var scoring_area: Node = null
@@ -48,12 +51,19 @@ func _process(_delta: float) -> bool:
 
 		for index in range(5):
 			controller.toggle_select(index)
-		var trace = controller.request_settle_selected({})
+		var trace = controller.request_settle_selected({}, bench_area.get_display_die_order())
 		if trace == null:
 			print("FAIL: trace null")
 			quit(1)
 			return true
 		expected_order = _expected_visual_selected_order(trace.selected_slot_indices)
+		var pip_order := _pip_step_order(trace)
+		if not _same_int_order(pip_order, expected_order):
+			print("expected_order=%s" % [str(expected_order)])
+			print("pip_step_order=%s" % [str(pip_order)])
+			print("FAIL: pip steps are not visual order")
+			quit(1)
+			return true
 		battle_screen.skip_resolution_animation()
 		battle_screen.move_selected_dice_to_resolution_by_trace(trace)
 		step = 3
@@ -101,6 +111,16 @@ func _settlement_order() -> Array[int]:
 		return order
 	for child in slots.get_children():
 		order.append(int(child.get_meta("die_index", -1)))
+	return order
+
+
+func _pip_step_order(trace) -> Array[int]:
+	var order: Array[int] = []
+	if trace == null:
+		return order
+	for step in trace.steps:
+		if step != null and step.phase == ResolutionStep.Phase.PIP_SCORE:
+			order.append(int(step.bench_slot_index))
 	return order
 
 

@@ -559,6 +559,48 @@ msgstr "留场面饰"
 msgid "FORGE_PART.ORNAMENT_STAY.DESC"
 msgstr "给一个骰面安装留场面饰。投出但未结算时，提供 +5 倍率。"
 
+msgid "FORGE_PART.ORNAMENT_WILD.NAME"
+msgstr "万能面饰"
+
+msgid "FORGE_PART.ORNAMENT_WILD.DESC"
+msgstr "给一个骰面安装万能面饰。结算前可选择临时点数参与点数判断。"
+
+msgid "FORGE_PART.ORNAMENT_STONE.NAME"
+msgstr "石质面饰"
+
+msgid "FORGE_PART.ORNAMENT_STONE.DESC"
+msgstr "给一个骰面安装石质面饰。被结算时 +50 基础战力，但不参与点数判断。"
+
+msgid "FORGE_PART.ORNAMENT_GOLD.NAME"
+msgstr "金辉面饰"
+
+msgid "FORGE_PART.ORNAMENT_GOLD.DESC"
+msgstr "给一个骰面安装金辉面饰。投出但未结算且本手成功结算后 +3 金币。"
+
+msgid "FORGE_PART.ORNAMENT_LUCKY.NAME"
+msgstr "幸运面饰"
+
+msgid "FORGE_PART.ORNAMENT_LUCKY.DESC"
+msgstr "给一个骰面安装幸运面饰。被结算时独立概率获得 +20 Mult 或 +20 金币。"
+
+msgid "FORGE_PART.ORNAMENT_FOIL.NAME"
+msgstr "箔光强化"
+
+msgid "FORGE_PART.ORNAMENT_FOIL.DESC"
+msgstr "给一个骰面安装箔光强化。被结算时 +50 基础战力。"
+
+msgid "FORGE_PART.ORNAMENT_HOLO.NAME"
+msgstr "幻彩强化"
+
+msgid "FORGE_PART.ORNAMENT_HOLO.DESC"
+msgstr "给一个骰面安装幻彩强化。被结算时 +10 Mult。"
+
+msgid "FORGE_PART.ORNAMENT_POLY.NAME"
+msgstr "多彩强化"
+
+msgid "FORGE_PART.ORNAMENT_POLY.DESC"
+msgstr "给一个骰面安装多彩强化。被结算时终倍率 ×1.5。"
+
 msgid "FORGE_PART.MARK_RED.NAME"
 msgstr "红印"
 
@@ -666,6 +708,54 @@ msgstr "低点玻璃"
 
 msgid "FORGE_PART.GLASS_1.DESC"
 msgstr "将一个面变为 1 点，并添加玻璃材质。"
+
+msgid "FORGE_PART.UPGRADE_COMBO_SCATTER.NAME"
+msgstr "散点升级件"
+
+msgid "FORGE_PART.UPGRADE_COMBO_SCATTER.DESC"
+msgstr "升级散点骰型。由蓝印生成，占用 1 个道具槽位。"
+
+msgid "FORGE_PART.UPGRADE_COMBO_PAIR.NAME"
+msgstr "一对升级件"
+
+msgid "FORGE_PART.UPGRADE_COMBO_PAIR.DESC"
+msgstr "升级一对骰型。由蓝印生成，占用 1 个道具槽位。"
+
+msgid "FORGE_PART.UPGRADE_COMBO_TWO_PAIR.NAME"
+msgstr "两对升级件"
+
+msgid "FORGE_PART.UPGRADE_COMBO_TWO_PAIR.DESC"
+msgstr "升级两对骰型。由蓝印生成，占用 1 个道具槽位。"
+
+msgid "FORGE_PART.UPGRADE_COMBO_THREE_KIND.NAME"
+msgstr "三同升级件"
+
+msgid "FORGE_PART.UPGRADE_COMBO_THREE_KIND.DESC"
+msgstr "升级三同骰型。由蓝印生成，占用 1 个道具槽位。"
+
+msgid "FORGE_PART.UPGRADE_COMBO_FULL_HOUSE.NAME"
+msgstr "葫芦升级件"
+
+msgid "FORGE_PART.UPGRADE_COMBO_FULL_HOUSE.DESC"
+msgstr "升级葫芦骰型。由蓝印生成，占用 1 个道具槽位。"
+
+msgid "FORGE_PART.UPGRADE_COMBO_FOUR_KIND.NAME"
+msgstr "四同升级件"
+
+msgid "FORGE_PART.UPGRADE_COMBO_FOUR_KIND.DESC"
+msgstr "升级四同骰型。由蓝印生成，占用 1 个道具槽位。"
+
+msgid "FORGE_PART.UPGRADE_COMBO_STRAIGHT.NAME"
+msgstr "顺子升级件"
+
+msgid "FORGE_PART.UPGRADE_COMBO_STRAIGHT.DESC"
+msgstr "升级顺子骰型。由蓝印生成，占用 1 个道具槽位。"
+
+msgid "FORGE_PART.UPGRADE_COMBO_FIVE_KIND.NAME"
+msgstr "五同升级件"
+
+msgid "FORGE_PART.UPGRADE_COMBO_FIVE_KIND.DESC"
+msgstr "升级五同骰型。由蓝印生成，占用 1 个道具槽位。"
 
 msgid "DIE.NORMAL_D6.NAME"
 msgstr "普通六面骰"
@@ -942,3 +1032,1215 @@ msgstr "战败"
 
 msgid "PHASE.UNKNOWN"
 msgstr "未知"
+
+msgid "AUTO.TEXT.01573E10E71B"
+msgstr "筹码面饰：+%d 基础战力"
+
+msgid "AUTO.TEXT.01758EA52EE6"
+msgstr "稀饰校准失败"
+
+msgid "AUTO.TEXT.02D1C09BF663"
+msgstr "金辉面饰：+3 金币"
+
+msgid "AUTO.TEXT.0327CD3D96EB"
+msgstr "结算中"
+
+msgid "AUTO.TEXT.038CDAFC55EF"
+msgstr "基础战力"
+
+msgid "AUTO.TEXT.043D46E4F6CD"
+msgstr "石质"
+
+msgid "AUTO.TEXT.04E30DB10857"
+msgstr "战力面贴"
+
+msgid "AUTO.TEXT.05A8FE4EDC14"
+msgstr "给一个骰面添加紫印。该骰子本手被重投后出现时，触发额外收益。"
+
+msgid "AUTO.TEXT.093DDBA0EF5F"
+msgstr "金辉面贴"
+
+msgid "AUTO.TEXT.0BB2D2BDE559"
+msgstr "高点"
+
+msgid "AUTO.TEXT.0C170134B33B"
+msgstr "金辉面饰"
+
+msgid "AUTO.TEXT.0CF1D841BD73"
+msgstr "奇数"
+
+msgid "AUTO.TEXT.0E689E7F4286"
+msgstr "尚未选择铸骰件。"
+
+msgid "AUTO.TEXT.0E84F9EF1AFF"
+msgstr "将 1 个选中骰面安装为金辉面饰。"
+
+msgid "AUTO.TEXT.0FA61CB1B30A"
+msgstr "骰面复写器"
+
+msgid "AUTO.TEXT.0FEA7E823183"
+msgstr "黑印"
+
+msgid "AUTO.TEXT.10D2FEDBF8A1"
+msgstr "将最多 2 个选中骰面点数 +1；超过所属骰子的面数后循环到 1。"
+
+msgid "AUTO.TEXT.11582CECE2E0"
+msgstr "给一个骰面安装万能面饰。结算前可选择临时点数参与点数判断。"
+
+msgid "AUTO.TEXT.117883B0EBE1"
+msgstr "筹码面饰"
+
+msgid "AUTO.TEXT.11D024154013"
+msgstr "返回"
+
+msgid "AUTO.TEXT.121760C4E89D"
+msgstr "额外触发点数"
+
+msgid "AUTO.TEXT.121A6D93AC00"
+msgstr "出现次数"
+
+msgid "AUTO.TEXT.135A684FBEFC"
+msgstr "终倍率：%.2f"
+
+msgid "AUTO.TEXT.135E3DF5C753"
+msgstr "包含结构：%s"
+
+msgid "AUTO.TEXT.147E1AD7C52E"
+msgstr "该骰子本手被重投后出现时，触发额外收益。"
+
+msgid "AUTO.TEXT.14DDE613ACF4"
+msgstr "被结算时，+30 基础战力。"
+
+msgid "AUTO.TEXT.15D753221CB6"
+msgstr "选择的目标骰面过多"
+
+msgid "AUTO.TEXT.16544158C110"
+msgstr "净化件"
+
+msgid "AUTO.TEXT.1706DBBA86F9"
+msgstr "无面饰效果。"
+
+msgid "AUTO.TEXT.171261F90755"
+msgstr "请选择复写目标骰面"
+
+msgid "AUTO.TEXT.173BD09E981C"
+msgstr "倍率面贴"
+
+msgid "AUTO.TEXT.18257B5FA85D"
+msgstr "给一个骰面安装石质面饰。被结算时 +50 基础战力，但不参与点数判断。"
+
+msgid "AUTO.TEXT.183A039CC4B1"
+msgstr "偶数重铸片"
+
+msgid "AUTO.TEXT.184D0F87C28C"
+msgstr "骰子 %d · %s (D%d)"
+
+msgid "AUTO.TEXT.191A3BBC896F"
+msgstr "面饰："
+
+msgid "AUTO.TEXT.1943D2CAFB6A"
+msgstr "多彩"
+
+msgid "AUTO.TEXT.196E11130931"
+msgstr "初始化"
+
+msgid "AUTO.TEXT.1A89DC6A8A7A"
+msgstr "倍率骰具"
+
+msgid "AUTO.TEXT.1B8190006657"
+msgstr "最常触发效果：无"
+
+msgid "AUTO.TEXT.1BA8AC01BCAB"
+msgstr "骰型"
+
+msgid "AUTO.TEXT.1BD96BB61B7F"
+msgstr "物品负片强化，不属于骰面面饰。"
+
+msgid "AUTO.TEXT.1CA08BEA94D3"
+msgstr "给一个骰面安装金辉面饰。投出但未结算且本手成功结算后 +3 金币。"
+
+msgid "AUTO.TEXT.1D11D52F2398"
+msgstr "将 1 个选中骰面安装为通配面饰。"
+
+msgid "AUTO.TEXT.1DC0AB17E3A0"
+msgstr "投出但未结算时，终倍率 ×1.5。"
+
+msgid "AUTO.TEXT.1DE727CACA95"
+msgstr "第 %d 场后：%s 安装到 骰子 %d / 面 %d"
+
+msgid "AUTO.TEXT.1E604A9DCA44"
+msgstr "被结算时，+50 基础战力。"
+
+msgid "AUTO.TEXT.1EDEC0EDA200"
+msgstr "聚币匣"
+
+msgid "AUTO.TEXT.1F6C99CA29E0"
+msgstr "最近结算摘要（%d / %d）："
+
+msgid "AUTO.TEXT.205AFF990BC5"
+msgstr "难度"
+
+msgid "AUTO.TEXT.2091A36B7297"
+msgstr "奖励: %s"
+
+msgid "AUTO.TEXT.20A87E1FBD1E"
+msgstr "高点合计"
+
+msgid "AUTO.TEXT.220EE7ACC516"
+msgstr "金币：%d"
+
+msgid "AUTO.TEXT.2219F266B80D"
+msgstr "等级%d"
+
+msgid "AUTO.TEXT.221EE0CC9460"
+msgstr "选项"
+
+msgid "AUTO.TEXT.222171072F44"
+msgstr "箔光强化：+%d 基础战力"
+
+msgid "AUTO.TEXT.22729A98C185"
+msgstr "将最多 2 个选中骰面安装为战力面饰。"
+
+msgid "AUTO.TEXT.22CE35BEF3DF"
+msgstr "额外触发"
+
+msgid "AUTO.TEXT.2349E49F1C7F"
+msgstr "战力骰具"
+
+msgid "AUTO.TEXT.2392B1DFA2A1"
+msgstr "点数总和：%d"
+
+msgid "AUTO.TEXT.23ADBAE60C54"
+msgstr "骰子信息"
+
+msgid "AUTO.TEXT.23CC91624DF3"
+msgstr "关卡"
+
+msgid "AUTO.TEXT.2444EE1FC9E1"
+msgstr "总获得战力：%d"
+
+msgid "AUTO.TEXT.24E797AEACB8"
+msgstr "将一个骰面替换为 6。"
+
+msgid "AUTO.TEXT.264C241CE51B"
+msgstr "骰子 %d / 面 %d：额外触发点数，+%d 基础战力。"
+
+msgid "AUTO.TEXT.267A5D4096BE"
+msgstr "四同"
+
+msgid "AUTO.TEXT.2695C11DEAEA"
+msgstr "稀饰校准器"
+
+msgid "AUTO.TEXT.2857A3704A65"
+msgstr "开始游戏"
+
+msgid "AUTO.TEXT.287EC954DA38"
+msgstr "顺子"
+
+msgid "AUTO.TEXT.296CDB12F677"
+msgstr "被结算时，终倍率 ×1.5。"
+
+msgid "AUTO.TEXT.296FAC38B168"
+msgstr "该骰面被重投时生成 1 个随机铸骰件；每场战斗每个物理面最多成功触发 1 次。"
+
+msgid "AUTO.TEXT.29C0C578392B"
+msgstr "倍率面饰：+%d Mult"
+
+msgid "AUTO.TEXT.2A2DE5E19D26"
+msgstr "将一个骰面替换为 1。"
+
+msgid "AUTO.TEXT.2A707C088E48"
+msgstr "结算前可临时选择点数参与点数判断，点数总和仍按原始点数。"
+
+msgid "AUTO.TEXT.2B299868C5C9"
+msgstr "第 %d 场 / 第 %d 手：最终战力 %d"
+
+msgid "AUTO.TEXT.2B928EF5366D"
+msgstr "金辉面饰：+%d 金币"
+
+msgid "AUTO.TEXT.2BF754A09305"
+msgstr "给一个骰面安装多彩强化。被结算时终倍率 ×1.5。"
+
+msgid "AUTO.TEXT.2C0D680889AC"
+msgstr "将最多 2 个选中骰面安装为倍率面饰。"
+
+msgid "AUTO.TEXT.2C105E1AA48C"
+msgstr "将最多 3 个选中骰面随机改为合法低域点数。"
+
+msgid "AUTO.TEXT.2D4DC8F81EEF"
+msgstr "金币：%s%d"
+
+msgid "AUTO.TEXT.2E03906910DE"
+msgstr "请先选择铸骰件。"
+
+msgid "AUTO.TEXT.2E05F223A24E"
+msgstr "印记变为 %s"
+
+msgid "AUTO.TEXT.2E1D574ED743"
+msgstr "白印"
+
+msgid "AUTO.TEXT.2E7CDAF52B60"
+msgstr "道具槽位无效"
+
+msgid "AUTO.TEXT.2F18107B0CB9"
+msgstr "获得当前已安装骰具总卖价对应金币，最多获得 50；不卖掉骰具。"
+
+msgid "AUTO.TEXT.307E616BDC9B"
+msgstr "稀饰校准器只能选择 1 个骰面"
+
+msgid "AUTO.TEXT.321D0B6368EA"
+msgstr "幸运面贴"
+
+msgid "AUTO.TEXT.32B0EAAA1AD6"
+msgstr "生成最多 2 个随机骰型升级件，生成物进入道具槽位。"
+
+msgid "AUTO.TEXT.32D3EE340AE5"
+msgstr "骰子备战区 · 正在查看骰子 %d"
+
+msgid "AUTO.TEXT.332A22260969"
+msgstr "重投"
+
+msgid "AUTO.TEXT.3361B11E8B48"
+msgstr "高点重铸片"
+
+msgid "AUTO.TEXT.33C12FCEA8E6"
+msgstr "空心骰胚"
+
+msgid "AUTO.TEXT.34067D466299"
+msgstr "选择骰子后，点击「结算所选」放入此处并计算得分"
+
+msgid "AUTO.TEXT.34EB0A73B9C4"
+msgstr "已选择：%d / %d"
+
+msgid "AUTO.TEXT.34F8E61E22F5"
+msgstr "幸运面饰：+20 金币"
+
+msgid "AUTO.TEXT.35285A7CDA47"
+msgstr "爆裂面饰：X%s 终倍率"
+
+msgid "AUTO.TEXT.35B3CF548106"
+msgstr "没有当前局状态"
+
+msgid "AUTO.TEXT.35BAEA2DB315"
+msgstr "最常触发效果：%s（%d 次）"
+
+msgid "AUTO.TEXT.35E4AB333428"
+msgstr "将最多 2 个选中骰面安装为幸运面饰。"
+
+msgid "AUTO.TEXT.375FB8073275"
+msgstr "被结算时，+10 Mult。"
+
+msgid "AUTO.TEXT.37850C43AF0C"
+msgstr "骰面复写完成"
+
+msgid "AUTO.TEXT.37C57A0E5090"
+msgstr "基础战力 × 倍率"
+
+msgid "AUTO.TEXT.37DE58A32A38"
+msgstr "骰胚变为 %s"
+
+msgid "AUTO.TEXT.3A3EE1B5AB90"
+msgstr "将一个骰面替换为 1，并安装爆裂面饰。"
+
+msgid "AUTO.TEXT.3A7FB8F6A252"
+msgstr "骰型信息"
+
+msgid "AUTO.TEXT.3BD484CFE7C3"
+msgstr "回响复制了 %s"
+
+msgid "AUTO.TEXT.3BD4F422F927"
+msgstr "点数：%d"
+
+msgid "AUTO.TEXT.3EA7BBD5DA04"
+msgstr "红印 6"
+
+msgid "AUTO.TEXT.3F474E4F22E5"
+msgstr "将最多 3 个选中骰面随机改为合法高域点数；D4 骰面不可作为目标。"
+
+msgid "AUTO.TEXT.3FDF9FEFC7A8"
+msgstr "给一个骰面添加蓝印。该面投出但未结算时触发留场收益。"
+
+msgid "AUTO.TEXT.402052AA36CD"
+msgstr "确认安装"
+
+msgid "AUTO.TEXT.4024BD5E2322"
+msgstr "稳定"
+
+msgid "AUTO.TEXT.40F52A25D0F6"
+msgstr "紫印：生成铸骰件"
+
+msgid "AUTO.TEXT.4175E1B87B17"
+msgstr "基础战力：%d"
+
+msgid "AUTO.TEXT.42398AEA87B6"
+msgstr "负面面饰，可被净化。"
+
+msgid "AUTO.TEXT.42C63776B3C2"
+msgstr "标准骰胚"
+
+msgid "AUTO.TEXT.434BA5C01C24"
+msgstr "骰具估价单"
+
+msgid "AUTO.TEXT.4391622EE4DF"
+msgstr "两对"
+
+msgid "AUTO.TEXT.446EFF18E772"
+msgstr "留场"
+
+msgid "AUTO.TEXT.455EA5D8FD85"
+msgstr "本场\n总分"
+
+msgid "AUTO.TEXT.45BF986F654F"
+msgstr "将最多 3 个选中骰面随机改为合法奇数点数。"
+
+msgid "AUTO.TEXT.45C08F3B5E42"
+msgstr "重置面饰和印记"
+
+msgid "AUTO.TEXT.46216CA5837D"
+msgstr "一对"
+
+msgid "AUTO.TEXT.46CDBD4B9F31"
+msgstr "偏心骰胚"
+
+msgid "AUTO.TEXT.475454217E69"
+msgstr "奇数重铸片"
+
+msgid "AUTO.TEXT.4788FB34D315"
+msgstr "实际结算战力：%d"
+
+msgid "AUTO.TEXT.481853976CD4"
+msgstr "最终：%d × %d × %s = %d"
+
+msgid "AUTO.TEXT.48C725A7FD3F"
+msgstr "该骰面免疫 Boss 或负面规则；一场 Boss 战结束后移除。"
+
+msgid "AUTO.TEXT.4B966F6C094D"
+msgstr "通关成功"
+
+msgid "AUTO.TEXT.4C506E4EF106"
+msgstr "结算"
+
+msgid "AUTO.TEXT.4C71E4837BD8"
+msgstr "回响铸模"
+
+msgid "AUTO.TEXT.4C8D3F952240"
+msgstr "已结算"
+
+msgid "AUTO.TEXT.4C9A59CFBD20"
+msgstr "当前铸骰件：无"
+
+msgid "AUTO.TEXT.4D0B4688C787"
+msgstr "取消"
+
+msgid "AUTO.TEXT.4FEED9B9B772"
+msgstr "效果：无"
+
+msgid "AUTO.TEXT.50D8E8DFB926"
+msgstr "投出但未结算且本手成功结算后，+3 金币。"
+
+msgid "AUTO.TEXT.513FE245BC0D"
+msgstr "负片强化"
+
+msgid "AUTO.TEXT.51AA50FCBAD9"
+msgstr "面饰：%s"
+
+msgid "AUTO.TEXT.51C2E5D71139"
+msgstr "面 %d"
+
+msgid "AUTO.TEXT.51C417CBC24C"
+msgstr "触发时提供资源。当前版本暂未启用经济系统。"
+
+msgid "AUTO.TEXT.51F26FB0850B"
+msgstr "将一个骰面替换为 6，并添加红印。"
+
+msgid "AUTO.TEXT.51FD93FB6755"
+msgstr "道具"
+
+msgid "AUTO.TEXT.52D27A21F811"
+msgstr "回合"
+
+msgid "AUTO.TEXT.53E2DB70167F"
+msgstr "未选择"
+
+msgid "AUTO.TEXT.53F7EEE5CB6F"
+msgstr "幻彩强化：+%d Mult"
+
+msgid "AUTO.TEXT.543CFD5DFDFE"
+msgstr "稀有"
+
+msgid "AUTO.TEXT.546DB6CEBB67"
+msgstr "选择骰子后，可以重投所选，或直接结算所选。"
+
+msgid "AUTO.TEXT.547F36B364AF"
+msgstr "该骰面被结算并计分时获得 1 金币。"
+
+msgid "AUTO.TEXT.5598B4374A82"
+msgstr "被结算时，+50 基础战力；不参与点数判断与点数总和。"
+
+msgid "AUTO.TEXT.55F0E3DF4A53"
+msgstr "未知面饰效果。"
+
+msgid "AUTO.TEXT.56B08BE6F8EA"
+msgstr "选择一个骰面"
+
+msgid "AUTO.TEXT.570646958A4D"
+msgstr "+%d 金币"
+
+msgid "AUTO.TEXT.57E72BA166C1"
+msgstr "给一个骰面安装倍率面饰。被结算时 +4 Mult。"
+
+msgid "AUTO.TEXT.5811C61314A1"
+msgstr "安装历史：无"
+
+msgid "AUTO.TEXT.5831FA30C96E"
+msgstr "点数片：3"
+
+msgid "AUTO.TEXT.594EF392D12F"
+msgstr "当前版本不启用该普通铸骰效果。"
+
+msgid "AUTO.TEXT.59C606C9E3EF"
+msgstr "注意：\n%s"
+
+msgid "AUTO.TEXT.5C0A3E2E5B09"
+msgstr "骰子 %d\n骰胚：%s\n面数：D%d"
+
+msgid "AUTO.TEXT.5C1FC3B3DE4C"
+msgstr "留场面饰"
+
+msgid "AUTO.TEXT.5C42C048EA24"
+msgstr "等级"
+
+msgid "AUTO.TEXT.5C86EE80873C"
+msgstr "金币 +%d"
+
+msgid "AUTO.TEXT.5C8EA2E7B281"
+msgstr "爆裂面饰破碎：面饰变为无面饰"
+
+msgid "AUTO.TEXT.5CD950781956"
+msgstr "幸运面饰：未触发"
+
+msgid "AUTO.TEXT.604BB0C7A531"
+msgstr "通配面贴"
+
+msgid "AUTO.TEXT.6097C95B410C"
+msgstr "骰面索引无效"
+
+msgid "AUTO.TEXT.610C37A76491"
+msgstr "包含 6"
+
+msgid "AUTO.TEXT.6197FE1A0676"
+msgstr "低点"
+
+msgid "AUTO.TEXT.61F608B0D90E"
+msgstr "金币"
+
+msgid "AUTO.TEXT.629A9098C25D"
+msgstr "选择要重投或结算的骰子。"
+
+msgid "AUTO.TEXT.63A0E9B5803D"
+msgstr "战力"
+
+msgid "AUTO.TEXT.64867FADD655"
+msgstr "爆裂破碎"
+
+msgid "AUTO.TEXT.648BA894F98E"
+msgstr "投出但未结算时，触发留场收益。"
+
+msgid "AUTO.TEXT.64A75BA1FD38"
+msgstr "效果：%s"
+
+msgid "AUTO.TEXT.64E8C5F4335A"
+msgstr "将 1 个选中骰面安装为爆裂面饰。"
+
+msgid "AUTO.TEXT.66311348D7E0"
+msgstr "葫芦"
+
+msgid "AUTO.TEXT.6711FCB746E3"
+msgstr "印记：%s"
+
+msgid "AUTO.TEXT.68BF269E906A"
+msgstr "遗物"
+
+msgid "AUTO.TEXT.692950289178"
+msgstr "骰子结算区"
+
+msgid "AUTO.TEXT.699368E17299"
+msgstr "被结算时，+4 Mult。"
+
+msgid "AUTO.TEXT.6A1C9F7BDE32"
+msgstr "正在查看：骰子 %d · 骰胚：%s"
+
+msgid "AUTO.TEXT.6AA9A82B6ED6"
+msgstr "计分预览\n未选择骰子。"
+
+msgid "AUTO.TEXT.6B6FB4EF372F"
+msgstr "低点重铸片"
+
+msgid "AUTO.TEXT.6B7CB54D478C"
+msgstr "最终战力：%d"
+
+msgid "AUTO.TEXT.6B93A4FA0C5A"
+msgstr "骰胚：%s"
+
+msgid "AUTO.TEXT.6BE7C15543DA"
+msgstr "将 1 个选中骰面安装为石质面饰。"
+
+msgid "AUTO.TEXT.6D536C9ECF3E"
+msgstr "面饰"
+
+msgid "AUTO.TEXT.6DB5DF72B910"
+msgstr "稀有度：%s"
+
+msgid "AUTO.TEXT.6DD5779493A0"
+msgstr "点数变为 %d"
+
+msgid "AUTO.TEXT.6F063F9A720B"
+msgstr "当前版本不启用该效果"
+
+msgid "AUTO.TEXT.6F0EF6ABE0EC"
+msgstr "蓝印：道具槽位不足"
+
+msgid "AUTO.TEXT.6F29AFF3D8BB"
+msgstr "未知印记效果。"
+
+msgid "AUTO.TEXT.6F4FAC813D23"
+msgstr "面 %d：%s"
+
+msgid "AUTO.TEXT.6FC540C2D9D3"
+msgstr "面饰信息"
+
+msgid "AUTO.TEXT.6FD2AC5246BC"
+msgstr "没有骰子。"
+
+msgid "AUTO.TEXT.6FF4419F3811"
+msgstr "未知铸骰件效果"
+
+msgid "AUTO.TEXT.7045BFF36A73"
+msgstr "骰子索引无效"
+
+msgid "AUTO.TEXT.70B208202CE5"
+msgstr "选择"
+
+msgid "AUTO.TEXT.71057C7B06AE"
+msgstr "幻彩强化"
+
+msgid "AUTO.TEXT.712EB6CA9E9D"
+msgstr "留场 6"
+
+msgid "AUTO.TEXT.72077749F794"
+msgstr "无"
+
+msgid "AUTO.TEXT.743AAF951E5D"
+msgstr "已选择"
+
+msgid "AUTO.TEXT.7681BC6BE994"
+msgstr "将替换%s：%s → %s"
+
+msgid "AUTO.TEXT.7755578B11E2"
+msgstr "箔光"
+
+msgid "AUTO.TEXT.7861067B035F"
+msgstr "骰具估价单：金币 +%d"
+
+msgid "AUTO.TEXT.7933F65671B8"
+msgstr "骰型升级：%s"
+
+msgid "AUTO.TEXT.799A766B4D0D"
+msgstr "已通过战斗：%d / %d"
+
+msgid "AUTO.TEXT.79C2CA946E6B"
+msgstr "红印"
+
+msgid "AUTO.TEXT.7BB3EF323E38"
+msgstr "为每个万能面饰选择本手临时点数"
+
+msgid "AUTO.TEXT.7C5B19F7D25E"
+msgstr "没有当前局状态。"
+
+msgid "AUTO.TEXT.7CDA072D452B"
+msgstr "普通"
+
+msgid "AUTO.TEXT.7D507BD3C533"
+msgstr "石质面饰"
+
+msgid "AUTO.TEXT.7DA5E56079A8"
+msgstr "稀饰校准成功"
+
+msgid "AUTO.TEXT.7EA823B27E5C"
+msgstr "被结算时，分别判定 20% 获得 +20 Mult、1/15 获得 +20 金币。"
+
+msgid "AUTO.TEXT.7F03BFBC43B6"
+msgstr "本手结算动画、分数日志和触发文本会显示在这里。"
+
+msgid "AUTO.TEXT.7F31376752FF"
+msgstr "印记"
+
+msgid "AUTO.TEXT.7FDD1CDCF1BE"
+msgstr "五同"
+
+msgid "AUTO.TEXT.8024C1DC23A5"
+msgstr "大顺"
+
+msgid "AUTO.TEXT.81B67C366AA7"
+msgstr "该道具不是铸骰件"
+
+msgid "AUTO.TEXT.8349FDE42757"
+msgstr "万能面饰点数选择"
+
+msgid "AUTO.TEXT.83C19741CC0F"
+msgstr "计分预览\n等待战斗开始。"
+
+msgid "AUTO.TEXT.83FF300A53CA"
+msgstr "已安装稀有面饰"
+
+msgid "AUTO.TEXT.8482E1E532B0"
+msgstr "倍率"
+
+msgid "AUTO.TEXT.85162D1409CC"
+msgstr "诅咒面饰"
+
+msgid "AUTO.TEXT.883EA5139D05"
+msgstr "最近结算摘要：无"
+
+msgid "AUTO.TEXT.8BC289567504"
+msgstr "结算日志"
+
+msgid "AUTO.TEXT.8D2CEEC7C5CF"
+msgstr "点数重铸完成"
+
+msgid "AUTO.TEXT.8D4E7410F9F2"
+msgstr "清除该骰面的负面面饰或负面印记。"
+
+msgid "AUTO.TEXT.8D9B4074FD1C"
+msgstr "计分预览"
+
+msgid "AUTO.TEXT.8E7B07850ED5"
+msgstr "面信息"
+
+msgid "AUTO.TEXT.8E9702E096F5"
+msgstr "计分预览\n%s"
+
+msgid "AUTO.TEXT.8EBB318D3D60"
+msgstr "紫印"
+
+msgid "AUTO.TEXT.8F10CCA653DA"
+msgstr "骰型升级件"
+
+msgid "AUTO.TEXT.8FB1BCFCA352"
+msgstr "金印：+1 金币"
+
+msgid "AUTO.TEXT.8FCB7811D446"
+msgstr "罕见"
+
+msgid "AUTO.TEXT.91E79785325C"
+msgstr "第 %d 场 / 第 %d 手：最终战力 %d\n%s"
+
+msgid "AUTO.TEXT.922669C45622"
+msgstr "紫印：生成【随机铸骰件】"
+
+msgid "AUTO.TEXT.92D099C18405"
+msgstr "留场面贴"
+
+msgid "AUTO.TEXT.92F40F9E756F"
+msgstr "稀饰校准成功，请选择 1 个骰面"
+
+msgid "AUTO.TEXT.93EBECF8CECD"
+msgstr "全偶"
+
+msgid "AUTO.TEXT.9455DA31503B"
+msgstr "主骰型：%s Lv%d"
+
+msgid "AUTO.TEXT.955AC7EBFC11"
+msgstr "给一个骰面添加红印。该面被结算时额外触发一次。"
+
+msgid "AUTO.TEXT.95B010C66CFF"
+msgstr "将最多 3 个选中骰面随机改为合法偶数点数。"
+
+msgid "AUTO.TEXT.97D68D60CCD1"
+msgstr "当前铸骰件：%s\n安装目标：未选择"
+
+msgid "AUTO.TEXT.97FB92DB432F"
+msgstr "爆裂面饰"
+
+msgid "AUTO.TEXT.98262A372A55"
+msgstr "给一个骰面安装筹码面饰。被结算时 +30 基础战力。"
+
+msgid "AUTO.TEXT.9911BC4FBEEC"
+msgstr "递增点数片"
+
+msgid "AUTO.TEXT.99C45E4A9A98"
+msgstr "25% 概率随机得到箔光、幻彩或多彩面饰，并安装到 1 个选中骰面；失败时无效果。"
+
+msgid "AUTO.TEXT.9B44878F713C"
+msgstr "幸运面饰"
+
+msgid "AUTO.TEXT.9C193E41AF49"
+msgstr "骰子 %d / 面 %d：%s重投后结算，+%d 倍率。"
+
+msgid "AUTO.TEXT.9C931D7AD49C"
+msgstr "面 -"
+
+msgid "AUTO.TEXT.9ED5A40576BA"
+msgstr "生成 1 个随机骰具道具，生成物进入道具槽位。"
+
+msgid "AUTO.TEXT.9F0F3B3AEC00"
+msgstr "安装预览"
+
+msgid "AUTO.TEXT.9F80FDEBB97D"
+msgstr "没有可回响的道具"
+
+msgid "AUTO.TEXT.9FC761A95140"
+msgstr "无骰面"
+
+msgid "AUTO.TEXT.A11B7784CCC8"
+msgstr "无印记效果。"
+
+msgid "AUTO.TEXT.A18EBC607F7F"
+msgstr "史诗"
+
+msgid "AUTO.TEXT.A1D476072362"
+msgstr "少量结算"
+
+msgid "AUTO.TEXT.A211180FE768"
+msgstr "当前铸骰件：%s\n安装目标：骰子 %d / 面 %d"
+
+msgid "AUTO.TEXT.A3685EA6FAFC"
+msgstr "偶数"
+
+msgid "AUTO.TEXT.A3738709BECF"
+msgstr "金币骰具"
+
+msgid "AUTO.TEXT.A4CA68633FD1"
+msgstr "印记："
+
+msgid "AUTO.TEXT.A4E11E7BCF16"
+msgstr "安装前：\n无骰面\n\n安装后：\n无骰面"
+
+msgid "AUTO.TEXT.A542B7CCA535"
+msgstr "镜面骰胚"
+
+msgid "AUTO.TEXT.A74D96EFFD75"
+msgstr "给一个骰面安装留场面饰。投出但未结算时，终倍率 ×1.5。"
+
+msgid "AUTO.TEXT.A93AED7A90F4"
+msgstr "六点"
+
+msgid "AUTO.TEXT.A9A4A4AB8CAF"
+msgstr "幻彩"
+
+msgid "AUTO.TEXT.AAD002B83E9D"
+msgstr "总结算手数：%d"
+
+msgid "AUTO.TEXT.ABAAFC3C7A71"
+msgstr "标签：%s"
+
+msgid "AUTO.TEXT.ABACD40075E4"
+msgstr "稀饰校准失败，无效果"
+
+msgid "AUTO.TEXT.AC2FB8965804"
+msgstr "万能面饰"
+
+msgid "AUTO.TEXT.ACA89D478331"
+msgstr "核心骰型"
+
+msgid "AUTO.TEXT.AE948A62B02F"
+msgstr "安装前：\n%s\n\n安装后：\n%s"
+
+msgid "AUTO.TEXT.AEF306CDBA53"
+msgstr "将 1 个选中骰面安装为留场面饰。"
+
+msgid "AUTO.TEXT.AF48D0AA5B9B"
+msgstr "请选择目标骰面"
+
+msgid "AUTO.TEXT.B1296780A94C"
+msgstr "三同"
+
+msgid "AUTO.TEXT.B144C1DD3DD0"
+msgstr "留场面饰：X%s 终倍率"
+
+msgid "AUTO.TEXT.B147441759D4"
+msgstr "骰型升级件。由蓝印生成，占用 1 个道具槽位。"
+
+msgid "AUTO.TEXT.B14D78BB3065"
+msgstr "紫印：道具槽位不足"
+
+msgid "AUTO.TEXT.B3DE28F6E415"
+msgstr "将一个骰面替换为 6，并安装留场面饰。投出但未结算时提供收益。"
+
+msgid "AUTO.TEXT.B4946317A55E"
+msgstr "点数递增完成"
+
+msgid "AUTO.TEXT.B51063C6E564"
+msgstr "爆裂面贴"
+
+msgid "AUTO.TEXT.B56D9AC6C5A0"
+msgstr "确认"
+
+msgid "AUTO.TEXT.B57562D610C0"
+msgstr "倍率：%d"
+
+msgid "AUTO.TEXT.B5D005020079"
+msgstr "安装历史："
+
+msgid "AUTO.TEXT.B6A38FDF50AC"
+msgstr "被结算时，终倍率 ×2；结算后有 25% 概率破碎为无面饰。"
+
+msgid "AUTO.TEXT.B6CF819FA0AC"
+msgstr "安装铸骰件"
+
+msgid "AUTO.TEXT.B7CD1829C0EC"
+msgstr "万能"
+
+msgid "AUTO.TEXT.B824742329E0"
+msgstr "幸运"
+
+msgid "AUTO.TEXT.B8CBB985D0FD"
+msgstr "选择一个铸骰件"
+
+msgid "AUTO.TEXT.B8FF1BD85267"
+msgstr "铸件补给匣"
+
+msgid "AUTO.TEXT.B9C0222B691C"
+msgstr "蓝印：生成"
+
+msgid "AUTO.TEXT.BAD8CA5F8C4F"
+msgstr "白印：Boss 战后移除"
+
+msgid "AUTO.TEXT.BAF2E11995C5"
+msgstr "查看中"
+
+msgid "AUTO.TEXT.BC067D3E77C9"
+msgstr "骰子 %d / 面 %d：%s，额外触发一次。"
+
+msgid "AUTO.TEXT.BC7DA19E882B"
+msgstr "爆裂 1"
+
+msgid "AUTO.TEXT.BC90445D994E"
+msgstr "将一个骰面替换为 3。"
+
+msgid "AUTO.TEXT.BCC672A44DB4"
+msgstr "最后一手"
+
+msgid "AUTO.TEXT.BD63F469A7E6"
+msgstr "整理"
+
+msgid "AUTO.TEXT.BD9FEA62A9DC"
+msgstr "战斗胜利"
+
+msgid "AUTO.TEXT.BDFC04DADDCB"
+msgstr "生成：%s"
+
+msgid "AUTO.TEXT.BE2465538832"
+msgstr "多个 6"
+
+msgid "AUTO.TEXT.BE260021E2DD"
+msgstr "选项暂未开放。"
+
+msgid "AUTO.TEXT.BE70BE5A2E12"
+msgstr "禁用"
+
+msgid "AUTO.TEXT.C017F153E6FB"
+msgstr "被结算时，该面额外触发一次。"
+
+msgid "AUTO.TEXT.C02DD5A6CE94"
+msgstr "点数片：6"
+
+msgid "AUTO.TEXT.C0469EBB56C8"
+msgstr "替换提示：\n未选择目标。"
+
+msgid "AUTO.TEXT.C21AF8D28311"
+msgstr "效果：\n%s"
+
+msgid "AUTO.TEXT.C235DFAE61D5"
+msgstr "计分预览\n已选择 %d / %d，最多只能结算 %d 颗骰子。"
+
+msgid "AUTO.TEXT.C39ACC391607"
+msgstr "终倍率：%s"
+
+msgid "AUTO.TEXT.C44738A97251"
+msgstr "点击一个骰面后，会在这里显示安装前和安装后。"
+
+msgid "AUTO.TEXT.C500FA399240"
+msgstr "倍率面饰"
+
+msgid "AUTO.TEXT.C5FFC0D889DE"
+msgstr "骰型倍率：x%d"
+
+msgid "AUTO.TEXT.C62DCC78F2C8"
+msgstr "骰面引用为空"
+
+msgid "AUTO.TEXT.C77871423FEA"
+msgstr "石质面饰：+%d 基础战力；不参与点数判断"
+
+msgid "AUTO.TEXT.C7D719D6CF7B"
+msgstr "多彩强化"
+
+msgid "AUTO.TEXT.C8A584D4E818"
+msgstr "获得等同于当前金币数的金币，最多获得 20。"
+
+msgid "AUTO.TEXT.C95B7D8DF883"
+msgstr "金印"
+
+msgid "AUTO.TEXT.C9CA5741CA3A"
+msgstr "清除负面面饰或负面印记"
+
+msgid "AUTO.TEXT.CA6BB100A6B7"
+msgstr "上次结算"
+
+msgid "AUTO.TEXT.CB14C28C4282"
+msgstr "给一个骰面安装箔光强化。被结算时 +50 基础战力。"
+
+msgid "AUTO.TEXT.CB8B35CDF2B4"
+msgstr "聚币匣：金币 +%d"
+
+msgid "AUTO.TEXT.CBEC11FC8C00"
+msgstr "%s安装完成"
+
+msgid "AUTO.TEXT.CBF70592C60C"
+msgstr "已停用铸骰件"
+
+msgid "AUTO.TEXT.CCA257E7F7C3"
+msgstr "奖励: $$$$"
+
+msgid "AUTO.TEXT.CD048469AC0B"
+msgstr "该骰面不受 Boss 禁用或负面规则影响；一场 Boss 战结束后移除。"
+
+msgid "AUTO.TEXT.CD0A30A4BB1E"
+msgstr "先选目标面，再选来源面；目标面复制来源面的点数、面饰与印记。"
+
+msgid "AUTO.TEXT.CD26A3E1462F"
+msgstr "骰具补给匣"
+
+msgid "AUTO.TEXT.CDE75A9B4341"
+msgstr "当前战斗序号：%d"
+
+msgid "AUTO.TEXT.CE1DC71354AE"
+msgstr "未知铸骰件"
+
+msgid "AUTO.TEXT.CE8CE780E5BD"
+msgstr "基础战力总数 × 基础倍率"
+
+msgid "AUTO.TEXT.CF5532730BC5"
+msgstr "万能面饰：原始 %d，本手视作 %d"
+
+msgid "AUTO.TEXT.CFBB1A03E628"
+msgstr "白印：免疫"
+
+msgid "AUTO.TEXT.D19E1EFF6391"
+msgstr "终倍率"
+
+msgid "AUTO.TEXT.D2C21A5E1F56"
+msgstr "战斗失败"
+
+msgid "AUTO.TEXT.D2D13E787E4F"
+msgstr "骰子 %d / 面 %d：%s留场触发，+%d 倍率。"
+
+msgid "AUTO.TEXT.D4AE8B2936A5"
+msgstr "面饰变为 %s"
+
+msgid "AUTO.TEXT.D4D96AFD037F"
+msgstr "使用过重投"
+
+msgid "AUTO.TEXT.D5E268A322C9"
+msgstr "给一个骰面添加金印。该面被结算并计分时获得 1 金币。"
+
+msgid "AUTO.TEXT.D5E75BFF6141"
+msgstr "骰胚：无"
+
+msgid "AUTO.TEXT.D6015166CA43"
+msgstr "点数片：1"
+
+msgid "AUTO.TEXT.D710E12E8D49"
+msgstr "至少得分"
+
+msgid "AUTO.TEXT.D7707C2686A7"
+msgstr "骰子 %d / 面 %d，原始点数 %d"
+
+msgid "AUTO.TEXT.D88E4EABA242"
+msgstr "替换提示：\n不会替换已有面饰或印记。"
+
+msgid "AUTO.TEXT.DA4587CAAA98"
+msgstr "给一个骰面添加白印。该面免疫 Boss 或负面规则，一场 Boss 战后移除。"
+
+msgid "AUTO.TEXT.DA53AE041865"
+msgstr "全奇"
+
+msgid "AUTO.TEXT.DB1E908DDAAB"
+msgstr "玻璃骰胚"
+
+msgid "AUTO.TEXT.DB4775169C24"
+msgstr "该骰面被结算或未结算留场触发后，额外触发 1 次。"
+
+msgid "AUTO.TEXT.DB56A53169CA"
+msgstr "幸运面饰：触发 +%d Mult"
+
+msgid "AUTO.TEXT.DBE74CDF4EC4"
+msgstr "印记信息"
+
+msgid "AUTO.TEXT.DC6B0A9293A8"
+msgstr "骰型基础战力：+%d"
+
+msgid "AUTO.TEXT.DC80A8298359"
+msgstr "给一个骰面安装爆裂面饰。被结算时终倍率 ×2，结算后可能破碎。"
+
+msgid "AUTO.TEXT.DE7851F4F172"
+msgstr "战斗准备中。"
+
+msgid "AUTO.TEXT.DEEF03E6A8A7"
+msgstr "正在查看：无"
+
+msgid "AUTO.TEXT.DF10F8387066"
+msgstr "无骰子"
+
+msgid "AUTO.TEXT.DF2D6C3AF8F4"
+msgstr "石质面贴"
+
+msgid "AUTO.TEXT.DF9F6D1541D3"
+msgstr "蓝印"
+
+msgid "AUTO.TEXT.E2E7B1D1350D"
+msgstr "道具槽位不足"
+
+msgid "AUTO.TEXT.E3CFB63E196B"
+msgstr "来源骰面无效"
+
+msgid "AUTO.TEXT.E3D30EF5898B"
+msgstr "爆发"
+
+msgid "AUTO.TEXT.E55AE381E0BA"
+msgstr "生成最多 2 个随机铸骰件；随机池排除铸件补给匣与回响铸模。"
+
+msgid "AUTO.TEXT.E60ACDC62872"
+msgstr "传说"
+
+msgid "AUTO.TEXT.E62E8CF325CA"
+msgstr "目标骰面无效"
+
+msgid "AUTO.TEXT.E699B4E7996F"
+msgstr "给一个骰面安装幸运面饰。被结算时独立概率获得 +20 Mult 或 +20 金币。"
+
+msgid "AUTO.TEXT.E69B498FE866"
+msgstr "该骰面没有合法目标点数"
+
+msgid "AUTO.TEXT.E69FDA851F52"
+msgstr "已安装铸骰件：%d"
+
+msgid "AUTO.TEXT.E6CD87AA4E74"
+msgstr "复制骰面（暂未启用）"
+
+msgid "AUTO.TEXT.E70A3C6E22B1"
+msgstr "给一个骰面安装幻彩强化。被结算时 +10 Mult。"
+
+msgid "AUTO.TEXT.E7B22B2652B2"
+msgstr "没有生成奖励。"
+
+msgid "AUTO.TEXT.E836750721A5"
+msgstr "低点合计"
+
+msgid "AUTO.TEXT.E941ADF91E56"
+msgstr "蓝印：生成【%s】"
+
+msgid "AUTO.TEXT.EA4600C595EC"
+msgstr "点数：-"
+
+msgid "AUTO.TEXT.EBBDEA8ACEFD"
+msgstr "负面印记。当前版本仅用于测试或净化。"
+
+msgid "AUTO.TEXT.EDE4E88DE3D0"
+msgstr "若该骰面本手最终投出但未被选择结算，本手结束时生成主骰型升级件。"
+
+msgid "AUTO.TEXT.EE01EF7E6EA2"
+msgstr "等待行动"
+
+msgid "AUTO.TEXT.EF0721A4BAA9"
+msgstr "主骰型：%s"
+
+msgid "AUTO.TEXT.EF4C86E15258"
+msgstr "散点"
+
+msgid "AUTO.TEXT.EF8326246CC6"
+msgstr "箔光强化"
+
+msgid "AUTO.TEXT.F0623EEFFFA7"
+msgstr "等级1"
+
+msgid "AUTO.TEXT.F073F3814359"
+msgstr "道具槽位不足，只生成 %d 个"
+
+msgid "AUTO.TEXT.F1063CABA3B2"
+msgstr "稀有面饰无效"
+
+msgid "AUTO.TEXT.F1236349614D"
+msgstr "骰型补给匣"
+
+msgid "AUTO.TEXT.F17FC9B7F685"
+msgstr "重新开始"
+
+msgid "AUTO.TEXT.F1D9231A4F77"
+msgstr "面数：D%d"
+
+msgid "AUTO.TEXT.F26608E9DBEA"
+msgstr "小顺"
+
+msgid "AUTO.TEXT.F2B83B1B98D0"
+msgstr "没有可生成的骰具道具"
+
+msgid "AUTO.TEXT.F31F59CBCB2C"
+msgstr "最高单手战力：%d"
+
+msgid "AUTO.TEXT.F328AB6F08A8"
+msgstr "最终骰组"
+
+msgid "AUTO.TEXT.F490EA5EF76E"
+msgstr "骰子备战区"
+
+msgid "AUTO.TEXT.F4E270D49C8E"
+msgstr "幸运面饰：触发 +%d 金币"
+
+msgid "AUTO.TEXT.F5833D7A3D75"
+msgstr "骰子 %d"
+
+msgid "AUTO.TEXT.F5D5B726DC8E"
+msgstr "%s升级件"
+
+msgid "AUTO.TEXT.F613362A4600"
+msgstr "道具槽位中的铸骰件不匹配"
+
+msgid "AUTO.TEXT.F80CC17A4BA6"
+msgstr "比赛\n信息"
+
+msgid "AUTO.TEXT.F83BC723B03A"
+msgstr "返回主界面"
+
+msgid "AUTO.TEXT.FA5D45A99246"
+msgstr "结算日志会显示在这里。"
+
+msgid "AUTO.TEXT.FB21BA85CACD"
+msgstr "红印：额外触发"
+
+msgid "AUTO.TEXT.FB26E473E039"
+msgstr "战斗开始。选择骰子后，可以重投所选，或直接结算所选。"
+
+msgid "AUTO.TEXT.FB2DE85039C5"
+msgstr "复制本局最近一次使用过的可复制铸骰件或骰型升级件，复制物进入道具槽位。"
+
+msgid "AUTO.TEXT.FB4D12C8E49C"
+msgstr "当前版本不启用该效果。"
+
+msgid "AUTO.TEXT.FC3405B20424"
+msgstr "多彩强化：X%s 终倍率"
+
+msgid "AUTO.TEXT.FCF3607DB577"
+msgstr "骰面为空"
+
+msgid "AUTO.TEXT.FD9FAA58F841"
+msgstr "挑战失败"
+
+msgid "AUTO.TEXT.FE35ED0F6706"
+msgstr "铁质骰胚"
+
+msgid "AUTO.TEXT.FEC9D42BBA9A"
+msgstr "道具槽位为空"
+
+msgid "AUTO.TEXT.FEECB1E6ADEC"
+msgstr "退出"

@@ -145,13 +145,14 @@ func score_selected(wild_effective_pips: Dictionary = {}) -> void:
 	commit_pending_resolution()
 
 
-func request_settle_selected(wild_effective_pips: Dictionary = {}) -> ResolutionTrace:
+func request_settle_selected(wild_effective_pips: Dictionary = {}, selected_die_order: Array[int] = []) -> ResolutionTrace:
 	if phase != BattlePhase.WAITING_ACTION or not can_score():
 		return null
 
 	_set_phase(BattlePhase.SCORING)
 	var context := _build_score_context()
 	context.wild_effective_pips = wild_effective_pips.duplicate(true)
+	context.selected_die_order = selected_die_order.duplicate()
 	context.defer_runtime_mutations = true
 
 	var trace := score_engine.build_resolution_trace(context)
@@ -480,7 +481,7 @@ func _trigger_purple_marks_before_reroll() -> void:
 			_queue_mark_log(&"LOG.MARK_PURPLE_NO_SLOT", {
 				"die": roll.die_index + 1,
 				"face": roll.face_index + 1,
-			}, &"mark_purple", "道具槽位不足", roll)
+			}, &"mark_purple", str(TranslationServer.translate(&"AUTO.TEXT.E2E7B1D1350D")), roll)
 			continue
 
 		var battle_index := 0
@@ -495,12 +496,12 @@ func _trigger_purple_marks_before_reroll() -> void:
 				"die": roll.die_index + 1,
 				"face": roll.face_index + 1,
 				"item": item_id,
-			}, &"mark_purple", "紫印：生成铸骰件", roll)
+			}, &"mark_purple", str(TranslationServer.translate(&"AUTO.TEXT.40F52A25D0F6")), roll)
 		else:
 			_queue_mark_log(&"LOG.MARK_PURPLE_NO_SLOT", {
 				"die": roll.die_index + 1,
 				"face": roll.face_index + 1,
-			}, &"mark_purple", "道具槽位不足", roll)
+			}, &"mark_purple", str(TranslationServer.translate(&"AUTO.TEXT.E2E7B1D1350D")), roll)
 
 
 func _queue_mark_log(key: StringName, args: Dictionary, category: StringName, floating_text: String, roll: RolledFace) -> void:
@@ -608,7 +609,7 @@ func _remove_white_marks_after_boss_battle(result: ScoreResult) -> void:
 					"die": die_index + 1,
 					"face": face_index + 1,
 				}, &"mark_white"))
-				result.add_floating_text("白印：Boss 战后移除", die_index, face_index)
+				result.add_floating_text(str(TranslationServer.translate(&"AUTO.TEXT.BAD8CA5F8C4F")), die_index, face_index)
 	if battle_state != null:
 		battle_state.refresh_white_mark_active_faces()
 
