@@ -7,6 +7,8 @@ const DisplayNames = preload("res://scripts/ui/DisplayNames.gd")
 const GameFlowController = preload("res://scripts/runtime/GameFlowController.gd")
 const RunState = preload("res://scripts/core/battle/RunState.gd")
 const ScoreResult = preload("res://scripts/core/scoring/ScoreResult.gd")
+const ResolutionTrace = preload("res://scripts/core/scoring/ResolutionTrace.gd")
+const ResolutionStep = preload("res://scripts/core/scoring/ResolutionStep.gd")
 const ComboEvaluator = preload("res://scripts/rules/combo/ComboEvaluator.gd")
 const ComboUpgradeItem = preload("res://scripts/rules/combo/ComboUpgradeItem.gd")
 const ForgeItemCatalog = preload("res://scripts/rules/forge/ForgeItemCatalog.gd")
@@ -49,6 +51,7 @@ var scoring_area: Control = null
 var dice_bench_area: Control = null
 var combo_info_popup: Control = null
 var layout_root: Control = null
+var animation_layer: Control = null
 var last_score_result: ScoreResult = null
 var current_preview_result: ScoreResult = null
 var status_text: String = "战斗准备中。"
@@ -56,6 +59,34 @@ var wild_selection_dialog: ConfirmationDialog = null
 var wild_button_rows: Dictionary = {}
 var local_combo_appearance_counts: Dictionary = {}
 var local_combo_last_formula_by_id: Dictionary = {}
+var is_resolution_playing: bool = false
+var suppress_next_hand_scored_fx: bool = false
+var active_resolution_trace: ResolutionTrace = null
+var resolution_log_lines: Array[String] = []
+var resolution_start_score: int = 0
+var resolution_display_score: int = 0
+var resolution_display_combo_name: String = ""
+var resolution_display_chips: int = 0
+var resolution_display_mult: int = 0
+var resolution_display_xmult: float = 1.0
+var resolution_display_formula_score: int = 0
+var resolution_final_score_visible: bool = false
+var resolution_fast_mode: bool = false
+var resolution_visual_index_by_trace_index: Dictionary = {}
+
+
+enum BattleUiState {
+	IDLE,
+	ROLLING,
+	SELECTING,
+	MOVING_TO_RESOLVE,
+	PLAYING_RESOLUTION,
+	COMMITTING_SCORE,
+	CLEANUP,
+}
+
+
+var battle_ui_state: int = BattleUiState.IDLE
 
 
 func setup(new_game_flow_controller: GameFlowController = null, new_run_state: RunState = null) -> void:
@@ -104,6 +135,13 @@ func _build_view() -> void:
 	layout_root.size = design_resolution
 	add_child(layout_root)
 
+	animation_layer = Control.new()
+	animation_layer.name = "ResolutionAnimationLayer"
+	animation_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	animation_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	animation_layer.z_index = 300
+	layout_root.add_child(animation_layer)
+
 	var margin := MarginContainer.new()
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	style_config.apply_margin(margin, style_config.outer_margin)
@@ -140,7 +178,14 @@ func _build_view() -> void:
 	scoring_area.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	main_area.add_child(scoring_area)
 	if scoring_area.has_method("setup"):
-		scoring_area.setup(style_config, score_log_row_scene, floating_score_text_scene)
+		scoring_area.setup(
+			style_config,
+			score_log_row_scene,
+			floating_score_text_scene,
+			dice_view_scene,
+			icon_library,
+			dice_visual_library
+		)
 
 	dice_bench_area = _instantiate_control(dice_bench_area_scene, PanelContainer.new())
 	main_area.add_child(dice_bench_area)
@@ -242,17 +287,12 @@ func _on_hand_scored(result: ScoreResult) -> void:
 	last_score_result = result
 	current_preview_result = null
 	_record_local_combo_stats(result)
-	status_text = "本手结算：%d 战力。" % [result.final_score]
+	status_text = ""
 	if game_flow_controller != null:
 		game_flow_controller.record_hand_score(result, controller.get_current_hand_number())
 	elif run_state != null:
 		run_state.record_hand_score(result, controller.get_current_hand_number())
-	if scoring_area != null and scoring_area.has_method("show_floating_score"):
-		scoring_area.show_floating_score("+%d" % [result.final_score])
-		for event in result.floating_texts:
-			var text := str(event.get("text", ""))
-			if text != "":
-				scoring_area.show_floating_score(text)
+	suppress_next_hand_scored_fx = false
 	_refresh_hud()
 
 
@@ -289,6 +329,8 @@ func _on_options_pressed() -> void:
 
 
 func _on_die_pressed(index: int) -> void:
+	if is_resolution_playing:
+		return
 	if controller == null:
 		return
 	controller.toggle_select(index)
@@ -318,18 +360,381 @@ func _on_die_hovered(_index: int) -> void:
 
 
 func _on_reroll_pressed() -> void:
+	if is_resolution_playing:
+		return
 	if controller != null:
 		controller.reroll()
 
 
 func _on_score_pressed() -> void:
+	if is_resolution_playing:
+		return
 	if controller == null:
 		return
 	var wild_requests := controller.get_selected_wild_face_requests()
 	if wild_requests.is_empty():
-		controller.score_selected()
+		await _settle_selected({})
 		return
 	_show_wild_selection_dialog(wild_requests)
+
+
+func _settle_selected(wild_effective_pips: Dictionary = {}) -> void:
+	if controller == null or is_resolution_playing:
+		return
+	if not controller.can_score():
+		return
+
+	var trace := controller.request_settle_selected(wild_effective_pips)
+	if trace == null:
+		return
+
+	await play_resolution(trace)
+	suppress_next_hand_scored_fx = true
+	controller.commit_pending_resolution()
+	cleanup_resolution_area()
+	_refresh_hud()
+
+
+func play_resolution(trace: ResolutionTrace) -> void:
+	if trace == null:
+		return
+
+	active_resolution_trace = trace
+	is_resolution_playing = true
+	battle_ui_state = BattleUiState.MOVING_TO_RESOLVE
+	resolution_final_score_visible = false
+	resolution_start_score = controller.get_total_score() if controller != null else 0
+	resolution_display_score = resolution_start_score
+	_prime_resolution_display_from_trace(trace)
+	resolution_log_lines.clear()
+	for index in range(min(3, trace.log_lines.size())):
+		resolution_log_lines.append(trace.log_lines[index])
+	status_text = "Resolution..."
+	_refresh_hud()
+
+	await move_selected_dice_to_resolution_by_trace(trace)
+
+	battle_ui_state = BattleUiState.PLAYING_RESOLUTION
+	for step in trace.steps:
+		await play_resolution_step(step)
+
+	battle_ui_state = BattleUiState.COMMITTING_SCORE
+	await play_final_score_fly(trace)
+	is_resolution_playing = false
+
+
+func move_selected_dice_to_resolution_by_trace(trace: ResolutionTrace) -> void:
+	if trace == null or scoring_area == null:
+		return
+
+	var visual_slot_indices := _visual_selected_slot_indices(trace)
+	_set_resolution_visual_index_map(trace, visual_slot_indices)
+	var dice_datas := _resolution_die_view_data_for_slots(visual_slot_indices)
+	if scoring_area.has_method("show_resolution_dice"):
+		scoring_area.show_resolution_dice(dice_datas, true)
+	await get_tree().process_frame
+
+	if dice_bench_area != null and dice_bench_area.has_method("set_hidden_die_indices"):
+		dice_bench_area.set_hidden_die_indices(trace.selected_slot_indices)
+
+	var clones: Array[Control] = []
+	for index in range(visual_slot_indices.size()):
+		var die_index := visual_slot_indices[index]
+		var data: DieViewData = dice_datas[index] if index < dice_datas.size() else null
+		if data == null:
+			continue
+		var clone := _make_animation_dice_view()
+		animation_layer.add_child(clone)
+		if not clone.is_node_ready():
+			await clone.ready
+		if clone.has_method("render"):
+			clone.render(data, style_config, icon_library, dice_visual_library)
+		var start_rect := Rect2()
+		if dice_bench_area != null and dice_bench_area.has_method("get_die_view_global_rect"):
+			start_rect = dice_bench_area.get_die_view_global_rect(die_index)
+		clone.global_position = start_rect.position
+		clone.size = start_rect.size if start_rect.size != Vector2.ZERO else style_config.dice_display_size
+		clones.append(clone)
+
+	if clones.is_empty():
+		if scoring_area.has_method("set_resolution_dice_visible"):
+			scoring_area.set_resolution_dice_visible(true)
+		return
+
+	for index in range(clones.size()):
+		var clone := clones[index]
+		var target_pos: Vector2 = scoring_area.get_resolution_dice_global_position(index) if scoring_area.has_method("get_resolution_dice_global_position") else clone.global_position
+		var move_duration := 0.12 if resolution_fast_mode else 0.35
+		var tween := create_tween()
+		tween.tween_property(clone, "global_position", target_pos, move_duration).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		await tween.finished
+		clone.queue_free()
+		if scoring_area.has_method("set_resolution_index_visible"):
+			scoring_area.set_resolution_index_visible(index, true)
+		if index < clones.size() - 1:
+			await get_tree().create_timer(0.03 if resolution_fast_mode else 0.08).timeout
+	if not scoring_area.has_method("set_resolution_index_visible") and scoring_area.has_method("set_resolution_dice_visible"):
+		scoring_area.set_resolution_dice_visible(true)
+
+
+func play_resolution_step(step: ResolutionStep) -> void:
+	if step == null:
+		return
+
+	if step.log_line != "" and not resolution_log_lines.has(step.log_line):
+		resolution_log_lines.append(step.log_line)
+	_apply_resolution_step_values(step)
+	resolution_final_score_visible = false
+	_highlight_step_source(step)
+	_refresh_hud()
+	if scoring_area != null and scoring_area.has_method("show_step_text"):
+		scoring_area.show_step_text("", "")
+	var floating_text := str(step.floating_text)
+	if step.phase != ResolutionStep.Phase.FINAL_SCORE and _should_show_floating_text(floating_text):
+		await _show_step_floating_text(step, floating_text)
+	else:
+		await get_tree().create_timer(_resolution_step_duration()).timeout
+	_clear_resolution_highlights()
+
+
+func play_final_score_fly(trace: ResolutionTrace) -> void:
+	if trace == null:
+		return
+	var final_score: int = maxi(0, trace.hand_score_final)
+	resolution_display_score = resolution_start_score
+	resolution_display_formula_score = final_score
+	resolution_final_score_visible = final_score > 0
+	_refresh_hud()
+	if scoring_area != null and scoring_area.has_method("show_step_text"):
+		scoring_area.show_step_text("", "")
+	if final_score > 0 and not resolution_fast_mode and left_sidebar != null and left_sidebar.has_method("play_final_score_pop"):
+		await left_sidebar.play_final_score_pop()
+	else:
+		await get_tree().create_timer(0.05 if resolution_fast_mode else 0.5).timeout
+	await _play_score_transfer_countdown(final_score)
+
+
+func _play_score_transfer_countdown(final_score: int) -> void:
+	if final_score <= 0:
+		resolution_display_formula_score = 0
+		resolution_final_score_visible = false
+		_refresh_hud()
+		return
+
+	var duration: float = 0.12 if resolution_fast_mode else 0.45
+	var start_ticks: int = Time.get_ticks_msec()
+	var transferred: int = 0
+	while transferred < final_score:
+		var elapsed: float = float(Time.get_ticks_msec() - start_ticks) / 1000.0
+		var t: float = clampf(elapsed / duration, 0.0, 1.0)
+		transferred = clampi(roundi(float(final_score) * t), 0, final_score)
+		resolution_display_score = resolution_start_score + transferred
+		resolution_display_formula_score = final_score - transferred
+		resolution_final_score_visible = resolution_display_formula_score > 0
+		_refresh_hud()
+		if transferred >= final_score:
+			break
+		await get_tree().process_frame
+
+	resolution_display_score = resolution_start_score + final_score
+	resolution_display_formula_score = 0
+	resolution_final_score_visible = false
+	_refresh_hud()
+
+
+func cleanup_resolution_area() -> void:
+	battle_ui_state = BattleUiState.CLEANUP
+	active_resolution_trace = null
+	resolution_visual_index_by_trace_index.clear()
+	resolution_log_lines.clear()
+	if scoring_area != null and scoring_area.has_method("clear_resolution_dice"):
+		scoring_area.clear_resolution_dice()
+	if dice_bench_area != null:
+		if dice_bench_area.has_method("clear_hidden_die_indices"):
+			dice_bench_area.clear_hidden_die_indices()
+		if dice_bench_area.has_method("clear_highlights"):
+			dice_bench_area.clear_highlights()
+	resolution_final_score_visible = false
+	resolution_fast_mode = false
+	battle_ui_state = BattleUiState.IDLE
+
+
+func skip_resolution_animation() -> void:
+	resolution_fast_mode = true
+
+
+func _prime_resolution_display_from_trace(trace: ResolutionTrace) -> void:
+	resolution_display_combo_name = trace.primary_combo_display_name if trace != null else ""
+	resolution_display_chips = 0
+	resolution_display_mult = 0
+	resolution_display_xmult = 1.0
+	resolution_display_formula_score = 0
+	resolution_final_score_visible = false
+	if trace == null:
+		return
+
+	for step in trace.steps:
+		if step != null and step.phase == ResolutionStep.Phase.COMBO_BASE:
+			_apply_resolution_step_values(step)
+			return
+
+
+func _apply_resolution_step_values(step: ResolutionStep) -> void:
+	if step == null:
+		return
+	if active_resolution_trace != null and active_resolution_trace.primary_combo_display_name != "":
+		resolution_display_combo_name = active_resolution_trace.primary_combo_display_name
+	resolution_display_chips = step.chips_after
+	resolution_display_mult = step.mult_after
+	resolution_display_xmult = step.xmult_after
+	resolution_display_formula_score = step.partial_score_after
+
+
+func _highlight_step_source(step: ResolutionStep) -> void:
+	_clear_resolution_highlights()
+	match step.phase:
+		ResolutionStep.Phase.PIP_SCORE, ResolutionStep.Phase.ORNAMENT_ON_SCORE, ResolutionStep.Phase.MARK_ON_SCORE, ResolutionStep.Phase.RETRIGGER:
+			var resolution_index := _visual_resolution_index(step.resolution_index)
+			if resolution_index < 0:
+				resolution_index = _visual_resolution_index(step.retrigger_target_resolution_index)
+			if scoring_area != null and scoring_area.has_method("highlight_resolution_index"):
+				scoring_area.highlight_resolution_index(resolution_index)
+		ResolutionStep.Phase.UNSELECTED_STAY, ResolutionStep.Phase.DIE_BODY:
+			if dice_bench_area != null and dice_bench_area.has_method("set_highlighted_die_indices"):
+				var highlighted_indices: Array[int] = [step.bench_slot_index]
+				dice_bench_area.set_highlighted_die_indices(highlighted_indices)
+		_:
+			pass
+
+
+func _clear_resolution_highlights() -> void:
+	if scoring_area != null and scoring_area.has_method("clear_highlights"):
+		scoring_area.clear_highlights()
+	if dice_bench_area != null and dice_bench_area.has_method("clear_highlights"):
+		dice_bench_area.clear_highlights()
+
+
+func _show_step_floating_text(step: ResolutionStep, floating_text: String = "") -> void:
+	if scoring_area == null:
+		return
+	var text: String = floating_text if floating_text != "" else str(step.floating_text)
+	if not _should_show_floating_text(text):
+		return
+	var target := Vector2(-999999.0, -999999.0)
+	if step.resolution_index >= 0:
+		var visual_index := _visual_resolution_index(step.resolution_index)
+		if scoring_area.has_method("get_resolution_dice_global_floating_anchor"):
+			target = scoring_area.get_resolution_dice_global_floating_anchor(visual_index)
+		elif scoring_area.has_method("get_resolution_dice_global_center"):
+			target = scoring_area.get_resolution_dice_global_center(visual_index)
+	if step.phase == ResolutionStep.Phase.UNSELECTED_STAY and dice_bench_area != null and dice_bench_area.has_method("get_die_view_global_rect"):
+		target = dice_bench_area.get_die_view_global_rect(step.bench_slot_index).get_center()
+	if scoring_area.has_method("play_floating_score_at"):
+		await scoring_area.play_floating_score_at(text, target)
+	elif scoring_area.has_method("show_floating_score_at"):
+		scoring_area.show_floating_score_at(text, target)
+	elif scoring_area.has_method("show_floating_score"):
+		scoring_area.show_floating_score(text)
+
+
+func _should_show_floating_text(text: String) -> bool:
+	var stripped := text.strip_edges()
+	if stripped == "":
+		return false
+	for index in range(stripped.length()):
+		if stripped.unicode_at(index) > 127:
+			return false
+	if stripped.begins_with("+") or stripped.begins_with("-"):
+		return true
+	if stripped.begins_with("X") or stripped.begins_with("x"):
+		return true
+	return false
+
+
+func _resolution_step_duration() -> float:
+	return 0.22 if resolution_fast_mode else 0.82
+
+
+func _resolution_state_text() -> String:
+	match battle_ui_state:
+		BattleUiState.MOVING_TO_RESOLVE:
+			return "Moving dice to resolution..."
+		BattleUiState.PLAYING_RESOLUTION:
+			return "Playing resolution..."
+		BattleUiState.COMMITTING_SCORE:
+			return "Committing score..."
+		_:
+			return "Resolution..."
+
+
+func _visual_selected_slot_indices(trace: ResolutionTrace) -> Array[int]:
+	var result: Array[int] = []
+	if trace == null:
+		return result
+
+	var selected_lookup: Dictionary = {}
+	for slot_index in trace.selected_slot_indices:
+		selected_lookup[int(slot_index)] = true
+
+	var display_order: Array[int] = []
+	if dice_bench_area != null and dice_bench_area.has_method("get_display_die_order"):
+		display_order = dice_bench_area.get_display_die_order()
+	for die_index in display_order:
+		if selected_lookup.has(die_index):
+			result.append(die_index)
+			selected_lookup.erase(die_index)
+
+	for slot_index in trace.selected_slot_indices:
+		var die_index := int(slot_index)
+		if selected_lookup.has(die_index):
+			result.append(die_index)
+			selected_lookup.erase(die_index)
+	return result
+
+
+func _set_resolution_visual_index_map(trace: ResolutionTrace, visual_slot_indices: Array[int]) -> void:
+	resolution_visual_index_by_trace_index.clear()
+	if trace == null:
+		return
+	for visual_index in range(visual_slot_indices.size()):
+		var trace_index := trace.selected_slot_indices.find(visual_slot_indices[visual_index])
+		if trace_index >= 0:
+			resolution_visual_index_by_trace_index[trace_index] = visual_index
+
+
+func _visual_resolution_index(trace_resolution_index: int) -> int:
+	if trace_resolution_index < 0:
+		return -1
+	return int(resolution_visual_index_by_trace_index.get(trace_resolution_index, trace_resolution_index))
+
+
+func _resolution_die_view_data(trace: ResolutionTrace) -> Array[DieViewData]:
+	if trace == null:
+		var empty_result: Array[DieViewData] = []
+		return empty_result
+	return _resolution_die_view_data_for_slots(trace.selected_slot_indices)
+
+
+func _resolution_die_view_data_for_slots(slot_indices: Array[int]) -> Array[DieViewData]:
+	var result: Array[DieViewData] = []
+	var dice := _get_dice()
+	var rolled_by_die := _current_rolls_by_die()
+	for slot_index in slot_indices:
+		if slot_index < 0 or slot_index >= dice.size():
+			continue
+		var rolled_face = rolled_by_die.get(slot_index, null)
+		var die_data := DieViewData.new()
+		die_data.setup_from_die(dice[slot_index], slot_index, rolled_face, false, false, false)
+		die_data.selected = false
+		result.append(die_data)
+	return result
+
+
+func _make_animation_dice_view() -> Control:
+	var view := _instantiate_control(dice_view_scene, PanelContainer.new())
+	view.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	view.z_index = 320
+	return view
 
 
 func _refresh_hud() -> void:
@@ -374,20 +779,39 @@ func _build_hud_state() -> BattleHudState:
 	state.current_hand = controller.get_current_hand_number()
 	state.max_hands = controller.get_hands_per_battle()
 	state.phase_text = DisplayNames.phase_name(controller.get_phase_name())
-	state.can_reroll = controller.can_reroll()
-	state.can_score = controller.can_score()
+	state.can_reroll = controller.can_reroll() and not is_resolution_playing
+	state.can_score = controller.can_score() and not is_resolution_playing
 	state.dice_results = _build_die_view_data()
 	state.selected_dice_indices = _selected_dice_indices()
 	state.score_log = _score_log_lines()
 	state.preview_text = _preview_text()
 
-	var formula_result := current_preview_result if current_preview_result != null else last_score_result
+	var formula_result: ScoreResult = current_preview_result
 	if formula_result != null:
 		state.core_combo_name = _combo_name(formula_result)
-		state.base_chips = formula_result.chips
-		state.base_mult = formula_result.mult
+		state.core_combo_level = _combo_level(_result_combo_id(formula_result))
+		state.combo_display_visible = true
+		state.base_chips = formula_result.combo_chips_bonus
+		state.base_mult = formula_result.combo_mult
 		state.xmult = formula_result.xmult
 		state.formula_score = formula_result.final_score
+
+	if active_resolution_trace != null:
+		state.current_score = resolution_display_score
+		state.core_combo_name = resolution_display_combo_name if resolution_display_combo_name != "" else state.core_combo_name
+		if active_resolution_trace.primary_combo_id != &"":
+			state.core_combo_level = _combo_level(active_resolution_trace.primary_combo_id)
+		state.combo_display_visible = battle_ui_state != BattleUiState.COMMITTING_SCORE and not resolution_final_score_visible
+		state.final_score_display_visible = resolution_final_score_visible
+		state.base_chips = resolution_display_chips
+		state.base_mult = resolution_display_mult
+		state.xmult = resolution_display_xmult
+		state.formula_score = resolution_display_formula_score if resolution_final_score_visible else 0
+		state.can_reroll = false
+		state.can_score = false
+		state.score_log = resolution_log_lines.duplicate()
+		state.preview_text = ""
+		state.status_text = ""
 
 	return state
 
@@ -396,12 +820,12 @@ func _build_die_view_data() -> Array[DieViewData]:
 	var result: Array[DieViewData] = []
 	var dice := _get_dice()
 	var rolled_by_die := _current_rolls_by_die()
-	var dice_enabled := controller != null and controller.get_phase() == BattleController.BattlePhase.WAITING_ACTION
-	var hand_scored := controller != null and controller.hand_state != null and controller.hand_state.scored
+	var dice_enabled := controller != null and controller.get_phase() == BattleController.BattlePhase.WAITING_ACTION and not is_resolution_playing
+	var hand_scored := controller != null and controller.hand_state != null and controller.hand_state.scored and not is_resolution_playing
 
 	for die_index in range(dice.size()):
 		var rolled_face = rolled_by_die.get(die_index, null)
-		var disabled := rolled_face == null or not dice_enabled
+		var disabled := rolled_face == null or (not dice_enabled and not is_resolution_playing)
 		var die_data = DieViewData.new()
 		die_data.setup_from_die(dice[die_index], die_index, rolled_face, dice_enabled, hand_scored, disabled)
 		result.append(die_data)
@@ -469,13 +893,16 @@ func _preview_text() -> String:
 		return "计分预览\n%s" % [current_preview_result.get_summary_text_zh()]
 
 	var selected_count := _selected_dice_indices().size()
-	var max_selected := controller.get_max_selected_dice() if controller != null else 0
+	var max_selected: int = controller.get_max_selected_dice() if controller != null else 0
 	if max_selected > 0 and selected_count > max_selected:
 		return "计分预览\n已选择 %d / %d，最多只能结算 %d 颗骰子。" % [selected_count, max_selected, max_selected]
 	return "计分预览\n未选择骰子。"
 
 
 func _score_log_lines() -> Array[String]:
+	if active_resolution_trace != null:
+		return resolution_log_lines.duplicate()
+
 	var lines: Array[String] = []
 	if last_score_result == null:
 		lines.append("选择骰子后，可以重投所选，或直接结算所选。")
@@ -545,7 +972,7 @@ func _is_combo_info_popup_visible() -> bool:
 
 func _build_combo_info_rows() -> Array[ComboInfoRowData]:
 	var rows: Array[ComboInfoRowData] = []
-	var active_result := current_preview_result if current_preview_result != null else last_score_result
+	var active_result: ScoreResult = current_preview_result if current_preview_result != null else last_score_result
 	var active_combo_id := _normalized_combo_id(_result_combo_id(active_result))
 
 	for combo_id in _combo_info_order():
@@ -598,7 +1025,7 @@ func _base_formula_for_combo(combo_id: StringName) -> Dictionary:
 	if engine != null and engine.has_method("get_base_values_for_combo"):
 		if run_state != null and run_state.has_method("ensure_combo_levels"):
 			run_state.ensure_combo_levels()
-		var combo_levels := run_state.combo_levels if run_state != null else {}
+		var combo_levels: Dictionary = run_state.combo_levels if run_state != null else {}
 		return engine.get_base_values_for_combo(combo_id, 0, combo_levels)
 	return {"chips": 0, "mult": 1}
 
@@ -691,7 +1118,7 @@ func _get_money() -> int:
 func _show_wild_selection_dialog(requests: Array[Dictionary]) -> void:
 	_ensure_wild_selection_dialog()
 	if wild_selection_dialog == null:
-		controller.score_selected()
+		call_deferred("_settle_selected", {})
 		return
 
 	wild_button_rows.clear()
@@ -778,7 +1205,7 @@ func _confirm_wild_selection() -> void:
 			if button.button_pressed:
 				selections[key] = int(button.get_meta("pip", 1))
 				break
-	controller.score_selected(selections)
+	await _settle_selected(selections)
 
 
 func _get_optional_property(property_name: StringName):

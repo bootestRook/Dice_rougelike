@@ -36,12 +36,12 @@ func _check_scatter_naming() -> bool:
 	var passed := (
 		result.combo_id == &"scatter"
 		and result.level == 1
-		and result.chips_bonus == 0
+		and result.chips_bonus == 5
 		and result.mult == 1
 		and display_name == "散点"
 		and display_name != "高点"
 	)
-	return _check("scatter Lv1 is +0/x1 and displays 散点", passed)
+	return _check("scatter Lv1 is +5/x1 and displays 散点", passed)
 
 
 func _check_straight_merge() -> bool:

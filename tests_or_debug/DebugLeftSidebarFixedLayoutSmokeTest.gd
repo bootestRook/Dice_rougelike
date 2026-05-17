@@ -1,0 +1,88 @@
+﻿extends SceneTree
+class_name DebugLeftSidebarFixedLayoutSmokeTest
+
+
+func _init() -> void:
+	print("--- DebugLeftSidebarFixedLayoutSmokeTest: start ---")
+
+	var all_passed := true
+	DisplayServer.window_set_size(Vector2i(1920, 1080))
+	root.size = Vector2i(1920, 1080)
+
+	var scene := load("res://scenes/battle/BattleScreen.tscn")
+	var battle_screen = scene.instantiate()
+	root.add_child(battle_screen)
+
+	await process_frame
+	await process_frame
+	await process_frame
+
+	var formula_panel := _find_node_by_name(battle_screen, "ScoreFormulaPanel") as Control
+	var resource_panel := _find_node_by_name(battle_screen, "BattleResourcePanel") as Control
+	var formula_value := _find_node_by_name(battle_screen, "FormulaValue") as Label
+	var formula_badges := _find_node_by_name(battle_screen, "FormulaBadges") as Control
+	var chips_badge := _find_node_by_name(battle_screen, "FormulaChipsBadge") as Control
+	var mult_badge := _find_node_by_name(battle_screen, "FormulaMultBadge") as Control
+	var chips_value := _find_node_by_name(battle_screen, "FormulaChipsValue") as Label
+	var mult_value := _find_node_by_name(battle_screen, "FormulaMultValue") as Label
+	var x_label := _find_node_by_name(battle_screen, "FormulaXLabel") as Label
+	var chips_texture := _find_node_by_name(battle_screen, "FormulaChipsTexture") as TextureRect
+	var mult_texture := _find_node_by_name(battle_screen, "FormulaMultTexture") as TextureRect
+	var left_sidebar = battle_screen.get("left_sidebar")
+	all_passed = _check("sidebar nodes exist", formula_panel != null and resource_panel != null and formula_value != null and formula_badges != null and chips_badge != null and mult_badge != null and chips_value != null and mult_value != null and x_label != null and left_sidebar != null) and all_passed
+
+	var base_formula_height := formula_panel.size.y
+	var base_resource_y := resource_panel.global_position.y
+
+	chips_value.text = "388,888"
+	mult_value.text = "333"
+	if left_sidebar.has_method("_fit_formula_badge_font_sizes"):
+		left_sidebar._fit_formula_badge_font_sizes()
+	await process_frame
+	await process_frame
+
+	all_passed = _check("formula panel height does not grow", formula_panel.size.y <= base_formula_height + 1.0) and all_passed
+	all_passed = _check("formula panel uses configured height", _near(formula_panel.size.y, float(battle_screen.style_config.left_score_formula_panel_height), 2.0)) and all_passed
+	all_passed = _check("resource panel position stays fixed", _near(resource_panel.global_position.y, base_resource_y, 1.0)) and all_passed
+	all_passed = _check("formula value does not request wrapping", formula_value.autowrap_mode == TextServer.AUTOWRAP_OFF) and all_passed
+	all_passed = _check("formula legacy value is hidden", not formula_value.visible) and all_passed
+	all_passed = _check("formula badges use image textures", chips_texture != null and chips_texture.texture != null and mult_texture != null and mult_texture.texture != null) and all_passed
+	all_passed = _check("formula badge row stays inside formula panel", _rect_contains(formula_panel.get_global_rect(), formula_badges.get_global_rect(), 1.0)) and all_passed
+	all_passed = _check("formula chips badge stays inside formula panel", _rect_contains(formula_panel.get_global_rect(), chips_badge.get_global_rect(), 1.0)) and all_passed
+	all_passed = _check("formula mult badge stays inside formula panel", _rect_contains(formula_panel.get_global_rect(), mult_badge.get_global_rect(), 1.0)) and all_passed
+	all_passed = _check("formula separator stays inside formula panel", _rect_contains(formula_panel.get_global_rect(), x_label.get_global_rect(), 1.0)) and all_passed
+
+	battle_screen.queue_free()
+	print("PASS: DebugLeftSidebarFixedLayoutSmokeTest" if all_passed else "FAIL: DebugLeftSidebarFixedLayoutSmokeTest")
+	print("--- DebugLeftSidebarFixedLayoutSmokeTest: end ---")
+	quit(0 if all_passed else 1)
+
+
+func _find_node_by_name(root_node: Node, node_name: String) -> Node:
+	if root_node.name == node_name:
+		return root_node
+	for child in root_node.get_children():
+		var result := _find_node_by_name(child, node_name)
+		if result != null:
+			return result
+	return null
+
+
+func _near(a: float, b: float, tolerance: float) -> bool:
+	return absf(a - b) <= tolerance
+
+
+func _rect_contains(parent_rect: Rect2, child_rect: Rect2, tolerance: float) -> bool:
+	return child_rect.position.x >= parent_rect.position.x - tolerance \
+		and child_rect.position.y >= parent_rect.position.y - tolerance \
+		and child_rect.end.x <= parent_rect.end.x + tolerance \
+		and child_rect.end.y <= parent_rect.end.y + tolerance
+
+
+func _check(label: String, passed: bool) -> bool:
+	var status := "PASS" if passed else "FAIL"
+	print("%s: %s" % [status, label])
+	if not passed:
+		push_error(label)
+	return passed
+

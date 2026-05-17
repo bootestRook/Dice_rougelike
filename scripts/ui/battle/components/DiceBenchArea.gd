@@ -29,13 +29,22 @@ var focused_die_index: int = 0
 var popup: Control = null
 var pending_info_die_index: int = -1
 var info_request_queued: bool = false
+var hidden_die_indices: Array[int] = []
+var highlighted_die_indices: Array[int] = []
+var display_die_order: Array[int] = []
+var dice_signature: String = ""
+var is_sorting_dice: bool = false
 
 @onready var margin: MarginContainer = %BenchMargin
 @onready var title_label: Label = %TitleLabel
 @onready var hint_label: Label = %HintLabel
 @onready var reroll_button: Button = %RerollButton
+@onready var organize_button: Button = %OrganizeButton
 @onready var score_button: Button = %ScoreButton
 @onready var bench_overlay: Control = %BenchOverlay
+@onready var dice_center: CenterContainer = $BenchMargin/Rows/BenchOverlay/DiceCenter
+@onready var action_buttons_center: CenterContainer = $BenchMargin/Rows/BenchOverlay/ActionButtonsCenter
+@onready var action_buttons_row: HBoxContainer = $BenchMargin/Rows/BenchOverlay/ActionButtonsCenter/ActionButtonsRow
 @onready var dice_row: HBoxContainer = %DiceRow
 @onready var popup_mount: CenterContainer = %PopupMount
 
@@ -60,6 +69,7 @@ func setup(
 
 func _ready() -> void:
 	reroll_button.pressed.connect(func() -> void: reroll_pressed.emit())
+	organize_button.pressed.connect(_on_organize_pressed)
 	score_button.pressed.connect(func() -> void: score_pressed.emit())
 	_apply_style()
 
@@ -71,7 +81,12 @@ func render(state: BattleHudState) -> void:
 
 	hint_label.text = "%s  |  %s" % [state.phase_text, state.status_text]
 	reroll_button.disabled = not state.can_reroll
+	organize_button.disabled = is_sorting_dice or _organize_disabled(state)
 	score_button.disabled = not state.can_score
+	var next_signature := _dice_signature(state.dice_results)
+	if next_signature != dice_signature:
+		dice_signature = next_signature
+		display_die_order.clear()
 	_render_dice(state.dice_results)
 
 	if popup != null and popup.visible:
@@ -163,15 +178,60 @@ func _apply_style() -> void:
 	style_config.apply_label(title_label, style_config.title_font_size)
 	style_config.apply_label(hint_label, style_config.small_font_size)
 	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_label.visible = false
 	hint_label.visible = false
 	style_config.apply_button(reroll_button)
+	style_config.apply_button(organize_button)
 	style_config.apply_button(score_button)
+	_position_dice_row_near_top()
+	_position_action_buttons()
 	dice_row.add_theme_constant_override("separation", style_config.layout_gap)
+
+
+func _position_dice_row_near_top() -> void:
+	if dice_center == null or style_config == null:
+		return
+	var top_offset := -18.0
+	var row_height := style_config.dice_display_size.y
+	dice_center.anchor_left = 0.0
+	dice_center.anchor_top = 0.0
+	dice_center.anchor_right = 1.0
+	dice_center.anchor_bottom = 0.0
+	dice_center.offset_left = 0.0
+	dice_center.offset_top = top_offset
+	dice_center.offset_right = 0.0
+	dice_center.offset_bottom = top_offset + row_height
+
+
+func _position_action_buttons() -> void:
+	if action_buttons_center == null or action_buttons_row == null or style_config == null:
+		return
+
+	var button_size := Vector2(124.0, 54.0)
+	var top_offset := style_config.dice_display_size.y + 28.0
+	for button in [reroll_button, organize_button, score_button]:
+		button.custom_minimum_size = button_size
+		button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	reroll_button.text = "重投"
+	organize_button.text = "整理"
+	score_button.text = "结算"
+
+	action_buttons_center.anchor_left = 0.0
+	action_buttons_center.anchor_top = 0.0
+	action_buttons_center.anchor_right = 1.0
+	action_buttons_center.anchor_bottom = 0.0
+	action_buttons_center.offset_left = 0.0
+	action_buttons_center.offset_top = top_offset
+	action_buttons_center.offset_right = 0.0
+	action_buttons_center.offset_bottom = top_offset + button_size.y
+	action_buttons_row.add_theme_constant_override("separation", 120)
+	action_buttons_row.alignment = BoxContainer.ALIGNMENT_CENTER
 
 
 func _render_dice(dice: Array[DieViewData]) -> void:
 	_clear_children(dice_row)
-	for die_data in dice:
+	for die_data in _ordered_dice(dice):
 		var view := _make_dice_view(die_data)
 		view.set_meta("die_index", die_data.die_index)
 		dice_row.add_child(view)
@@ -183,7 +243,216 @@ func _render_dice(dice: Array[DieViewData]) -> void:
 			view.die_hovered.connect(_on_die_view_hovered)
 		if view.has_signal("die_info_requested"):
 			view.die_info_requested.connect(_on_die_info_requested)
+		_apply_die_view_transient_state(view, die_data.die_index)
 	_update_info_focus()
+
+
+func _on_organize_pressed() -> void:
+	if current_state == null or is_sorting_dice:
+		return
+
+	var sorted_order := _sorted_die_order(current_state.dice_results)
+	if sorted_order.is_empty():
+		return
+	if _same_int_order(_current_display_order(), sorted_order):
+		display_die_order = sorted_order
+		return
+
+	var old_rects := _current_die_global_rects()
+	var clones := _make_sort_animation_clones(old_rects)
+	display_die_order = sorted_order
+	is_sorting_dice = true
+	organize_button.disabled = true
+	_render_dice(current_state.dice_results)
+	_set_current_die_views_visible(false)
+	await get_tree().process_frame
+
+	var new_rects := _current_die_global_rects()
+	await _play_sort_animation(clones, new_rects)
+	is_sorting_dice = false
+	_set_current_die_views_visible(true)
+	organize_button.disabled = _organize_disabled(current_state)
+	_apply_transient_states_to_current_views()
+
+
+func _ordered_dice(dice: Array[DieViewData]) -> Array[DieViewData]:
+	var result: Array[DieViewData] = []
+	if display_die_order.is_empty():
+		result.append_array(dice)
+		return result
+
+	var by_index: Dictionary = {}
+	for die_data in dice:
+		if die_data != null:
+			by_index[die_data.die_index] = die_data
+	for die_index in display_die_order:
+		if by_index.has(die_index):
+			result.append(by_index[die_index])
+			by_index.erase(die_index)
+	for die_data in dice:
+		if die_data != null and by_index.has(die_data.die_index):
+			result.append(die_data)
+			by_index.erase(die_data.die_index)
+	return result
+
+
+func _sorted_die_order(dice: Array[DieViewData]) -> Array[int]:
+	var sorted: Array[DieViewData] = []
+	for die_data in dice:
+		if die_data != null:
+			sorted.append(die_data)
+	sorted.sort_custom(func(a: DieViewData, b: DieViewData) -> bool:
+		var pip_a := _current_pip(a)
+		var pip_b := _current_pip(b)
+		if pip_a == pip_b:
+			return a.die_index < b.die_index
+		return pip_a > pip_b
+	)
+
+	var order: Array[int] = []
+	for die_data in sorted:
+		order.append(die_data.die_index)
+	return order
+
+
+func _current_pip(die_data: DieViewData) -> int:
+	if die_data == null or die_data.current_face == null:
+		return -1
+	return die_data.current_face.pip
+
+
+func _current_display_order() -> Array[int]:
+	var order: Array[int] = []
+	for child in dice_row.get_children():
+		if child is Control:
+			order.append(int(child.get_meta("die_index", -1)))
+	return order
+
+
+func _current_die_global_rects() -> Dictionary:
+	var rects: Dictionary = {}
+	for child in dice_row.get_children():
+		if not child is Control:
+			continue
+		var view := child as Control
+		var die_index := int(view.get_meta("die_index", -1))
+		if die_index >= 0:
+			rects[die_index] = view.get_global_rect()
+	return rects
+
+
+func _make_sort_animation_clones(old_rects: Dictionary) -> Array[Control]:
+	var clones: Array[Control] = []
+	if current_state == null:
+		return clones
+
+	for die_data in _ordered_dice(current_state.dice_results):
+		if die_data == null or not old_rects.has(die_data.die_index):
+			continue
+		var rect := old_rects[die_data.die_index] as Rect2
+		var clone := _make_dice_view(die_data)
+		clone.set_meta("die_index", die_data.die_index)
+		clone.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		clone.z_index = 80
+		bench_overlay.add_child(clone)
+		if clone.has_method("render"):
+			clone.render(die_data, style_config, icon_library, dice_visual_library)
+		clone.global_position = rect.position
+		clone.size = rect.size
+		clones.append(clone)
+	return clones
+
+
+func _play_sort_animation(clones: Array[Control], new_rects: Dictionary) -> void:
+	if clones.is_empty():
+		return
+
+	var tween := create_tween()
+	tween.set_parallel(true)
+	for clone in clones:
+		var die_index := int(clone.get_meta("die_index", -1))
+		if new_rects.has(die_index):
+			var target_rect := new_rects[die_index] as Rect2
+			tween.tween_property(clone, "global_position", target_rect.position, 0.28).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	await tween.finished
+	for clone in clones:
+		clone.queue_free()
+
+
+func _set_current_die_views_visible(value: bool) -> void:
+	for child in dice_row.get_children():
+		if child is Control:
+			(child as Control).modulate.a = 1.0 if value else 0.0
+
+
+func _same_int_order(a: Array[int], b: Array[int]) -> bool:
+	if a.size() != b.size():
+		return false
+	for index in range(a.size()):
+		if a[index] != b[index]:
+			return false
+	return true
+
+
+func _dice_signature(dice: Array[DieViewData]) -> String:
+	var parts := PackedStringArray()
+	for die_data in dice:
+		if die_data == null:
+			continue
+		parts.append("%d:%d:%d" % [die_data.die_index, die_data.current_face_index, _current_pip(die_data)])
+	return "|".join(parts)
+
+
+func _organize_disabled(state: BattleHudState) -> bool:
+	if state == null or state.dice_results.is_empty():
+		return true
+	for die_data in state.dice_results:
+		if die_data != null and not die_data.disabled:
+			return false
+	return true
+
+
+func set_hidden_die_indices(indices: Array[int]) -> void:
+	hidden_die_indices = indices.duplicate()
+	_apply_transient_states_to_current_views()
+
+
+func clear_hidden_die_indices() -> void:
+	hidden_die_indices.clear()
+	_apply_transient_states_to_current_views()
+
+
+func set_highlighted_die_indices(indices: Array[int]) -> void:
+	highlighted_die_indices = indices.duplicate()
+	_apply_transient_states_to_current_views()
+
+
+func clear_highlights() -> void:
+	highlighted_die_indices.clear()
+	_apply_transient_states_to_current_views()
+
+
+func get_die_view_global_rect(index: int) -> Rect2:
+	var die_view := _die_view_at(index)
+	if die_view == null:
+		return Rect2()
+	return die_view.get_global_rect()
+
+
+func get_display_die_order() -> Array[int]:
+	var order := _current_display_order()
+	if not order.is_empty():
+		return order
+	if not display_die_order.is_empty():
+		return display_die_order.duplicate()
+
+	var fallback: Array[int] = []
+	if current_state == null:
+		return fallback
+	for die_data in current_state.dice_results:
+		if die_data != null:
+			fallback.append(die_data.die_index)
+	return fallback
 
 
 func _make_dice_view(die_data: DieViewData) -> Control:
@@ -315,6 +584,22 @@ func _die_view_at(index: int) -> Control:
 	return null
 
 
+func _apply_transient_states_to_current_views() -> void:
+	for child in dice_row.get_children():
+		if child is Control:
+			_apply_die_view_transient_state(child as Control, int(child.get_meta("die_index", -1)))
+
+
+func _apply_die_view_transient_state(view: Control, die_index: int) -> void:
+	if view == null:
+		return
+	var hidden := hidden_die_indices.has(die_index)
+	var highlighted := highlighted_die_indices.has(die_index)
+	view.modulate = Color(1, 1, 1, 0.0) if hidden else (Color(1.0, 0.92, 0.45, 1.0) if highlighted else Color.WHITE)
+	view.scale = Vector2(1.04, 1.04) if highlighted and not hidden else Vector2.ONE
+	view.mouse_filter = Control.MOUSE_FILTER_IGNORE if hidden else Control.MOUSE_FILTER_STOP
+
+
 func _set_popup_tail_to_die(index: int) -> void:
 	if popup == null or not popup.visible or not popup.has_method("set_tail_target_global_x"):
 		return
@@ -333,6 +618,7 @@ func _update_info_focus() -> void:
 
 
 func _update_viewing_title() -> void:
+	title_label.visible = false
 	if popup != null and popup.visible:
 		title_label.text = "骰子备战区 · 正在查看骰子 %d" % [focused_die_index + 1]
 	else:

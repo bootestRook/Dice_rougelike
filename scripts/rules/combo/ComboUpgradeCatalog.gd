@@ -49,7 +49,7 @@ static func get_all_defs() -> Array[ComboLevelDef]:
 	defs.append(_make_def(&"combo_three_kind", "三同", THREE_KIND, 5, 30, 4, 25, 2))
 	defs.append(_make_def(&"combo_two_pair", "两对", TWO_PAIR, 6, 20, 3, 20, 1))
 	defs.append(_make_def(&"combo_pair", "一对", PAIR, 7, 10, 2, 15, 1))
-	defs.append(_make_def(&"combo_scatter", "散点", SCATTER, 8, 0, 1, 10, 1))
+	defs.append(_make_def(&"combo_scatter", "散点", SCATTER, 8, 5, 1, 10, 1))
 	return defs
 
 
@@ -117,7 +117,7 @@ static func normalize_combo_id(combo_id: StringName) -> StringName:
 
 
 static func _scatter_def() -> ComboLevelDef:
-	return _make_def(&"combo_scatter", "散点", SCATTER, 8, 0, 1, 10, 1)
+	return _make_def(&"combo_scatter", "散点", SCATTER, 8, 5, 1, 10, 1)
 
 
 static func _make_def(

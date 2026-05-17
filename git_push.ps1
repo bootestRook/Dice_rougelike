@@ -51,6 +51,17 @@ function Test-NeedsPullFirst {
     return $GitOutput -match "non-fast-forward|fetch first|Updates were rejected|remote contains work that you do not have locally"
 }
 
+function Invoke-PullBeforePush {
+    Write-Host ""
+    Write-Host "Remote has commits that are not local. Trying pull before the next push..."
+    & git pull --rebase --autostash $RemoteName $BranchName
+
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host ""
+        Write-Host "Pull before push did not finish. Resolve any conflicts if needed; this script will keep retrying."
+    }
+}
+
 try {
     Test-GitCommand
     Test-GitRepository
@@ -86,9 +97,7 @@ try {
 
         $outputText = $output | Out-String
         if (Test-NeedsPullFirst $outputText) {
-            Write-Host ""
-            Write-Host "The remote has commits that are not local. Run git_pull.ps1 first."
-            Pause-And-Exit 1
+            Invoke-PullBeforePush
         }
 
         Write-Host ""

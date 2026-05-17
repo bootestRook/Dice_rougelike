@@ -14,6 +14,7 @@ const ComboEvaluator = preload("res://scripts/rules/combo/ComboEvaluator.gd")
 const ScoreContext = preload("res://scripts/core/scoring/ScoreContext.gd")
 const ScoreEngine = preload("res://scripts/rules/scoring/ScoreEngine.gd")
 const ScoreResult = preload("res://scripts/core/scoring/ScoreResult.gd")
+const ResolutionTrace = preload("res://scripts/core/scoring/ResolutionTrace.gd")
 const BattleLogEntry = preload("res://scripts/log/BattleLogEntry.gd")
 const RewardGenerator = preload("res://scripts/rules/reward/RewardGenerator.gd")
 
@@ -53,6 +54,9 @@ var reward_generator := RewardGenerator.new()
 var score_rng := RandomNumberGenerator.new()
 var pending_mark_logs: Array[BattleLogEntry] = []
 var pending_mark_floating_texts: Array[Dictionary] = []
+var pending_resolution_trace: ResolutionTrace = null
+var pending_resolution_result: ScoreResult = null
+var pending_resolution_context: ScoreContext = null
 
 
 func _init() -> void:
@@ -85,6 +89,9 @@ func start_battle(config: BattleConfig = null, run_state: RunState = null) -> vo
 	hand_state = null
 	pending_mark_logs.clear()
 	pending_mark_floating_texts.clear()
+	pending_resolution_trace = null
+	pending_resolution_result = null
+	pending_resolution_context = null
 	_set_phase(BattlePhase.INIT)
 	battle_started.emit()
 	score_changed.emit(battle_state.total_score, battle_state.config.target_score)
@@ -132,19 +139,56 @@ func reroll() -> void:
 
 
 func score_selected(wild_effective_pips: Dictionary = {}) -> void:
-	if phase != BattlePhase.WAITING_ACTION or not can_score():
+	var trace := request_settle_selected(wild_effective_pips)
+	if trace == null:
 		return
+	commit_pending_resolution()
+
+
+func request_settle_selected(wild_effective_pips: Dictionary = {}) -> ResolutionTrace:
+	if phase != BattlePhase.WAITING_ACTION or not can_score():
+		return null
 
 	_set_phase(BattlePhase.SCORING)
 	var context := _build_score_context()
 	context.wild_effective_pips = wild_effective_pips.duplicate(true)
+	context.defer_runtime_mutations = true
 
-	var result := score_engine.score(context)
+	var trace := score_engine.build_resolution_trace(context)
+	var result := trace.score_result
+	if result == null:
+		result = ScoreResult.new()
+		result.final_score = trace.hand_score_final
+
 	hand_state.scored = true
 	hand_state.score_result = result
-	battle_state.total_score += result.final_score
-	battle_state.hands_played += 1
+	pending_resolution_trace = trace
+	pending_resolution_result = result
+	pending_resolution_context = context
+	var log_count_before_pending_marks := result.logs.size()
 	_consume_pending_mark_events(result)
+	_append_pending_mark_logs_to_trace(trace, result, log_count_before_pending_marks)
+	score_preview_changed.emit(null)
+	return trace
+
+
+func commit_pending_resolution() -> void:
+	if pending_resolution_trace == null:
+		return
+	if battle_state == null or hand_state == null:
+		_clear_pending_resolution()
+		return
+
+	var trace := pending_resolution_trace
+	var result := pending_resolution_result
+	if result == null:
+		result = ScoreResult.new()
+		result.final_score = trace.hand_score_final
+
+	battle_state.total_score += trace.hand_score_final
+	battle_state.hands_played += 1
+	_apply_pending_score_events(result)
+	_apply_pending_post_resolution_mutations(result)
 
 	if battle_state.total_score >= battle_state.config.target_score:
 		_mark_battle_finished(true, result)
@@ -154,6 +198,7 @@ func score_selected(wild_effective_pips: Dictionary = {}) -> void:
 	hand_scored.emit(result)
 	score_preview_changed.emit(null)
 	score_changed.emit(battle_state.total_score, battle_state.config.target_score)
+	_clear_pending_resolution()
 
 	if battle_state.battle_finished:
 		_emit_battle_finished()
@@ -485,6 +530,50 @@ func _consume_pending_mark_events(result: ScoreResult) -> void:
 		)
 	pending_mark_logs.clear()
 	pending_mark_floating_texts.clear()
+
+
+func _append_pending_mark_logs_to_trace(trace: ResolutionTrace, result: ScoreResult, start_index: int) -> void:
+	if trace == null or result == null:
+		return
+	for index in range(max(0, start_index), result.logs.size()):
+		var entry = result.logs[index]
+		if entry != null:
+			var text := entry.get_text()
+			if text != "" and not trace.log_lines.has(text):
+				trace.log_lines.append(text)
+
+
+func _apply_pending_score_events(result: ScoreResult) -> void:
+	if result == null or run_state == null:
+		return
+	for event in result.score_events:
+		var event_type := StringName(str(event.get("type", &"")))
+		match event_type:
+			&"coins":
+				var amount := int(event.get("amount", 0))
+				if amount == 0:
+					continue
+				if run_state.has_method("add_coins"):
+					run_state.add_coins(amount, &"score_effect")
+				else:
+					run_state.coins += amount
+			&"item":
+				var item_id := StringName(str(event.get("item_id", &"")))
+				if item_id != &"":
+					run_state.add_item_to_inventory_or_pending(item_id)
+
+
+func _apply_pending_post_resolution_mutations(result: ScoreResult) -> void:
+	if pending_resolution_context == null or result == null:
+		return
+	pending_resolution_context.defer_runtime_mutations = false
+	score_engine.effect_resolver.apply_post_score_effects(pending_resolution_context, result)
+
+
+func _clear_pending_resolution() -> void:
+	pending_resolution_trace = null
+	pending_resolution_result = null
+	pending_resolution_context = null
 
 
 func _mark_battle_finished(victory: bool, result: ScoreResult) -> void:

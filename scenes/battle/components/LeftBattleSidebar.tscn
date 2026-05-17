@@ -1,267 +1,511 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://m5gkp8ite0p8"]
 
-[ext_resource type="Script" path="res://scripts/ui/battle/components/LeftBattleSidebar.gd" id="1_left"]
+[ext_resource type="Script" uid="uid://cw57brnlut6eo" path="res://scripts/ui/battle/components/LeftBattleSidebar.gd" id="1_left"]
 
-[node name="LeftBattleSidebar" type="PanelContainer"]
+[node name="LeftBattleSidebar" type="PanelContainer" unique_id=2131239583]
 custom_minimum_size = Vector2(456, 0)
 script = ExtResource("1_left")
 
-[node name="SidebarMargin" type="MarginContainer" parent="."]
+[node name="SidebarMargin" type="MarginContainer" parent="." unique_id=575747163]
 unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="Rows" type="VBoxContainer" parent="SidebarMargin" unique_id=283310238]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TargetScorePanel" type="PanelContainer" parent="SidebarMargin/Rows" unique_id=1680877628]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 250)
+layout_mode = 2
+
+[node name="TargetMargin" type="MarginContainer" parent="SidebarMargin/Rows/TargetScorePanel" unique_id=1121400944]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 12
+
+[node name="TargetCenter" type="CenterContainer" parent="SidebarMargin/Rows/TargetScorePanel/TargetMargin" unique_id=1496080824]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="TargetScoreRows" type="VBoxContainer" parent="SidebarMargin/Rows/TargetScorePanel/TargetMargin/TargetCenter" unique_id=95250406]
+custom_minimum_size = Vector2(180, 0)
+layout_mode = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="TargetHint" type="Label" parent="SidebarMargin/Rows/TargetScorePanel/TargetMargin/TargetCenter/TargetScoreRows" unique_id=1516187820]
+unique_name_in_owner = true
+layout_mode = 2
+text = "至少得分"
+horizontal_alignment = 1
+
+[node name="TargetValue" type="Label" parent="SidebarMargin/Rows/TargetScorePanel/TargetMargin/TargetCenter/TargetScoreRows" unique_id=2034368020]
+unique_name_in_owner = true
+layout_mode = 2
+text = "0"
+horizontal_alignment = 1
+
+[node name="RewardLabel" type="Label" parent="SidebarMargin/Rows/TargetScorePanel/TargetMargin/TargetCenter/TargetScoreRows" unique_id=1665490163]
+unique_name_in_owner = true
+layout_mode = 2
+text = "奖励: $$$$"
+horizontal_alignment = 1
+
+[node name="CurrentScorePanel" type="PanelContainer" parent="SidebarMargin/Rows" unique_id=495251575]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 74)
+layout_mode = 2
+
+[node name="CurrentMargin" type="MarginContainer" parent="SidebarMargin/Rows/CurrentScorePanel" unique_id=1714025335]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="CurrentRow" type="HBoxContainer" parent="SidebarMargin/Rows/CurrentScorePanel/CurrentMargin" unique_id=1746393657]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="CurrentTitle" type="Label" parent="SidebarMargin/Rows/CurrentScorePanel/CurrentMargin/CurrentRow" unique_id=926135331]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(118, 0)
+layout_mode = 2
+text = "本场
+总分"
+vertical_alignment = 1
+
+[node name="CurrentScoreBox" type="PanelContainer" parent="SidebarMargin/Rows/CurrentScorePanel/CurrentMargin/CurrentRow" unique_id=1854435327]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CurrentScoreBoxMargin" type="MarginContainer" parent="SidebarMargin/Rows/CurrentScorePanel/CurrentMargin/CurrentRow/CurrentScoreBox" unique_id=1430084072]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 2
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 2
+
+[node name="CurrentScoreBoxRow" type="HBoxContainer" parent="SidebarMargin/Rows/CurrentScorePanel/CurrentMargin/CurrentRow/CurrentScoreBox/CurrentScoreBoxMargin" unique_id=1340506302]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="CurrentIcon" type="TextureRect" parent="SidebarMargin/Rows/CurrentScorePanel/CurrentMargin/CurrentRow/CurrentScoreBox/CurrentScoreBoxMargin/CurrentScoreBoxRow" unique_id=1453410287]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(34, 34)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CurrentScoreValue" type="Label" parent="SidebarMargin/Rows/CurrentScorePanel/CurrentMargin/CurrentRow/CurrentScoreBox/CurrentScoreBoxMargin/CurrentScoreBoxRow" unique_id=314865369]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CoreComboPanel" type="PanelContainer" parent="SidebarMargin/Rows" unique_id=150223071]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 188)
+layout_mode = 2
+
+[node name="ComboMargin" type="MarginContainer" parent="SidebarMargin/Rows/CoreComboPanel" unique_id=982022677]
 layout_mode = 2
 theme_override_constants/margin_left = 12
 theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 12
 
-[node name="Rows" type="VBoxContainer" parent="SidebarMargin"]
-unique_name_in_owner = true
+[node name="ComboRows" type="VBoxContainer" parent="SidebarMargin/Rows/CoreComboPanel/ComboMargin" unique_id=1052582852]
 layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="TargetScorePanel" type="PanelContainer" parent="SidebarMargin/Rows"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 184)
-layout_mode = 2
-
-[node name="TargetMargin" type="MarginContainer" parent="SidebarMargin/Rows/TargetScorePanel"]
-layout_mode = 2
-theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 14
-theme_override_constants/margin_right = 16
-theme_override_constants/margin_bottom = 14
-
-[node name="TargetContent" type="HBoxContainer" parent="SidebarMargin/Rows/TargetScorePanel/TargetMargin"]
-layout_mode = 2
-theme_override_constants/separation = 18
+theme_override_constants/separation = 12
 alignment = 1
 
-[node name="TargetIcon" type="TextureRect" parent="SidebarMargin/Rows/TargetScorePanel/TargetMargin/TargetContent"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(112, 112)
+[node name="ComboHeader" type="HBoxContainer" parent="SidebarMargin/Rows/CoreComboPanel/ComboMargin/ComboRows" unique_id=231011743]
 layout_mode = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="TargetRows" type="VBoxContainer" parent="SidebarMargin/Rows/TargetScorePanel/TargetMargin/TargetContent"]
-layout_mode = 2
-size_flags_horizontal = 3
 theme_override_constants/separation = 8
 alignment = 1
 
-[node name="TargetTitle" type="Label" parent="SidebarMargin/Rows/TargetScorePanel/TargetMargin/TargetContent/TargetRows"]
+[node name="ComboTitle" type="Label" parent="SidebarMargin/Rows/CoreComboPanel/ComboMargin/ComboRows/ComboHeader" unique_id=1953627172]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "核心骰型"
+
+[node name="ComboValue" type="Label" parent="SidebarMargin/Rows/CoreComboPanel/ComboMargin/ComboRows/ComboHeader" unique_id=1037540440]
 unique_name_in_owner = true
 layout_mode = 2
-text = "目标分数"
+size_flags_horizontal = 4
+custom_minimum_size = Vector2(0, 44)
 horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="TargetValue" type="Label" parent="SidebarMargin/Rows/TargetScorePanel/TargetMargin/TargetContent/TargetRows"]
+[node name="ComboLevelLabel" type="Label" parent="SidebarMargin/Rows/CoreComboPanel/ComboMargin/ComboRows/ComboHeader" unique_id=187933082]
 unique_name_in_owner = true
 layout_mode = 2
-text = "0"
+size_flags_horizontal = 4
+custom_minimum_size = Vector2(0, 44)
 horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="RewardLabel" type="Label" parent="SidebarMargin/Rows/TargetScorePanel/TargetMargin/TargetContent/TargetRows"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "达成以获得 $$$$"
-horizontal_alignment = 1
-
-[node name="CurrentScorePanel" type="PanelContainer" parent="SidebarMargin/Rows"]
+[node name="ScoreFormulaPanel" type="PanelContainer" parent="SidebarMargin/Rows/CoreComboPanel/ComboMargin/ComboRows" unique_id=322412521]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 86)
 layout_mode = 2
 
-[node name="CurrentMargin" type="MarginContainer" parent="SidebarMargin/Rows/CurrentScorePanel"]
+[node name="FormulaMargin" type="MarginContainer" parent="SidebarMargin/Rows/CoreComboPanel/ComboMargin/ComboRows/ScoreFormulaPanel" unique_id=92500087]
 layout_mode = 2
-theme_override_constants/margin_left = 14
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 14
-theme_override_constants/margin_bottom = 8
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
 
-[node name="CurrentRow" type="HBoxContainer" parent="SidebarMargin/Rows/CurrentScorePanel/CurrentMargin"]
+[node name="FormulaRows" type="VBoxContainer" parent="SidebarMargin/Rows/CoreComboPanel/ComboMargin/ComboRows/ScoreFormulaPanel/FormulaMargin" unique_id=1301854561]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 4
 alignment = 1
 
-[node name="CurrentTitle" type="Label" parent="SidebarMargin/Rows/CurrentScorePanel/CurrentMargin/CurrentRow"]
+[node name="FormulaTitle" type="Label" parent="SidebarMargin/Rows/CoreComboPanel/ComboMargin/ComboRows/ScoreFormulaPanel/FormulaMargin/FormulaRows" unique_id=565617266]
 unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-text = "当前分数"
-
-[node name="CurrentIcon" type="TextureRect" parent="SidebarMargin/Rows/CurrentScorePanel/CurrentMargin/CurrentRow"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(38, 38)
-layout_mode = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="CurrentScoreValue" type="Label" parent="SidebarMargin/Rows/CurrentScorePanel/CurrentMargin/CurrentRow"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-text = "0"
-horizontal_alignment = 2
-
-[node name="CoreComboPanel" type="PanelContainer" parent="SidebarMargin/Rows"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 106)
-layout_mode = 2
-
-[node name="ComboMargin" type="MarginContainer" parent="SidebarMargin/Rows/CoreComboPanel"]
-layout_mode = 2
-theme_override_constants/margin_left = 14
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 14
-theme_override_constants/margin_bottom = 10
-
-[node name="ComboRows" type="VBoxContainer" parent="SidebarMargin/Rows/CoreComboPanel/ComboMargin"]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="ComboTitle" type="Label" parent="SidebarMargin/Rows/CoreComboPanel/ComboMargin/ComboRows"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "核心骰型"
-
-[node name="ComboValue" type="Label" parent="SidebarMargin/Rows/CoreComboPanel/ComboMargin/ComboRows"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "未选择"
-horizontal_alignment = 1
-
-[node name="ScoreFormulaPanel" type="PanelContainer" parent="SidebarMargin/Rows"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 124)
-layout_mode = 2
-
-[node name="FormulaMargin" type="MarginContainer" parent="SidebarMargin/Rows/ScoreFormulaPanel"]
-layout_mode = 2
-theme_override_constants/margin_left = 14
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 14
-theme_override_constants/margin_bottom = 10
-
-[node name="FormulaRows" type="VBoxContainer" parent="SidebarMargin/Rows/ScoreFormulaPanel/FormulaMargin"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="FormulaTitle" type="Label" parent="SidebarMargin/Rows/ScoreFormulaPanel/FormulaMargin/FormulaRows"]
-unique_name_in_owner = true
+visible = false
 layout_mode = 2
 text = "基础战力总数 × 基础倍率"
 horizontal_alignment = 1
 
-[node name="FormulaValue" type="Label" parent="SidebarMargin/Rows/ScoreFormulaPanel/FormulaMargin/FormulaRows"]
+[node name="FormulaValue" type="Label" parent="SidebarMargin/Rows/CoreComboPanel/ComboMargin/ComboRows/ScoreFormulaPanel/FormulaMargin/FormulaRows" unique_id=930251507]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
 text = "0 × 1"
 horizontal_alignment = 1
 
-[node name="BottomRow" type="HBoxContainer" parent="SidebarMargin/Rows"]
+[node name="FormulaBadges" type="HBoxContainer" parent="SidebarMargin/Rows/CoreComboPanel/ComboMargin/ComboRows/ScoreFormulaPanel/FormulaMargin/FormulaRows" unique_id=655684677]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="FormulaChipsBadge" type="Control" parent="SidebarMargin/Rows/CoreComboPanel/ComboMargin/ComboRows/ScoreFormulaPanel/FormulaMargin/FormulaRows/FormulaBadges" unique_id=1166567911]
+unique_name_in_owner = true
+clip_contents = true
+custom_minimum_size = Vector2(112, 62)
+layout_mode = 2
+
+[node name="FormulaChipsTexture" type="TextureRect" parent="SidebarMargin/Rows/CoreComboPanel/ComboMargin/ComboRows/ScoreFormulaPanel/FormulaMargin/FormulaRows/FormulaBadges/FormulaChipsBadge" unique_id=541493146]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+
+[node name="FormulaChipsValue" type="Label" parent="SidebarMargin/Rows/CoreComboPanel/ComboMargin/ComboRows/ScoreFormulaPanel/FormulaMargin/FormulaRows/FormulaBadges/FormulaChipsBadge" unique_id=1461025911]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -5.0
+offset_bottom = -5.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="FormulaXLabel" type="Label" parent="SidebarMargin/Rows/CoreComboPanel/ComboMargin/ComboRows/ScoreFormulaPanel/FormulaMargin/FormulaRows/FormulaBadges" unique_id=801427985]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(24, 62)
+layout_mode = 2
+text = "x"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="FormulaMultBadge" type="Control" parent="SidebarMargin/Rows/CoreComboPanel/ComboMargin/ComboRows/ScoreFormulaPanel/FormulaMargin/FormulaRows/FormulaBadges" unique_id=76927379]
+unique_name_in_owner = true
+clip_contents = true
+custom_minimum_size = Vector2(112, 62)
+layout_mode = 2
+
+[node name="FormulaMultTexture" type="TextureRect" parent="SidebarMargin/Rows/CoreComboPanel/ComboMargin/ComboRows/ScoreFormulaPanel/FormulaMargin/FormulaRows/FormulaBadges/FormulaMultBadge" unique_id=305707620]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+
+[node name="FormulaMultValue" type="Label" parent="SidebarMargin/Rows/CoreComboPanel/ComboMargin/ComboRows/ScoreFormulaPanel/FormulaMargin/FormulaRows/FormulaBadges/FormulaMultBadge" unique_id=1026853544]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -5.0
+offset_bottom = -5.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "1"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="FormulaXMultLabel" type="Label" parent="SidebarMargin/Rows/CoreComboPanel/ComboMargin/ComboRows/ScoreFormulaPanel/FormulaMargin/FormulaRows/FormulaBadges" unique_id=1737734912]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(24, 62)
+layout_mode = 2
+text = "x"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="FormulaXMultBadge" type="Control" parent="SidebarMargin/Rows/CoreComboPanel/ComboMargin/ComboRows/ScoreFormulaPanel/FormulaMargin/FormulaRows/FormulaBadges" unique_id=947847621]
+unique_name_in_owner = true
+clip_contents = true
+custom_minimum_size = Vector2(112, 62)
+layout_mode = 2
+
+[node name="FormulaXMultTexture" type="TextureRect" parent="SidebarMargin/Rows/CoreComboPanel/ComboMargin/ComboRows/ScoreFormulaPanel/FormulaMargin/FormulaRows/FormulaBadges/FormulaXMultBadge" unique_id=1480359288]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+
+[node name="FormulaXMultValue" type="Label" parent="SidebarMargin/Rows/CoreComboPanel/ComboMargin/ComboRows/ScoreFormulaPanel/FormulaMargin/FormulaRows/FormulaBadges/FormulaXMultBadge" unique_id=558596741]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -5.0
+offset_bottom = -5.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "1"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BottomRow" type="HBoxContainer" parent="SidebarMargin/Rows" unique_id=1931034375]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 10
+theme_override_constants/separation = 8
 
-[node name="ActionButtonPanel" type="PanelContainer" parent="SidebarMargin/Rows/BottomRow"]
+[node name="ActionButtonPanel" type="PanelContainer" parent="SidebarMargin/Rows/BottomRow" unique_id=1830389110]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(120, 0)
+custom_minimum_size = Vector2(142, 0)
 layout_mode = 2
 
-[node name="ActionMargin" type="MarginContainer" parent="SidebarMargin/Rows/BottomRow/ActionButtonPanel"]
+[node name="ActionMargin" type="MarginContainer" parent="SidebarMargin/Rows/BottomRow/ActionButtonPanel" unique_id=2099788855]
 layout_mode = 2
-theme_override_constants/margin_left = 6
-theme_override_constants/margin_top = 6
-theme_override_constants/margin_right = 6
-theme_override_constants/margin_bottom = 6
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
 
-[node name="ActionButtons" type="VBoxContainer" parent="SidebarMargin/Rows/BottomRow/ActionButtonPanel/ActionMargin"]
+[node name="ActionButtons" type="VBoxContainer" parent="SidebarMargin/Rows/BottomRow/ActionButtonPanel/ActionMargin" unique_id=1706746274]
 layout_mode = 2
+size_flags_vertical = 3
 theme_override_constants/separation = 14
 
-[node name="InfoButton" type="Button" parent="SidebarMargin/Rows/BottomRow/ActionButtonPanel/ActionMargin/ActionButtons"]
+[node name="InfoButton" type="Button" parent="SidebarMargin/Rows/BottomRow/ActionButtonPanel/ActionMargin/ActionButtons" unique_id=802665817]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(108, 145)
+custom_minimum_size = Vector2(124, 154)
 layout_mode = 2
-text = "查看\n骰型"
+size_flags_vertical = 3
+text = "比赛
+信息"
 
-[node name="OptionsButton" type="Button" parent="SidebarMargin/Rows/BottomRow/ActionButtonPanel/ActionMargin/ActionButtons"]
+[node name="OptionsButton" type="Button" parent="SidebarMargin/Rows/BottomRow/ActionButtonPanel/ActionMargin/ActionButtons" unique_id=512745795]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(108, 145)
+custom_minimum_size = Vector2(124, 154)
 layout_mode = 2
+size_flags_vertical = 3
 text = "选项"
 
-[node name="BattleResourcePanel" type="PanelContainer" parent="SidebarMargin/Rows/BottomRow"]
+[node name="BattleResourcePanel" type="PanelContainer" parent="SidebarMargin/Rows/BottomRow" unique_id=601864637]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="ResourceMargin" type="MarginContainer" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel"]
+[node name="ResourceMargin" type="MarginContainer" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel" unique_id=429031307]
 layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 10
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
 
-[node name="ResourceGrid" type="GridContainer" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin"]
+[node name="ResourceRows" type="VBoxContainer" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin" unique_id=1206408842]
 layout_mode = 2
-columns = 2
-theme_override_constants/h_separation = 8
-theme_override_constants/v_separation = 10
+size_flags_vertical = 3
+theme_override_constants/separation = 10
 
-[node name="HandTitle" type="Label" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceGrid"]
+[node name="ActionResourceRow" type="HBoxContainer" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows" unique_id=1721716285]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="HandStatPanel" type="PanelContainer" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows/ActionResourceRow" unique_id=1024900453]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 66)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HandStatMargin" type="MarginContainer" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows/ActionResourceRow/HandStatPanel" unique_id=1568197103]
+layout_mode = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="HandStatRows" type="VBoxContainer" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows/ActionResourceRow/HandStatPanel/HandStatMargin" unique_id=2074824224]
+layout_mode = 2
+theme_override_constants/separation = 0
+alignment = 1
+
+[node name="HandTitle" type="Label" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows/ActionResourceRow/HandStatPanel/HandStatMargin/HandStatRows" unique_id=963090610]
 unique_name_in_owner = true
 layout_mode = 2
-text = "回合数"
+text = "回合"
+horizontal_alignment = 1
 
-[node name="HandValue" type="Label" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceGrid"]
+[node name="HandValue" type="Label" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows/ActionResourceRow/HandStatPanel/HandStatMargin/HandStatRows" unique_id=1437918757]
 unique_name_in_owner = true
 layout_mode = 2
-text = "0 / 0"
-horizontal_alignment = 2
+text = "0"
+horizontal_alignment = 1
 
-[node name="RerollTitle" type="Label" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceGrid"]
+[node name="RerollStatPanel" type="PanelContainer" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows/ActionResourceRow" unique_id=1068071721]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 66)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RerollStatMargin" type="MarginContainer" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows/ActionResourceRow/RerollStatPanel" unique_id=224181728]
+layout_mode = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="RerollStatRows" type="VBoxContainer" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows/ActionResourceRow/RerollStatPanel/RerollStatMargin" unique_id=1235965874]
+layout_mode = 2
+theme_override_constants/separation = 0
+alignment = 1
+
+[node name="RerollTitle" type="Label" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows/ActionResourceRow/RerollStatPanel/RerollStatMargin/RerollStatRows" unique_id=1858579316]
 unique_name_in_owner = true
 layout_mode = 2
-text = "重投数"
+text = "重投"
+horizontal_alignment = 1
 
-[node name="RerollValue" type="Label" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceGrid"]
+[node name="RerollValue" type="Label" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows/ActionResourceRow/RerollStatPanel/RerollStatMargin/RerollStatRows" unique_id=859674557]
 unique_name_in_owner = true
 layout_mode = 2
-text = "0 / 0"
-horizontal_alignment = 2
+text = "0"
+horizontal_alignment = 1
 
-[node name="BattleTitle" type="Label" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceGrid"]
+[node name="MoneyStatPanel" type="PanelContainer" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows" unique_id=251058569]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 66)
 layout_mode = 2
-text = "当前回合"
+size_flags_vertical = 3
 
-[node name="BattleValue" type="Label" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceGrid"]
-unique_name_in_owner = true
+[node name="MoneyStatMargin" type="MarginContainer" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows/MoneyStatPanel" unique_id=1185050079]
 layout_mode = 2
-text = "1"
-horizontal_alignment = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 2
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 2
 
-[node name="MaxBattleTitle" type="Label" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceGrid"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "总回合"
-
-[node name="MaxBattleValue" type="Label" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceGrid"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "1"
-horizontal_alignment = 2
-
-[node name="MoneyTitle" type="Label" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceGrid"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "金钱"
-
-[node name="MoneyValue" type="Label" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceGrid"]
+[node name="MoneyValue" type="Label" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows/MoneyStatPanel/MoneyStatMargin" unique_id=1372012621]
 unique_name_in_owner = true
 layout_mode = 2
 text = "$0"
-horizontal_alignment = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BattleProgressRow" type="HBoxContainer" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows" unique_id=591388823]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="BattleStatPanel" type="PanelContainer" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows/BattleProgressRow" unique_id=1852948627]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 66)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="BattleStatMargin" type="MarginContainer" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows/BattleProgressRow/BattleStatPanel" unique_id=671695259]
+layout_mode = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="BattleStatRows" type="VBoxContainer" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows/BattleProgressRow/BattleStatPanel/BattleStatMargin" unique_id=1637982374]
+layout_mode = 2
+theme_override_constants/separation = 0
+alignment = 1
+
+[node name="BattleTitle" type="Label" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows/BattleProgressRow/BattleStatPanel/BattleStatMargin/BattleStatRows" unique_id=1630329322]
+unique_name_in_owner = true
+layout_mode = 2
+text = "难度"
+horizontal_alignment = 1
+
+[node name="BattleValue" type="Label" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows/BattleProgressRow/BattleStatPanel/BattleStatMargin/BattleStatRows" unique_id=1265957258]
+unique_name_in_owner = true
+layout_mode = 2
+text = "1"
+horizontal_alignment = 1
+
+[node name="MaxBattleStatPanel" type="PanelContainer" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows/BattleProgressRow" unique_id=1627215877]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 66)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MaxBattleStatMargin" type="MarginContainer" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows/BattleProgressRow/MaxBattleStatPanel" unique_id=1697222876]
+layout_mode = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="MaxBattleStatRows" type="VBoxContainer" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows/BattleProgressRow/MaxBattleStatPanel/MaxBattleStatMargin" unique_id=1238831238]
+layout_mode = 2
+theme_override_constants/separation = 0
+alignment = 1
+
+[node name="MaxBattleTitle" type="Label" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows/BattleProgressRow/MaxBattleStatPanel/MaxBattleStatMargin/MaxBattleStatRows" unique_id=1774478053]
+unique_name_in_owner = true
+layout_mode = 2
+text = "关卡"
+horizontal_alignment = 1
+
+[node name="MaxBattleValue" type="Label" parent="SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows/BattleProgressRow/MaxBattleStatPanel/MaxBattleStatMargin/MaxBattleStatRows" unique_id=1012238598]
+unique_name_in_owner = true
+layout_mode = 2
+text = "1"
+horizontal_alignment = 1

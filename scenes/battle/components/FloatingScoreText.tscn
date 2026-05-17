@@ -3,6 +3,11 @@
 [ext_resource type="Script" path="res://scripts/ui/battle/components/FloatingScoreText.gd" id="1_float"]
 
 [node name="FloatingScoreText" type="Label"]
+custom_minimum_size = Vector2(220, 54)
 script = ExtResource("1_float")
 text = "+0"
 horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 0
+clip_text = true
+text_overrun_behavior = 3

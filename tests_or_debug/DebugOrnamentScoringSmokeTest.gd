@@ -14,8 +14,8 @@ func _init() -> void:
 
 	var all_passed := true
 
-	all_passed = _check("chip ornament adds 30 chips", _score([_roll(0, 0, 1, &"orn_chip")]).chips == 31) and all_passed
-	all_passed = _check("foil ornament adds 50 chips", _score([_roll(0, 0, 1, &"orn_foil")]).chips == 51) and all_passed
+	all_passed = _check("chip ornament adds 30 chips", _score([_roll(0, 0, 1, &"orn_chip")]).chips == 36) and all_passed
+	all_passed = _check("foil ornament adds 50 chips", _score([_roll(0, 0, 1, &"orn_foil")]).chips == 56) and all_passed
 	all_passed = _check("mult ornament adds 4 mult", _score([_roll(0, 0, 1, &"orn_mult")]).mult == 5) and all_passed
 	all_passed = _check("burst ornament x2", is_equal_approx(_score([_roll(0, 0, 1, &"orn_burst")]).xmult, 2.0)) and all_passed
 
@@ -24,11 +24,11 @@ func _init() -> void:
 	all_passed = _check("stay unselected adds x1.5", is_equal_approx(_score([selected], [selected, stay_unselected]).xmult, 1.5)) and all_passed
 
 	var red_chip := _score([_roll(0, 0, 1, &"orn_chip", &"red")])
-	all_passed = _check("red repeats pip and chip", red_chip.chips == 62) and all_passed
+	all_passed = _check("red repeats pip and chip", red_chip.chips == 67) and all_passed
 	var red_mult := _score([_roll(0, 0, 1, &"orn_mult", &"red")])
-	all_passed = _check("red repeats mult", red_mult.chips == 2 and red_mult.mult == 9) and all_passed
+	all_passed = _check("red repeats mult", red_mult.chips == 7 and red_mult.mult == 9) and all_passed
 	var red_burst := _score([_roll(0, 0, 1, &"orn_burst", &"red")])
-	all_passed = _check("red repeats burst", red_burst.chips == 2 and is_equal_approx(red_burst.xmult, 4.0)) and all_passed
+	all_passed = _check("red repeats burst", red_burst.chips == 7 and is_equal_approx(red_burst.xmult, 4.0)) and all_passed
 
 	var selected_blue := _roll(0, 0, 1)
 	var blue_unselected := _roll(1, 0, 5, &"orn_none", &"blue", &"none", 1, false)

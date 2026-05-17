@@ -9,6 +9,8 @@ const LocKeys = preload("res://scripts/i18n/LocKeys.gd")
 const ScoreContext = preload("res://scripts/core/scoring/ScoreContext.gd")
 const BattleLogEntry = preload("res://scripts/log/BattleLogEntry.gd")
 const ScoreResult = preload("res://scripts/core/scoring/ScoreResult.gd")
+const ResolutionTrace = preload("res://scripts/core/scoring/ResolutionTrace.gd")
+const ResolutionStep = preload("res://scripts/core/scoring/ResolutionStep.gd")
 const DisplayNames = preload("res://scripts/ui/DisplayNames.gd")
 const FaceState = preload("res://scripts/core/dice/FaceState.gd")
 const RolledFace = preload("res://scripts/core/dice/RolledFace.gd")
@@ -90,6 +92,173 @@ func score(context: ScoreContext) -> ScoreResult:
 	return result
 
 
+func build_resolution_trace(context: ScoreContext) -> ResolutionTrace:
+	var trace := ResolutionTrace.new()
+	trace.trace_id = "resolution_%d" % [Time.get_ticks_usec()]
+	trace.chips_initial = 0
+	trace.mult_initial = 1
+	trace.xmult_initial = 1.0
+
+	if context == null:
+		return trace
+
+	var previous_defer_runtime_mutations := context.defer_runtime_mutations
+	context.defer_runtime_mutations = true
+	_prepare_context(context)
+	_ensure_wild_effective_pips(context)
+	context.selected_faces = _sorted_rolls_by_bench_order(context.selected_faces)
+	context.scored_faces = context.selected_faces
+	_mark_scored_and_unscored(context)
+	_capture_trace_snapshots(trace, context)
+
+	var total_pips := _selected_pip_sum(context)
+	var combo_evaluator := ComboEvaluator.new()
+	var resolution := combo_evaluator.resolve(
+		context.selected_faces,
+		context.all_rolled_faces,
+		_has_rerolled(context),
+		_context_is_last_hand(context),
+		context
+	)
+	var primary_combo := _primary_combo_for_context(context, combo_evaluator, resolution)
+	var contained_patterns := _contained_patterns_for_context(context)
+	var facts := _facts_for_context(context, resolution)
+	var active_tags := _active_tags_for_context(context)
+
+	context.primary_combo = primary_combo
+	context.combo_id = primary_combo
+	context.combo_type = primary_combo
+	context.display_combo_ids.clear()
+	context.display_combo_ids.append(primary_combo)
+	context.contained_patterns = contained_patterns
+	context.facts = facts
+	context.active_tags = active_tags
+	context.tags = active_tags
+	context.condition_tags.clear()
+	context.operation_tags.clear()
+	context.state_tags.clear()
+
+	var base_values := _base_values_for_combo(primary_combo, total_pips, _combo_levels_for_context(context))
+	var result := ScoreResult.new()
+	result.primary_combo = primary_combo
+	result.combo_id = primary_combo
+	result.combo_name_key = LocKeys.combo_key(primary_combo)
+	_copy_display_combos(primary_combo, result)
+	_copy_contained_patterns(contained_patterns, result)
+	result.facts = facts.duplicate(true)
+	_copy_active_tags(active_tags, result)
+	result.scored_point_sum = total_pips
+	result.combo_level = int(base_values["level"])
+	result.combo_chips_bonus = int(base_values["chips_bonus"])
+	result.combo_mult = int(base_values["mult"])
+	result.chips = 0
+	result.mult = 1
+	result.xmult = 1.0
+
+	trace.primary_combo_id = primary_combo
+	trace.primary_combo_display_name = DisplayNames.combo_name(primary_combo)
+	trace.log_lines.append("Hand resolution")
+	trace.log_lines.append("----------------")
+	trace.log_lines.append("Primary combo: %s" % [trace.primary_combo_display_name])
+
+	_add_log(result, &"LOG.COMBO", {"combo": LocKeys.combo_key(primary_combo), "level": result.combo_level}, &"combo")
+	_add_log(result, &"LOG.CONTAINED_PATTERNS", {"patterns": _contained_patterns_text(contained_patterns)}, &"patterns")
+	_add_log(result, &"LOG.COMBO_CHIPS_BONUS", {"chips": result.combo_chips_bonus}, &"base")
+	_add_log(result, &"LOG.COMBO_MULT", {"mult": result.combo_mult}, &"base")
+
+	_append_manual_step(
+		trace,
+		result,
+		ResolutionStep.Phase.COMBO_BASE,
+		&"combo",
+		primary_combo,
+		trace.primary_combo_display_name,
+		"Primary combo: %s" % [trace.primary_combo_display_name],
+		"Base Chips +%d, Mult set to %d" % [result.combo_chips_bonus, result.combo_mult],
+		trace.primary_combo_display_name,
+		result.chips,
+		result.mult,
+		result.xmult,
+		result.combo_chips_bonus,
+		result.combo_mult,
+		1.0
+	)
+	result.chips = result.combo_chips_bonus
+	result.mult = result.combo_mult
+
+	_add_wild_choice_logs(context, result)
+	for index in range(context.selected_faces.size()):
+		var roll: RolledFace = context.selected_faces[index]
+		var pip = get_pip_for_sum(roll, context)
+		var pip_value: int = int(pip) if pip != null else 0
+		var before := _score_snapshot(result)
+		result.chips += pip_value
+		_append_manual_step(
+			trace,
+			result,
+			ResolutionStep.Phase.PIP_SCORE,
+			&"face",
+			&"pip",
+			"Pip",
+			"Die %d pip" % [roll.die_index + 1],
+			"+%d Chips" % [pip_value],
+			"+%d Chips" % [pip_value],
+			int(before.get("chips", 0)),
+			int(before.get("mult", 1)),
+			float(before.get("xmult", 1.0)),
+			result.chips,
+			result.mult,
+			result.xmult,
+			roll.die_index,
+			index
+		)
+
+	_add_log(result, &"LOG.PIP_SUM", {"sum": total_pips}, &"base")
+	_add_log(result, &"LOG.BASE_CHIPS", {"chips": result.chips}, &"base")
+	_add_log(result, &"LOG.BASE_MULT", {"mult": result.mult}, &"base")
+	_add_log(result, &"LOG.BASE_XMULT", {"xmult": _format_xmult(result.xmult)}, &"base")
+
+	effect_resolver.apply_effects(context, result, trace)
+	result.final_score = roundi(float(result.chips * result.mult) * result.xmult)
+	_add_log(result, &"LOG.FINAL_SCORE", {
+		"chips": result.chips,
+		"mult": result.mult,
+		"xmult": _format_xmult(result.xmult),
+		"score": result.final_score,
+	}, &"final")
+
+	_append_manual_step(
+		trace,
+		result,
+		ResolutionStep.Phase.FINAL_SCORE,
+		&"final",
+		&"final_score",
+		"Final score",
+		"Final score",
+		"%d x %d x %s = %d" % [result.chips, result.mult, _format_xmult(result.xmult), result.final_score],
+		"+%d" % [result.final_score],
+		result.chips,
+		result.mult,
+		result.xmult,
+		result.chips,
+		result.mult,
+		result.xmult
+	)
+
+	result.coins_delta = context.coins_delta
+	for event in context.score_events:
+		result.add_score_event(event)
+
+	trace.chips_final = result.chips
+	trace.mult_final = result.mult
+	trace.xmult_final = result.xmult
+	trace.hand_score_final = result.final_score
+	trace.score_result = result
+	context.wild_effective_pips.clear()
+	context.defer_runtime_mutations = previous_defer_runtime_mutations
+	return trace
+
+
 func recommend_wild_effective_pips(context: ScoreContext) -> Dictionary:
 	_prepare_context(context)
 	var wild_faces := _selected_wild_faces(context)
@@ -142,6 +311,128 @@ func get_pip_for_sum(face_ref: RolledFace, context: ScoreContext) -> Variant:
 
 func get_effective_ornament_id_for_roll(roll: RolledFace, context: ScoreContext = null) -> StringName:
 	return _effective_ornament_id_for_roll(roll, context)
+
+
+func _sorted_rolls_by_bench_order(rolls: Array[RolledFace]) -> Array[RolledFace]:
+	var sorted: Array[RolledFace] = []
+	for roll in rolls:
+		if roll != null:
+			sorted.append(roll)
+	sorted.sort_custom(func(a, b) -> bool:
+		return _bench_slot_index(a) < _bench_slot_index(b)
+	)
+	return sorted
+
+
+func _bench_slot_index(roll: RolledFace) -> int:
+	if roll == null:
+		return 999999
+	return roll.die_index
+
+
+func _capture_trace_snapshots(trace: ResolutionTrace, context: ScoreContext) -> void:
+	if trace == null or context == null:
+		return
+
+	trace.selected_dice.clear()
+	trace.unselected_dice.clear()
+	trace.selected_slot_indices.clear()
+	trace.selected_dice_order.clear()
+
+	for roll in context.selected_faces:
+		trace.selected_dice.append(_roll_snapshot(roll, context))
+		trace.selected_slot_indices.append(roll.die_index)
+		trace.selected_dice_order.append(roll.die_index)
+
+	for roll in context.all_rolled_faces:
+		if roll == null or _is_face_selected(roll, context):
+			continue
+		trace.unselected_dice.append(_roll_snapshot(roll, context))
+
+
+func _roll_snapshot(roll: RolledFace, context: ScoreContext) -> Dictionary:
+	if roll == null:
+		return {}
+	var face = roll.face
+	var die = roll.die
+	if die == null and context != null and roll.die_index >= 0 and roll.die_index < context.source_dice.size():
+		die = context.source_dice[roll.die_index]
+	if die == null and context != null and context.battle_state != null and roll.die_index >= 0 and roll.die_index < context.battle_state.dice.size():
+		die = context.battle_state.dice[roll.die_index]
+
+	return {
+		"die_index": roll.die_index,
+		"face_index": roll.face_index,
+		"die_id": roll.die_id,
+		"face_instance_id": roll.face_instance_id,
+		"pip": face.pip if face != null else 0,
+		"ornament_id": face.get_effective_ornament_id() if face != null else FaceState.ORN_NONE,
+		"mark_id": face.mark_id if face != null else FaceState.MARK_NONE,
+		"body_id": die.body_id if die != null else &"none",
+		"face_count": die.face_count if die != null else 0,
+	}
+
+
+func _score_snapshot(result: ScoreResult) -> Dictionary:
+	return {
+		"chips": result.chips if result != null else 0,
+		"mult": result.mult if result != null else 1,
+		"xmult": result.xmult if result != null else 1.0,
+	}
+
+
+func _append_manual_step(
+	trace: ResolutionTrace,
+	result: ScoreResult,
+	phase: int,
+	source_type: StringName,
+	source_id: StringName,
+	source_display_name: String,
+	title: String,
+	detail: String,
+	floating_text: String,
+	chips_before: int,
+	mult_before: int,
+	xmult_before: float,
+	chips_after: int,
+	mult_after: int,
+	xmult_after: float,
+	bench_slot_index: int = -1,
+	resolution_index: int = -1
+) -> void:
+	if trace == null:
+		return
+
+	var step := ResolutionStep.new()
+	step.phase = phase
+	step.source_type = source_type
+	step.source_id = source_id
+	step.source_display_name = source_display_name
+	step.title = title
+	step.detail = detail
+	step.floating_text = floating_text
+	step.bench_slot_index = bench_slot_index
+	step.resolution_index = resolution_index
+	step.set_before(chips_before, mult_before, xmult_before)
+	step.set_after(chips_after, mult_after, xmult_after)
+	if phase == ResolutionStep.Phase.FINAL_SCORE and result != null:
+		step.partial_score_after = result.final_score
+	step.log_line = _manual_trace_log_line(step)
+	trace.append_step(step)
+
+
+func _manual_trace_log_line(step: ResolutionStep) -> String:
+	var prefix := "[Step]"
+	match step.phase:
+		ResolutionStep.Phase.COMBO_BASE:
+			prefix = "[Combo]"
+		ResolutionStep.Phase.PIP_SCORE:
+			prefix = "[Pip]"
+		ResolutionStep.Phase.FINAL_SCORE:
+			prefix = "[Final]"
+		_:
+			prefix = "[Step]"
+	return "%s %s: %s" % [prefix, step.title, step.detail]
 
 
 func _prepare_context(context: ScoreContext) -> void:

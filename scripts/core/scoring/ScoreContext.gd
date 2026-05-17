@@ -36,6 +36,7 @@ var score_events: Array[Dictionary] = []
 var wild_effective_pips: Dictionary = {}
 var rng = null
 var is_preview: bool = false
+var defer_runtime_mutations: bool = false
 
 
 func clear() -> void:
@@ -66,3 +67,4 @@ func clear() -> void:
 	wild_effective_pips.clear()
 	rng = null
 	is_preview = false
+	defer_runtime_mutations = false

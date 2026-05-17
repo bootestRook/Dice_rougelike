@@ -10,6 +10,8 @@ const ScoreResult = preload("res://scripts/core/scoring/ScoreResult.gd")
 const DisplayNames = preload("res://scripts/ui/DisplayNames.gd")
 const RewardGenerator = preload("res://scripts/rules/reward/RewardGenerator.gd")
 const ComboUpgradeItem = preload("res://scripts/rules/combo/ComboUpgradeItem.gd")
+const ResolutionTrace = preload("res://scripts/core/scoring/ResolutionTrace.gd")
+const ResolutionStep = preload("res://scripts/core/scoring/ResolutionStep.gd")
 
 
 var reward_generator := RewardGenerator.new()
@@ -19,17 +21,17 @@ func resolve(context: ScoreContext, result: ScoreResult) -> ScoreResult:
 	return apply_effects(context, result)
 
 
-func apply_effects(context: ScoreContext, result: ScoreResult) -> ScoreResult:
+func apply_effects(context: ScoreContext, result: ScoreResult, trace: ResolutionTrace = null) -> ScoreResult:
 	if context == null or result == null:
 		return result
 
-	_apply_selected_face_effects(context, result)
-	_apply_unselected_effects(context, result)
+	_apply_selected_face_effects(context, result, trace)
+	_apply_unselected_effects(context, result, trace)
 	return result
 
 
 func apply_post_score_effects(context: ScoreContext, result: ScoreResult) -> ScoreResult:
-	if context == null or result == null or context.is_preview:
+	if context == null or result == null or context.is_preview or context.defer_runtime_mutations:
 		return result
 
 	for roll in context.selected_faces:
@@ -74,64 +76,117 @@ func try_apply_face_negative_rule(face_ref, negative_rule_id: StringName, result
 	return false
 
 
-func _apply_unselected_effects(context: ScoreContext, result: ScoreResult) -> void:
+func _apply_unselected_effects(context: ScoreContext, result: ScoreResult, trace: ResolutionTrace = null) -> void:
 	for roll in context.all_rolled_faces:
 		if roll == null or roll.face == null or _is_face_selected(roll, context):
 			continue
 
-		var triggered := _apply_single_unselected_stay_trigger(roll, context, result)
+		var triggered := _apply_single_unselected_stay_trigger(roll, context, result, trace)
 		var mark_id := _normalized_mark_id(roll.face.mark_id)
 		if mark_id == FaceState.MARK_RED and triggered:
+			var before := _score_snapshot(result)
 			_add_log(result, &"LOG.MARK_RED_RETRIGGER", {
 				"die": roll.die_index + 1,
 				"face": roll.face_index + 1,
 			}, &"mark_red")
 			result.add_floating_text("红印：额外触发", roll.die_index, roll.face_index)
-			_apply_single_unselected_stay_trigger(roll, context, result)
+			_append_trace_step(
+				trace,
+				result,
+				before,
+				ResolutionStep.Phase.MARK_ON_SCORE,
+				&"mark",
+				mark_id,
+				DisplayNames.mark_name(mark_id),
+				"Retrigger",
+				"Red mark registers one extra stay trigger.",
+				"Retrigger x1",
+				roll
+			)
+			_apply_single_unselected_stay_trigger(roll, context, result, trace, true)
 		elif mark_id == FaceState.MARK_BLUE:
-			_try_trigger_blue_mark(roll, context, result, triggered)
+			_try_trigger_blue_mark(roll, context, result, triggered, trace)
 
 
-func _apply_selected_face_effects(context: ScoreContext, result: ScoreResult) -> void:
+func _apply_selected_face_effects(context: ScoreContext, result: ScoreResult, trace: ResolutionTrace = null) -> void:
 	for roll in context.selected_faces:
 		if roll == null or roll.face == null:
 			continue
 
-		_apply_single_face_trigger(roll, result, 0, context)
+		_apply_single_face_trigger(roll, result, 0, context, trace)
 
 		var mark_id := _normalized_mark_id(roll.face.mark_id)
 		match mark_id:
 			FaceState.MARK_RED:
+				var before := _score_snapshot(result)
 				_add_log(result, &"LOG.MARK_RED_RETRIGGER", {
 					"die": roll.die_index + 1,
 					"face": roll.face_index + 1,
 				}, &"mark_red")
 				result.add_floating_text("红印：额外触发", roll.die_index, roll.face_index)
-				_apply_single_face_trigger(roll, result, 1, context)
+				_append_trace_step(
+					trace,
+					result,
+					before,
+					ResolutionStep.Phase.MARK_ON_SCORE,
+					&"mark",
+					mark_id,
+					DisplayNames.mark_name(mark_id),
+					"Retrigger",
+					"Red mark registers one extra trigger.",
+					"Retrigger x1",
+					roll
+				)
+				_apply_single_face_trigger(roll, result, 1, context, trace)
 			FaceState.MARK_GOLD:
-				_apply_gold_mark(roll, context, result)
+				_apply_gold_mark(roll, context, result, trace)
 			FaceState.MARK_PURPLE:
-				_try_trigger_purple_mark(roll, result)
+				_try_trigger_purple_mark(roll, result, trace)
 
 
-func _apply_single_face_trigger(roll: RolledFace, result: ScoreResult, trigger_index: int, context: ScoreContext = null) -> void:
+func _apply_single_face_trigger(
+	roll: RolledFace,
+	result: ScoreResult,
+	trigger_index: int,
+	context: ScoreContext = null,
+	trace: ResolutionTrace = null
+) -> void:
 	var face = roll.face
 	if face == null:
 		return
 	var ornament_id: StringName = _effective_ornament_id_for_roll(roll, context)
+	var phase: int = ResolutionStep.Phase.RETRIGGER if trigger_index > 0 else ResolutionStep.Phase.ORNAMENT_ON_SCORE
+	var ornament_name := DisplayNames.ornament_name(ornament_id)
 
 	if trigger_index > 0:
 		var retrigger_pip = _pip_for_retrigger(roll, context)
 		if retrigger_pip != null:
+			var before_retrigger_pip := _score_snapshot(result)
 			result.chips += int(retrigger_pip)
 			_add_log(result, &"LOG.EXTRA_TRIGGER_PIP", {
 				"die": roll.die_index + 1,
 				"face": roll.face_index + 1,
 				"chips": int(retrigger_pip),
 			}, &"extra_pip")
+			_append_trace_step(
+				trace,
+				result,
+				before_retrigger_pip,
+				phase,
+				&"face",
+				&"pip",
+				"Pip",
+				"Extra pip trigger",
+				"Red mark repeats this face pip.",
+				"+%d Chips" % [int(retrigger_pip)],
+				roll,
+				trigger_index,
+				_resolution_index_for_roll(trace, roll)
+			)
 
 	match ornament_id:
 		FaceState.ORN_CHIP:
+			var before_chip := _score_snapshot(result)
 			result.chips += 30
 			_add_log(result, &"LOG.ORNAMENT_CHIP", {
 				"die": roll.die_index + 1,
@@ -140,7 +195,9 @@ func _apply_single_face_trigger(roll: RolledFace, result: ScoreResult, trigger_i
 				"chips": 30,
 			}, &"ornament_chip")
 			result.add_floating_text("+30 Chips", roll.die_index, roll.face_index)
+			_append_trace_step(trace, result, before_chip, phase, &"ornament", ornament_id, ornament_name, ornament_name, "+30 Chips", "+30 Chips", roll, trigger_index, _resolution_index_for_roll(trace, roll))
 		FaceState.ORN_MULT:
+			var before_mult := _score_snapshot(result)
 			result.mult += 4
 			_add_log(result, &"LOG.ORNAMENT_MULT", {
 				"die": roll.die_index + 1,
@@ -149,7 +206,9 @@ func _apply_single_face_trigger(roll: RolledFace, result: ScoreResult, trigger_i
 				"mult": 4,
 			}, &"ornament_mult")
 			result.add_floating_text("+4 Mult", roll.die_index, roll.face_index)
+			_append_trace_step(trace, result, before_mult, phase, &"ornament", ornament_id, ornament_name, ornament_name, "+4 Mult", "+4 Mult", roll, trigger_index, _resolution_index_for_roll(trace, roll))
 		FaceState.ORN_STONE:
+			var before_stone := _score_snapshot(result)
 			result.chips += 50
 			_add_log(result, &"LOG.ORNAMENT_STONE", {
 				"die": roll.die_index + 1,
@@ -157,7 +216,9 @@ func _apply_single_face_trigger(roll: RolledFace, result: ScoreResult, trigger_i
 				"chips": 50,
 			}, &"ornament_stone")
 			result.add_floating_text("+50 Chips", roll.die_index, roll.face_index)
+			_append_trace_step(trace, result, before_stone, phase, &"ornament", ornament_id, ornament_name, ornament_name, "+50 Chips", "+50 Chips", roll, trigger_index, _resolution_index_for_roll(trace, roll))
 		FaceState.ORN_BURST:
+			var before_burst := _score_snapshot(result)
 			result.xmult *= 2.0
 			_add_log(result, &"LOG.ORNAMENT_BURST", {
 				"die": roll.die_index + 1,
@@ -166,9 +227,11 @@ func _apply_single_face_trigger(roll: RolledFace, result: ScoreResult, trigger_i
 				"xmult": _format_xmult(2.0),
 			}, &"ornament_burst")
 			result.add_floating_text("X2", roll.die_index, roll.face_index)
+			_append_trace_step(trace, result, before_burst, phase, &"ornament", ornament_id, ornament_name, ornament_name, "x2 XMult", "x2 XMult", roll, trigger_index, _resolution_index_for_roll(trace, roll))
 		FaceState.ORN_LUCKY:
-			_apply_lucky(roll, context, result)
+			_apply_lucky(roll, context, result, trace, phase, trigger_index)
 		FaceState.ORN_FOIL:
+			var before_foil := _score_snapshot(result)
 			result.chips += 50
 			_add_log(result, &"LOG.ORNAMENT_FOIL", {
 				"die": roll.die_index + 1,
@@ -176,7 +239,9 @@ func _apply_single_face_trigger(roll: RolledFace, result: ScoreResult, trigger_i
 				"chips": 50,
 			}, &"ornament_foil")
 			result.add_floating_text("+50 Chips", roll.die_index, roll.face_index)
+			_append_trace_step(trace, result, before_foil, phase, &"ornament", ornament_id, ornament_name, ornament_name, "+50 Chips", "+50 Chips", roll, trigger_index, _resolution_index_for_roll(trace, roll))
 		FaceState.ORN_HOLO:
+			var before_holo := _score_snapshot(result)
 			result.mult += 10
 			_add_log(result, &"LOG.ORNAMENT_HOLO", {
 				"die": roll.die_index + 1,
@@ -184,7 +249,9 @@ func _apply_single_face_trigger(roll: RolledFace, result: ScoreResult, trigger_i
 				"mult": 10,
 			}, &"ornament_holo")
 			result.add_floating_text("+10 Mult", roll.die_index, roll.face_index)
+			_append_trace_step(trace, result, before_holo, phase, &"ornament", ornament_id, ornament_name, ornament_name, "+10 Mult", "+10 Mult", roll, trigger_index, _resolution_index_for_roll(trace, roll))
 		FaceState.ORN_POLY:
+			var before_poly := _score_snapshot(result)
 			result.xmult *= 1.5
 			_add_log(result, &"LOG.ORNAMENT_POLY", {
 				"die": roll.die_index + 1,
@@ -192,16 +259,26 @@ func _apply_single_face_trigger(roll: RolledFace, result: ScoreResult, trigger_i
 				"xmult": _format_xmult(1.5),
 			}, &"ornament_poly")
 			result.add_floating_text("X1.5", roll.die_index, roll.face_index)
+			_append_trace_step(trace, result, before_poly, phase, &"ornament", ornament_id, ornament_name, ornament_name, "x1.5 XMult", "x1.5 XMult", roll, trigger_index, _resolution_index_for_roll(trace, roll))
 
 
-func _apply_single_unselected_stay_trigger(roll: RolledFace, context: ScoreContext, result: ScoreResult) -> bool:
+func _apply_single_unselected_stay_trigger(
+	roll: RolledFace,
+	context: ScoreContext,
+	result: ScoreResult,
+	trace: ResolutionTrace = null,
+	is_retrigger: bool = false
+) -> bool:
 	if roll == null or roll.face == null:
 		return false
 
 	var triggered := false
 	var ornament_id: StringName = _effective_ornament_id_for_roll(roll, context)
+	var phase: int = ResolutionStep.Phase.RETRIGGER if is_retrigger else ResolutionStep.Phase.UNSELECTED_STAY
+	var ornament_name := DisplayNames.ornament_name(ornament_id)
 	match ornament_id:
 		FaceState.ORN_STAY:
+			var before_stay := _score_snapshot(result)
 			result.xmult *= 1.5
 			_add_log(result, &"LOG.ORNAMENT_STAY", {
 				"die": roll.die_index + 1,
@@ -210,22 +287,32 @@ func _apply_single_unselected_stay_trigger(roll: RolledFace, context: ScoreConte
 				"xmult": _format_xmult(1.5),
 			}, &"ornament_stay")
 			result.add_floating_text("X1.5", roll.die_index, roll.face_index)
+			_append_trace_step(trace, result, before_stay, phase, &"ornament", ornament_id, ornament_name, ornament_name, "Stay x1.5 XMult", "x1.5 XMult", roll)
 			triggered = true
 		FaceState.ORN_GOLD:
+			var before_gold_stay := _score_snapshot(result)
 			_add_coins(context, result, 3, "金辉面饰：+3 金币", roll)
 			_add_log(result, &"LOG.ORNAMENT_GOLD", {
 				"die": roll.die_index + 1,
 				"face": roll.face_index + 1,
 				"coins": 3,
 			}, &"ornament_gold")
+			_append_trace_step(trace, result, before_gold_stay, phase, &"ornament", ornament_id, ornament_name, ornament_name, "Stay +3 Coins", "+3 Coins", roll)
 			triggered = true
 	return triggered
 
 
-func _try_trigger_blue_mark(roll: RolledFace, context: ScoreContext, result: ScoreResult, triggered_stay: bool) -> void:
+func _try_trigger_blue_mark(
+	roll: RolledFace,
+	context: ScoreContext,
+	result: ScoreResult,
+	triggered_stay: bool,
+	trace: ResolutionTrace = null
+) -> void:
 	if result == null:
 		return
 
+	var before := _score_snapshot(result)
 	var mult_bonus := 2
 	if triggered_stay:
 		mult_bonus += 1
@@ -237,6 +324,19 @@ func _try_trigger_blue_mark(roll: RolledFace, context: ScoreContext, result: Sco
 		"mult": mult_bonus,
 	}, &"mark_blue")
 	result.add_floating_text("+%d Mult" % [mult_bonus], roll.die_index, roll.face_index)
+	_append_trace_step(
+		trace,
+		result,
+		before,
+		ResolutionStep.Phase.UNSELECTED_STAY,
+		&"mark",
+		FaceState.MARK_BLUE,
+		DisplayNames.mark_name(FaceState.MARK_BLUE),
+		DisplayNames.mark_name(FaceState.MARK_BLUE),
+		"+%d Mult" % [mult_bonus],
+		"+%d Mult" % [mult_bonus],
+		roll
+	)
 
 	if context == null or context.is_preview or context.run_state == null:
 		return
@@ -271,10 +371,11 @@ func _try_trigger_blue_mark(roll: RolledFace, context: ScoreContext, result: Sco
 		result.add_floating_text("道具槽位不足", roll.die_index, roll.face_index)
 
 
-func _try_trigger_purple_mark(roll: RolledFace, result: ScoreResult) -> void:
+func _try_trigger_purple_mark(roll: RolledFace, result: ScoreResult, trace: ResolutionTrace = null) -> void:
 	if roll == null or result == null or not roll.was_rerolled:
 		return
 
+	var before := _score_snapshot(result)
 	var mult_bonus := 4
 	result.mult += mult_bonus
 	_add_log(result, &"LOG.MARK_PURPLE", {
@@ -284,15 +385,42 @@ func _try_trigger_purple_mark(roll: RolledFace, result: ScoreResult) -> void:
 		"mult": mult_bonus,
 	}, &"mark_purple")
 	result.add_floating_text("+%d Mult" % [mult_bonus], roll.die_index, roll.face_index)
+	_append_trace_step(
+		trace,
+		result,
+		before,
+		ResolutionStep.Phase.MARK_ON_SCORE,
+		&"mark",
+		FaceState.MARK_PURPLE,
+		DisplayNames.mark_name(FaceState.MARK_PURPLE),
+		DisplayNames.mark_name(FaceState.MARK_PURPLE),
+		"+%d Mult" % [mult_bonus],
+		"+%d Mult" % [mult_bonus],
+		roll
+	)
 
 
-func _apply_gold_mark(roll: RolledFace, context: ScoreContext, result: ScoreResult) -> void:
+func _apply_gold_mark(roll: RolledFace, context: ScoreContext, result: ScoreResult, trace: ResolutionTrace = null) -> void:
+	var before := _score_snapshot(result)
 	_add_coins(context, result, 1, "金印：+1 金币", roll)
 	_add_log(result, &"LOG.MARK_GOLD_COINS", {
 		"die": roll.die_index + 1,
 		"face": roll.face_index + 1,
 		"coins": 1,
 	}, &"mark_gold")
+	_append_trace_step(
+		trace,
+		result,
+		before,
+		ResolutionStep.Phase.MARK_ON_SCORE,
+		&"mark",
+		FaceState.MARK_GOLD,
+		DisplayNames.mark_name(FaceState.MARK_GOLD),
+		DisplayNames.mark_name(FaceState.MARK_GOLD),
+		"+1 Coins",
+		"+1 Coins",
+		roll
+	)
 
 
 func _is_face_selected(roll: RolledFace, context: ScoreContext) -> bool:
@@ -308,18 +436,30 @@ func _is_face_selected(roll: RolledFace, context: ScoreContext) -> bool:
 	return false
 
 
-func _apply_lucky(roll: RolledFace, context: ScoreContext, result: ScoreResult) -> void:
+func _apply_lucky(
+	roll: RolledFace,
+	context: ScoreContext,
+	result: ScoreResult,
+	trace: ResolutionTrace = null,
+	phase: int = ResolutionStep.Phase.ORNAMENT_ON_SCORE,
+	trigger_index: int = 0
+) -> void:
+	var ornament_id := FaceState.ORN_LUCKY
+	var ornament_name := DisplayNames.ornament_name(ornament_id)
 	if context == null or context.is_preview:
+		var before_lucky_preview := _score_snapshot(result)
 		_add_log(result, &"LOG.ORNAMENT_LUCKY_MISS", {
 			"die": roll.die_index + 1,
 			"face": roll.face_index + 1,
 		}, &"ornament_lucky")
+		_append_trace_step(trace, result, before_lucky_preview, phase, &"ornament", ornament_id, ornament_name, ornament_name, "Lucky missed", "Miss", roll, trigger_index, _resolution_index_for_roll(trace, roll))
 		return
 
 	var triggered_mult := false
 	var triggered_coins := false
 	var rng = _active_rng(context)
 	if rng.randf() < 0.20:
+		var before_lucky_mult := _score_snapshot(result)
 		triggered_mult = true
 		result.mult += 20
 		result.add_floating_text("+20 Mult", roll.die_index, roll.face_index)
@@ -328,8 +468,10 @@ func _apply_lucky(roll: RolledFace, context: ScoreContext, result: ScoreResult) 
 			"face": roll.face_index + 1,
 			"mult": 20,
 		}, &"ornament_lucky")
+		_append_trace_step(trace, result, before_lucky_mult, phase, &"ornament", ornament_id, ornament_name, ornament_name, "+20 Mult", "+20 Mult", roll, trigger_index, _resolution_index_for_roll(trace, roll))
 
 	if rng.randf() < (1.0 / 15.0):
+		var before_lucky_coins := _score_snapshot(result)
 		triggered_coins = true
 		_add_coins(context, result, 20, "幸运面饰：+20 金币", roll)
 		_add_log(result, &"LOG.ORNAMENT_LUCKY_COINS", {
@@ -337,12 +479,15 @@ func _apply_lucky(roll: RolledFace, context: ScoreContext, result: ScoreResult) 
 			"face": roll.face_index + 1,
 			"coins": 20,
 		}, &"ornament_lucky")
+		_append_trace_step(trace, result, before_lucky_coins, phase, &"ornament", ornament_id, ornament_name, ornament_name, "+20 Coins", "+20 Coins", roll, trigger_index, _resolution_index_for_roll(trace, roll))
 
 	if not triggered_mult and not triggered_coins:
+		var before_lucky_miss := _score_snapshot(result)
 		_add_log(result, &"LOG.ORNAMENT_LUCKY_MISS", {
 			"die": roll.die_index + 1,
 			"face": roll.face_index + 1,
 		}, &"ornament_lucky")
+		_append_trace_step(trace, result, before_lucky_miss, phase, &"ornament", ornament_id, ornament_name, ornament_name, "Lucky missed", "Miss", roll, trigger_index, _resolution_index_for_roll(trace, roll))
 
 
 func _add_coins(context: ScoreContext, result: ScoreResult, amount: int, event_text: String, roll: RolledFace) -> void:
@@ -357,15 +502,15 @@ func _add_coins(context: ScoreContext, result: ScoreResult, amount: int, event_t
 			"die_index": roll.die_index if roll != null else -1,
 			"face_index": roll.face_index if roll != null else -1,
 		})
-		if not context.is_preview and context.run_state != null:
+		if not context.is_preview and not context.defer_runtime_mutations and context.run_state != null:
 			if context.run_state.has_method("add_coins"):
 				context.run_state.add_coins(amount, &"score_effect")
 			else:
 				context.run_state.coins += amount
 	if result != null:
 		result.coins_delta += amount
-		var die_index := roll.die_index if roll != null else -1
-		var face_index := roll.face_index if roll != null else -1
+		var die_index: int = roll.die_index if roll != null else -1
+		var face_index: int = roll.face_index if roll != null else -1
 		result.add_floating_text("+%d 金币" % [amount], die_index, face_index)
 
 
@@ -374,7 +519,15 @@ func _has_free_item_slot(context: ScoreContext) -> bool:
 
 
 func _add_item_to_inventory_or_pending(context: ScoreContext, item_id: StringName) -> bool:
-	return context != null and context.run_state != null and context.run_state.add_item_to_inventory_or_pending(item_id)
+	if context == null or context.run_state == null:
+		return false
+	if context.defer_runtime_mutations:
+		context.score_events.append({
+			"type": &"item",
+			"item_id": item_id,
+		})
+		return true
+	return context.run_state.add_item_to_inventory_or_pending(item_id)
 
 
 func _clear_face_ornament(context: ScoreContext, roll: RolledFace) -> void:
@@ -466,6 +619,89 @@ func _upgrade_item_name(combo_id: StringName) -> String:
 	if item != null:
 		return item.display_name
 	return "%s升级件" % [DisplayNames.combo_name(combo_id)]
+
+
+func _score_snapshot(result: ScoreResult) -> Dictionary:
+	if result == null:
+		return {
+			"chips": 0,
+			"mult": 1,
+			"xmult": 1.0,
+		}
+	return {
+		"chips": result.chips,
+		"mult": result.mult,
+		"xmult": result.xmult,
+	}
+
+
+func _append_trace_step(
+	trace: ResolutionTrace,
+	result: ScoreResult,
+	before: Dictionary,
+	phase: int,
+	source_type: StringName,
+	source_id: StringName,
+	source_display_name: String,
+	title: String,
+	detail: String,
+	floating_text: String,
+	roll: RolledFace = null,
+	retrigger_count: int = 0,
+	retrigger_target_resolution_index: int = -1
+) -> void:
+	if trace == null or result == null:
+		return
+
+	var step := ResolutionStep.new()
+	step.phase = phase
+	step.source_type = source_type
+	step.source_id = source_id
+	step.source_display_name = source_display_name
+	step.title = title
+	step.detail = detail
+	step.floating_text = floating_text
+	if roll != null:
+		step.bench_slot_index = roll.die_index
+		step.resolution_index = trace.resolution_index_for_bench_slot(roll.die_index)
+	step.retrigger_count = retrigger_count
+	step.retrigger_target_resolution_index = retrigger_target_resolution_index
+	step.set_before(
+		int(before.get("chips", 0)),
+		int(before.get("mult", 1)),
+		float(before.get("xmult", 1.0))
+	)
+	step.set_after(result.chips, result.mult, result.xmult)
+	step.log_line = _trace_log_line(step)
+	trace.append_step(step)
+
+
+func _trace_log_line(step: ResolutionStep) -> String:
+	var prefix := "[Effect]"
+	match step.phase:
+		ResolutionStep.Phase.ORNAMENT_ON_SCORE:
+			prefix = "[Ornament]"
+		ResolutionStep.Phase.MARK_ON_SCORE:
+			prefix = "[Mark]"
+		ResolutionStep.Phase.UNSELECTED_STAY:
+			prefix = "[Stay]"
+		ResolutionStep.Phase.RETRIGGER:
+			prefix = "[Retrigger]"
+		_:
+			prefix = "[Effect]"
+	var source := step.source_display_name
+	if source == "":
+		source = str(step.source_id)
+	var slot_text := ""
+	if step.bench_slot_index >= 0:
+		slot_text = " Die %d" % [step.bench_slot_index + 1]
+	return "%s%s %s: %s" % [prefix, slot_text, source, step.detail]
+
+
+func _resolution_index_for_roll(trace: ResolutionTrace, roll: RolledFace) -> int:
+	if trace == null or roll == null:
+		return -1
+	return trace.resolution_index_for_bench_slot(roll.die_index)
 
 
 func _add_log(result: ScoreResult, key: StringName, args: Dictionary = {}, category: StringName = &"general") -> void:

@@ -18,19 +18,19 @@ func _init() -> void:
 	var all_passed := true
 
 	var ordinary_6 := _score([_make_roll(0, 0, 6)])
-	all_passed = _check("ordinary 6 scores 6", ordinary_6.chips == 6 and ordinary_6.mult == 1 and is_equal_approx(ordinary_6.xmult, 1.0) and ordinary_6.final_score == 6) and all_passed
+	all_passed = _check("ordinary 6 scores scatter 5 plus pip", ordinary_6.chips == 11 and ordinary_6.mult == 1 and is_equal_approx(ordinary_6.xmult, 1.0) and ordinary_6.final_score == 11) and all_passed
 
 	var chip := _score([_make_roll(0, 0, 1, &"orn_chip")])
-	all_passed = _check("chip ornament adds 30 chips", chip.chips == 31 and chip.final_score == 31) and all_passed
+	all_passed = _check("chip ornament adds 30 chips", chip.chips == 36 and chip.final_score == 36) and all_passed
 
 	var foil := _score([_make_roll(0, 0, 1, &"orn_foil")])
-	all_passed = _check("foil ornament adds 50 chips", foil.chips == 51 and foil.final_score == 51 and _logs_contain(foil, ["ornament_foil"])) and all_passed
+	all_passed = _check("foil ornament adds 50 chips", foil.chips == 56 and foil.final_score == 56 and _logs_contain(foil, ["ornament_foil"])) and all_passed
 
 	var mult := _score([_make_roll(0, 0, 1, &"orn_mult")])
-	all_passed = _check("mult ornament adds 4 mult", mult.mult == 5 and mult.final_score == 5) and all_passed
+	all_passed = _check("mult ornament adds 4 mult", mult.mult == 5 and mult.final_score == 30) and all_passed
 
 	var burst := _score([_make_roll(0, 0, 1, &"orn_burst")])
-	all_passed = _check("burst ornament gives x2", is_equal_approx(burst.xmult, 2.0) and burst.final_score == 2) and all_passed
+	all_passed = _check("burst ornament gives x2", is_equal_approx(burst.xmult, 2.0) and burst.final_score == 12) and all_passed
 	var burst_break_roll := _make_roll(0, 0, 4, &"orn_burst", &"red")
 	var burst_break_context := ScoreContext.new()
 	burst_break_context.selected_faces = [burst_break_roll]
@@ -49,41 +49,41 @@ func _init() -> void:
 	var selected_stay_test := _make_roll(0, 0, 1)
 	var unselected_stay := _make_roll(1, 0, 5, &"orn_stay", &"mark_none", &"none", 1, false)
 	var stay := _score([selected_stay_test], [selected_stay_test, unselected_stay])
-	all_passed = _check("stay ornament unselected adds x1.5", is_equal_approx(stay.xmult, 1.5) and stay.final_score == 2) and all_passed
+	all_passed = _check("stay ornament unselected adds x1.5", is_equal_approx(stay.xmult, 1.5) and stay.final_score == 9) and all_passed
 
 	var red_chip := _score([_make_roll(0, 0, 1, &"orn_chip", &"red")])
-	all_passed = _check("red repeats pip and chip", red_chip.chips == 62 and red_chip.final_score == 62) and all_passed
+	all_passed = _check("red repeats pip and chip", red_chip.chips == 67 and red_chip.final_score == 67) and all_passed
 	all_passed = _check("red logs extra trigger", _logs_contain(red_chip, ["mark_red", "extra_pip", "ornament_chip"])) and all_passed
 
 	var red_mult := _score([_make_roll(0, 0, 1, &"orn_mult", &"red")])
-	all_passed = _check("red repeats mult ornament", red_mult.chips == 2 and red_mult.mult == 9 and red_mult.final_score == 18) and all_passed
+	all_passed = _check("red repeats mult ornament", red_mult.chips == 7 and red_mult.mult == 9 and red_mult.final_score == 63) and all_passed
 
 	var red_burst := _score([_make_roll(0, 0, 1, &"orn_burst", &"red")])
-	all_passed = _check("red repeats burst ornament", red_burst.chips == 2 and is_equal_approx(red_burst.xmult, 4.0) and red_burst.final_score == 8) and all_passed
+	all_passed = _check("red repeats burst ornament", red_burst.chips == 7 and is_equal_approx(red_burst.xmult, 4.0) and red_burst.final_score == 28) and all_passed
 
 	var selected_blue_test := _make_roll(0, 0, 1)
 	var unselected_blue := _make_roll(1, 0, 5, &"orn_none", &"blue", &"none", 1, false)
 	var blue := _score([selected_blue_test], [selected_blue_test, unselected_blue])
-	all_passed = _check("blue mark unselected adds 2 mult without stay", blue.mult == 3 and blue.final_score == 3) and all_passed
+	all_passed = _check("blue mark unselected adds 2 mult without stay", blue.mult == 3 and blue.final_score == 18) and all_passed
 
 	var selected_blue_stay_test := _make_roll(0, 0, 1)
 	var unselected_blue_stay := _make_roll(1, 0, 5, &"orn_stay", &"blue", &"none", 1, false)
 	var blue_stay := _score([selected_blue_stay_test], [selected_blue_stay_test, unselected_blue_stay])
-	all_passed = _check("blue mark follows stay flow", blue_stay.mult == 4 and is_equal_approx(blue_stay.xmult, 1.5) and blue_stay.final_score == 6) and all_passed
+	all_passed = _check("blue mark follows stay flow", blue_stay.mult == 4 and is_equal_approx(blue_stay.xmult, 1.5) and blue_stay.final_score == 36) and all_passed
 
 	var purple := _score([_make_roll(0, 0, 1, &"orn_none", &"purple", &"none", 1, true, &"none", true)])
-	all_passed = _check("purple mark rewards rerolled selected face", purple.mult == 5 and purple.final_score == 5) and all_passed
+	all_passed = _check("purple mark rewards rerolled selected face", purple.mult == 5 and purple.final_score == 30) and all_passed
 
 	var legacy_glass := _score([_make_roll(0, 0, 1, &"orn_none", &"mark_none", &"glass")])
-	all_passed = _check("legacy glass material maps to burst", is_equal_approx(legacy_glass.xmult, 2.0) and legacy_glass.final_score == 2) and all_passed
+	all_passed = _check("legacy glass material maps to burst", is_equal_approx(legacy_glass.xmult, 2.0) and legacy_glass.final_score == 12) and all_passed
 
 	var selected_legacy_steel_test := _make_roll(0, 0, 1)
 	var legacy_steel_unselected := _make_roll(1, 0, 5, &"orn_none", &"mark_none", &"steel", 1, false)
 	var legacy_steel := _score([selected_legacy_steel_test], [selected_legacy_steel_test, legacy_steel_unselected])
-	all_passed = _check("legacy steel material maps to stay", is_equal_approx(legacy_steel.xmult, 1.5) and legacy_steel.final_score == 2) and all_passed
+	all_passed = _check("legacy steel material maps to stay", is_equal_approx(legacy_steel.xmult, 1.5) and legacy_steel.final_score == 9) and all_passed
 
 	var legacy_disabled := _score([_make_roll(0, 0, 6, &"orn_none", &"mark_none", &"none", 5, true, &"six")])
-	all_passed = _check("rune and level do not affect scoring", legacy_disabled.chips == 6 and legacy_disabled.mult == 1 and legacy_disabled.final_score == 6) and all_passed
+	all_passed = _check("rune and level do not affect scoring", legacy_disabled.chips == 11 and legacy_disabled.mult == 1 and legacy_disabled.final_score == 11) and all_passed
 	var source_die := DieState.create_normal_d6(&"source_d6")
 	source_die.faces[0].ornament_id = &"orn_foil"
 	var stale_roll := _make_roll(0, 0, 1, &"orn_none")
@@ -94,7 +94,7 @@ func _init() -> void:
 	stale_context.source_dice = source_dice
 	stale_context.rng = FixedRng.new([0.99, 0.99])
 	var stale_result := ScoreEngine.new().score(stale_context)
-	all_passed = _check("source face ornament fallback scores foil", stale_result.chips == 51 and stale_result.final_score == 51 and _logs_contain(stale_result, ["ornament_foil"])) and all_passed
+	all_passed = _check("source face ornament fallback scores foil", stale_result.chips == 56 and stale_result.final_score == 56 and _logs_contain(stale_result, ["ornament_foil"])) and all_passed
 	var stone := _score([_make_roll(0, 0, 6, &"orn_stone"), _make_roll(1, 0, 6), _make_roll(2, 0, 6), _make_roll(3, 0, 6), _make_roll(4, 0, 6)])
 	all_passed = _check("stone exits point logic and adds chips", stone.primary_combo == ComboEvaluator.FOUR_KIND and stone.chips == 134) and all_passed
 	var gold_run := RunState.new()

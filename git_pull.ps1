@@ -89,7 +89,8 @@ try {
         }
 
         if (Test-NeedsManualFix) {
-            Pause-And-Exit 1
+            Write-Host ""
+            Write-Host "Manual fix is needed. Resolve it in this repo; this script will keep retrying."
         }
 
         Write-Host ""

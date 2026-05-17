@@ -19,14 +19,14 @@ config/icon="res://icon.svg"
 
 Loc="*res://scripts/i18n/Loc.gd"
 
-[dotnet]
-
-project/assembly_name="Dice_Rougelike"
-
 [display]
 
 window/size/viewport_width=1920
 window/size/viewport_height=1080
+
+[dotnet]
+
+project/assembly_name="Dice_Rougelike"
 
 [internationalization]
 

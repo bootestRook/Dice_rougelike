@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="MainMenuArtConfig" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/main/resources/MainMenuArtConfig.gd" id="1_config_script"]
+[ext_resource type="Texture2D" path="res://assets/ui/main/main_menu_background.png" id="2_background"]
+
+[resource]
+script = ExtResource("1_config_script")
+background_texture = ExtResource("2_background")
+title_text = "Dice King"
+version_text = "1.0.0-FULL"

@@ -33,10 +33,10 @@ func _init() -> void:
 		all_passed = _check("reward batch %d has no removed ids" % [index], not _choices_have_removed_ids(choices)) and all_passed
 
 	var rune_result := _score([_roll_with_legacy(6, &"six", 1)])
-	all_passed = _check("rune_id six does not add mult", rune_result.mult == 1 and rune_result.final_score == 6) and all_passed
+	all_passed = _check("rune_id six does not add mult", rune_result.mult == 1 and rune_result.final_score == 11) and all_passed
 
 	var level_result := _score([_roll_with_legacy(1, &"none", 5)])
-	all_passed = _check("level 5 does not add chips", level_result.chips == 1 and level_result.final_score == 1) and all_passed
+	all_passed = _check("level 5 does not add extra chips", level_result.chips == 6 and level_result.final_score == 6) and all_passed
 	all_passed = _check("logs do not mention removed visible slots", not _logs_contain_removed_visible_terms(rune_result) and not _logs_contain_removed_visible_terms(level_result)) and all_passed
 
 	print("PASS: DebugNoLegacyFaceSlotsSmokeTest" if all_passed else "FAIL: DebugNoLegacyFaceSlotsSmokeTest")

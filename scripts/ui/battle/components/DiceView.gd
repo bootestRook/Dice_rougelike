@@ -58,6 +58,10 @@ func render(
 	new_icon_library: BattleIconLibrary,
 	new_dice_visual_library: DiceVisualLibrary
 ) -> void:
+	if not is_node_ready():
+		call_deferred("render", new_die_data, new_style_config, new_icon_library, new_dice_visual_library)
+		return
+
 	die_data = new_die_data
 	info_focused = false
 	style_config = new_style_config
