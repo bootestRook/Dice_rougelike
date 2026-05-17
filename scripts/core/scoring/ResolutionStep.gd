@@ -2,6 +2,9 @@ extends RefCounted
 class_name ResolutionStep
 
 
+const ScoreResult = preload("res://scripts/core/scoring/ScoreResult.gd")
+
+
 enum Phase {
 	COMBO_BASE,
 	PIP_SCORE,
@@ -68,4 +71,4 @@ func set_after(chips: int, mult: int, xmult: float) -> void:
 		xmult_factor = xmult_after
 	else:
 		xmult_factor = xmult_after / xmult_before
-	partial_score_after = roundi(float(chips_after * mult_after) * xmult_after)
+	partial_score_after = ScoreResult.final_score_for(chips_after, mult_after, xmult_after)

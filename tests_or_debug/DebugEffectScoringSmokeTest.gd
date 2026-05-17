@@ -49,7 +49,7 @@ func _init() -> void:
 	var selected_stay_test := _make_roll(0, 0, 1)
 	var unselected_stay := _make_roll(1, 0, 5, &"orn_stay", &"mark_none", &"none", 1, false)
 	var stay := _score([selected_stay_test], [selected_stay_test, unselected_stay])
-	all_passed = _check("stay ornament unselected adds x1.5", is_equal_approx(stay.xmult, 1.5) and stay.final_score == 9) and all_passed
+	all_passed = _check("stay ornament unselected adds x2", is_equal_approx(stay.xmult, 2.0) and stay.final_score == 12) and all_passed
 
 	var red_chip := _score([_make_roll(0, 0, 1, &"orn_chip", &"red")])
 	all_passed = _check("red repeats pip and chip", red_chip.chips == 67 and red_chip.final_score == 67) and all_passed
@@ -69,7 +69,7 @@ func _init() -> void:
 	var selected_blue_stay_test := _make_roll(0, 0, 1)
 	var unselected_blue_stay := _make_roll(1, 0, 5, &"orn_stay", &"blue", &"none", 1, false)
 	var blue_stay := _score([selected_blue_stay_test], [selected_blue_stay_test, unselected_blue_stay])
-	all_passed = _check("blue mark follows stay flow", blue_stay.mult == 4 and is_equal_approx(blue_stay.xmult, 1.5) and blue_stay.final_score == 36) and all_passed
+	all_passed = _check("blue mark follows rounded stay flow", blue_stay.mult == 4 and is_equal_approx(blue_stay.xmult, 2.0) and blue_stay.final_score == 48) and all_passed
 
 	var purple := _score([_make_roll(0, 0, 1, &"orn_none", &"purple", &"none", 1, true, &"none", true)])
 	all_passed = _check("purple mark rewards rerolled selected face", purple.mult == 5 and purple.final_score == 30) and all_passed
@@ -80,7 +80,7 @@ func _init() -> void:
 	var selected_legacy_steel_test := _make_roll(0, 0, 1)
 	var legacy_steel_unselected := _make_roll(1, 0, 5, &"orn_none", &"mark_none", &"steel", 1, false)
 	var legacy_steel := _score([selected_legacy_steel_test], [selected_legacy_steel_test, legacy_steel_unselected])
-	all_passed = _check("legacy steel material maps to stay", is_equal_approx(legacy_steel.xmult, 1.5) and legacy_steel.final_score == 9) and all_passed
+	all_passed = _check("legacy steel material maps to rounded stay", is_equal_approx(legacy_steel.xmult, 2.0) and legacy_steel.final_score == 12) and all_passed
 
 	var legacy_disabled := _score([_make_roll(0, 0, 6, &"orn_none", &"mark_none", &"none", 5, true, &"six")])
 	all_passed = _check("rune and level do not affect scoring", legacy_disabled.chips == 11 and legacy_disabled.mult == 1 and legacy_disabled.final_score == 11) and all_passed
@@ -96,7 +96,8 @@ func _init() -> void:
 	var stale_result := ScoreEngine.new().score(stale_context)
 	all_passed = _check("source face ornament fallback scores foil", stale_result.chips == 56 and stale_result.final_score == 56 and _logs_contain(stale_result, ["ornament_foil"])) and all_passed
 	var stone := _score([_make_roll(0, 0, 6, &"orn_stone"), _make_roll(1, 0, 6), _make_roll(2, 0, 6), _make_roll(3, 0, 6), _make_roll(4, 0, 6)])
-	all_passed = _check("stone exits point logic and adds chips", stone.primary_combo == ComboEvaluator.FOUR_KIND and stone.chips == 134) and all_passed
+	var stone_expected_chips := stone.scored_point_sum + stone.combo_chips_bonus + 50
+	all_passed = _check("stone exits point logic and adds chips", stone.primary_combo == ComboEvaluator.FOUR_KIND and stone.scored_point_sum == 24 and stone.chips == stone_expected_chips) and all_passed
 	var gold_run := RunState.new()
 	gold_run.setup_new_run()
 	var context := ScoreContext.new()

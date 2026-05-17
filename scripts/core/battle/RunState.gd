@@ -30,6 +30,7 @@ var pending_item_ids: Array[StringName] = []
 var item_slot_capacity: int = DEFAULT_ITEM_SLOT_CAPACITY
 var last_copyable_used_item_id: StringName = &""
 var dice_tools: Array[DiceToolState] = []
+var installed_tools: Array[DiceToolState] = []
 var dice_tool_capacity: int = DEFAULT_DICE_TOOL_CAPACITY
 var battle_index: int = 0
 var current_battle: BattleState = null
@@ -74,6 +75,11 @@ var effect_trigger_order: Array[StringName] = []
 var combo_appearance_counts: Dictionary = {}
 var combo_last_formula_by_id: Dictionary = {}
 var combo_levels: Dictionary = {}
+var foundry_logs: Array[Dictionary] = []
+
+
+func _init() -> void:
+	installed_tools = dice_tools
 
 
 func setup_new_run() -> void:
@@ -87,6 +93,7 @@ func setup_new_run() -> void:
 	item_slot_capacity = DEFAULT_ITEM_SLOT_CAPACITY
 	last_copyable_used_item_id = &""
 	dice_tools.clear()
+	installed_tools = dice_tools
 	dice_tool_capacity = DEFAULT_DICE_TOOL_CAPACITY
 	run_won = false
 	run_lost = false
@@ -103,6 +110,7 @@ func setup_new_run() -> void:
 	combo_appearance_counts.clear()
 	combo_last_formula_by_id.clear()
 	combo_levels = ComboUpgradeCatalog.default_combo_levels()
+	foundry_logs.clear()
 	create_default_loadout()
 
 
@@ -205,7 +213,16 @@ func record_copyable_used_item_id(item_id: StringName) -> void:
 
 
 func has_free_dice_tool_slot() -> bool:
-	return dice_tools.size() < max(0, dice_tool_capacity)
+	return get_non_negative_dice_tool_count() < max(0, dice_tool_capacity)
+
+
+func get_non_negative_dice_tool_count() -> int:
+	_sync_installed_tools_alias()
+	var count := 0
+	for tool in dice_tools:
+		if tool != null and not tool.is_negative:
+			count += 1
+	return count
 
 
 func install_dice_tool_item_from_slot(slot_index: int) -> bool:
@@ -221,6 +238,7 @@ func install_dice_tool_item_from_slot(slot_index: int) -> bool:
 	if tool == null:
 		return false
 	dice_tools.append(tool)
+	installed_tools = dice_tools
 	consume_item_slot(slot_index)
 	return true
 
@@ -276,7 +294,11 @@ func get_combo_appearance_count(combo_id: StringName) -> int:
 
 func get_combo_level(combo_id: StringName) -> int:
 	ensure_combo_levels()
-	return max(1, int(combo_levels.get(_normalized_combo_id(combo_id), 1)))
+	var normalized_id := _normalized_combo_id(combo_id)
+	if normalized_id == &"" or not ComboUpgradeCatalog.has_combo(normalized_id):
+		return 1
+	var def := ComboUpgradeCatalog.get_def(normalized_id)
+	return max(1, int(combo_levels.get(def.upgrade_id, combo_levels.get(normalized_id, 1))))
 
 
 func get_combo_last_formula(combo_id: StringName) -> Dictionary:
@@ -289,17 +311,19 @@ func get_combo_last_formula(combo_id: StringName) -> Dictionary:
 func ensure_combo_levels() -> void:
 	var migrated := {}
 	for existing_id in combo_levels.keys():
-		var normalized_id := _normalized_combo_id(StringName(str(existing_id)))
+		var normalized_id := ComboUpgradeCatalog.normalize_combo_id(StringName(str(existing_id)))
 		if normalized_id == &"" or not ComboUpgradeCatalog.has_combo(normalized_id):
 			continue
-		migrated[normalized_id] = max(
-			int(migrated.get(normalized_id, 1)),
+		var def := ComboUpgradeCatalog.get_def(normalized_id)
+		var level_key := def.upgrade_id
+		migrated[level_key] = max(
+			int(migrated.get(level_key, 1)),
 			max(1, int(combo_levels[existing_id]))
 		)
 
-	for combo_id in ComboUpgradeCatalog.get_combo_ids():
-		if not migrated.has(combo_id):
-			migrated[combo_id] = 1
+	for combo_def in ComboUpgradeCatalog.get_all_defs():
+		if not migrated.has(combo_def.upgrade_id):
+			migrated[combo_def.upgrade_id] = 1
 
 	combo_levels = migrated
 
@@ -310,7 +334,8 @@ func increase_combo_level(combo_id: StringName, amount: int = 1) -> bool:
 	if normalized_id == &"" or not ComboUpgradeCatalog.has_combo(normalized_id):
 		return false
 
-	combo_levels[normalized_id] = max(1, int(combo_levels.get(normalized_id, 1))) + max(1, amount)
+	var def := ComboUpgradeCatalog.get_def(normalized_id)
+	combo_levels[def.upgrade_id] = max(1, int(combo_levels.get(def.upgrade_id, 1))) + max(1, amount)
 	return true
 
 
@@ -468,25 +493,25 @@ func _record_combo_stats(result: ScoreResult, hand_number: int) -> void:
 
 
 func _normalized_combo_id(combo_id: StringName) -> StringName:
-	match combo_id:
-		&"FIVE_KIND", &"five_kind":
-			return &"five_kind"
-		&"LARGE_STRAIGHT", &"SMALL_STRAIGHT", &"large_straight", &"small_straight", &"straight":
-			return &"straight"
-		&"FOUR_KIND", &"four_kind":
-			return &"four_kind"
-		&"FULL_HOUSE", &"full_house":
-			return &"full_house"
-		&"THREE_KIND", &"three_kind":
-			return &"three_kind"
-		&"TWO_PAIR", &"two_pair":
-			return &"two_pair"
-		&"PAIR", &"pair":
-			return &"pair"
-		&"HIGH_CARD", &"high_card", &"scatter":
-			return &"scatter"
-		_:
-			return combo_id
+	return ComboUpgradeCatalog.normalize_combo_id(combo_id)
+
+
+func record_foundry_log(service_id: StringName, service_name: String, message: String, details: Dictionary = {}) -> void:
+	foundry_logs.append({
+		"battle": battle_index + 1,
+		"service_id": service_id,
+		"service_name": service_name,
+		"message": message,
+		"details": details.duplicate(true),
+		"coins": coins,
+	})
+
+
+func _sync_installed_tools_alias() -> void:
+	if dice_tools.is_empty() and not installed_tools.is_empty():
+		dice_tools = installed_tools
+	elif installed_tools.is_empty() and not dice_tools.is_empty():
+		installed_tools = dice_tools
 
 
 func _record_effect_triggers(result: ScoreResult) -> void:

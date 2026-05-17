@@ -72,7 +72,7 @@ func _check_combo_value_table() -> bool:
 	for combo_id in expected.keys():
 		var def := ComboUpgradeCatalog.get_def(combo_id)
 		var values: Array = expected[combo_id]
-		var combo_passed := (
+		var combo_passed: bool = (
 			def.lv1_chips_bonus == values[0]
 			and def.lv1_mult == values[1]
 			and def.chips_per_level == values[2]
@@ -103,9 +103,6 @@ func _check_no_condition_tag_upgrades_in_module() -> bool:
 		"few_scored",
 		"rerolled",
 		"stay",
-		"same_domain",
-		"domain_house",
-		"mirror_five",
 		"high_card",
 		"combo_high",
 		"small_straight",

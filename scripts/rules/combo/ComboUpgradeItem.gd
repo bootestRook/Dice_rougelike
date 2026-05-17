@@ -35,6 +35,7 @@ static func from_item_id(id: StringName) -> ComboUpgradeItem:
 func apply_to_combo_levels(combo_levels: Dictionary) -> bool:
 	if target_combo_id == &"" or not ComboUpgradeCatalog.has_combo(target_combo_id):
 		return false
-	var current_level: int = max(1, int(combo_levels.get(target_combo_id, 1)))
-	combo_levels[target_combo_id] = current_level + 1
+	var def := ComboUpgradeCatalog.get_def(target_combo_id)
+	var current_level: int = max(1, int(combo_levels.get(def.upgrade_id, combo_levels.get(target_combo_id, 1))))
+	combo_levels[def.upgrade_id] = current_level + 1
 	return true

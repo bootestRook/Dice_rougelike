@@ -607,12 +607,17 @@ func _floating_display_color(raw_text: String) -> Color:
 
 
 func _unsigned_number_token(token: String) -> String:
-	return token.strip_edges().trim_prefix("+")
+	var value := token.strip_edges().trim_prefix("+")
+	if value.is_valid_float():
+		return str(ceili(value.to_float()))
+	return value
 
 
 func _xmult_number_token(text: String) -> String:
 	var first_token := text.strip_edges().split(" ", false)[0]
 	var value := first_token.trim_prefix("X").trim_prefix("x").strip_edges()
+	if value.is_valid_float():
+		return str(ceili(value.to_float()))
 	return value if value != "" else "1"
 
 

@@ -368,7 +368,7 @@ msgid "MATERIAL.STEEL.NAME"
 msgstr "Steel"
 
 msgid "MATERIAL.STEEL.DESC"
-msgstr "When rolled but not selected, +5 Mult."
+msgstr "When rolled but not selected, x2 XMult."
 
 msgid "MATERIAL.BLOOD.NAME"
 msgstr "Blood"
@@ -557,7 +557,7 @@ msgid "FORGE_PART.ORNAMENT_STAY.NAME"
 msgstr "Stay Ornament"
 
 msgid "FORGE_PART.ORNAMENT_STAY.DESC"
-msgstr "Install a stay ornament on one face. When rolled but unscored, it gives +5 Mult."
+msgstr "Install a stay ornament on one face. When rolled but unscored, it gives x2 XMult."
 
 msgid "FORGE_PART.ORNAMENT_WILD.NAME"
 msgstr "Wild Ornament"
@@ -599,7 +599,7 @@ msgid "FORGE_PART.ORNAMENT_POLY.NAME"
 msgstr "Polychrome Upgrade"
 
 msgid "FORGE_PART.ORNAMENT_POLY.DESC"
-msgstr "Install a polychrome upgrade on one face. When scored, it gives x1.5 XMult."
+msgstr "Install a polychrome upgrade on one face. When scored, it gives x2 XMult."
 
 msgid "FORGE_PART.MARK_RED.NAME"
 msgstr "Red Imprint"
@@ -611,13 +611,13 @@ msgid "FORGE_PART.MARK_BLUE.NAME"
 msgstr "Blue Imprint"
 
 msgid "FORGE_PART.MARK_BLUE.DESC"
-msgstr "When rolled but not scored, +2 Mult and generate a primary combo upgrade."
+msgstr "When rolled but not scored, +2 Mult and generate a primary combo upgrade; +1 extra Mult if a stay ornament triggered first."
 
 msgid "FORGE_PART.MARK_PURPLE.NAME"
 msgstr "Purple Imprint"
 
 msgid "FORGE_PART.MARK_PURPLE.DESC"
-msgstr "When selected for reroll, generate 1 random forge item; when scored after reroll, +4 Mult."
+msgstr "When selected for reroll, generate 1 random forge item; when scored after reroll, +4 Mult. Each physical face can generate successfully once per battle."
 
 msgid "FORGE_PART.MARK_GOLD.NAME"
 msgstr "Gold Mark"
@@ -641,7 +641,7 @@ msgid "FORGE_PART.MATERIAL_STEEL.NAME"
 msgstr "Steel"
 
 msgid "FORGE_PART.MATERIAL_STEEL.DESC"
-msgstr "When rolled but not selected, +5 Mult."
+msgstr "When rolled but not selected, x2 XMult."
 
 msgid "FORGE_PART.RUNE_SIX.NAME"
 msgstr "Six Rune"
@@ -872,10 +872,10 @@ msgid "UI.SCORE_SUMMARY.PRIMARY_COMBO"
 msgstr "Primary combo: {combo}"
 
 msgid "UI.MARK_EFFECT_COMPACT.BLUE"
-msgstr "+2 Mult; generate primary combo upgrade"
+msgstr "+2 Mult (+3 after stay); generate primary combo upgrade"
 
 msgid "UI.MARK_EFFECT_COMPACT.PURPLE"
-msgstr "+4 Mult; generate random forge item"
+msgstr "+4 Mult; generate random forge item (once per face/battle)"
 
 msgid "UI.MARK_EFFECT_COMPACT.GOLD"
 msgstr "+1 Coin"
@@ -1064,7 +1064,7 @@ msgid "AUTO.TEXT.04E30DB10857"
 msgstr "战力面贴"
 
 msgid "AUTO.TEXT.05A8FE4EDC14"
-msgstr "给一个骰面添加紫印。被选择重投时生成 1 个随机铸骰件；重投后出现并结算时 +4 倍率。"
+msgstr "Add a purple imprint to one face. When selected for reroll, generate 1 random forge item; when scored after reroll, +4 Mult. Each physical face can generate successfully once per battle and requires an item slot."
 
 msgid "AUTO.TEXT.093DDBA0EF5F"
 msgstr "金辉面贴"
@@ -1115,7 +1115,7 @@ msgid "AUTO.TEXT.135E3DF5C753"
 msgstr "包含结构：%s"
 
 msgid "AUTO.TEXT.147E1AD7C52E"
-msgstr "被选择重投时生成 1 个随机铸骰件；重投后出现并结算时，+4 倍率。"
+msgstr "When selected for reroll, generate 1 random forge item; when scored after reroll, +4 Mult. Each physical face can generate successfully once per battle and requires an item slot."
 
 msgid "AUTO.TEXT.14DDE613ACF4"
 msgstr "被结算时，+30 基础战力。"
@@ -1172,7 +1172,7 @@ msgid "AUTO.TEXT.1D11D52F2398"
 msgstr "将 1 个选中骰面安装为通配面饰。"
 
 msgid "AUTO.TEXT.1DC0AB17E3A0"
-msgstr "投出但未结算时，终倍率 ×1.5。"
+msgstr "投出但未结算时，终倍率 ×2。"
 
 msgid "AUTO.TEXT.1DE727CACA95"
 msgstr "第 %d 场后：%s 安装到 骰子 %d / 面 %d"
@@ -1247,10 +1247,10 @@ msgid "AUTO.TEXT.287EC954DA38"
 msgstr "顺子"
 
 msgid "AUTO.TEXT.296CDB12F677"
-msgstr "被结算时，终倍率 ×1.5。"
+msgstr "被结算时，终倍率 ×2。"
 
 msgid "AUTO.TEXT.296FAC38B168"
-msgstr "该骰面被重投时生成 1 个随机铸骰件；每场战斗每个物理面最多成功触发 1 次。"
+msgstr "When selected for reroll, generate 1 random forge item; when scored after reroll, +4 Mult. Each physical face can generate successfully once per battle and requires an item slot."
 
 msgid "AUTO.TEXT.29C0C578392B"
 msgstr "倍率面饰：+%d Mult"
@@ -1268,7 +1268,7 @@ msgid "AUTO.TEXT.2B928EF5366D"
 msgstr "金辉面饰：+%d 金币"
 
 msgid "AUTO.TEXT.2BF754A09305"
-msgstr "给一个骰面安装多彩强化。被结算时终倍率 ×1.5。"
+msgstr "给一个骰面安装多彩强化。被结算时终倍率 ×2。"
 
 msgid "AUTO.TEXT.2C0D680889AC"
 msgstr "将最多 2 个选中骰面安装为倍率面饰。"
@@ -1367,7 +1367,7 @@ msgid "AUTO.TEXT.3F474E4F22E5"
 msgstr "将最多 3 个选中骰面随机改为合法高域点数；D4 骰面不可作为目标。"
 
 msgid "AUTO.TEXT.3FDF9FEFC7A8"
-msgstr "给一个骰面添加蓝印。该面投出但未结算时 +2 倍率，并生成主骰型升级件。"
+msgstr "Add a blue imprint to one face. When rolled but not scored, +2 Mult and generate a primary combo upgrade; +1 extra Mult if a stay ornament triggered first. Generation requires an item slot."
 
 msgid "AUTO.TEXT.402052AA36CD"
 msgstr "确认安装"
@@ -1457,7 +1457,7 @@ msgid "AUTO.TEXT.51C2E5D71139"
 msgstr "面 %d"
 
 msgid "AUTO.TEXT.51C417CBC24C"
-msgstr "该骰面被结算并计分时，+1 金币。"
+msgstr "When this face is scored, +1 Coin."
 
 msgid "AUTO.TEXT.51F26FB0850B"
 msgstr "将一个骰面替换为 6，并添加红印。"
@@ -1481,7 +1481,7 @@ msgid "AUTO.TEXT.546DB6CEBB67"
 msgstr "选择骰子后，可以重投所选，或直接结算所选。"
 
 msgid "AUTO.TEXT.547F36B364AF"
-msgstr "该骰面被结算并计分时获得 1 金币。"
+msgstr "When this face is scored, gain 1 coin."
 
 msgid "AUTO.TEXT.5598B4374A82"
 msgstr "被结算时，+50 基础战力；不参与点数判断与点数总和。"
@@ -1553,7 +1553,7 @@ msgid "AUTO.TEXT.64867FADD655"
 msgstr "爆裂破碎"
 
 msgid "AUTO.TEXT.648BA894F98E"
-msgstr "投出但未结算时，+2 倍率，并生成主骰型升级件。"
+msgstr "When rolled but not scored, +2 Mult and generate a primary combo upgrade; +1 extra Mult if a stay ornament triggered first. Generation requires an item slot."
 
 msgid "AUTO.TEXT.64A75BA1FD38"
 msgstr "效果：%s"
@@ -1829,7 +1829,7 @@ msgid "AUTO.TEXT.A542B7CCA535"
 msgstr "镜面骰胚"
 
 msgid "AUTO.TEXT.A74D96EFFD75"
-msgstr "给一个骰面安装留场面饰。投出但未结算时，终倍率 ×1.5。"
+msgstr "给一个骰面安装留场面饰。投出但未结算时，终倍率 ×2。"
 
 msgid "AUTO.TEXT.A93AED7A90F4"
 msgstr "六点"
@@ -2051,7 +2051,7 @@ msgid "AUTO.TEXT.D4D96AFD037F"
 msgstr "使用过重投"
 
 msgid "AUTO.TEXT.D5E268A322C9"
-msgstr "给一个骰面添加金印。该面被结算并计分时获得 1 金币。"
+msgstr "Add a gold imprint to one face. When this face is scored, gain 1 coin."
 
 msgid "AUTO.TEXT.D5E75BFF6141"
 msgstr "骰胚：无"
@@ -2156,7 +2156,7 @@ msgid "AUTO.TEXT.EBBDEA8ACEFD"
 msgstr "负面印记。当前版本仅用于测试或净化。"
 
 msgid "AUTO.TEXT.EDE4E88DE3D0"
-msgstr "若该骰面本回合最终投出但未被选择结算，本回合结束时生成主骰型升级件。"
+msgstr "When rolled but not scored, +2 Mult and generate a primary combo upgrade; +1 extra Mult if a stay ornament triggered first. Generation requires an item slot."
 
 msgid "AUTO.TEXT.EE01EF7E6EA2"
 msgstr "等待行动"

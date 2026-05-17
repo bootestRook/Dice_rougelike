@@ -21,7 +21,7 @@ func _init() -> void:
 
 	var selected := _roll(0, 0, 1)
 	var stay_unselected := _roll(1, 0, 5, &"orn_stay", &"mark_none", &"none", 1, false)
-	all_passed = _check("stay unselected adds x1.5", is_equal_approx(_score([selected], [selected, stay_unselected]).xmult, 1.5)) and all_passed
+	all_passed = _check("stay unselected adds x2", is_equal_approx(_score([selected], [selected, stay_unselected]).xmult, 2.0)) and all_passed
 
 	var red_chip := _score([_roll(0, 0, 1, &"orn_chip", &"red")])
 	all_passed = _check("red repeats pip and chip", red_chip.chips == 67) and all_passed
@@ -38,8 +38,8 @@ func _init() -> void:
 	all_passed = _check("legacy glass scores as burst", is_equal_approx(legacy_glass.xmult, 2.0)) and all_passed
 	var selected_steel := _roll(0, 0, 1)
 	var legacy_steel := _roll(1, 0, 5, &"orn_none", &"mark_none", &"steel", 1, false)
-	all_passed = _check("legacy steel scores as stay", is_equal_approx(_score([selected_steel], [selected_steel, legacy_steel]).xmult, 1.5)) and all_passed
-	all_passed = _check("poly occupies ornament slot and adds x1.5", is_equal_approx(_score([_roll(0, 0, 1, &"orn_poly")]).xmult, 1.5)) and all_passed
+	all_passed = _check("legacy steel scores as rounded stay", is_equal_approx(_score([selected_steel], [selected_steel, legacy_steel]).xmult, 2.0)) and all_passed
+	all_passed = _check("poly occupies ornament slot and adds x2", is_equal_approx(_score([_roll(0, 0, 1, &"orn_poly")]).xmult, 2.0)) and all_passed
 	all_passed = _check("logs are Chinese and hide legacy ids", not _logs_have_forbidden_text(red_burst) and not _logs_have_forbidden_text(legacy_glass)) and all_passed
 
 	print("PASS: DebugOrnamentScoringSmokeTest" if all_passed else "FAIL: DebugOrnamentScoringSmokeTest")

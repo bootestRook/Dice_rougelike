@@ -28,8 +28,25 @@ var score_events: Array[Dictionary] = []
 var floating_texts: Array[Dictionary] = []
 
 
+static func ceil_multiplier(value: float) -> int:
+	return ceili(value)
+
+
+static func format_multiplier(value: float) -> String:
+	return str(ceil_multiplier(value))
+
+
+static func final_score_for(score_chips: int, score_mult: int, score_xmult: float) -> int:
+	return ceili(float(score_chips * score_mult) * float(ceil_multiplier(score_xmult)))
+
+
+func normalize_multipliers() -> void:
+	xmult = float(ceil_multiplier(xmult))
+
+
 func recalculate_final_score() -> void:
-	final_score = roundi(float(chips * mult) * xmult)
+	normalize_multipliers()
+	final_score = final_score_for(chips, mult, xmult)
 
 
 func add_log(entry: BattleLogEntry) -> void:
@@ -62,7 +79,7 @@ func get_summary_text_zh() -> String:
 	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.ABAAFC3C7A71")) % [_tags_text()])
 	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.4175E1B87B17")) % [chips])
 	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.B57562D610C0")) % [mult])
-	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.135A684FBEFC")) % [xmult])
+	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.135A684FBEFC")) % [format_multiplier(xmult)])
 	if coins_delta != 0:
 		var coin_prefix := "+" if coins_delta > 0 else ""
 		lines.append(str(TranslationServer.translate(&"AUTO.TEXT.2D4DC8F81EEF")) % [coin_prefix, coins_delta])

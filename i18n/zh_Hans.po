@@ -557,7 +557,7 @@ msgid "FORGE_PART.ORNAMENT_STAY.NAME"
 msgstr "留场面饰"
 
 msgid "FORGE_PART.ORNAMENT_STAY.DESC"
-msgstr "给一个骰面安装留场面饰。投出但未结算时，提供 +5 倍率。"
+msgstr "给一个骰面安装留场面饰。投出但未结算时，终倍率 ×2。"
 
 msgid "FORGE_PART.ORNAMENT_WILD.NAME"
 msgstr "万能面饰"
@@ -599,7 +599,7 @@ msgid "FORGE_PART.ORNAMENT_POLY.NAME"
 msgstr "多彩强化"
 
 msgid "FORGE_PART.ORNAMENT_POLY.DESC"
-msgstr "给一个骰面安装多彩强化。被结算时终倍率 ×1.5。"
+msgstr "给一个骰面安装多彩强化。被结算时终倍率 ×2。"
 
 msgid "FORGE_PART.MARK_RED.NAME"
 msgstr "红印"
@@ -611,13 +611,13 @@ msgid "FORGE_PART.MARK_BLUE.NAME"
 msgstr "蓝印"
 
 msgid "FORGE_PART.MARK_BLUE.DESC"
-msgstr "投出但未结算时，+2 倍率，并生成主骰型升级件。"
+msgstr "投出但未结算时，+2 倍率，并生成主骰型升级件；若已触发留场面饰则额外 +1 倍率。"
 
 msgid "FORGE_PART.MARK_PURPLE.NAME"
 msgstr "紫印"
 
 msgid "FORGE_PART.MARK_PURPLE.DESC"
-msgstr "被选择重投时生成 1 个随机铸骰件；重投后出现并结算时，+4 倍率。"
+msgstr "被选择重投时生成 1 个随机铸骰件；重投后出现并结算时，+4 倍率。每个物理面每场战斗最多成功生成 1 次。"
 
 msgid "FORGE_PART.MARK_GOLD.NAME"
 msgstr "金印"
@@ -872,10 +872,10 @@ msgid "UI.SCORE_SUMMARY.PRIMARY_COMBO"
 msgstr "主骰型：{combo}"
 
 msgid "UI.MARK_EFFECT_COMPACT.BLUE"
-msgstr "+2 倍率；生成主骰型升级件"
+msgstr "+2 倍率（留场后 +3）；生成主骰型升级件"
 
 msgid "UI.MARK_EFFECT_COMPACT.PURPLE"
-msgstr "+4 倍率；生成随机铸骰件"
+msgstr "+4 倍率；生成随机铸骰件（每面每战 1 次）"
 
 msgid "UI.MARK_EFFECT_COMPACT.GOLD"
 msgstr "+1 金币"
@@ -1064,7 +1064,7 @@ msgid "AUTO.TEXT.04E30DB10857"
 msgstr "战力面贴"
 
 msgid "AUTO.TEXT.05A8FE4EDC14"
-msgstr "给一个骰面添加紫印。被选择重投时生成 1 个随机铸骰件；重投后出现并结算时 +4 倍率。"
+msgstr "给一个骰面添加紫印。被选择重投时生成 1 个随机铸骰件；重投后出现并结算时 +4 倍率。每个物理面每场战斗最多成功生成 1 次，需有道具槽位。"
 
 msgid "AUTO.TEXT.093DDBA0EF5F"
 msgstr "金辉面贴"
@@ -1115,7 +1115,7 @@ msgid "AUTO.TEXT.135E3DF5C753"
 msgstr "包含结构：%s"
 
 msgid "AUTO.TEXT.147E1AD7C52E"
-msgstr "被选择重投时生成 1 个随机铸骰件；重投后出现并结算时，+4 倍率。"
+msgstr "被选择重投时生成 1 个随机铸骰件；重投后出现并结算时，+4 倍率。每个物理面每场战斗最多成功生成 1 次，需有道具槽位。"
 
 msgid "AUTO.TEXT.14DDE613ACF4"
 msgstr "被结算时，+30 基础战力。"
@@ -1172,7 +1172,7 @@ msgid "AUTO.TEXT.1D11D52F2398"
 msgstr "将 1 个选中骰面安装为通配面饰。"
 
 msgid "AUTO.TEXT.1DC0AB17E3A0"
-msgstr "投出但未结算时，终倍率 ×1.5。"
+msgstr "投出但未结算时，终倍率 ×2。"
 
 msgid "AUTO.TEXT.1DE727CACA95"
 msgstr "第 %d 场后：%s 安装到 骰子 %d / 面 %d"
@@ -1247,10 +1247,10 @@ msgid "AUTO.TEXT.287EC954DA38"
 msgstr "顺子"
 
 msgid "AUTO.TEXT.296CDB12F677"
-msgstr "被结算时，终倍率 ×1.5。"
+msgstr "被结算时，终倍率 ×2。"
 
 msgid "AUTO.TEXT.296FAC38B168"
-msgstr "该骰面被重投时生成 1 个随机铸骰件；每场战斗每个物理面最多成功触发 1 次。"
+msgstr "被选择重投时生成 1 个随机铸骰件；重投后出现并结算时，+4 倍率。每个物理面每场战斗最多成功生成 1 次，需有道具槽位。"
 
 msgid "AUTO.TEXT.29C0C578392B"
 msgstr "倍率面饰：+%d Mult"
@@ -1268,7 +1268,7 @@ msgid "AUTO.TEXT.2B928EF5366D"
 msgstr "金辉面饰：+%d 金币"
 
 msgid "AUTO.TEXT.2BF754A09305"
-msgstr "给一个骰面安装多彩强化。被结算时终倍率 ×1.5。"
+msgstr "给一个骰面安装多彩强化。被结算时终倍率 ×2。"
 
 msgid "AUTO.TEXT.2C0D680889AC"
 msgstr "将最多 2 个选中骰面安装为倍率面饰。"
@@ -1367,7 +1367,7 @@ msgid "AUTO.TEXT.3F474E4F22E5"
 msgstr "将最多 3 个选中骰面随机改为合法高域点数；D4 骰面不可作为目标。"
 
 msgid "AUTO.TEXT.3FDF9FEFC7A8"
-msgstr "给一个骰面添加蓝印。该面投出但未结算时 +2 倍率，并生成主骰型升级件。"
+msgstr "给一个骰面添加蓝印。该面投出但未结算时 +2 倍率，并生成主骰型升级件；若已触发留场面饰则额外 +1 倍率。生成需有道具槽位。"
 
 msgid "AUTO.TEXT.402052AA36CD"
 msgstr "确认安装"
@@ -1553,7 +1553,7 @@ msgid "AUTO.TEXT.64867FADD655"
 msgstr "爆裂破碎"
 
 msgid "AUTO.TEXT.648BA894F98E"
-msgstr "投出但未结算时，+2 倍率，并生成主骰型升级件。"
+msgstr "投出但未结算时，+2 倍率，并生成主骰型升级件；若已触发留场面饰则额外 +1 倍率。生成需有道具槽位。"
 
 msgid "AUTO.TEXT.64A75BA1FD38"
 msgstr "效果：%s"
@@ -1829,7 +1829,7 @@ msgid "AUTO.TEXT.A542B7CCA535"
 msgstr "镜面骰胚"
 
 msgid "AUTO.TEXT.A74D96EFFD75"
-msgstr "给一个骰面安装留场面饰。投出但未结算时，终倍率 ×1.5。"
+msgstr "给一个骰面安装留场面饰。投出但未结算时，终倍率 ×2。"
 
 msgid "AUTO.TEXT.A93AED7A90F4"
 msgstr "六点"
@@ -2156,7 +2156,7 @@ msgid "AUTO.TEXT.EBBDEA8ACEFD"
 msgstr "负面印记。当前版本仅用于测试或净化。"
 
 msgid "AUTO.TEXT.EDE4E88DE3D0"
-msgstr "若该骰面本回合最终投出但未被选择结算，本回合结束时生成主骰型升级件。"
+msgstr "投出但未结算时，+2 倍率，并生成主骰型升级件；若已触发留场面饰则额外 +1 倍率。生成需有道具槽位。"
 
 msgid "AUTO.TEXT.EE01EF7E6EA2"
 msgstr "等待行动"

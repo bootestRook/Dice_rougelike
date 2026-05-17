@@ -56,7 +56,7 @@ static func get_all_defs() -> Array[ComboLevelDef]:
 static func get_combo_ids() -> Array[StringName]:
 	var ids: Array[StringName] = []
 	for def in get_all_defs():
-		ids.append(def.combo_id)
+		ids.append(def.upgrade_id)
 	return ids
 
 
@@ -69,8 +69,8 @@ static func get_item_ids() -> Array[StringName]:
 
 static func default_combo_levels() -> Dictionary:
 	var result := {}
-	for combo_id in get_combo_ids():
-		result[combo_id] = 1
+	for def in get_all_defs():
+		result[def.upgrade_id] = 1
 	return result
 
 
@@ -96,20 +96,36 @@ static func display_name_for_combo(primary_combo_id: StringName) -> String:
 
 static func normalize_combo_id(combo_id: StringName) -> StringName:
 	match combo_id:
+		&"combo_five_kind", &"upgrade_combo_five_kind":
+			return FIVE_KIND
 		&"FIVE_KIND", &"five_kind":
 			return FIVE_KIND
+		&"combo_straight", &"upgrade_combo_straight":
+			return STRAIGHT
 		&"STRAIGHT", &"straight":
 			return STRAIGHT
+		&"combo_four_kind", &"upgrade_combo_four_kind":
+			return FOUR_KIND
 		&"FOUR_KIND", &"four_kind":
 			return FOUR_KIND
+		&"combo_full_house", &"upgrade_combo_full_house":
+			return FULL_HOUSE
 		&"FULL_HOUSE", &"full_house":
 			return FULL_HOUSE
+		&"combo_three_kind", &"upgrade_combo_three_kind":
+			return THREE_KIND
 		&"THREE_KIND", &"three_kind":
 			return THREE_KIND
+		&"combo_two_pair", &"upgrade_combo_two_pair":
+			return TWO_PAIR
 		&"TWO_PAIR", &"two_pair":
 			return TWO_PAIR
+		&"combo_pair", &"upgrade_combo_pair":
+			return PAIR
 		&"PAIR", &"pair":
 			return PAIR
+		&"combo_scatter", &"upgrade_combo_scatter":
+			return SCATTER
 		&"SCATTER", &"scatter":
 			return SCATTER
 		_:

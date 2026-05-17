@@ -409,30 +409,30 @@ static func log_text(key: StringName, args: Dictionary = {}) -> String:
 		&"LOG.COMBO_CHIPS_BONUS":
 			return str(TranslationServer.translate(&"AUTO.TEXT.DC6B0A9293A8")) % [int(args.get("chips", 0))]
 		&"LOG.COMBO_MULT":
-			return str(TranslationServer.translate(&"AUTO.TEXT.C5FFC0D889DE")) % [int(args.get("mult", 1))]
+			return str(TranslationServer.translate(&"AUTO.TEXT.C5FFC0D889DE")) % [_ceil_numeric_arg(args, "mult", 1.0)]
 		&"LOG.PIP_SUM":
 			return str(TranslationServer.translate(&"AUTO.TEXT.2392B1DFA2A1")) % [int(args.get("sum", 0))]
 		&"LOG.BASE_CHIPS":
 			return str(TranslationServer.translate(&"AUTO.TEXT.4175E1B87B17")) % [int(args.get("chips", 0))]
 		&"LOG.BASE_MULT":
-			return str(TranslationServer.translate(&"AUTO.TEXT.B57562D610C0")) % [int(args.get("mult", 0))]
+			return str(TranslationServer.translate(&"AUTO.TEXT.B57562D610C0")) % [_ceil_numeric_arg(args, "mult", 0.0)]
 		&"LOG.BASE_XMULT":
-			return str(TranslationServer.translate(&"AUTO.TEXT.C39ACC391607")) % [str(args.get("xmult", "1.00"))]
+			return str(TranslationServer.translate(&"AUTO.TEXT.C39ACC391607")) % [_format_multiplier_arg(args, "xmult", 1.0)]
 		&"LOG.FINAL_SCORE":
 			return str(TranslationServer.translate(&"AUTO.TEXT.481853976CD4")) % [
 				int(args.get("chips", 0)),
-				int(args.get("mult", 0)),
-				str(args.get("xmult", "1.00")),
+				_ceil_numeric_arg(args, "mult", 0.0),
+				_format_multiplier_arg(args, "xmult", 1.0),
 				int(args.get("score", 0)),
 			]
 		&"LOG.ORNAMENT_CHIP":
 			return str(TranslationServer.translate(&"AUTO.TEXT.01573E10E71B")) % [int(args.get("chips", 0))]
 		&"LOG.ORNAMENT_MULT":
-			return str(TranslationServer.translate(&"AUTO.TEXT.29C0C578392B")) % [int(args.get("mult", 0))]
+			return str(TranslationServer.translate(&"AUTO.TEXT.29C0C578392B")) % [_ceil_numeric_arg(args, "mult", 0.0)]
 		&"LOG.ORNAMENT_BURST":
-			return str(TranslationServer.translate(&"AUTO.TEXT.35285A7CDA47")) % [str(args.get("xmult", "2"))]
+			return str(TranslationServer.translate(&"AUTO.TEXT.35285A7CDA47")) % [_format_multiplier_arg(args, "xmult", 2.0)]
 		&"LOG.ORNAMENT_STAY":
-			return str(TranslationServer.translate(&"AUTO.TEXT.B144C1DD3DD0")) % [str(args.get("xmult", "1.5"))]
+			return str(TranslationServer.translate(&"AUTO.TEXT.B144C1DD3DD0")) % [_format_multiplier_arg(args, "xmult", 2.0)]
 		&"LOG.ORNAMENT_WILD":
 			return str(TranslationServer.translate(&"AUTO.TEXT.CF5532730BC5")) % [
 				int(args.get("original", 0)),
@@ -443,7 +443,7 @@ static func log_text(key: StringName, args: Dictionary = {}) -> String:
 		&"LOG.ORNAMENT_GOLD":
 			return str(TranslationServer.translate(&"AUTO.TEXT.2B928EF5366D")) % [int(args.get("coins", 0))]
 		&"LOG.ORNAMENT_LUCKY_MULT":
-			return str(TranslationServer.translate(&"AUTO.TEXT.DB56A53169CA")) % [int(args.get("mult", 0))]
+			return str(TranslationServer.translate(&"AUTO.TEXT.DB56A53169CA")) % [_ceil_numeric_arg(args, "mult", 0.0)]
 		&"LOG.ORNAMENT_LUCKY_COINS":
 			return str(TranslationServer.translate(&"AUTO.TEXT.F4E270D49C8E")) % [int(args.get("coins", 0))]
 		&"LOG.ORNAMENT_LUCKY_MISS":
@@ -451,9 +451,9 @@ static func log_text(key: StringName, args: Dictionary = {}) -> String:
 		&"LOG.ORNAMENT_FOIL":
 			return str(TranslationServer.translate(&"AUTO.TEXT.222171072F44")) % [int(args.get("chips", 0))]
 		&"LOG.ORNAMENT_HOLO":
-			return str(TranslationServer.translate(&"AUTO.TEXT.53F7EEE5CB6F")) % [int(args.get("mult", 0))]
+			return str(TranslationServer.translate(&"AUTO.TEXT.53F7EEE5CB6F")) % [_ceil_numeric_arg(args, "mult", 0.0)]
 		&"LOG.ORNAMENT_POLY":
-			return str(TranslationServer.translate(&"AUTO.TEXT.FC3405B20424")) % [str(args.get("xmult", "1.5"))]
+			return str(TranslationServer.translate(&"AUTO.TEXT.FC3405B20424")) % [_format_multiplier_arg(args, "xmult", 2.0)]
 		&"LOG.ORNAMENT_BURST_BREAK":
 			return str(TranslationServer.translate(&"AUTO.TEXT.5C8EA2E7B281"))
 		&"LOG.MARK_RED_RETRIGGER":
@@ -483,14 +483,14 @@ static func log_text(key: StringName, args: Dictionary = {}) -> String:
 				int(args.get("die", 0)),
 				int(args.get("face", 0)),
 				str(args.get("mark", "")),
-				int(args.get("mult", 0)),
+				_ceil_numeric_arg(args, "mult", 0.0),
 			]
 		&"LOG.MARK_PURPLE":
 			return str(TranslationServer.translate(&"AUTO.TEXT.9C193E41AF49")) % [
 				int(args.get("die", 0)),
 				int(args.get("face", 0)),
 				str(args.get("mark", "")),
-				int(args.get("mult", 0)),
+				_ceil_numeric_arg(args, "mult", 0.0),
 			]
 		&"LOG.EXTRA_TRIGGER_PIP":
 			return str(TranslationServer.translate(&"AUTO.TEXT.264C241CE51B")) % [
@@ -499,7 +499,7 @@ static func log_text(key: StringName, args: Dictionary = {}) -> String:
 				int(args.get("chips", 0)),
 			]
 		&"LOG.MATERIAL_STEEL":
-			return log_text(&"LOG.ORNAMENT_STAY", {"die": args.get("die", 0), "face": args.get("face", 0), "ornament": ornament_name(&"orn_stay"), "xmult": args.get("xmult", "1.5")})
+			return log_text(&"LOG.ORNAMENT_STAY", {"die": args.get("die", 0), "face": args.get("face", 0), "ornament": ornament_name(&"orn_stay"), "xmult": args.get("xmult", "2")})
 		&"LOG.MATERIAL_GLASS":
 			return log_text(&"LOG.ORNAMENT_BURST", {"die": args.get("die", 0), "face": args.get("face", 0), "ornament": ornament_name(&"orn_burst"), "xmult": args.get("xmult", "2")})
 		&"LOG.IMPRINT_BLUE":
@@ -602,6 +602,22 @@ static func _legacy_mark_id(id: StringName) -> StringName:
 			return &"mark_white"
 		_:
 			return id
+
+
+static func _format_multiplier_arg(args: Dictionary, key: String, default_value: float) -> String:
+	return str(_ceil_numeric_arg(args, key, default_value))
+
+
+static func _ceil_numeric_arg(args: Dictionary, key: String, default_value: float) -> int:
+	if args == null:
+		return ceili(default_value)
+	var value = args.get(key, default_value)
+	if value is String or value is StringName:
+		var text := str(value).strip_edges()
+		if text.is_valid_float():
+			return ceili(text.to_float())
+		return ceili(default_value)
+	return ceili(float(value))
 
 
 static func _is_none_id(value: StringName) -> bool:

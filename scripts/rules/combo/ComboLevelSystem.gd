@@ -11,7 +11,7 @@ static func get_combo_level_result(primary_combo_id: StringName, combo_levels: D
 	if not ComboUpgradeCatalog.has_combo(combo_id):
 		combo_id = ComboUpgradeCatalog.SCATTER
 	var def := ComboUpgradeCatalog.get_def(combo_id)
-	var level := int(combo_levels.get(combo_id, 1))
+	var level := int(combo_levels.get(def.upgrade_id, combo_levels.get(combo_id, 1)))
 	level = max(level, 1)
 
 	var result := ComboLevelResult.new()

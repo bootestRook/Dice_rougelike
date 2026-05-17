@@ -10,6 +10,8 @@ const RunState = preload("res://scripts/core/battle/RunState.gd")
 const ComboUpgradeCatalog = preload("res://scripts/rules/combo/ComboUpgradeCatalog.gd")
 const ComboUpgradeItem = preload("res://scripts/rules/combo/ComboUpgradeItem.gd")
 const ForgeItemCatalog = preload("res://scripts/rules/forge/ForgeItemCatalog.gd")
+const FoundryServiceDef = preload("res://scripts/data_defs/FoundryServiceDef.gd")
+const FoundryServiceCatalog = preload("res://scripts/rules/forge/FoundryServiceCatalog.gd")
 
 
 const NORMAL_REWARD_POOL_IDS := [
@@ -107,6 +109,15 @@ func generate_forge_item_choices(count: int = 3) -> Array[ForgeItemDef]:
 	return choices
 
 
+func generate_foundry_service_choices(count: int = 3) -> Array[FoundryServiceDef]:
+	var choices: Array[FoundryServiceDef] = []
+	for id in _draw_unique_formal_foundry_service_ids(FoundryServiceCatalog.get_all_ids(), max(0, count)):
+		var def := FoundryServiceCatalog.get_def(id)
+		if def != null:
+			choices.append(def)
+	return choices
+
+
 func roll_random_forge_item(battle_index: int = 0) -> StringName:
 	var pool := _build_reward_pool_for_battle(battle_index)
 	if pool.is_empty():
@@ -129,6 +140,18 @@ func combo_upgrade_item_id(combo_id: StringName) -> StringName:
 
 
 func _draw_unique_formal_forge_item_ids(pool: Array, requested_count: int) -> Array[StringName]:
+	var source: Array[StringName] = []
+	for id in pool:
+		source.append(StringName(str(id)))
+	var choices: Array[StringName] = []
+	while choices.size() < requested_count and not source.is_empty():
+		var index := rng.randi_range(0, source.size() - 1)
+		choices.append(source[index])
+		source.remove_at(index)
+	return choices
+
+
+func _draw_unique_formal_foundry_service_ids(pool: Array, requested_count: int) -> Array[StringName]:
 	var source: Array[StringName] = []
 	for id in pool:
 		source.append(StringName(str(id)))

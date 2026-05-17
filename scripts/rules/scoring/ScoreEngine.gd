@@ -76,9 +76,11 @@ func score(context: ScoreContext) -> ScoreResult:
 	_add_log(result, &"LOG.BASE_XMULT", {"xmult": _format_xmult(result.xmult)}, &"base")
 	_add_wild_choice_logs(context, result)
 
-	_apply_selected_rolls_for_resolution(context, result)
-	effect_resolver.apply_unselected_effects(context, result)
-	result.final_score = roundi(float(result.chips * result.mult) * result.xmult)
+	var include_settlement_effects := not context.is_preview
+	_apply_selected_rolls_for_resolution(context, result, null, include_settlement_effects)
+	if include_settlement_effects:
+		effect_resolver.apply_unselected_effects(context, result)
+	result.recalculate_final_score()
 	_add_log(result, &"LOG.FINAL_SCORE", {
 		"chips": result.chips,
 		"mult": result.mult,
@@ -196,7 +198,7 @@ func build_resolution_trace(context: ScoreContext) -> ResolutionTrace:
 
 	_apply_selected_rolls_for_resolution(context, result, trace)
 	effect_resolver.apply_unselected_effects(context, result, trace)
-	result.final_score = roundi(float(result.chips * result.mult) * result.xmult)
+	result.recalculate_final_score()
 	_add_log(result, &"LOG.FINAL_SCORE", {
 		"chips": result.chips,
 		"mult": result.mult,
@@ -372,7 +374,8 @@ func _score_snapshot(result: ScoreResult) -> Dictionary:
 func _apply_selected_rolls_for_resolution(
 	context: ScoreContext,
 	result: ScoreResult,
-	trace: ResolutionTrace = null
+	trace: ResolutionTrace = null,
+	include_settlement_effects: bool = true
 ) -> void:
 	if context == null or result == null:
 		return
@@ -380,7 +383,8 @@ func _apply_selected_rolls_for_resolution(
 	for index in range(context.selected_faces.size()):
 		var roll: RolledFace = context.selected_faces[index]
 		_apply_roll_pip_score(roll, context, result, trace, index)
-		effect_resolver.apply_selected_face_effects_for_roll(roll, context, result, trace)
+		if include_settlement_effects:
+			effect_resolver.apply_selected_face_effects_for_roll(roll, context, result, trace)
 
 
 func _apply_roll_pip_score(
@@ -487,12 +491,14 @@ func _prepare_context(context: ScoreContext) -> void:
 
 func _mark_scored_and_unscored(context: ScoreContext) -> void:
 	context.unscored_faces.clear()
+	var mutate_roll_resolution_flags := not context.is_preview
 	for roll in context.all_rolled_faces:
 		if roll == null:
 			continue
 		var selected := _is_face_selected(roll, context)
-		roll.is_scored = selected
-		roll.is_unscored_stay = not selected
+		if mutate_roll_resolution_flags:
+			roll.is_scored = selected
+			roll.is_unscored_stay = not selected
 		if not selected:
 			context.unscored_faces.append(roll)
 
@@ -763,7 +769,7 @@ func _add_log(result: ScoreResult, key: StringName, args: Dictionary = {}, categ
 
 
 func _format_xmult(value: float) -> String:
-	return "%.2f" % [value]
+	return ScoreResult.format_multiplier(value)
 
 
 func _has_rerolled(context: ScoreContext) -> bool:

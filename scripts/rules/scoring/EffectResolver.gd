@@ -234,15 +234,16 @@ func _apply_single_face_trigger(
 			_append_trace_step(trace, result, before_stone, phase, &"ornament", ornament_id, ornament_name, ornament_name, "+50 Chips", "+50 Chips", roll, trigger_index, _resolution_index_for_roll(trace, roll))
 		FaceState.ORN_BURST:
 			var before_burst := _score_snapshot(result)
-			result.xmult *= 2.0
+			var burst_factor := _apply_xmult_factor(result, 2.0)
 			_add_log(result, &"LOG.ORNAMENT_BURST", {
 				"die": roll.die_index + 1,
 				"face": roll.face_index + 1,
 				"ornament": DisplayNames.ornament_name(ornament_id),
-				"xmult": _format_xmult(2.0),
+				"xmult": _format_xmult(burst_factor),
 			}, &"ornament_burst")
-			result.add_floating_text("X2", roll.die_index, roll.face_index)
-			_append_trace_step(trace, result, before_burst, phase, &"ornament", ornament_id, ornament_name, ornament_name, "x2 XMult", "x2 XMult", roll, trigger_index, _resolution_index_for_roll(trace, roll))
+			var burst_text := "X%s" % [_format_xmult(burst_factor)]
+			result.add_floating_text(burst_text, roll.die_index, roll.face_index)
+			_append_trace_step(trace, result, before_burst, phase, &"ornament", ornament_id, ornament_name, ornament_name, "%s XMult" % [burst_text.to_lower()], "%s XMult" % [burst_text.to_lower()], roll, trigger_index, _resolution_index_for_roll(trace, roll))
 		FaceState.ORN_LUCKY:
 			_apply_lucky(roll, context, result, trace, phase, trigger_index)
 		FaceState.ORN_FOIL:
@@ -267,14 +268,15 @@ func _apply_single_face_trigger(
 			_append_trace_step(trace, result, before_holo, phase, &"ornament", ornament_id, ornament_name, ornament_name, "+10 Mult", "+10 Mult", roll, trigger_index, _resolution_index_for_roll(trace, roll))
 		FaceState.ORN_POLY:
 			var before_poly := _score_snapshot(result)
-			result.xmult *= 1.5
+			var poly_factor := _apply_xmult_factor(result, 2.0)
 			_add_log(result, &"LOG.ORNAMENT_POLY", {
 				"die": roll.die_index + 1,
 				"face": roll.face_index + 1,
-				"xmult": _format_xmult(1.5),
+				"xmult": _format_xmult(poly_factor),
 			}, &"ornament_poly")
-			result.add_floating_text("X1.5", roll.die_index, roll.face_index)
-			_append_trace_step(trace, result, before_poly, phase, &"ornament", ornament_id, ornament_name, ornament_name, "x1.5 XMult", "x1.5 XMult", roll, trigger_index, _resolution_index_for_roll(trace, roll))
+			var poly_text := "X%s" % [_format_xmult(poly_factor)]
+			result.add_floating_text(poly_text, roll.die_index, roll.face_index)
+			_append_trace_step(trace, result, before_poly, phase, &"ornament", ornament_id, ornament_name, ornament_name, "%s XMult" % [poly_text.to_lower()], "%s XMult" % [poly_text.to_lower()], roll, trigger_index, _resolution_index_for_roll(trace, roll))
 
 
 func _apply_single_unselected_stay_trigger(
@@ -294,15 +296,16 @@ func _apply_single_unselected_stay_trigger(
 	match ornament_id:
 		FaceState.ORN_STAY:
 			var before_stay := _score_snapshot(result)
-			result.xmult *= 1.5
+			var stay_factor := _apply_xmult_factor(result, 2.0)
 			_add_log(result, &"LOG.ORNAMENT_STAY", {
 				"die": roll.die_index + 1,
 				"face": roll.face_index + 1,
 				"ornament": DisplayNames.ornament_name(ornament_id),
-				"xmult": _format_xmult(1.5),
+				"xmult": _format_xmult(stay_factor),
 			}, &"ornament_stay")
-			result.add_floating_text("X1.5", roll.die_index, roll.face_index)
-			_append_trace_step(trace, result, before_stay, phase, &"ornament", ornament_id, ornament_name, ornament_name, "Stay x1.5 XMult", "x1.5 XMult", roll)
+			var stay_text := "X%s" % [_format_xmult(stay_factor)]
+			result.add_floating_text(stay_text, roll.die_index, roll.face_index)
+			_append_trace_step(trace, result, before_stay, phase, &"ornament", ornament_id, ornament_name, ornament_name, "Stay %s XMult" % [stay_text.to_lower()], "%s XMult" % [stay_text.to_lower()], roll)
 			triggered = true
 		FaceState.ORN_GOLD:
 			var before_gold_stay := _score_snapshot(result)
@@ -650,6 +653,13 @@ func _score_snapshot(result: ScoreResult) -> Dictionary:
 	}
 
 
+func _apply_xmult_factor(result: ScoreResult, raw_factor: float) -> int:
+	var factor := ScoreResult.ceil_multiplier(raw_factor)
+	if result != null:
+		result.xmult = float(ScoreResult.ceil_multiplier(result.xmult * float(factor)))
+	return factor
+
+
 func _append_trace_step(
 	trace: ResolutionTrace,
 	result: ScoreResult,
@@ -725,6 +735,4 @@ func _add_log(result: ScoreResult, key: StringName, args: Dictionary = {}, categ
 
 
 func _format_xmult(value: float) -> String:
-	if is_equal_approx(value, roundf(value)):
-		return str(int(roundf(value)))
-	return "%.2f" % [value]
+	return ScoreResult.format_multiplier(value)

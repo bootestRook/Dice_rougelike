@@ -16,6 +16,7 @@ var hand_current_value: Label = null
 var hand_separator_value: Label = null
 var hand_total_value: Label = null
 var hand_current_font: Font = null
+var victory_target_font: Font = null
 var last_rendered_hand: int = -1
 var last_rendered_rerolls: int = -1
 var last_rendered_money: int = -1
@@ -240,12 +241,12 @@ func _apply_victory_target_display() -> void:
 	target_value.text = "战斗胜利"
 	if style_config != null:
 		style_config.apply_label(target_value, 56, Color(1.0, 0.82, 0.08, 1.0))
-	target_value.add_theme_font_override("font", _get_hand_current_font())
+	target_value.add_theme_font_override("font", _get_victory_target_font())
 	target_value.add_theme_color_override("font_outline_color", Color(0.20, 0.08, 0.0, 1.0))
 	target_value.add_theme_constant_override("outline_size", 4)
-	target_value.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	target_value.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_apply_target_value_layout()
 	target_value.clip_text = false
+	call_deferred("_fit_victory_target_font_size")
 
 
 func _start_victory_target_shake() -> void:
@@ -491,6 +492,23 @@ func _get_hand_current_font() -> Font:
 		font.font_names = PackedStringArray(["Impact", "Arial Black", "Bahnschrift Display", "Bahnschrift", "Arial"])
 		hand_current_font = font
 	return hand_current_font
+
+
+func _get_victory_target_font() -> Font:
+	if victory_target_font == null:
+		var font := SystemFont.new()
+		font.font_names = PackedStringArray([
+			"Microsoft YaHei UI",
+			"Microsoft YaHei",
+			"SimHei",
+			"Noto Sans CJK SC",
+			"Source Han Sans SC",
+			"PingFang SC",
+			"Arial Unicode MS",
+			"Arial",
+		])
+		victory_target_font = font
+	return victory_target_font
 
 
 func _set_hand_counter_text(current_hand: int, max_hands: int) -> void:
@@ -797,6 +815,15 @@ func _fit_target_value_font_size() -> void:
 	_fit_label_to_width(target_value, available_width, style_config.score_font_size, style_config.body_font_size)
 
 
+func _fit_victory_target_font_size() -> void:
+	if target_value == null or target_score_panel == null:
+		return
+	var available_width := target_score_panel.size.x - 42.0
+	if available_width <= 0.0:
+		available_width = target_value.size.x
+	_fit_label_to_width(target_value, available_width, 56, 34)
+
+
 func _remaining_hands(state: BattleHudState) -> int:
 	if state == null or state.max_hands <= 0:
 		return 0
@@ -833,4 +860,4 @@ func _format_number(value: int) -> String:
 
 
 func _format_xmult(value: float) -> String:
-	return str(int(roundf(value)))
+	return str(ceili(value))
