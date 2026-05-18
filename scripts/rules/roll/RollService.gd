@@ -3,6 +3,7 @@ class_name RollService
 
 
 const DieState = preload("res://scripts/core/dice/DieState.gd")
+const FaceState = preload("res://scripts/core/dice/FaceState.gd")
 const RolledFace = preload("res://scripts/core/dice/RolledFace.gd")
 
 
@@ -41,13 +42,13 @@ func reroll_unlocked(dice: Array[DieState], current: Array[RolledFace]) -> Array
 
 func reroll_selected(dice: Array[DieState], current: Array[RolledFace]) -> Array[RolledFace]:
 	var results: Array[RolledFace] = []
-	var roll_count: int = min(dice.size(), current.size())
+	var roll_count: int = current.size()
 
 	for die_index in range(roll_count):
 		var current_roll := current[die_index]
 
 		if current_roll.selected:
-			var rerolled := roll_die(dice[die_index], die_index)
+			var rerolled := roll_temp_face(current_roll) if current_roll.is_temporary else roll_die(dice[die_index], die_index)
 			rerolled.was_rerolled = true
 			results.append(rerolled)
 		else:
@@ -87,6 +88,22 @@ func roll_die(die: DieState, die_index: int, external_rng: RandomNumberGenerator
 	rolled_face.die = die
 	rolled_face.face = die.faces[face_index].clone()
 	rolled_face.rolled_pip = rolled_face.face.pip
+	return rolled_face
+
+
+func roll_temp_face(current_roll: RolledFace = null) -> RolledFace:
+	var mark_id := FaceState.MARK_NONE
+	var die_index := 1000
+	var face_index := 0
+	if current_roll != null:
+		die_index = current_roll.die_index
+		face_index = current_roll.face_index
+		if current_roll.face != null:
+			mark_id = current_roll.face.mark_id
+	var face := FaceState.new(rng.randi_range(1, 6), FaceState.ORN_NONE, mark_id)
+	var rolled_face := RolledFace.new()
+	rolled_face.set_roll(die_index, face_index, face, null)
+	rolled_face.is_temporary = true
 	return rolled_face
 
 

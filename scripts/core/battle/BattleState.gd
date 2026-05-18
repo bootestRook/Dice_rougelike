@@ -20,6 +20,11 @@ var victory: bool = false
 var purple_mark_triggered_this_battle: Dictionary = {}
 var white_mark_active_faces: Dictionary = {}
 var body_triggered_flags_this_battle: Dictionary = {}
+var boss_rule_disabled: bool = false
+var boss_rule_triggered_this_round: bool = false
+var current_round_rerolled_face_count: int = 0
+var current_round_rerolled_four_pip_count: int = 0
+var temporary_faces: Array[RolledFace] = []
 
 
 func setup(new_config: BattleConfig, battle_dice: Array[DieState]) -> void:
@@ -35,6 +40,11 @@ func setup(new_config: BattleConfig, battle_dice: Array[DieState]) -> void:
 	battle_started = true
 	battle_finished = false
 	victory = false
+	boss_rule_disabled = false
+	boss_rule_triggered_this_round = false
+	current_round_rerolled_face_count = 0
+	current_round_rerolled_four_pip_count = 0
+	temporary_faces.clear()
 	purple_mark_triggered_this_battle.clear()
 	_refresh_white_mark_active_faces()
 	body_triggered_flags_this_battle.clear()

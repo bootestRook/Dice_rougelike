@@ -15,6 +15,7 @@ const ScoreResult = preload("res://scripts/core/scoring/ScoreResult.gd")
 const ComboUpgradeCatalog = preload("res://scripts/rules/combo/ComboUpgradeCatalog.gd")
 const ComboUpgradeItem = preload("res://scripts/rules/combo/ComboUpgradeItem.gd")
 const ForgeItemCatalog = preload("res://scripts/rules/forge/ForgeItemCatalog.gd")
+const DiceToolCatalog = preload("res://scripts/rules/dice_tools/DiceToolCatalog.gd")
 
 
 const MAX_RECENT_SETTLEMENT_LOGS := 5
@@ -73,8 +74,17 @@ var recent_hand_summaries: Array[String] = []
 var effect_trigger_counts: Dictionary = {}
 var effect_trigger_order: Array[StringName] = []
 var combo_appearance_counts: Dictionary = {}
+var combo_scored_counts: Dictionary = {}
 var combo_last_formula_by_id: Dictionary = {}
 var combo_levels: Dictionary = {}
+var used_forge_item_count: int = 0
+var used_combo_upgrade_item_ids: Dictionary = {}
+var pending_double_reward_tags: int = 0
+var starting_total_face_count: int = 0
+var skipped_battle_node_count: int = 0
+var battle_rounds_available_delta: int = 0
+var max_scored_faces_per_round_delta: int = 0
+var pending_dice_tool_face_copy: Dictionary = {}
 var foundry_logs: Array[Dictionary] = []
 
 
@@ -108,10 +118,20 @@ func setup_new_run() -> void:
 	effect_trigger_counts.clear()
 	effect_trigger_order.clear()
 	combo_appearance_counts.clear()
+	combo_scored_counts.clear()
 	combo_last_formula_by_id.clear()
 	combo_levels = ComboUpgradeCatalog.default_combo_levels()
+	used_forge_item_count = 0
+	used_combo_upgrade_item_ids.clear()
+	pending_double_reward_tags = 0
+	starting_total_face_count = 0
+	skipped_battle_node_count = 0
+	battle_rounds_available_delta = 0
+	max_scored_faces_per_round_delta = 0
+	pending_dice_tool_face_copy.clear()
 	foundry_logs.clear()
 	create_default_loadout()
+	starting_total_face_count = get_total_face_count()
 
 
 func create_default_loadout() -> void:
@@ -124,6 +144,16 @@ func create_default_loadout() -> void:
 func ensure_starting_dice() -> void:
 	if dice.is_empty():
 		create_default_loadout()
+	if starting_total_face_count <= 0:
+		starting_total_face_count = get_total_face_count()
+
+
+func get_total_face_count() -> int:
+	var total := 0
+	for die in dice:
+		if die != null:
+			total += die.face_count
+	return total
 
 
 func advance_battle() -> void:
@@ -170,7 +200,7 @@ func add_item_instance_to_slots(item: ItemInstance) -> bool:
 
 
 func add_coins(amount: int, _source: StringName = &"") -> void:
-	coins += amount
+	coins = max(get_min_allowed_coins(), coins + amount)
 
 
 func consume_item_slot(slot_index: int) -> ItemInstance:
@@ -223,6 +253,19 @@ func get_non_negative_dice_tool_count() -> int:
 		if tool != null and not tool.is_negative:
 			count += 1
 	return count
+
+
+func get_empty_regular_dice_tool_slot_count() -> int:
+	return max(0, dice_tool_capacity - get_non_negative_dice_tool_count())
+
+
+func get_min_allowed_coins() -> int:
+	_sync_installed_tools_alias()
+	var minimum := 0
+	for tool in dice_tools:
+		if tool != null and tool.tool_id == DiceToolCatalog.TOOL_CREDIT_DEBT:
+			minimum = min(minimum, -20)
+	return minimum
 
 
 func install_dice_tool_item_from_slot(slot_index: int) -> bool:
@@ -360,6 +403,10 @@ func use_item(item_id: StringName) -> bool:
 
 	consume_item_slot(item_index)
 	record_copyable_used_item_id(item_id)
+	used_combo_upgrade_item_ids[item_id] = true
+	for tool in dice_tools:
+		if tool != null and tool.tool_id == DiceToolCatalog.TOOL_STAR_COUNTER:
+			tool.permanent_counters["combo_upgrade_used_count"] = int(tool.permanent_counters.get("combo_upgrade_used_count", 0)) + 1
 	return true
 
 
@@ -527,7 +574,7 @@ func _record_effect_triggers(result: ScoreResult) -> void:
 
 func _is_counted_effect_category(category: StringName) -> bool:
 	match category:
-		&"ornament_chip", &"ornament_mult", &"ornament_wild", &"ornament_burst", &"ornament_stay", &"ornament_stone", &"ornament_gold", &"ornament_lucky", &"ornament_foil", &"ornament_holo", &"ornament_poly", &"mark_blue", &"mark_red", &"mark_purple", &"mark_gold", &"mark_white", &"extra_pip", &"body_iron", &"body_hollow", &"body_mirror", &"body_cracked", &"body_merchant":
+		&"ornament_chip", &"ornament_mult", &"ornament_wild", &"ornament_burst", &"ornament_stay", &"ornament_stone", &"ornament_gold", &"ornament_lucky", &"ornament_foil", &"ornament_holo", &"ornament_poly", &"mark_blue", &"mark_red", &"mark_purple", &"mark_gold", &"mark_white", &"extra_pip", &"body_iron", &"body_hollow", &"body_mirror", &"body_cracked", &"body_merchant", &"dice_tool":
 			return true
 		_:
 			return false
@@ -601,6 +648,8 @@ func _effect_category_text(category: StringName) -> String:
 			return DisplayNames.body_name(DieState.BODY_CRACKED)
 		&"body_merchant":
 			return DisplayNames.body_name(DieState.BODY_MERCHANT)
+		&"dice_tool":
+			return "骰具"
 		_:
 			return str(category)
 
@@ -623,11 +672,13 @@ func _make_item_instance_from_id(item_id: StringName) -> ItemInstance:
 
 	for tool_data in ForgeItemCatalog.get_dice_tool_item_pool():
 		if StringName(str(tool_data.get("id", &""))) == item_id:
-			return ItemInstance.create_dice_tool(
+			var item: ItemInstance = ItemInstance.create_dice_tool(
 				item_id,
 				str(tool_data.get("name", item_id)),
 				int(tool_data.get("sell_value", 0))
 			)
+			item.metadata["rarity"] = StringName(str(tool_data.get("rarity", &"common")))
+			return item
 
 	return ItemInstance.create(item_id, ItemInstance.TYPE_GENERIC, str(item_id))
 

@@ -14,15 +14,18 @@ const ResolutionStep = preload("res://scripts/core/scoring/ResolutionStep.gd")
 const DisplayNames = preload("res://scripts/ui/DisplayNames.gd")
 const FaceState = preload("res://scripts/core/dice/FaceState.gd")
 const RolledFace = preload("res://scripts/core/dice/RolledFace.gd")
+const DiceToolService = preload("res://scripts/rules/dice_tools/DiceToolService.gd")
 
 
 var effect_resolver := EffectResolver.new()
+var dice_tool_service := DiceToolService.new()
 
 
 func score(context: ScoreContext) -> ScoreResult:
 	var result := ScoreResult.new()
 	_prepare_context(context)
 	_ensure_wild_effective_pips(context)
+	dice_tool_service.apply_rule_modifiers(context)
 	var total_pips := _selected_pip_sum(context)
 	var combo_evaluator := ComboEvaluator.new()
 	var resolution := combo_evaluator.resolve(
@@ -49,6 +52,7 @@ func score(context: ScoreContext) -> ScoreResult:
 	context.condition_tags.clear()
 	context.operation_tags.clear()
 	context.state_tags.clear()
+	context.primary_structure_face_keys = combo_evaluator.get_primary_structure_face_keys(context.selected_faces, primary_combo, context)
 	result.primary_combo = primary_combo
 	result.combo_id = primary_combo
 	result.combo_name_key = LocKeys.combo_key(primary_combo)
@@ -80,6 +84,7 @@ func score(context: ScoreContext) -> ScoreResult:
 	_apply_selected_rolls_for_resolution(context, result, null, include_settlement_effects)
 	if include_settlement_effects:
 		effect_resolver.apply_unselected_effects(context, result)
+		dice_tool_service.apply_score_tools(context, result, null, effect_resolver)
 	result.recalculate_final_score()
 	_add_log(result, &"LOG.FINAL_SCORE", {
 		"chips": result.chips,
@@ -109,6 +114,7 @@ func build_resolution_trace(context: ScoreContext) -> ResolutionTrace:
 	context.defer_runtime_mutations = true
 	_prepare_context(context)
 	_ensure_wild_effective_pips(context)
+	dice_tool_service.apply_rule_modifiers(context)
 	context.selected_faces = _sorted_rolls_for_resolution(context.selected_faces, context.selected_die_order)
 	context.scored_faces = context.selected_faces
 	_mark_scored_and_unscored(context)
@@ -140,6 +146,7 @@ func build_resolution_trace(context: ScoreContext) -> ResolutionTrace:
 	context.condition_tags.clear()
 	context.operation_tags.clear()
 	context.state_tags.clear()
+	context.primary_structure_face_keys = combo_evaluator.get_primary_structure_face_keys(context.selected_faces, primary_combo, context)
 
 	var base_values := _base_values_for_combo(primary_combo, total_pips, _combo_levels_for_context(context))
 	var result := ScoreResult.new()
@@ -198,6 +205,7 @@ func build_resolution_trace(context: ScoreContext) -> ResolutionTrace:
 
 	_apply_selected_rolls_for_resolution(context, result, trace)
 	effect_resolver.apply_unselected_effects(context, result, trace)
+	dice_tool_service.apply_score_tools(context, result, trace, effect_resolver)
 	result.recalculate_final_score()
 	_add_log(result, &"LOG.FINAL_SCORE", {
 		"chips": result.chips,
@@ -240,6 +248,7 @@ func build_resolution_trace(context: ScoreContext) -> ResolutionTrace:
 
 func recommend_wild_effective_pips(context: ScoreContext) -> Dictionary:
 	_prepare_context(context)
+	dice_tool_service.apply_rule_modifiers(context)
 	var wild_faces := _selected_wild_faces(context)
 	var recommendations := {}
 	if wild_faces.is_empty():

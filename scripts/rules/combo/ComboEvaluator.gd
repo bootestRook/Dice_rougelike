@@ -50,7 +50,7 @@ func resolve(
 	var counts := _get_pip_counts(pips)
 	var unique_pips := _get_sorted_unique_pips(counts)
 	var pip_sum := _sum_pips_for_values(scored_faces, context)
-	var primary := resolve_primary_combo(counts, unique_pips)
+	var primary := _resolve_primary_combo_for_context(counts, unique_pips, context)
 	var facts := _build_facts(
 		pips,
 		counts,
@@ -58,7 +58,8 @@ func resolve(
 		scored_faces.size(),
 		rolled_faces.size(),
 		has_rerolled_this_hand,
-		is_last_hand
+		is_last_hand,
+		context
 	)
 	var active_tags: Array[StringName] = []
 
@@ -84,11 +85,24 @@ func evaluate_primary_combo(pips: Array[int]) -> StringName:
 
 
 func resolve_primary_combo(pip_counts: Dictionary, unique_pips: Array[int]) -> StringName:
+	return _resolve_primary_combo_with_straight_length(pip_counts, unique_pips, 5)
+
+
+func _resolve_primary_combo_for_context(pip_counts: Dictionary, unique_pips: Array[int], context: ScoreContext = null) -> StringName:
+	var straight_length := 5
+	var allow_one_gap := false
+	if context != null:
+		straight_length = clampi(context.straight_required_count, 4, 5)
+		allow_one_gap = context.straight_allow_one_gap
+	return _resolve_primary_combo_with_straight_length(pip_counts, unique_pips, straight_length, allow_one_gap)
+
+
+func _resolve_primary_combo_with_straight_length(pip_counts: Dictionary, unique_pips: Array[int], straight_length: int, allow_one_gap: bool = false) -> StringName:
 	var max_count := _get_max_count(pip_counts)
 
 	if max_count >= 5:
 		return FIVE_KIND
-	if _has_straight(unique_pips, 5):
+	if _has_straight(unique_pips, straight_length, allow_one_gap):
 		return STRAIGHT
 	if max_count >= 4:
 		return FOUR_KIND
@@ -117,6 +131,65 @@ func evaluate_display_combos(pips: Array[int]) -> Array[StringName]:
 
 func evaluate_rolls(selected_faces: Array[RolledFace]) -> StringName:
 	return evaluate(_pips_from_rolls(selected_faces))
+
+
+func get_primary_structure_face_keys(scored_faces: Array, primary_combo_id: StringName, context: ScoreContext = null) -> Dictionary:
+	var entries: Array[Dictionary] = []
+	var by_pip := {}
+	var counts := {}
+	for value in scored_faces:
+		if not (value is RolledFace):
+			continue
+		var roll := value as RolledFace
+		var pip = get_effective_pip_for_point_logic(roll, context)
+		if pip == null:
+			continue
+		var int_pip := int(pip)
+		var entry := {"roll": roll, "pip": int_pip, "key": _roll_key(roll)}
+		entries.append(entry)
+		if not by_pip.has(int_pip):
+			by_pip[int_pip] = []
+		(by_pip[int_pip] as Array).append(entry)
+		counts[int_pip] = int(counts.get(int_pip, 0)) + 1
+
+	var result := {}
+	var combo_id := normalize_combo_id(primary_combo_id)
+	match combo_id:
+		FIVE_KIND:
+			_add_all_entries(result, entries)
+		FOUR_KIND:
+			_add_entries_for_count(result, by_pip, counts, 4, 4)
+		FULL_HOUSE:
+			var triple_pip := _first_pip_with_count(counts, 3)
+			var pair_pip := _first_pip_with_count(counts, 2, triple_pip)
+			_add_entries_for_pip(result, by_pip, triple_pip, 3)
+			_add_entries_for_pip(result, by_pip, pair_pip, 2)
+		THREE_KIND:
+			_add_entries_for_count(result, by_pip, counts, 3, 3)
+		TWO_PAIR:
+			var pairs_added := 0
+			for pip in _sorted_count_keys(counts):
+				if int(counts[pip]) < 2:
+					continue
+				_add_entries_for_pip(result, by_pip, int(pip), 2)
+				pairs_added += 1
+				if pairs_added >= 2:
+					break
+		PAIR:
+			_add_entries_for_count(result, by_pip, counts, 2, 2)
+		STRAIGHT:
+			var unique := _get_sorted_unique_pips(counts)
+			var straight_length := 5
+			var allow_one_gap := false
+			if context != null:
+				straight_length = clampi(context.straight_required_count, 4, 5)
+				allow_one_gap = context.straight_allow_one_gap
+			var subset := _straight_pip_subset(unique, straight_length, allow_one_gap)
+			for pip in subset:
+				_add_entries_for_pip(result, by_pip, pip, 1)
+		_:
+			_add_all_entries(result, entries)
+	return result
 
 
 func evaluate_facts(
@@ -332,22 +405,91 @@ func _is_full_house(pip_counts: Dictionary) -> bool:
 	return false
 
 
-func _has_straight(unique_pips: Array[int], length: int) -> bool:
+func _has_straight(unique_pips: Array[int], length: int, allow_one_gap: bool = false) -> bool:
+	return not _straight_pip_subset(unique_pips, length, allow_one_gap).is_empty()
+
+
+static func _straight_pip_subset(unique_pips: Array[int], length: int, allow_one_gap: bool = false) -> Array[int]:
 	if unique_pips.size() < length:
-		return false
+		return []
+	var sorted: Array[int] = []
+	for pip in unique_pips:
+		if not sorted.has(pip):
+			sorted.append(pip)
+	sorted.sort()
+	if not allow_one_gap:
+		for start_pip in range(MIN_PIP, MAX_PIP - length + 2):
+			var subset: Array[int] = []
+			for offset in range(length):
+				var value := start_pip + offset
+				if not sorted.has(value):
+					subset.clear()
+					break
+				subset.append(value)
+			if subset.size() == length:
+				return subset
+		return []
 
-	for start_pip in range(MIN_PIP, MAX_PIP - length + 2):
-		var complete := true
+	for start_pip in range(MIN_PIP, MAX_PIP - length + 1):
+		var window_max := start_pip + length
+		var subset: Array[int] = []
+		for pip in sorted:
+			if pip >= start_pip and pip <= window_max:
+				subset.append(pip)
+		if subset.size() >= length:
+			return subset.slice(0, length)
+	return []
 
-		for offset in range(length):
-			if not unique_pips.has(start_pip + offset):
-				complete = false
-				break
 
-		if complete:
-			return true
+static func _roll_key(roll: RolledFace) -> String:
+	if roll == null:
+		return ""
+	if roll.face_instance_id != "":
+		return roll.face_instance_id
+	return RolledFace.make_face_instance_id(roll.die_id, roll.die_index, roll.face_index)
 
-	return false
+
+static func _add_all_entries(result: Dictionary, entries: Array[Dictionary]) -> void:
+	for entry in entries:
+		var key := str(entry.get("key", ""))
+		if key != "":
+			result[key] = true
+
+
+static func _add_entries_for_count(result: Dictionary, by_pip: Dictionary, counts: Dictionary, threshold: int, limit: int) -> void:
+	var pip := _first_pip_with_count(counts, threshold)
+	_add_entries_for_pip(result, by_pip, pip, limit)
+
+
+static func _add_entries_for_pip(result: Dictionary, by_pip: Dictionary, pip: int, limit: int) -> void:
+	if pip <= 0 or not by_pip.has(pip):
+		return
+	var entries := by_pip[pip] as Array
+	var added := 0
+	for entry in entries:
+		var key := str(entry.get("key", ""))
+		if key != "":
+			result[key] = true
+			added += 1
+		if added >= limit:
+			return
+
+
+static func _first_pip_with_count(counts: Dictionary, threshold: int, excluded_pip: int = 0) -> int:
+	for pip in _sorted_count_keys(counts):
+		if int(pip) == excluded_pip:
+			continue
+		if int(counts[pip]) >= threshold:
+			return int(pip)
+	return 0
+
+
+static func _sorted_count_keys(counts: Dictionary) -> Array[int]:
+	var keys: Array[int] = []
+	for pip in counts.keys():
+		keys.append(int(pip))
+	keys.sort()
+	return keys
 
 
 func _build_facts(
@@ -357,7 +499,8 @@ func _build_facts(
 	scored_count: int,
 	rolled_count: int,
 	has_rerolled_this_hand: bool,
-	is_last_hand: bool
+	is_last_hand: bool,
+	context: ScoreContext = null
 ) -> Dictionary:
 	if pips.is_empty():
 		return {
@@ -379,14 +522,17 @@ func _build_facts(
 			"has_unscored_stay": rolled_count > scored_count,
 		}
 
+	var tolerance := 0
+	if context != null and context.fact_tolerance_for_tools:
+		tolerance = 1
 	return {
 		"has_pair_shape": _has_count_at_least(counts, 2),
 		"has_three_kind_shape": _has_count_at_least(counts, 3),
 		"has_four_kind_shape": _has_count_at_least(counts, 4),
-		"is_all_odd": _all_pips_in(pips, [1, 3, 5, 7]),
-		"is_all_even": _all_pips_in(pips, [2, 4, 6, 8]),
-		"is_all_low": _all_pips_in(pips, LOW_DOMAIN_PIPS),
-		"is_all_high": _all_pips_in(pips, HIGH_DOMAIN_PIPS),
+		"is_all_odd": _all_pips_in(pips, [1, 3, 5, 7], tolerance),
+		"is_all_even": _all_pips_in(pips, [2, 4, 6, 8], tolerance),
+		"is_all_low": _all_pips_in(pips, LOW_DOMAIN_PIPS, tolerance),
+		"is_all_high": _all_pips_in(pips, HIGH_DOMAIN_PIPS, tolerance),
 		"is_low_total": pip_sum <= 10,
 		"is_high_total": pip_sum >= 25,
 		"contains_six": pips.has(6),
@@ -407,12 +553,15 @@ func _has_count_at_least(counts: Dictionary, threshold: int) -> bool:
 	return false
 
 
-func _all_pips_in(pips: Array[int], allowed_pips: Array) -> bool:
+func _all_pips_in(pips: Array[int], allowed_pips: Array, tolerance: int = 0) -> bool:
 	if pips.is_empty():
 		return false
 
+	var miss_count := 0
 	for pip in pips:
 		if not allowed_pips.has(pip):
-			return false
+			miss_count += 1
+			if miss_count > tolerance:
+				return false
 
 	return true

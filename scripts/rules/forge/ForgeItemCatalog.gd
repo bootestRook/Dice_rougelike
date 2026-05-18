@@ -4,6 +4,7 @@ class_name ForgeItemCatalog
 
 const ForgeItemDef = preload("res://scripts/data_defs/ForgeItemDef.gd")
 const ComboUpgradeCatalog = preload("res://scripts/rules/combo/ComboUpgradeCatalog.gd")
+const DiceToolCatalog = preload("res://scripts/rules/dice_tools/DiceToolCatalog.gd")
 
 
 const DROP_POOL_RESERVED := &"reserved"
@@ -86,25 +87,6 @@ const RARE_ORNAMENT_IDS := [
 	&"orn_poly",
 ]
 
-const DICE_TOOL_ITEM_POOL := [
-	{
-		"id": &"dice_tool_chip_core",
-		"name_key": &"AUTO.TEXT.2349E49F1C7F",
-		"sell_value": 12,
-	},
-	{
-		"id": &"dice_tool_mult_core",
-		"name_key": &"AUTO.TEXT.1A89DC6A8A7A",
-		"sell_value": 16,
-	},
-	{
-		"id": &"dice_tool_gold_core",
-		"name_key": &"AUTO.TEXT.A3738709BECF",
-		"sell_value": 20,
-	},
-]
-
-
 static func get_all_defs() -> Array[ForgeItemDef]:
 	return [
 		_make_def(FORGE_ECHO_COPY, str(TranslationServer.translate(&"AUTO.TEXT.4C71E4837BD8")), str(TranslationServer.translate(&"AUTO.TEXT.FB2DE85039C5")), EFFECT_ECHO_COPY, TARGET_NONE, 0, 1, true, [&"copy", &"generate"]),
@@ -170,27 +152,17 @@ static func get_combo_upgrade_pool_ids() -> Array[StringName]:
 
 
 static func get_dice_tool_item_pool() -> Array:
-	var items := DICE_TOOL_ITEM_POOL.duplicate(true)
-	for item in items:
-		item["name"] = _localized_tool_name(item)
-	return items
+	return DiceToolCatalog.get_item_pool_for_rarity()
 
 
 static func display_name_for_id(id: StringName) -> String:
 	var def := get_def(id)
 	if def != null:
 		return def.get_display_name()
-	for tool_data in DICE_TOOL_ITEM_POOL:
+	for tool_data in get_dice_tool_item_pool():
 		if StringName(str(tool_data.get("id", &""))) == id:
-			return _localized_tool_name(tool_data)
+			return str(tool_data.get("name", id))
 	return str(id)
-
-
-static func _localized_tool_name(tool_data: Dictionary) -> String:
-	var name_key := StringName(str(tool_data.get("name_key", &"")))
-	if name_key != &"":
-		return str(TranslationServer.translate(name_key))
-	return str(tool_data.get("name", tool_data.get("id", &"")))
 
 
 static func _make_ornament_def(

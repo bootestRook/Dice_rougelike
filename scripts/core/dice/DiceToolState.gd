@@ -11,7 +11,9 @@ var sell_value: int = 0
 var rarity: StringName = &"common"
 var is_negative: bool = false
 var permanent_flags: Dictionary = {}
+var permanent_counters: Dictionary = {}
 var combat_counters: Dictionary = {}
+var runtime_counters: Dictionary = {}
 var metadata: Dictionary = {}
 
 
@@ -32,7 +34,9 @@ static func from_item_instance(item: ItemInstance):
 	tool.rarity = StringName(str(item.metadata.get("rarity", &"common")))
 	tool.is_negative = bool(item.metadata.get("is_negative", false))
 	tool.permanent_flags = item.metadata.get("permanent_flags", {}).duplicate(true)
+	tool.permanent_counters = item.metadata.get("permanent_counters", {}).duplicate(true)
 	tool.combat_counters = item.metadata.get("combat_counters", {}).duplicate(true)
+	tool.runtime_counters = item.metadata.get("runtime_counters", {}).duplicate(true)
 	return tool
 
 
@@ -44,6 +48,8 @@ func clone_without_combat_counters(copy_is_negative: bool = false):
 	cloned.rarity = rarity
 	cloned.is_negative = is_negative if copy_is_negative else false
 	cloned.permanent_flags = permanent_flags.duplicate(true)
+	cloned.permanent_counters = permanent_counters.duplicate(true)
 	cloned.combat_counters = {}
+	cloned.runtime_counters = {}
 	cloned.metadata = metadata.duplicate(true)
 	return cloned

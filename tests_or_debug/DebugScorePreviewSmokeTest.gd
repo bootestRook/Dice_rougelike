@@ -5,6 +5,7 @@ class_name DebugScorePreviewSmokeTest
 const BattleController = preload("res://scripts/runtime/BattleController.gd")
 const RunState = preload("res://scripts/core/battle/RunState.gd")
 const ScoreResult = preload("res://scripts/core/scoring/ScoreResult.gd")
+const ComboEvaluator = preload("res://scripts/rules/combo/ComboEvaluator.gd")
 
 
 var captured_result: ScoreResult = null
@@ -146,6 +147,29 @@ func _init() -> void:
 	all_passed = _check("stay settlement applies unselected effect", stay_settlement_ok) and all_passed
 	stay_controller.free()
 
+	var wild_controller := BattleController.new()
+	wild_controller.start_battle()
+	var wild_rolls := wild_controller.get_current_rolls()
+	_set_roll_face(wild_rolls[0], 5)
+	_set_roll_face(wild_rolls[1], 5)
+	_set_roll_face(wild_rolls[2], 4)
+	_set_roll_face(wild_rolls[3], 4)
+	_set_roll_face(wild_rolls[4], 1, &"orn_wild")
+	for index in range(5):
+		wild_controller.toggle_select(index)
+	var wild_original_preview := wild_controller.preview_selected_score()
+	var wild_key := "%d:%d" % [wild_rolls[4].die_index, wild_rolls[4].face_index]
+	var wild_selected_preview := wild_controller.preview_selected_score({wild_key: 4})
+	all_passed = _check(
+		"wild preview uses original pip before explicit choice",
+		wild_original_preview != null and wild_original_preview.primary_combo == ComboEvaluator.TWO_PAIR
+	) and all_passed
+	all_passed = _check(
+		"wild preview follows explicit pip choice",
+		wild_selected_preview != null and wild_selected_preview.primary_combo == ComboEvaluator.FULL_HOUSE
+	) and all_passed
+	wild_controller.free()
+
 	if all_passed:
 		print("PASS: DebugScorePreviewSmokeTest")
 	else:
@@ -188,6 +212,13 @@ func _set_all_faces_mark(run_state: RunState, die_index: int, mark_id: StringNam
 	for face in die.faces:
 		if face != null:
 			face.mark_id = mark_id
+
+
+func _set_roll_face(roll, pip: int, ornament_id: StringName = &"orn_none") -> void:
+	if roll == null or roll.face == null:
+		return
+	roll.face.pip = pip
+	roll.face.ornament_id = ornament_id
 
 
 func _logs_contain(result: ScoreResult, needle: String) -> bool:

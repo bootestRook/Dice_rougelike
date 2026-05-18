@@ -3,6 +3,7 @@ class_name GameFlowController
 
 
 const ForgePieceDef = preload("res://scripts/data_defs/ForgePieceDef.gd")
+const DiceToolService = preload("res://scripts/rules/dice_tools/DiceToolService.gd")
 const ForgeService = preload("res://scripts/rules/forge/ForgeService.gd")
 const RewardGenerator = preload("res://scripts/rules/reward/RewardGenerator.gd")
 const RunState = preload("res://scripts/core/battle/RunState.gd")
@@ -19,6 +20,7 @@ signal run_state_changed(run_state: RunState)
 
 var current_state_id: StringName = &"boot"
 var run_state: RunState = null
+var dice_tool_service := DiceToolService.new()
 var reward_generator := RewardGenerator.new()
 var forge_service := ForgeService.new()
 
@@ -150,7 +152,12 @@ func install_pending_piece(die_index: int, face_index: int) -> bool:
 		push_warning("GameFlowController.install_pending_piece cannot apply piece.")
 		return false
 
+	var before_face = null
+	if face_index >= 0 and face_index < run_state.dice[die_index].faces.size():
+		before_face = run_state.dice[die_index].faces[face_index].clone()
 	forge_service.apply_piece(piece, run_state.dice[die_index], face_index)
+	if before_face != null and face_index >= 0 and face_index < run_state.dice[die_index].faces.size():
+		dice_tool_service.on_face_changed(run_state, before_face, run_state.dice[die_index].faces[face_index], &"forge_piece")
 	run_state.record_installed_piece(piece, die_index, face_index)
 	run_state.pending_forge_piece = null
 	run_state.last_reward_choices.clear()
@@ -158,6 +165,18 @@ func install_pending_piece(die_index: int, face_index: int) -> bool:
 	run_state_changed.emit(run_state)
 	start_next_battle()
 	return true
+
+
+func apply_pending_dice_tool_face_copy(die_index: int, face_index: int) -> Dictionary:
+	if run_state == null:
+		return {"success": false, "reason": "当前没有局内状态。"}
+	var result := dice_tool_service.apply_pending_face_copy(run_state, {
+		"die_index": die_index,
+		"face_index": face_index,
+	})
+	if bool(result.get("success", false)):
+		run_state_changed.emit(run_state)
+	return result
 
 
 func record_hand_score(score_or_result, hand_number: int = 0) -> void:

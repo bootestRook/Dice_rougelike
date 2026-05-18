@@ -174,9 +174,9 @@ func _check_score_engine_primary_combo_only() -> bool:
 		and bool(five_kind.facts["has_pair_shape"])
 		and bool(five_kind.facts["has_three_kind_shape"])
 		and bool(five_kind.facts["has_four_kind_shape"])
-		and five_kind.chips == 130
-		and five_kind.mult == 15
-		and five_kind.final_score == 1950
+		and five_kind.chips == 150
+		and five_kind.mult == 10
+		and five_kind.final_score == 1500
 	)
 	print("ScoreEngine uses one primary combo and empty active tags: %s" % [str(five_passed)])
 	if not five_passed:
@@ -191,9 +191,9 @@ func _check_facts_do_not_add_score() -> bool:
 		and bool(result.facts["is_all_even"])
 		and bool(result.facts["contains_six"])
 		and result.tags.is_empty()
-		and result.chips == 38
-		and result.mult == 3
-		and result.final_score == 114
+		and result.chips == 36
+		and result.mult == 2
+		and result.final_score == 72
 	)
 	print("Facts do not add Chips/Mult/XMult by themselves: %s" % [str(passed)])
 	if not passed:
@@ -215,7 +215,7 @@ func _check_official_ornament_point_logic() -> bool:
 	var wild_result := ScoreEngine.new().score(wild_context)
 	var wild_passed := (
 		wild_result.primary_combo == ComboEvaluator.STRAIGHT
-		and wild_result.chips == 96
+		and wild_result.chips == 71
 		and wild_context.wild_effective_pips.is_empty()
 	)
 
@@ -236,7 +236,7 @@ func _check_official_ornament_point_logic() -> bool:
 	var stone_passed := (
 		stone_result.primary_combo == ComboEvaluator.FOUR_KIND
 		and bool(stone_result.facts.get("has_four_kind_shape", false))
-		and stone_result.chips == 134
+		and stone_result.chips == 139
 	)
 
 	var passed := wild_passed and d4_passed and stone_passed

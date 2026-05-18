@@ -41,6 +41,11 @@ var body_triggered_flags_this_battle: Dictionary = {}
 var rng = null
 var is_preview: bool = false
 var defer_runtime_mutations: bool = false
+var straight_required_count: int = 5
+var straight_allow_one_gap: bool = false
+var all_faces_high_for_tools: bool = false
+var fact_tolerance_for_tools: bool = false
+var primary_structure_face_keys: Dictionary = {}
 
 
 func clear() -> void:
@@ -76,3 +81,8 @@ func clear() -> void:
 	rng = null
 	is_preview = false
 	defer_runtime_mutations = false
+	straight_required_count = 5
+	straight_allow_one_gap = false
+	all_faces_high_for_tools = false
+	fact_tolerance_for_tools = false
+	primary_structure_face_keys.clear()

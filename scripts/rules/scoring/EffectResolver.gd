@@ -12,6 +12,7 @@ const DisplayNames = preload("res://scripts/ui/DisplayNames.gd")
 const RewardGenerator = preload("res://scripts/rules/reward/RewardGenerator.gd")
 const ComboUpgradeItem = preload("res://scripts/rules/combo/ComboUpgradeItem.gd")
 const ComboEvaluator = preload("res://scripts/rules/combo/ComboEvaluator.gd")
+const DiceToolService = preload("res://scripts/rules/dice_tools/DiceToolService.gd")
 const ResolutionTrace = preload("res://scripts/core/scoring/ResolutionTrace.gd")
 const ResolutionStep = preload("res://scripts/core/scoring/ResolutionStep.gd")
 
@@ -29,6 +30,7 @@ const BODY_FLAG_CRACKED_ABSORB := &"cracked_absorb_used"
 
 
 var reward_generator := RewardGenerator.new()
+var dice_tool_service := DiceToolService.new()
 
 
 func resolve(context: ScoreContext, result: ScoreResult) -> ScoreResult:
@@ -100,10 +102,13 @@ func apply_post_score_effects(context: ScoreContext, result: ScoreResult) -> Sco
 			continue
 		if _effective_ornament_id_for_roll(roll, context) != FaceState.ORN_BURST:
 			continue
-		if _active_rng(context).randf() < 0.25:
+		if dice_tool_service.probability_succeeds(context, 1, 4):
 			if _try_absorb_burst_break_with_cracked_body(roll, context, result):
 				continue
+			var before_face := roll.face.clone()
 			_clear_face_ornament(context, roll)
+			dice_tool_service.on_burst_ornament_broken(context.run_state, roll)
+			dice_tool_service.on_face_changed(context.run_state, before_face, roll.face, &"burst_break")
 			result.add_floating_text(str(TranslationServer.translate(&"AUTO.TEXT.64867FADD655")), roll.die_index, roll.face_index)
 			_add_log(result, &"LOG.ORNAMENT_BURST_BREAK", {
 				"die": roll.die_index + 1,
@@ -470,6 +475,8 @@ func _apply_single_face_trigger(
 			result.add_floating_text(poly_text, roll.die_index, roll.face_index)
 			var poly_detail := _xmult_gain_text(poly_factor)
 			_append_trace_step(trace, result, before_poly, phase, &"ornament", ornament_id, ornament_name, ornament_name, poly_detail, poly_text, roll, trigger_index, _resolution_index_for_roll(trace, roll))
+	if context != null and context.run_state != null and not context.is_preview:
+		dice_tool_service.apply_face_trigger_tools(context, result, trace, roll, trigger_index)
 
 
 func _apply_single_unselected_stay_trigger(
@@ -719,7 +726,7 @@ func _apply_lucky(
 	var triggered_mult := false
 	var triggered_coins := false
 	var rng = _active_rng(context)
-	if rng.randf() < LUCKY_MULT_CHANCE:
+	if dice_tool_service.probability_succeeds(context, 1, 5):
 		var before_lucky_mult := _score_snapshot(result)
 		triggered_mult = true
 		result.mult += 20
@@ -730,9 +737,11 @@ func _apply_lucky(
 			"face": roll.face_index + 1,
 			"mult": 20,
 		}, &"ornament_lucky")
+		if context != null and context.run_state != null:
+			dice_tool_service.on_lucky_ornament_success(context.run_state, roll, &"mult")
 		_append_trace_step(trace, result, before_lucky_mult, phase, &"ornament", ornament_id, ornament_name, ornament_name, lucky_mult_text, lucky_mult_text, roll, trigger_index, _resolution_index_for_roll(trace, roll))
 
-	if rng.randf() < LUCKY_COINS_CHANCE:
+	if dice_tool_service.probability_succeeds(context, 6, 100):
 		var before_lucky_coins := _score_snapshot(result)
 		triggered_coins = true
 		_add_coins(context, result, 20, str(TranslationServer.translate(&"AUTO.TEXT.34F8E61E22F5")), roll)
@@ -741,6 +750,8 @@ func _apply_lucky(
 			"face": roll.face_index + 1,
 			"coins": 20,
 		}, &"ornament_lucky")
+		if context != null and context.run_state != null:
+			dice_tool_service.on_lucky_ornament_success(context.run_state, roll, &"coins")
 		_append_trace_step(trace, result, before_lucky_coins, phase, &"ornament", ornament_id, ornament_name, ornament_name, "+20 Coins", "+20 Coins", roll, trigger_index, _resolution_index_for_roll(trace, roll))
 
 	if not triggered_mult and not triggered_coins:

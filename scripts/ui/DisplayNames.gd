@@ -3,6 +3,7 @@ class_name DisplayNames
 
 
 const DieState = preload("res://scripts/core/dice/DieState.gd")
+const DiceToolCatalog = preload("res://scripts/rules/dice_tools/DiceToolCatalog.gd")
 
 
 static func combo_name(id: StringName) -> String:
@@ -43,6 +44,10 @@ static func combo_name(id: StringName) -> String:
 			return str(TranslationServer.translate(&"AUTO.TEXT.7FDD1CDCF1BE"))
 		_:
 			return str(id)
+
+
+static func dice_tool_name(id: StringName) -> String:
+	return DiceToolCatalog.display_name_for_id(id)
 
 
 static func contained_pattern_name(id: StringName) -> String:
@@ -432,6 +437,8 @@ static func log_text(key: StringName, args: Dictionary = {}) -> String:
 				_format_multiplier_arg(args, "xmult", 1.0),
 				int(args.get("score", 0)),
 			]
+		&"LOG.DICE_TOOL":
+			return str(args.get("text", ""))
 		&"LOG.ORNAMENT_CHIP":
 			return str(TranslationServer.translate(&"AUTO.TEXT.01573E10E71B")) % [int(args.get("chips", 0))]
 		&"LOG.ORNAMENT_MULT":

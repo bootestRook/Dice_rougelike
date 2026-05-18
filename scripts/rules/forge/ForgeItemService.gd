@@ -8,11 +8,13 @@ const ItemInstance = preload("res://scripts/core/items/ItemInstance.gd")
 const DiceToolState = preload("res://scripts/core/dice/DiceToolState.gd")
 const RunState = preload("res://scripts/core/battle/RunState.gd")
 const ComboUpgradeItem = preload("res://scripts/rules/combo/ComboUpgradeItem.gd")
+const DiceToolService = preload("res://scripts/rules/dice_tools/DiceToolService.gd")
 const ForgeItemCatalog = preload("res://scripts/rules/forge/ForgeItemCatalog.gd")
 const ForgeItemDef = preload("res://scripts/data_defs/ForgeItemDef.gd")
 
 
 var rng := RandomNumberGenerator.new()
+var dice_tool_service := DiceToolService.new()
 
 
 func _init() -> void:
@@ -142,6 +144,13 @@ func apply_forge_item(
 			return _fail(result, str(TranslationServer.translate(&"AUTO.TEXT.6FF4419F3811")))
 
 	result["success"] = true
+	dice_tool_service.on_forge_item_used(run_state, def.id)
+	if def.effect_type == ForgeItemCatalog.EFFECT_FACE_COPY:
+		var target_ref := target_faces[0] if not target_faces.is_empty() and target_faces[0] is Dictionary else {}
+		var source_ref := source_face_ref
+		if source_ref.is_empty() and target_faces.size() >= 2 and target_faces[1] is Dictionary:
+			source_ref = target_faces[1]
+		dice_tool_service.on_face_copied(run_state, source_ref, target_ref)
 	if def.id != ForgeItemCatalog.FORGE_ECHO_COPY:
 		run_state.record_copyable_used_item_id(def.id)
 	return result
@@ -360,6 +369,7 @@ func _generate_dice_tool_pack(run_state: RunState, result: Dictionary) -> void:
 		str(tool_data.get("name", "")),
 		int(tool_data.get("sell_value", 0))
 	)
+	item.metadata["rarity"] = StringName(str(tool_data.get("rarity", &"common")))
 	_add_generated_item_instances(run_state, [item], result)
 
 
@@ -405,11 +415,13 @@ func _make_item_instance_for_id(item_id: StringName) -> ItemInstance:
 		return ItemInstance.create_forge_item(item_id, forge_def.get_display_name())
 	for tool_data in ForgeItemCatalog.get_dice_tool_item_pool():
 		if StringName(str(tool_data.get("id", &""))) == item_id:
-			return ItemInstance.create_dice_tool(
+			var item := ItemInstance.create_dice_tool(
 				item_id,
 				str(tool_data.get("name", item_id)),
 				int(tool_data.get("sell_value", 0))
 			)
+			item.metadata["rarity"] = StringName(str(tool_data.get("rarity", &"common")))
+			return item
 	return null
 
 

@@ -11,6 +11,7 @@ const ResolutionTrace = preload("res://scripts/core/scoring/ResolutionTrace.gd")
 const ResolutionStep = preload("res://scripts/core/scoring/ResolutionStep.gd")
 const ComboEvaluator = preload("res://scripts/rules/combo/ComboEvaluator.gd")
 const ComboUpgradeItem = preload("res://scripts/rules/combo/ComboUpgradeItem.gd")
+const DiceToolService = preload("res://scripts/rules/dice_tools/DiceToolService.gd")
 const ForgePieceDef = preload("res://scripts/data_defs/ForgePieceDef.gd")
 const ForgeItemCatalog = preload("res://scripts/rules/forge/ForgeItemCatalog.gd")
 const ForgeService = preload("res://scripts/rules/forge/ForgeService.gd")
@@ -50,6 +51,7 @@ const RoundIntroBanner = preload("res://scripts/ui/battle/components/RoundIntroB
 var controller: BattleController = null
 var game_flow_controller: GameFlowController = null
 var run_state: RunState = null
+var dice_tool_service := DiceToolService.new()
 var forge_service := ForgeService.new()
 var left_sidebar: Control = null
 var top_inventory_bar: Control = null
@@ -92,6 +94,7 @@ var reward_phase_active: bool = false
 var reward_install_active: bool = false
 var victory_reward_showcase_active: bool = false
 var victory_target_restore_pending: bool = false
+var dice_tool_face_copy_active: bool = false
 var pending_install_piece: ForgePieceDef = null
 var selected_install_die_index: int = -1
 var selected_install_face_index: int = -1
@@ -732,7 +735,12 @@ func _on_install_face_selected(die_index: int, face_index: int) -> void:
 		return
 	selected_install_die_index = die_index
 	selected_install_face_index = face_index
-	if pending_install_piece != null:
+	if dice_tool_face_copy_active:
+		status_text = "单面样本：目标为第 %d 颗骰第 %d 面。确认后覆盖点数、面饰、印记。" % [
+			die_index + 1,
+			face_index + 1,
+		]
+	elif pending_install_piece != null:
 		status_text = str(TranslationServer.translate(&"AUTO.TEXT.A211180FE768")) % [
 			pending_install_piece.get_display_name(),
 			die_index + 1,
@@ -742,6 +750,13 @@ func _on_install_face_selected(die_index: int, face_index: int) -> void:
 
 
 func _on_install_requested(die_index: int, face_index: int) -> void:
+	if dice_tool_face_copy_active:
+		var copy_target := _resolve_install_target(die_index, face_index)
+		_apply_pending_dice_tool_face_copy_target(
+			int(copy_target.get("die_index", -1)),
+			int(copy_target.get("face_index", -1))
+		)
+		return
 	if not reward_install_active or pending_install_piece == null:
 		return
 	var target := _resolve_install_target(die_index, face_index)
@@ -807,6 +822,7 @@ func _clear_reward_phase_ui() -> void:
 	reward_phase_active = false
 	reward_install_active = false
 	victory_reward_showcase_active = false
+	dice_tool_face_copy_active = false
 	pending_install_piece = null
 	selected_install_die_index = -1
 	selected_install_face_index = -1
@@ -947,6 +963,44 @@ func _settle_selected(wild_effective_pips: Dictionary = {}) -> void:
 	suppress_next_hand_scored_fx = true
 	controller.commit_pending_resolution()
 	cleanup_resolution_area()
+	_maybe_begin_pending_dice_tool_face_copy()
+	_refresh_hud()
+
+
+func _maybe_begin_pending_dice_tool_face_copy() -> void:
+	if run_state == null or run_state.pending_dice_tool_face_copy.is_empty():
+		return
+	reward_phase_active = true
+	reward_install_active = true
+	dice_tool_face_copy_active = true
+	pending_install_piece = null
+	selected_install_die_index = -1
+	selected_install_face_index = -1
+	status_text = "单面样本：选择 1 个现有目标骰面。"
+	if scoring_area != null and scoring_area.has_method("hide_reward_choices"):
+		scoring_area.hide_reward_choices()
+	if dice_bench_area != null:
+		if dice_bench_area.has_method("set_install_mode"):
+			dice_bench_area.set_install_mode(true, "单面样本")
+		if dice_bench_area.has_method("set_highlighted_die_indices"):
+			dice_bench_area.set_highlighted_die_indices(_all_dice_indices())
+	_show_install_focus_overlay()
+
+
+func _apply_pending_dice_tool_face_copy_target(die_index: int, face_index: int) -> void:
+	var result: Dictionary = {}
+	if game_flow_controller != null:
+		result = game_flow_controller.apply_pending_dice_tool_face_copy(die_index, face_index)
+	elif run_state != null:
+		result = dice_tool_service.apply_pending_face_copy(run_state, {
+			"die_index": die_index,
+			"face_index": face_index,
+		})
+	if bool(result.get("success", false)):
+		status_text = str(result.get("message", "单面样本已完成复制覆盖。"))
+		_clear_reward_phase_ui()
+	else:
+		status_text = str(result.get("reason", "该目标骰面无法覆盖。"))
 	_refresh_hud()
 
 
@@ -1956,6 +2010,7 @@ func _show_wild_selection_dialog(requests: Array[Dictionary]) -> void:
 			button.button_group = group
 			button.button_pressed = pip == default_pip
 			button.set_meta("pip", pip)
+			button.toggled.connect(_on_wild_selection_button_toggled)
 			buttons.add_child(button)
 			row_buttons.append(button)
 		if not row_buttons.is_empty() and group.get_pressed_button() == null:
@@ -1963,6 +2018,7 @@ func _show_wild_selection_dialog(requests: Array[Dictionary]) -> void:
 		wild_button_rows[key] = row_buttons
 
 	wild_selection_dialog.popup_centered()
+	_preview_current_wild_selection()
 
 
 func _play_reroll_magic() -> void:
@@ -2200,6 +2256,7 @@ func _ensure_wild_selection_dialog() -> void:
 	wild_selection_dialog.cancel_button_text = str(TranslationServer.translate(&"AUTO.TEXT.4D0B4688C787"))
 	wild_selection_dialog.exclusive = true
 	wild_selection_dialog.confirmed.connect(_confirm_wild_selection)
+	wild_selection_dialog.canceled.connect(_on_wild_selection_canceled)
 	add_child(wild_selection_dialog)
 
 	var margin := MarginContainer.new()
@@ -2220,13 +2277,37 @@ func _ensure_wild_selection_dialog() -> void:
 func _confirm_wild_selection() -> void:
 	if controller == null:
 		return
+	await _settle_selected(_current_wild_selections())
+
+
+func _on_wild_selection_canceled() -> void:
+	if controller == null:
+		return
+	current_preview_result = controller.preview_selected_score()
+	_refresh_hud()
+
+
+func _on_wild_selection_button_toggled(button_pressed: bool) -> void:
+	if not button_pressed:
+		return
+	_preview_current_wild_selection()
+
+
+func _preview_current_wild_selection() -> void:
+	if controller == null:
+		return
+	current_preview_result = controller.preview_selected_score(_current_wild_selections())
+	_refresh_hud()
+
+
+func _current_wild_selections() -> Dictionary:
 	var selections := {}
 	for key in wild_button_rows.keys():
 		for button in wild_button_rows[key]:
 			if button.button_pressed:
 				selections[key] = int(button.get_meta("pip", 1))
 				break
-	await _settle_selected(selections)
+	return selections
 
 
 func _get_optional_property(property_name: StringName):

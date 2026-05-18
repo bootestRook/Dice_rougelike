@@ -18,6 +18,7 @@ var selected: bool = false
 var was_rerolled: bool = false
 var is_scored: bool = false
 var is_unscored_stay: bool = false
+var is_temporary: bool = false
 
 
 func set_roll(new_die_index: int, new_face_index: int, new_face: FaceState, new_die: DieState = null) -> void:

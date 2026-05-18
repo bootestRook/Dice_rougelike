@@ -4,6 +4,7 @@ class_name BattleConfig
 
 var dice_count: int = 6
 var max_selected_dice: int = 5
+var max_scored_faces_per_round: int = 5
 var rerolls_per_hand: int = 2
 var hands_per_battle: int = 4
 var target_score: int = 850
@@ -14,6 +15,7 @@ func clone() -> BattleConfig:
 	var cloned := BattleConfig.new()
 	cloned.dice_count = dice_count
 	cloned.max_selected_dice = max_selected_dice
+	cloned.max_scored_faces_per_round = max_scored_faces_per_round
 	cloned.rerolls_per_hand = rerolls_per_hand
 	cloned.hands_per_battle = hands_per_battle
 	cloned.target_score = target_score
