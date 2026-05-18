@@ -22,6 +22,7 @@ var white_mark_active_faces: Dictionary = {}
 var body_triggered_flags_this_battle: Dictionary = {}
 var boss_rule_disabled: bool = false
 var boss_rule_triggered_this_round: bool = false
+var long_term_boss_rule_grace_used: bool = false
 var current_round_rerolled_face_count: int = 0
 var current_round_rerolled_four_pip_count: int = 0
 var temporary_faces: Array[RolledFace] = []
@@ -42,6 +43,7 @@ func setup(new_config: BattleConfig, battle_dice: Array[DieState]) -> void:
 	victory = false
 	boss_rule_disabled = false
 	boss_rule_triggered_this_round = false
+	long_term_boss_rule_grace_used = false
 	current_round_rerolled_face_count = 0
 	current_round_rerolled_four_pip_count = 0
 	temporary_faces.clear()

@@ -4,6 +4,7 @@ class_name MainPrototypeView
 
 const GameFlowController = preload("res://scripts/runtime/GameFlowController.gd")
 const RunState = preload("res://scripts/core/battle/RunState.gd")
+const AutomationBridge = preload("res://scripts/debug/AutomationBridge.gd")
 const DEFAULT_MENU_ART = preload("res://scenes/main/resources/MainMenuArtConfig.tres")
 
 
@@ -11,17 +12,21 @@ const BATTLE_SCREEN_PATH := "res://scenes/battle/BattleScreen.tscn"
 const FORGE_INSTALL_SCREEN_PATH := "res://scenes/forge/ForgeInstallScreen.tscn"
 const REWARD_SCREEN_PATH := "res://scenes/reward/RewardScreen.tscn"
 const RUN_RESULT_SCREEN_PATH := "res://scenes/run/RunResultScreen.tscn"
+const SHOP_SCREEN_PATH := "res://scenes/shop/ShopScreen.tscn"
 
 
 @export var menu_art_config: MainMenuArtConfig = DEFAULT_MENU_ART
 
 var game_flow_controller: GameFlowController = null
 var current_view_id: StringName = &""
+var automation_bridge: AutomationBridge = null
+var automation_input_shield: Control = null
 
 
 func _ready() -> void:
 	_create_flow_controller()
 	_show_main_menu()
+	_maybe_start_automation_bridge()
 
 
 func _create_flow_controller() -> void:
@@ -30,6 +35,7 @@ func _create_flow_controller() -> void:
 	game_flow_controller.battle_requested.connect(_on_battle_requested)
 	game_flow_controller.reward_requested.connect(_on_reward_requested)
 	game_flow_controller.forge_install_requested.connect(_on_forge_install_requested)
+	game_flow_controller.shop_requested.connect(_on_shop_requested)
 	game_flow_controller.run_result_requested.connect(_on_run_result_requested)
 	game_flow_controller.flow_state_changed.connect(_on_flow_state_changed)
 
@@ -388,6 +394,14 @@ func _on_run_result_requested(result_run_state: RunState) -> void:
 	add_child(run_result_screen)
 
 
+func _on_shop_requested(shop_state: Dictionary) -> void:
+	current_view_id = &"shop"
+	_clear_screen()
+	var shop_screen = load(SHOP_SCREEN_PATH).instantiate()
+	shop_screen.setup(game_flow_controller, game_flow_controller.get_run_state(), shop_state)
+	add_child(shop_screen)
+
+
 func _on_flow_state_changed(state_id: StringName) -> void:
 	if state_id == &"main":
 		_show_main_menu()
@@ -395,7 +409,7 @@ func _on_flow_state_changed(state_id: StringName) -> void:
 
 func _clear_screen() -> void:
 	for child in get_children():
-		if child != game_flow_controller:
+		if child != game_flow_controller and child != automation_bridge and child != automation_input_shield:
 			remove_child(child)
 			child.queue_free()
 
@@ -405,3 +419,225 @@ func _current_battle_screen() -> Control:
 		if child is Control and child.has_method("start_battle_with_run_state") and child.has_method("show_reward_choices"):
 			return child as Control
 	return null
+
+
+func _maybe_start_automation_bridge() -> void:
+	if not _automation_bridge_requested():
+		return
+	automation_bridge = AutomationBridge.new()
+	automation_bridge.name = "AutomationBridge"
+	add_child(automation_bridge)
+	automation_bridge.setup(self, _automation_bridge_port())
+	automation_set_input_locked(_automation_lock_requested())
+
+
+func _automation_bridge_requested() -> bool:
+	if OS.get_environment("DICE_AUTOMATION_BRIDGE") == "1":
+		return true
+	for arg in OS.get_cmdline_user_args():
+		if arg == "--automation-bridge" or arg.begins_with("--automation-port="):
+			return true
+	return false
+
+
+func _automation_lock_requested() -> bool:
+	if OS.get_environment("DICE_AUTOMATION_LOCK_INPUT") == "1":
+		return true
+	for arg in OS.get_cmdline_user_args():
+		if arg == "--automation-lock":
+			return true
+	return false
+
+
+func _automation_bridge_port() -> int:
+	var env_port := OS.get_environment("DICE_AUTOMATION_PORT")
+	if env_port.is_valid_int():
+		return max(1, int(env_port))
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--automation-port="):
+			var raw_port := arg.trim_prefix("--automation-port=")
+			if raw_port.is_valid_int():
+				return max(1, int(raw_port))
+	return AutomationBridge.DEFAULT_PORT
+
+
+func automation_set_input_locked(locked: bool) -> void:
+	_ensure_automation_input_shield()
+	if automation_input_shield != null:
+		automation_input_shield.visible = locked
+
+
+func automation_is_input_locked() -> bool:
+	return automation_input_shield != null and automation_input_shield.visible
+
+
+func _ensure_automation_input_shield() -> void:
+	if automation_input_shield != null:
+		return
+	automation_input_shield = Control.new()
+	automation_input_shield.name = "AutomationInputShield"
+	automation_input_shield.mouse_filter = Control.MOUSE_FILTER_STOP
+	automation_input_shield.z_index = 4096
+	automation_input_shield.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(automation_input_shield)
+
+	var scrim := ColorRect.new()
+	scrim.name = "ShieldScrim"
+	scrim.color = Color(0.0, 0.0, 0.0, 0.18)
+	scrim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	scrim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	automation_input_shield.add_child(scrim)
+
+	var label := Label.new()
+	label.name = "ShieldLabel"
+	label.text = "自动运行中\n游戏视窗点击已暂时屏蔽"
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", 26)
+	label.add_theme_color_override("font_color", Color(1.0, 0.94, 0.72, 1.0))
+	label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.85))
+	label.add_theme_constant_override("shadow_offset_x", 2)
+	label.add_theme_constant_override("shadow_offset_y", 2)
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.anchor_left = 0.34
+	label.anchor_right = 0.66
+	label.anchor_top = 0.04
+	label.anchor_bottom = 0.16
+	automation_input_shield.add_child(label)
+	automation_input_shield.visible = false
+
+
+func automation_get_snapshot() -> Dictionary:
+	var snapshot := {
+		"view": str(current_view_id),
+		"flow_state": str(game_flow_controller.current_state_id) if game_flow_controller != null else "",
+		"input_locked": automation_is_input_locked(),
+	}
+	if game_flow_controller != null:
+		snapshot["run"] = _automation_run_snapshot(game_flow_controller.get_run_state())
+	var battle_screen := _current_battle_screen()
+	if battle_screen != null and battle_screen.has_method("automation_get_snapshot"):
+		snapshot["battle"] = battle_screen.call("automation_get_snapshot")
+	return snapshot
+
+
+func automation_start_run() -> Dictionary:
+	if game_flow_controller == null:
+		return _automation_error("流程控制器尚未准备好。")
+	automation_set_input_locked(true)
+	game_flow_controller.start_new_run()
+	return _automation_ok("已开始新一局。")
+
+
+func automation_select_dice(indices: Array[int]) -> Dictionary:
+	var battle_screen := _current_battle_screen()
+	if battle_screen == null or not battle_screen.has_method("automation_select_dice"):
+		return _automation_error("当前没有可操作的战斗界面。")
+	return battle_screen.call("automation_select_dice", indices)
+
+
+func automation_preview_selection(indices: Array[int]) -> Dictionary:
+	var battle_screen := _current_battle_screen()
+	if battle_screen == null or not battle_screen.has_method("automation_preview_selection"):
+		return _automation_error("当前没有可预览的战斗界面。")
+	return battle_screen.call("automation_preview_selection", indices)
+
+
+func automation_preview_selections(selections: Array) -> Dictionary:
+	var battle_screen := _current_battle_screen()
+	if battle_screen == null or not battle_screen.has_method("automation_preview_selections"):
+		return _automation_error("当前没有可批量预览的战斗界面。")
+	return battle_screen.call("automation_preview_selections", selections)
+
+
+func automation_reroll() -> Dictionary:
+	var battle_screen := _current_battle_screen()
+	if battle_screen == null or not battle_screen.has_method("automation_reroll"):
+		return _automation_error("当前没有可重投的战斗界面。")
+	return battle_screen.call("automation_reroll")
+
+
+func automation_score() -> Dictionary:
+	var battle_screen := _current_battle_screen()
+	if battle_screen == null or not battle_screen.has_method("automation_score"):
+		return _automation_error("当前没有可结算的战斗界面。")
+	return battle_screen.call("automation_score")
+
+
+func automation_choose_reward(index: int) -> Dictionary:
+	if game_flow_controller == null or game_flow_controller.get_run_state() == null:
+		return _automation_error("当前没有局内状态。")
+	var choices := game_flow_controller.get_run_state().last_reward_choices
+	if index < 0 or index >= choices.size():
+		return _automation_error("奖励序号无效。")
+	game_flow_controller.choose_reward(choices[index])
+	return _automation_ok("已选择奖励。")
+
+
+func automation_install_piece(die_index: int, face_index: int) -> Dictionary:
+	var battle_screen := _current_battle_screen()
+	if battle_screen != null and battle_screen.has_method("automation_install_pending_piece"):
+		return battle_screen.call("automation_install_pending_piece", die_index, face_index)
+	if game_flow_controller == null or not game_flow_controller.install_pending_piece(die_index, face_index):
+		return _automation_error("安装失败。")
+	return _automation_ok("已安装铸骰件。")
+
+
+func _automation_run_snapshot(state: RunState) -> Dictionary:
+	if state == null:
+		return {}
+	var rewards: Array[Dictionary] = []
+	for index in range(state.last_reward_choices.size()):
+		var choice = state.last_reward_choices[index]
+		if choice == null:
+			continue
+		rewards.append({
+			"index": index,
+			"id": str(choice.id),
+			"name": choice.get_display_name(),
+			"description": choice.get_description(),
+			"tags": choice.get_tags_display_text(),
+		})
+	return {
+		"battle": state.battle_index + 1,
+		"max_battles": state.max_battles,
+		"target_score": state.get_target_score(),
+		"is_boss": state.is_boss_battle(),
+		"is_final": state.is_final_battle(),
+		"won": state.run_won,
+		"lost": state.run_lost,
+		"coins": state.coins,
+		"total_hands_scored": state.total_hands_scored,
+		"total_score_scored": state.total_score_scored,
+		"best_hand_score": state.best_hand_score,
+		"installed_piece_count": state.installed_piece_count,
+		"reward_choices": rewards,
+		"pending_piece": _automation_piece_snapshot(state.pending_forge_piece),
+	}
+
+
+func _automation_piece_snapshot(piece) -> Dictionary:
+	if piece == null:
+		return {}
+	return {
+		"id": str(piece.id),
+		"name": piece.get_display_name(),
+		"description": piece.get_description(),
+		"tags": piece.get_tags_display_text(),
+	}
+
+
+func _automation_ok(message: String = "") -> Dictionary:
+	return {
+		"ok": true,
+		"message": message,
+		"snapshot": automation_get_snapshot(),
+	}
+
+
+func _automation_error(message: String) -> Dictionary:
+	return {
+		"ok": false,
+		"error": message,
+		"snapshot": automation_get_snapshot(),
+	}

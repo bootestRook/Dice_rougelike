@@ -12,6 +12,7 @@ const ResolutionStep = preload("res://scripts/core/scoring/ResolutionStep.gd")
 const ComboEvaluator = preload("res://scripts/rules/combo/ComboEvaluator.gd")
 const ComboUpgradeItem = preload("res://scripts/rules/combo/ComboUpgradeItem.gd")
 const DiceToolService = preload("res://scripts/rules/dice_tools/DiceToolService.gd")
+const FaceState = preload("res://scripts/core/dice/FaceState.gd")
 const ForgePieceDef = preload("res://scripts/data_defs/ForgePieceDef.gd")
 const ForgeItemCatalog = preload("res://scripts/rules/forge/ForgeItemCatalog.gd")
 const ForgeService = preload("res://scripts/rules/forge/ForgeService.gd")
@@ -770,6 +771,251 @@ func _on_install_requested(die_index: int, face_index: int) -> void:
 			_refresh_hud()
 		return
 	_install_pending_piece_locally(target_die_index, target_face_index)
+
+
+func automation_get_snapshot() -> Dictionary:
+	var snapshot := {
+		"reward_phase_active": reward_phase_active,
+		"reward_install_active": reward_install_active,
+		"victory_reward_showcase_active": victory_reward_showcase_active,
+		"status_text": status_text,
+	}
+	if controller == null or controller.battle_state == null:
+		return snapshot
+
+	snapshot["phase"] = controller.get_phase_name()
+	snapshot["target_score"] = controller.get_target_score()
+	snapshot["total_score"] = controller.get_total_score()
+	snapshot["hand"] = controller.get_current_hand_number()
+	snapshot["hands_per_battle"] = controller.get_hands_per_battle()
+	snapshot["rerolls_left"] = controller.get_rerolls_left()
+	snapshot["rerolls_per_hand"] = controller.get_rerolls_per_hand()
+	snapshot["max_selected"] = controller.get_max_selected_dice()
+	snapshot["can_reroll"] = controller.can_reroll()
+	snapshot["can_score"] = controller.can_score()
+	snapshot["rolls"] = _automation_roll_snapshots()
+	snapshot["dice"] = _automation_dice_snapshots()
+	snapshot["selected_indices"] = _automation_selected_indices()
+	snapshot["preview"] = _automation_preview_snapshot()
+	return snapshot
+
+
+func automation_preview_selection(indices: Array[int]) -> Dictionary:
+	if controller == null or controller.hand_state == null:
+		return _automation_error("当前没有可预览的骰子。")
+	var old_selection: Array[int] = _automation_selected_indices()
+	var preview := _automation_preview_indices(indices, old_selection)
+	_restore_automation_selection(old_selection)
+	return {
+		"ok": true,
+		"preview": preview,
+		"snapshot": automation_get_snapshot(),
+	}
+
+
+func automation_preview_selections(selections: Array) -> Dictionary:
+	if controller == null or controller.hand_state == null:
+		return _automation_error("当前没有可预览的骰子。")
+	var old_selection: Array[int] = _automation_selected_indices()
+	var previews: Array[Dictionary] = []
+	for selection in selections:
+		previews.append({
+			"indices": selection.duplicate(),
+			"preview": _automation_preview_indices(selection, old_selection),
+		})
+	_restore_automation_selection(old_selection)
+	return {
+		"ok": true,
+		"previews": previews,
+		"snapshot": automation_get_snapshot(),
+	}
+
+
+func automation_select_dice(indices: Array[int]) -> Dictionary:
+	if controller == null or controller.hand_state == null:
+		return _automation_error("当前没有可选择的骰子。")
+	if reward_phase_active or victory_reward_showcase_active:
+		return _automation_error("当前处于奖励或安装阶段，不能选择结算骰。")
+
+	controller.hand_state.clear_selection()
+	for index in indices:
+		if index < 0 or index >= controller.hand_state.rolled_faces.size():
+			return _automation_error("骰子序号无效：%d。" % [index])
+		controller.toggle_select(index)
+	_refresh_hud()
+	return _automation_ok("已选择骰子。")
+
+
+func automation_reroll() -> Dictionary:
+	if controller == null or not controller.can_reroll():
+		return _automation_error("当前不能重投。")
+	controller.reroll()
+	_refresh_hud()
+	return _automation_ok("已重投所选骰子。")
+
+
+func automation_score() -> Dictionary:
+	if controller == null or not controller.can_score():
+		return _automation_error("当前不能结算。")
+	controller.score_selected(_automation_default_wild_selections())
+	_refresh_hud()
+	return _automation_ok("已结算所选骰子。")
+
+
+func automation_install_pending_piece(die_index: int, face_index: int) -> Dictionary:
+	if not reward_install_active and not dice_tool_face_copy_active:
+		return _automation_error("当前不在安装阶段。")
+	_on_install_requested(die_index, face_index)
+	return _automation_ok("已提交安装。")
+
+
+func _automation_roll_snapshots() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	if controller == null:
+		return result
+	for roll in controller.get_current_rolls():
+		if roll == null:
+			continue
+		var face = roll.face
+		var ornament_id := FaceState.ORN_NONE
+		var mark_id := FaceState.MARK_NONE
+		if face != null:
+			ornament_id = face.get_effective_ornament_id()
+			mark_id = face.mark_id
+		result.append({
+			"die_index": roll.die_index,
+			"face_index": roll.face_index,
+			"pip": roll.rolled_pip,
+			"selected": roll.selected,
+			"was_rerolled": roll.was_rerolled,
+			"ornament_id": str(ornament_id),
+			"ornament": DisplayNames.ornament_name(ornament_id),
+			"mark_id": str(mark_id),
+			"mark": DisplayNames.mark_name(mark_id),
+			"face_text": DisplayNames.face_summary(face) if face != null else "",
+		})
+	return result
+
+
+func _automation_dice_snapshots() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	var dice := _get_dice()
+	for die_index in range(dice.size()):
+		var die = dice[die_index]
+		if die == null:
+			continue
+		var faces: Array[Dictionary] = []
+		for face_index in range(die.faces.size()):
+			var face = die.faces[face_index]
+			if face == null:
+				continue
+			var ornament_id: StringName = face.get_effective_ornament_id()
+			var mark_id: StringName = face.mark_id
+			faces.append({
+				"face_index": face_index,
+				"pip": face.pip,
+				"ornament_id": str(ornament_id),
+				"ornament": DisplayNames.ornament_name(ornament_id),
+				"mark_id": str(mark_id),
+				"mark": DisplayNames.mark_name(mark_id),
+				"face_text": DisplayNames.face_summary(face),
+			})
+		result.append({
+			"die_index": die_index,
+			"id": str(die.id),
+			"face_count": die.face_count,
+			"body_id": str(die.body_id),
+			"body": DisplayNames.body_name(die.body_id),
+			"faces": faces,
+		})
+	return result
+
+
+func _automation_selected_indices() -> Array[int]:
+	var result: Array[int] = []
+	if controller == null or controller.hand_state == null:
+		return result
+	for index in range(controller.hand_state.rolled_faces.size()):
+		var roll = controller.hand_state.rolled_faces[index]
+		if roll != null and roll.selected:
+			result.append(index)
+	return result
+
+
+func _automation_preview_indices(indices: Array, fallback_selection: Array[int]) -> Dictionary:
+	if controller == null or controller.hand_state == null:
+		return {}
+	if indices.is_empty() or indices.size() > controller.get_max_selected_dice():
+		return {}
+	controller.hand_state.clear_selection()
+	for raw_index in indices:
+		var index := int(raw_index)
+		if index < 0 or index >= controller.hand_state.rolled_faces.size():
+			_restore_automation_selection(fallback_selection)
+			return {}
+		controller.hand_state.rolled_faces[index].selected = true
+	var preview := controller.preview_selected_score(_automation_default_wild_selections())
+	return _automation_score_result_snapshot(preview)
+
+
+func _restore_automation_selection(indices: Array[int]) -> void:
+	if controller == null or controller.hand_state == null:
+		return
+	controller.hand_state.clear_selection()
+	for index in indices:
+		if index >= 0 and index < controller.hand_state.rolled_faces.size():
+			controller.hand_state.rolled_faces[index].selected = true
+
+
+func _automation_preview_snapshot() -> Dictionary:
+	if controller == null or not controller.can_score():
+		return {}
+	var preview := controller.preview_selected_score(_automation_default_wild_selections())
+	if preview == null:
+		return {}
+	return _automation_score_result_snapshot(preview)
+
+
+func _automation_score_result_snapshot(preview: ScoreResult) -> Dictionary:
+	if preview == null:
+		return {}
+	return {
+		"combo_id": str(preview.primary_combo),
+		"combo": DisplayNames.combo_name(preview.primary_combo),
+		"chips": preview.chips,
+		"mult": preview.mult,
+		"xmult": preview.xmult,
+		"final_score": preview.final_score,
+		"summary": preview.get_summary_text_zh(),
+	}
+
+
+func _automation_default_wild_selections() -> Dictionary:
+	var selections := {}
+	if controller == null:
+		return selections
+	for request in controller.get_selected_wild_face_requests():
+		var key := str(request.get("key", ""))
+		if key == "":
+			continue
+		selections[key] = int(request.get("default_pip", request.get("original_pip", 1)))
+	return selections
+
+
+func _automation_ok(message: String = "") -> Dictionary:
+	return {
+		"ok": true,
+		"message": message,
+		"snapshot": automation_get_snapshot(),
+	}
+
+
+func _automation_error(message: String) -> Dictionary:
+	return {
+		"ok": false,
+		"error": message,
+		"snapshot": automation_get_snapshot(),
+	}
 
 
 func _resolve_install_target(die_index: int, face_index: int) -> Dictionary:

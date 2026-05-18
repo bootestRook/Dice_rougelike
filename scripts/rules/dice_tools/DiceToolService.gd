@@ -13,6 +13,7 @@ const DieState = preload("res://scripts/core/dice/DieState.gd")
 const FaceState = preload("res://scripts/core/dice/FaceState.gd")
 const ForgeItemCatalog = preload("res://scripts/rules/forge/ForgeItemCatalog.gd")
 const ItemInstance = preload("res://scripts/core/items/ItemInstance.gd")
+const LongTermUnlockService = preload("res://scripts/rules/long_term/LongTermUnlockService.gd")
 const ResolutionStep = preload("res://scripts/core/scoring/ResolutionStep.gd")
 const RewardGenerator = preload("res://scripts/rules/reward/RewardGenerator.gd")
 const RolledFace = preload("res://scripts/core/dice/RolledFace.gd")
@@ -921,6 +922,8 @@ func on_boss_rule_triggered(run_state, battle_state = null, boss_rule_id: String
 
 func should_disable_boss_rules(run_state, battle_state = null) -> bool:
 	if battle_state != null and bool(battle_state.boss_rule_disabled):
+		return true
+	if LongTermUnlockService.should_disable_boss_rules(run_state, battle_state):
 		return true
 	return _has_tool(run_state, DiceToolCatalog.TOOL_BOSS_DISABLE_LEGEND)
 

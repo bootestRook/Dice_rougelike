@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "best_weights": {
+    "settle_score": 0.9559607980671572,
+    "settle_progress": 0.7981919209167251,
+    "settle_overkill_penalty": 0.16691850067912437,
+    "reroll_keep_preview": 1.1484706007164918,
+    "reroll_keep_duplicate": 11.433015473575022,
+    "reroll_keep_straight": 6.699965852959333,
+    "reroll_keep_high_pip": 2.5575908454737517,
+    "reroll_keep_special": 7.397535707850325,
+    "reroll_low_score_floor": 177.4840529820849,
+    "reward_pip": 6.858365601684755,
+    "reward_red": 39.16170294186449,
+    "reward_blue": 22.42249134924151,
+    "reward_purple": 20.950396418149104,
+    "reward_wild": 30.439793724276843,
+    "reward_burst": 44.604627502954436,
+    "reward_stay": 41.10701286598176,
+    "reward_mult": 21.38235583772307,
+    "reward_chip": 17.22816137387747,
+    "reward_foil": 31.305261472536877,
+    "reward_holo": 39.654659674879206,
+    "reward_poly": 42.05203584770953,
+    "reward_lucky": 14.003607221809585,
+    "install_high_pip": 5.57273985287792,
+    "install_low_pip_for_pip": 3.1017162584654887,
+    "install_empty_slot": 27.123666637660648,
+    "install_combo_face": 11.053024658338002
+  },
+  "best_fitness": 61967.7,
+  "runs": [
+    {
+      "run": 1,
+      "batch_run": 1,
+      "fitness": 61967.7,
+      "won": false,
+      "battle": 6,
+      "best_hand": 844,
+      "total_score": 5850,
+      "installed": 5,
+      "elapsed": 13.845537424087524
+    }
+  ],
+  "state_file": "reports\\test_ps1_random_seed_smoke_state.json",
+  "last_seed": 1378009134
+}

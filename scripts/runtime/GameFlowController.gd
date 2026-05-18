@@ -7,6 +7,7 @@ const DiceToolService = preload("res://scripts/rules/dice_tools/DiceToolService.
 const ForgeService = preload("res://scripts/rules/forge/ForgeService.gd")
 const RewardGenerator = preload("res://scripts/rules/reward/RewardGenerator.gd")
 const RunState = preload("res://scripts/core/battle/RunState.gd")
+const ShopService = preload("res://scripts/rules/shop/ShopService.gd")
 
 
 signal flow_state_changed(state_id: StringName)
@@ -14,6 +15,8 @@ signal run_started(run_state: RunState)
 signal battle_requested(run_state: RunState)
 signal reward_requested(choices: Array)
 signal forge_install_requested(piece: ForgePieceDef)
+signal shop_requested(shop_state: Dictionary)
+signal booster_pack_opened(open_result: Dictionary)
 signal run_result_requested(run_state: RunState)
 signal run_state_changed(run_state: RunState)
 
@@ -23,6 +26,7 @@ var run_state: RunState = null
 var dice_tool_service := DiceToolService.new()
 var reward_generator := RewardGenerator.new()
 var forge_service := ForgeService.new()
+var shop_service := ShopService.new()
 
 
 func set_flow_state(state_id: StringName) -> void:
@@ -205,3 +209,34 @@ func enter_reward() -> void:
 
 func enter_forge() -> void:
 	set_flow_state(&"forge")
+
+
+func enter_shop() -> Dictionary:
+	if run_state == null:
+		start_new_run()
+		return {}
+	var shop_state := shop_service.generate_shop(run_state)
+	set_flow_state(&"shop")
+	run_state_changed.emit(run_state)
+	shop_requested.emit(shop_state)
+	return shop_state
+
+
+func reroll_shop_random_items() -> Dictionary:
+	if run_state == null:
+		return {"success": false, "message": "缺少本局状态"}
+	var result := shop_service.reroll_random_shop_items(run_state)
+	run_state_changed.emit(run_state)
+	if bool(result.get("success", false)):
+		shop_requested.emit(run_state.current_shop_state)
+	return result
+
+
+func purchase_shop_offer_by_slot(slot_group: StringName, index: int = 0) -> Dictionary:
+	if run_state == null:
+		return {"success": false, "message": "缺少本局状态"}
+	var result := shop_service.purchase_offer_by_slot(run_state, slot_group, index)
+	run_state_changed.emit(run_state)
+	if bool(result.get("success", false)) and result.has("candidate_offers"):
+		booster_pack_opened.emit(result)
+	return result

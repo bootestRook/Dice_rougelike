@@ -26,6 +26,9 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Local developer tool overrides
+.godot-bin
+
 # Logs / temp files
 *.log
 tmp/

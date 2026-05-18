@@ -99,6 +99,15 @@ func use_forge_item_from_slot(
 	return apply_forge_item(run_state, item.item_id, target_faces, source_face_ref, slot_index)
 
 
+func use_from_pack(
+	run_state: RunState,
+	forge_item_id: StringName,
+	target_faces: Array = [],
+	source_face_ref: Dictionary = {}
+) -> Dictionary:
+	return apply_forge_item(run_state, forge_item_id, target_faces, source_face_ref, -1)
+
+
 func apply_forge_item(
 	run_state: RunState,
 	forge_item_id: StringName,
@@ -146,8 +155,8 @@ func apply_forge_item(
 	result["success"] = true
 	dice_tool_service.on_forge_item_used(run_state, def.id)
 	if def.effect_type == ForgeItemCatalog.EFFECT_FACE_COPY:
-		var target_ref := target_faces[0] if not target_faces.is_empty() and target_faces[0] is Dictionary else {}
-		var source_ref := source_face_ref
+		var target_ref: Dictionary = target_faces[0] if not target_faces.is_empty() and target_faces[0] is Dictionary else {}
+		var source_ref: Dictionary = source_face_ref
 		if source_ref.is_empty() and target_faces.size() >= 2 and target_faces[1] is Dictionary:
 			source_ref = target_faces[1]
 		dice_tool_service.on_face_copied(run_state, source_ref, target_ref)
@@ -415,7 +424,7 @@ func _make_item_instance_for_id(item_id: StringName) -> ItemInstance:
 		return ItemInstance.create_forge_item(item_id, forge_def.get_display_name())
 	for tool_data in ForgeItemCatalog.get_dice_tool_item_pool():
 		if StringName(str(tool_data.get("id", &""))) == item_id:
-			var item := ItemInstance.create_dice_tool(
+			var item: ItemInstance = ItemInstance.create_dice_tool(
 				item_id,
 				str(tool_data.get("name", item_id)),
 				int(tool_data.get("sell_value", 0))

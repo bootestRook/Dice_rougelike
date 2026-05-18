@@ -4,10 +4,27 @@ class_name DisplayNames
 
 const DieState = preload("res://scripts/core/dice/DieState.gd")
 const DiceToolCatalog = preload("res://scripts/rules/dice_tools/DiceToolCatalog.gd")
+const LongTermUnlockCatalog = preload("res://scripts/rules/long_term/LongTermUnlockCatalog.gd")
 
 
 static func combo_name(id: StringName) -> String:
 	match id:
+		&"combo_scatter":
+			return combo_name(&"scatter")
+		&"combo_pair":
+			return combo_name(&"PAIR")
+		&"combo_two_pair":
+			return combo_name(&"TWO_PAIR")
+		&"combo_three_kind":
+			return combo_name(&"THREE_KIND")
+		&"combo_full_house":
+			return combo_name(&"FULL_HOUSE")
+		&"combo_four_kind":
+			return combo_name(&"FOUR_KIND")
+		&"combo_straight":
+			return combo_name(&"straight")
+		&"combo_five_kind":
+			return combo_name(&"FIVE_KIND")
 		&"scatter", &"SCATTER", &"high_card":
 			return str(TranslationServer.translate(&"AUTO.TEXT.EF4C86E15258"))
 		&"straight", &"STRAIGHT", &"small_straight", &"large_straight":
@@ -48,6 +65,74 @@ static func combo_name(id: StringName) -> String:
 
 static func dice_tool_name(id: StringName) -> String:
 	return DiceToolCatalog.display_name_for_id(id)
+
+
+static func long_term_unlock_name(id: StringName) -> String:
+	return LongTermUnlockCatalog.display_name_for_id(id)
+
+
+static func shop_offer_kind_name(id: StringName) -> String:
+	match id:
+		&"random_item":
+			return "随机商品"
+		&"booster_pack":
+			return "补充包"
+		&"long_term_unlock":
+			return "长期解锁"
+		_:
+			return str(id)
+
+
+static func shop_payload_kind_name(id: StringName) -> String:
+	match id:
+		&"forge_item":
+			return "铸骰件"
+		&"dice_tool_item":
+			return "骰具道具"
+		&"combo_upgrade_item":
+			return "主骰型升级件"
+		&"booster_pack":
+			return "补充包"
+		&"long_term_unlock":
+			return "长期解锁"
+		_:
+			return str(id)
+
+
+static func booster_pack_kind_name(id: StringName) -> String:
+	match id:
+		&"face":
+			return "骰面改造"
+		&"forge":
+			return "铸骰件"
+		&"combo":
+			return "主骰型"
+		&"tool":
+			return "骰具"
+		&"foundry":
+			return "工坊服务"
+		_:
+			return str(id)
+
+
+static func face_cover_mode_name(id: StringName) -> String:
+	match id:
+		&"full_face":
+			return "完整覆盖"
+		&"pip_only":
+			return "只改点数"
+		&"ornament_only":
+			return "只改面饰"
+		&"mark_only":
+			return "只改印记"
+		&"pip_ornament":
+			return "点数与面饰"
+		&"pip_mark":
+			return "点数与印记"
+		&"ornament_mark":
+			return "面饰与印记"
+		_:
+			return str(id)
 
 
 static func contained_pattern_name(id: StringName) -> String:

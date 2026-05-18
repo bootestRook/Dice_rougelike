@@ -37,36 +37,51 @@ var battle_index: int = 0
 var current_battle: BattleState = null
 var last_reward_choices: Array[ForgePieceDef] = []
 var pending_forge_piece: ForgePieceDef = null
-var max_battles: int = 20
+var max_battles: int = 24
 var target_scores: Array[int] = [
-	850,
-	1100,
-	1400,
-	1900,
-	2200,
+	300,
+	450,
+	600,
+	800,
+	1200,
+	1600,
+	2000,
 	3000,
-	3900,
-	5200,
-	6000,
-	7800,
-	10200,
-	13500,
-	15500,
+	4000,
+	5000,
+	7500,
+	10000,
+	11000,
+	16500,
+	22000,
 	20000,
-	26000,
-	34500,
-	39000,
+	30000,
+	40000,
+	35000,
+	52500,
+	70000,
 	50000,
-	64000,
-	85000,
+	75000,
+	100000,
 ]
-var boss_battle_numbers: Array[int] = [4, 8, 12, 16, 20]
+var boss_battle_numbers: Array[int] = [3, 6, 9, 12, 15, 18, 21, 24]
 var run_won: bool = false
 var run_lost: bool = false
 var total_hands_scored: int = 0
 var total_score_scored: int = 0
 var best_hand_score: int = 0
 var coins: int = 0
+var shop_reroll_base_cost: int = 5
+var shop_reroll_count_this_shop: int = 0
+var shop_random_item_slot_bonus: int = 0
+var shop_booster_slot_bonus: int = 0
+var current_shop_state: Dictionary = {}
+var pending_booster_resolution: Dictionary = {}
+var shop_logs: Array[Dictionary] = []
+var long_term_unlocks: Dictionary = {}
+var long_term_unlock_effect_totals: Dictionary = {}
+var battle_rerolls_per_hand_delta: int = 0
+var long_term_boss_rule_grace_per_battle: int = 0
 var installed_piece_count: int = 0
 var installed_piece_history: Array[Dictionary] = []
 var recent_settlement_logs: Array[Dictionary] = []
@@ -111,6 +126,17 @@ func setup_new_run() -> void:
 	total_score_scored = 0
 	best_hand_score = 0
 	coins = 0
+	shop_reroll_base_cost = 5
+	shop_reroll_count_this_shop = 0
+	shop_random_item_slot_bonus = 0
+	shop_booster_slot_bonus = 0
+	current_shop_state.clear()
+	pending_booster_resolution.clear()
+	shop_logs.clear()
+	long_term_unlocks.clear()
+	long_term_unlock_effect_totals.clear()
+	battle_rerolls_per_hand_delta = 0
+	long_term_boss_rule_grace_per_battle = 0
 	installed_piece_count = 0
 	installed_piece_history.clear()
 	recent_settlement_logs.clear()
@@ -201,6 +227,32 @@ func add_item_instance_to_slots(item: ItemInstance) -> bool:
 
 func add_coins(amount: int, _source: StringName = &"") -> void:
 	coins = max(get_min_allowed_coins(), coins + amount)
+
+
+func get_shop_reroll_cost() -> int:
+	return max(0, shop_reroll_base_cost + shop_reroll_count_this_shop)
+
+
+func get_shop_random_item_slot_count() -> int:
+	return max(0, 2 + shop_random_item_slot_bonus)
+
+
+func get_shop_booster_slot_count() -> int:
+	return max(0, 2 + shop_booster_slot_bonus)
+
+
+func has_long_term_unlock(unlock_id: StringName) -> bool:
+	return bool(long_term_unlocks.get(unlock_id, false))
+
+
+func add_long_term_unlock_effect(effect_type: StringName, amount: int) -> void:
+	if effect_type == &"" or amount == 0:
+		return
+	long_term_unlock_effect_totals[effect_type] = int(long_term_unlock_effect_totals.get(effect_type, 0)) + amount
+
+
+func get_long_term_unlock_effect_total(effect_type: StringName) -> int:
+	return int(long_term_unlock_effect_totals.get(effect_type, 0))
 
 
 func consume_item_slot(slot_index: int) -> ItemInstance:
@@ -548,6 +600,17 @@ func record_foundry_log(service_id: StringName, service_name: String, message: S
 		"battle": battle_index + 1,
 		"service_id": service_id,
 		"service_name": service_name,
+		"message": message,
+		"details": details.duplicate(true),
+		"coins": coins,
+	})
+
+
+func record_shop_log(message: String, details: Dictionary = {}) -> void:
+	if message == "":
+		return
+	shop_logs.append({
+		"battle": battle_index + 1,
 		"message": message,
 		"details": details.duplicate(true),
 		"coins": coins,
