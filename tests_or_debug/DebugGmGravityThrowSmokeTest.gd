@@ -80,16 +80,23 @@ func _init() -> void:
 			all_passed = _check("multi dice collision is enabled", bool(sandbox.call("did_last_enable_dice_collision"))) and all_passed
 			all_passed = _check("landing phase restores old 0.3 second feel", _is_between(float(sandbox.call("get_landing_phase_seconds")), 0.25, 0.40)) and all_passed
 			all_passed = _check("bounce phase restores old half-second feel", _is_between(float(sandbox.call("get_bounce_roll_phase_seconds")), 0.48, 0.68)) and all_passed
-			all_passed = _check("target face pre-rotation stays around 0.2 seconds", _is_between(float(sandbox.call("get_face_pre_rotate_seconds")), 0.15, 0.25)) and all_passed
+			var ground_positions: Array = sandbox.call("get_last_ground_positions")
+			all_passed = _check("dice land inside random circular area", ground_positions.size() == 4 and _positions_inside_landing_circle(ground_positions, float(sandbox.call("get_landing_area_radius")))) and all_passed
+			all_passed = _check("dice landing scatter does not collapse into a line", _positions_use_two_axes(ground_positions)) and all_passed
 			await create_timer(1.20).timeout
 			all_passed = _check("landing uses physical gravity curve", bool(sandbox.call("did_last_landing_use_gravity_curve"))) and all_passed
 			all_passed = _check("ground contact is recorded before calibration", bool(sandbox.call("did_last_record_ground_contact"))) and all_passed
 			all_passed = _check("calibration starts after ground contact", bool(sandbox.call("did_last_start_calibration_after_ground"))) and all_passed
 			all_passed = _check("bounce roll returns to the ground", bool(sandbox.call("did_last_bounce_touch_ground"))) and all_passed
-			all_passed = _check("target face pre-rotation is used during bounce", _is_between(float(sandbox.call("get_last_final_push_seconds")), 0.15, 0.25)) and all_passed
+			all_passed = _check("target face turn is gradual during bounce", _is_between(float(sandbox.call("get_last_final_push_seconds")), 0.26, 0.55)) and all_passed
 			all_passed = _check("dice visits fake face before target", int(sandbox.call("get_last_fake_face_number")) != int(sandbox.call("get_last_target_face_number"))) and all_passed
 			all_passed = _check("dice adjusts toward target during bounce", bool(sandbox.call("was_last_adjusted_during_bounce"))) and all_passed
-			all_passed = _check("far target rotation applies slight roll", bool(sandbox.call("did_last_apply_roll_offset")) and float(sandbox.call("get_last_roll_offset_distance")) > 0.0) and all_passed
+			var bounce_directions: Array = sandbox.call("get_last_bounce_directions")
+			var turn_speeds: Array = sandbox.call("get_last_turn_speeds")
+			var turn_distances: Array = sandbox.call("get_last_turn_distances")
+			all_passed = _check("bounce uses randomized horizontal directions", _directions_are_randomized(bounce_directions, 4)) and all_passed
+			all_passed = _check("turn speed and distance are recorded", _positive_float_array(turn_speeds, 4) and _positive_float_array(turn_distances, 4)) and all_passed
+			all_passed = _check("turn effort applies slight roll", bool(sandbox.call("did_last_apply_roll_offset")) and float(sandbox.call("get_last_roll_offset_distance")) > 14.0) and all_passed
 			all_passed = _check("dice settle target pips up", bool(sandbox.call("was_last_face_up_completed")) and _same_int_array(sandbox.call("get_last_target_face_numbers"), [6, 2, 6, 1])) and all_passed
 			all_passed = _check("dice throw presentation keeps old compact duration", _is_between(float(sandbox.call("get_last_throw_total_seconds")), 0.75, 1.05)) and all_passed
 		if throw_button != null:
@@ -205,5 +212,58 @@ func _all_int_values(values: Array, expected: int) -> bool:
 func _all_string_values(values: Array, expected: String) -> bool:
 	for value in values:
 		if str(value) != expected:
+			return false
+	return true
+
+
+func _positions_inside_landing_circle(values: Array, radius: float) -> bool:
+	for value in values:
+		var position: Vector3 = value
+		if Vector2(position.x, position.z).length() > radius + 0.1:
+			return false
+	return true
+
+
+func _positions_use_two_axes(values: Array) -> bool:
+	if values.size() < 2:
+		return false
+	var min_x := INF
+	var max_x := -INF
+	var min_z := INF
+	var max_z := -INF
+	for value in values:
+		var position: Vector3 = value
+		min_x = minf(min_x, position.x)
+		max_x = maxf(max_x, position.x)
+		min_z = minf(min_z, position.z)
+		max_z = maxf(max_z, position.z)
+	return (max_x - min_x) > 18.0 and (max_z - min_z) > 18.0
+
+
+func _directions_are_randomized(values: Array, expected_count: int) -> bool:
+	if values.size() != expected_count:
+		return false
+	var first_angle := 0.0
+	var has_first := false
+	var has_different_angle := false
+	for value in values:
+		var direction: Vector3 = value
+		if absf(direction.y) > 0.001 or direction.length() < 0.90:
+			return false
+		var angle := atan2(direction.z, direction.x)
+		if not has_first:
+			first_angle = angle
+			has_first = true
+			continue
+		if absf(wrapf(angle - first_angle, -PI, PI)) > 0.12:
+			has_different_angle = true
+	return has_different_angle
+
+
+func _positive_float_array(values: Array, expected_count: int) -> bool:
+	if values.size() != expected_count:
+		return false
+	for value in values:
+		if float(value) <= 0.0:
 			return false
 	return true
