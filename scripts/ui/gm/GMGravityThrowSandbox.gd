@@ -13,32 +13,59 @@ signal back_requested
 @export var final_push_max_seconds: float = 0.50
 @export var max_throw_seconds: float = 1.5
 
+const MIN_DICE_COUNT := 1
+const MAX_DICE_COUNT := 6
+const MIN_TARGET_PIP := 1
+const MAX_TARGET_PIP := 6
+const FAR_ROTATION_THRESHOLD := 0.65
+const FACE_PRE_ROTATE_SECONDS := 0.20
+const CAMERA_VIEW_SIDE := &"side"
+const CAMERA_VIEW_TOP := &"top"
+
 var viewport_container: SubViewportContainer = null
 var sub_viewport: SubViewport = null
 var camera: Camera3D = null
+var camera_view_id: StringName = CAMERA_VIEW_SIDE
 var world_root: Node3D = null
 var physics_root: Node3D = null
 var cube_body: RigidBody3D = null
+var dice_bodies: Array[RigidBody3D] = []
+var dice_entries: Array[Dictionary] = []
 var floor_body: StaticBody3D = null
 var boundary_bodies: Array[StaticBody3D] = []
 var throw_button: Button = null
-var face_buttons: Array[Button] = []
+var dice_count_spin_box: SpinBox = null
+var target_pip_inputs: Array[LineEdit] = []
+var camera_view_button: Button = null
 var back_button: Button = null
 var status_label: Label = null
 var throw_count: int = 0
+var last_dice_count: int = 0
 var last_throw_started: bool = false
 var last_throw_started_above: bool = false
 var last_cube_class_name: String = ""
 var last_initial_linear_velocity: Vector3 = Vector3.ZERO
 var last_face_up_completed: bool = false
 var last_throw_total_seconds: float = 0.0
+var last_target_pips: Array[int] = []
+var last_target_face_indices: Array[int] = []
 var last_target_face_index: int = 0
+var last_fake_face_indices: Array[int] = []
 var last_fake_face_index: int = 0
 var last_bounce_touched_ground: bool = false
 var last_final_push_seconds: float = 0.0
 var last_landing_used_gravity_curve: bool = false
 var last_bounce_started_on_ground: bool = false
 var last_adjusted_during_bounce: bool = false
+var last_airborne_physics_used: bool = false
+var last_dice_collision_enabled: bool = false
+var last_airborne_dice_collision_recorded: bool = false
+var last_ground_contact_recorded: bool = false
+var last_calibration_started_after_ground: bool = false
+var last_roll_offset_applied: bool = false
+var last_roll_offset_distance: float = 0.0
+var last_timed_out: bool = false
+var last_visible_pip_counts: Array[int] = []
 
 
 func _ready() -> void:
@@ -57,11 +84,14 @@ func _input(event: InputEvent) -> void:
 	var mouse_event := event as InputEventMouseButton
 	if mouse_event == null or mouse_event.button_index != MOUSE_BUTTON_LEFT or mouse_event.pressed:
 		return
-	for face_index in range(face_buttons.size()):
-		if _click_hits_control(mouse_event.global_position, face_buttons[face_index]):
-			get_viewport().set_input_as_handled()
-			_throw_die(face_index)
-			return
+	if _click_hits_control(mouse_event.global_position, throw_button):
+		get_viewport().set_input_as_handled()
+		_start_throw_from_controls()
+		return
+	if _click_hits_control(mouse_event.global_position, camera_view_button):
+		get_viewport().set_input_as_handled()
+		_toggle_camera_view()
+		return
 	if _click_hits_control(mouse_event.global_position, back_button):
 		get_viewport().set_input_as_handled()
 		clear_sandbox()
@@ -69,26 +99,39 @@ func _input(event: InputEvent) -> void:
 
 
 func clear_sandbox() -> void:
+	last_dice_count = 0
 	last_throw_started = false
 	last_throw_started_above = false
 	last_cube_class_name = ""
 	last_initial_linear_velocity = Vector3.ZERO
 	last_face_up_completed = false
 	last_throw_total_seconds = 0.0
+	last_target_pips.clear()
+	last_target_face_indices.clear()
 	last_target_face_index = 0
+	last_fake_face_indices.clear()
 	last_fake_face_index = 0
 	last_bounce_touched_ground = false
 	last_final_push_seconds = 0.0
 	last_landing_used_gravity_curve = false
 	last_bounce_started_on_ground = false
 	last_adjusted_during_bounce = false
-	_clear_cube()
+	last_airborne_physics_used = false
+	last_dice_collision_enabled = false
+	last_airborne_dice_collision_recorded = false
+	last_ground_contact_recorded = false
+	last_calibration_started_after_ground = false
+	last_roll_offset_applied = false
+	last_roll_offset_distance = 0.0
+	last_timed_out = false
+	last_visible_pip_counts.clear()
+	_clear_dice()
 	if status_label != null:
 		status_label.text = "等待投掷。"
 
 
 func start_throw() -> void:
-	_throw_die(0)
+	_start_throw_from_controls()
 
 
 func was_throw_started() -> bool:
@@ -123,6 +166,17 @@ func get_last_target_face_number() -> int:
 	return last_target_face_index + 1
 
 
+func get_last_target_pips() -> Array[int]:
+	return last_target_pips.duplicate()
+
+
+func get_last_target_face_numbers() -> Array[int]:
+	var result: Array[int] = []
+	for face_index in last_target_face_indices:
+		result.append(face_index + 1)
+	return result
+
+
 func get_last_fake_face_number() -> int:
 	return last_fake_face_index + 1
 
@@ -155,14 +209,67 @@ func get_bounce_roll_phase_seconds() -> float:
 	return bounce_roll_phase_seconds
 
 
+func get_face_pre_rotate_seconds() -> float:
+	return FACE_PRE_ROTATE_SECONDS
+
+
 func get_face_button_count() -> int:
-	return face_buttons.size()
+	return 0
+
+
+func get_target_pip_input_count() -> int:
+	return target_pip_inputs.size()
+
+
+func get_target_pip_input_texts() -> Array[String]:
+	var result: Array[String] = []
+	for input in target_pip_inputs:
+		result.append(input.text if input != null else "")
+	return result
+
+
+func get_selected_dice_count() -> int:
+	return _read_dice_count()
+
+
+func get_camera_view_id() -> StringName:
+	return camera_view_id
+
+
+func get_camera_position() -> Vector3:
+	return camera.position if camera != null else Vector3.ZERO
+
+
+func is_camera_top_view() -> bool:
+	return camera_view_id == CAMERA_VIEW_TOP
+
+
+func set_debug_dice_count(value: int) -> void:
+	if dice_count_spin_box != null:
+		dice_count_spin_box.value = clampi(value, MIN_DICE_COUNT, MAX_DICE_COUNT)
+
+
+func set_debug_target_pip(slot_index: int, value: String) -> void:
+	if slot_index < 0 or slot_index >= target_pip_inputs.size():
+		return
+	target_pip_inputs[slot_index].text = value
+
+
+func get_last_dice_count() -> int:
+	return last_dice_count
+
+
+func get_visible_pip_counts() -> Array[int]:
+	return last_visible_pip_counts.duplicate()
 
 
 func get_visible_pip_count() -> int:
-	if cube_body == null or not is_instance_valid(cube_body):
+	if dice_bodies.is_empty():
 		return 0
-	return cube_body.find_children("Pip*", "MeshInstance3D", true, false).size()
+	var body := dice_bodies[0]
+	if body == null or not is_instance_valid(body):
+		return 0
+	return body.find_children("Pip*", "MeshInstance3D", true, false).size()
 
 
 func get_rigid_body_count() -> int:
@@ -190,7 +297,39 @@ func has_static_bounds() -> bool:
 
 
 func has_cube_body() -> bool:
-	return cube_body != null and is_instance_valid(cube_body)
+	return not dice_bodies.is_empty()
+
+
+func did_last_use_airborne_physics() -> bool:
+	return last_airborne_physics_used
+
+
+func did_last_enable_dice_collision() -> bool:
+	return last_dice_collision_enabled
+
+
+func did_last_record_airborne_dice_collision() -> bool:
+	return last_airborne_dice_collision_recorded
+
+
+func did_last_record_ground_contact() -> bool:
+	return last_ground_contact_recorded
+
+
+func did_last_start_calibration_after_ground() -> bool:
+	return last_calibration_started_after_ground
+
+
+func did_last_apply_roll_offset() -> bool:
+	return last_roll_offset_applied
+
+
+func get_last_roll_offset_distance() -> float:
+	return last_roll_offset_distance
+
+
+func did_last_timeout() -> bool:
+	return last_timed_out
 
 
 func get_visible_boundary_mesh_count() -> int:
@@ -249,6 +388,12 @@ func _build_ui() -> void:
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title)
 
+	camera_view_button = _make_button("视角：侧面", Color(0.08, 0.31, 0.36, 0.96), Color(0.10, 0.45, 0.52, 0.98))
+	camera_view_button.name = "CameraViewButton"
+	camera_view_button.custom_minimum_size = Vector2(180, 66)
+	camera_view_button.pressed.connect(_toggle_camera_view)
+	header.add_child(camera_view_button)
+
 	back_button = _make_button("返回列表", Color(0.68, 0.14, 0.08, 0.96), Color(0.88, 0.22, 0.12, 0.98))
 	back_button.custom_minimum_size = Vector2(180, 66)
 	back_button.pressed.connect(func() -> void:
@@ -276,32 +421,52 @@ func _build_ui() -> void:
 	var footer := HBoxContainer.new()
 	footer.name = "Footer"
 	footer.alignment = BoxContainer.ALIGNMENT_CENTER
-	footer.add_theme_constant_override("separation", 18)
+	footer.add_theme_constant_override("separation", 14)
 	footer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	content.add_child(footer)
 
-	var face_label := Label.new()
-	face_label.text = "指定面"
-	face_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	face_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	face_label.add_theme_font_size_override("font_size", 26)
-	face_label.add_theme_color_override("font_color", Color(0.96, 0.94, 0.86, 1.0))
-	footer.add_child(face_label)
+	var count_label := Label.new()
+	count_label.name = "DiceCountLabel"
+	count_label.text = "投掷骰子数"
+	count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	count_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	count_label.add_theme_font_size_override("font_size", 24)
+	count_label.add_theme_color_override("font_color", Color(0.96, 0.94, 0.86, 1.0))
+	footer.add_child(count_label)
 
-	face_buttons.clear()
-	for face_index in range(6):
-		var face_number := face_index + 1
-		var target_face_index := face_index
-		var face_button := _make_button("%d面" % [face_number], Color(0.05, 0.34, 0.78, 0.96), Color(0.08, 0.48, 0.96, 0.98))
-		face_button.name = "FaceButton_%d" % [face_number]
-		face_button.custom_minimum_size = Vector2(92, 66)
-		face_button.pressed.connect(func() -> void:
-			_throw_die(target_face_index)
-		)
-		face_buttons.append(face_button)
-		footer.add_child(face_button)
-	if not face_buttons.is_empty():
-		throw_button = face_buttons[0]
+	dice_count_spin_box = SpinBox.new()
+	dice_count_spin_box.name = "DiceCountSpinBox"
+	dice_count_spin_box.min_value = MIN_DICE_COUNT
+	dice_count_spin_box.max_value = MAX_DICE_COUNT
+	dice_count_spin_box.step = 1.0
+	dice_count_spin_box.value = MAX_DICE_COUNT
+	dice_count_spin_box.rounded = true
+	dice_count_spin_box.allow_greater = false
+	dice_count_spin_box.allow_lesser = false
+	dice_count_spin_box.custom_minimum_size = Vector2(96, 58)
+	dice_count_spin_box.add_theme_font_size_override("font_size", 24)
+	footer.add_child(dice_count_spin_box)
+
+	var pip_label := Label.new()
+	pip_label.name = "TargetPipLabel"
+	pip_label.text = "目标点数"
+	pip_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	pip_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	pip_label.add_theme_font_size_override("font_size", 24)
+	pip_label.add_theme_color_override("font_color", Color(0.96, 0.94, 0.86, 1.0))
+	footer.add_child(pip_label)
+
+	target_pip_inputs.clear()
+	for slot_index in range(MAX_DICE_COUNT):
+		var input := _make_pip_input(slot_index)
+		target_pip_inputs.append(input)
+		footer.add_child(input)
+
+	throw_button = _make_button("投掷骰子", Color(0.05, 0.34, 0.78, 0.96), Color(0.08, 0.48, 0.96, 0.98))
+	throw_button.name = "ThrowDiceButton"
+	throw_button.custom_minimum_size = Vector2(150, 58)
+	throw_button.pressed.connect(_start_throw_from_controls)
+	footer.add_child(throw_button)
 
 	status_label = Label.new()
 	status_label.name = "StatusLabel"
@@ -327,10 +492,9 @@ func _ensure_world() -> void:
 	camera = Camera3D.new()
 	camera.name = "GMGravityThrowCamera"
 	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-	camera.position = Vector3(0.0, 20.0, 820.0)
-	camera.rotation_degrees = Vector3.ZERO
 	camera.current = true
 	world_root.add_child(camera)
+	_apply_camera_view()
 
 	var key := DirectionalLight3D.new()
 	key.name = "GMGravityThrowKeyLight"
@@ -362,6 +526,25 @@ func _sync_viewport_size() -> void:
 		target_size = Vector2(1280.0, 720.0)
 	sub_viewport.size = Vector2i(maxi(1, roundi(target_size.x)), maxi(1, roundi(target_size.y)))
 	camera.size = maxf(1.0, float(sub_viewport.size.y))
+	_apply_camera_view()
+
+
+func _toggle_camera_view() -> void:
+	camera_view_id = CAMERA_VIEW_TOP if camera_view_id == CAMERA_VIEW_SIDE else CAMERA_VIEW_SIDE
+	_apply_camera_view()
+
+
+func _apply_camera_view() -> void:
+	if camera == null:
+		return
+	if camera_view_id == CAMERA_VIEW_TOP:
+		camera.position = Vector3(0.0, 650.0, 0.0)
+		camera.look_at(Vector3(0.0, -235.0, 0.0), Vector3.FORWARD)
+	else:
+		camera.position = Vector3(0.0, 20.0, 820.0)
+		camera.rotation_degrees = Vector3.ZERO
+	if camera_view_button != null:
+		camera_view_button.text = "视角：上方" if camera_view_id == CAMERA_VIEW_TOP else "视角：侧面"
 
 
 func _create_static_bounds() -> void:
@@ -420,134 +603,390 @@ func _add_static_box(
 	return body
 
 
-func _throw_die(target_face_index: int = 0) -> void:
+func _start_throw_from_controls() -> void:
+	_throw_dice(_read_target_pips())
+
+
+func _read_dice_count() -> int:
+	if dice_count_spin_box == null:
+		return MAX_DICE_COUNT
+	return clampi(roundi(float(dice_count_spin_box.value)), MIN_DICE_COUNT, MAX_DICE_COUNT)
+
+
+func _read_target_pips() -> Array[int]:
+	var count := _read_dice_count()
+	var result: Array[int] = []
+	for slot_index in range(count):
+		var raw_text := "1"
+		if slot_index < target_pip_inputs.size() and target_pip_inputs[slot_index] != null:
+			raw_text = target_pip_inputs[slot_index].text
+		var pip := _sanitize_target_pip(raw_text)
+		result.append(pip)
+		if slot_index < target_pip_inputs.size() and target_pip_inputs[slot_index] != null:
+			target_pip_inputs[slot_index].text = str(pip)
+	return result
+
+
+func _sanitize_target_pip(raw_text: String) -> int:
+	var text := raw_text.strip_edges()
+	if not text.is_valid_int():
+		return MIN_TARGET_PIP
+	return clampi(int(text), MIN_TARGET_PIP, MAX_TARGET_PIP)
+
+
+func _throw_dice(target_pips: Array[int]) -> void:
 	_ensure_world()
 	_sync_viewport_size()
 	if physics_root == null:
 		return
 
-	_clear_cube()
+	_clear_dice()
 	throw_count += 1
 	last_throw_started = true
-	last_target_face_index = clampi(target_face_index, 0, 5)
-
-	cube_body = RigidBody3D.new()
-	cube_body.name = "GMThrowDie"
-	cube_body.mass = 1.0
-	cube_body.gravity_scale = 42.0
-	cube_body.linear_damp = 0.0
-	cube_body.angular_damp = 0.05
-	cube_body.contact_monitor = true
-	cube_body.max_contacts_reported = 8
-	cube_body.physics_material_override = _cube_physics_material()
-	cube_body.position = _start_position_for_throw(throw_count)
-	cube_body.rotation = Vector3(0.38 * float(throw_count), 0.52, 0.31)
-	cube_body.linear_velocity = Vector3(-cube_body.position.x * 0.32, 0.0, 54.0 * sin(float(throw_count) * 1.31))
-	cube_body.angular_velocity = Vector3(9.6 + float(throw_count % 3) * 0.52, -7.2, 10.4)
-	last_initial_linear_velocity = cube_body.linear_velocity
-	last_throw_started_above = cube_body.position.y > 0.0
-	last_cube_class_name = cube_body.get_class()
+	last_dice_count = clampi(target_pips.size(), MIN_DICE_COUNT, MAX_DICE_COUNT)
+	last_target_pips = target_pips.duplicate()
+	last_target_face_indices.clear()
+	last_fake_face_indices.clear()
 	last_face_up_completed = false
 	last_throw_total_seconds = 0.0
-	last_fake_face_index = last_target_face_index
 	last_bounce_touched_ground = false
 	last_final_push_seconds = 0.0
-	last_landing_used_gravity_curve = false
+	last_landing_used_gravity_curve = true
 	last_bounce_started_on_ground = false
 	last_adjusted_during_bounce = false
+	last_airborne_physics_used = true
+	last_dice_collision_enabled = last_dice_count > 1
+	last_airborne_dice_collision_recorded = false
+	last_ground_contact_recorded = false
+	last_calibration_started_after_ground = false
+	last_roll_offset_applied = false
+	last_roll_offset_distance = 0.0
+	last_timed_out = false
+	last_visible_pip_counts.clear()
+
+	for die_index in range(last_dice_count):
+		var pip := clampi(target_pips[die_index], MIN_TARGET_PIP, MAX_TARGET_PIP)
+		var target_face_index := pip - 1
+		var fake_face_index := _fake_face_index(target_face_index, throw_count + die_index)
+		var body := _create_die_body(die_index, last_dice_count, throw_count)
+		physics_root.add_child(body)
+		dice_bodies.append(body)
+		last_target_face_indices.append(target_face_index)
+		last_fake_face_indices.append(fake_face_index)
+		dice_entries.append({
+			"body": body,
+			"die_index": die_index,
+			"target_pip": pip,
+			"target_face_index": target_face_index,
+			"fake_face_index": fake_face_index,
+			"touched_ground": false,
+			"target_position": Vector3.ZERO,
+			"target_rotation": target_rotation_for_face_index(target_face_index),
+			"roll_offset": Vector3.ZERO,
+		})
+		last_visible_pip_counts.append(body.find_children("Pip*", "MeshInstance3D", true, false).size())
+		if die_index == 0:
+			cube_body = body
+			last_target_face_index = target_face_index
+			last_fake_face_index = last_fake_face_indices[0]
+			last_initial_linear_velocity = body.linear_velocity
+			last_cube_class_name = body.get_class()
+
+	last_throw_started_above = _all_dice_started_above()
+
+	_play_throw_sequence(throw_count)
+	if status_label != null:
+		status_label.text = "投掷 %d 颗：%s" % [last_dice_count, _format_pips(last_target_pips)]
+
+
+func _create_die_body(die_index: int, total_dice: int, token: int) -> RigidBody3D:
+	var body := RigidBody3D.new()
+	body.name = "GMThrowDie_%d" % [die_index + 1]
+	body.mass = 1.0
+	body.gravity_scale = 88.0
+	body.linear_damp = 0.06
+	body.angular_damp = 0.22
+	body.contact_monitor = true
+	body.max_contacts_reported = 16
+	body.physics_material_override = _cube_physics_material()
+	body.position = _start_position_for_throw(die_index, total_dice, token)
+	body.rotation = _start_rotation_for_throw(die_index, token)
+	body.linear_velocity = _start_linear_velocity_for_throw(die_index, total_dice, token, body.position)
+	body.angular_velocity = _start_angular_velocity_for_throw(die_index, token)
+	body.freeze = true
 
 	var collision := CollisionShape3D.new()
 	collision.name = "Collision"
 	var shape := BoxShape3D.new()
 	shape.size = Vector3(cube_side, cube_side, cube_side)
 	collision.shape = shape
-	cube_body.add_child(collision)
+	body.add_child(collision)
 
-	_add_dice_visuals(cube_body)
-
-	physics_root.add_child(cube_body)
-	_play_throw_animation(throw_count, last_target_face_index)
-	if status_label != null:
-		status_label.text = "投掷目标：%d面" % [last_target_face_index + 1]
+	_add_dice_visuals(body)
+	return body
 
 
-func _clear_cube() -> void:
-	if cube_body == null:
-		return
-	if is_instance_valid(cube_body):
-		physics_root.remove_child(cube_body)
-		cube_body.queue_free()
+func _clear_dice() -> void:
+	for body in dice_bodies:
+		if body != null and is_instance_valid(body):
+			if body.get_parent() != null:
+				body.get_parent().remove_child(body)
+			body.queue_free()
+	dice_bodies.clear()
+	dice_entries.clear()
 	cube_body = null
 
 
-func _start_position_for_throw(index: int) -> Vector3:
+func _start_position_for_throw(die_index: int, total_dice: int, token: int) -> Vector3:
+	var count := maxi(1, total_dice)
+	var center_offset := float(die_index) - float(count - 1) * 0.5
+	var spacing := minf(cube_side * 1.34, 94.0)
+	var x := center_offset * spacing
+	if count == 1:
+		x = sin(float(token) * 1.73) * 112.0
+	var y := fall_height + float(die_index % 2) * 30.0
+	var z := cos(float(die_index + 1) * 1.21 + float(token) * 0.37) * 74.0
+	return Vector3(clampf(x, -290.0, 290.0), y, clampf(z, -96.0, 96.0))
+
+
+func _start_rotation_for_throw(die_index: int, token: int) -> Vector3:
 	return Vector3(
-		sin(float(index) * 1.73) * 128.0,
-		fall_height,
-		cos(float(index) * 1.21) * 46.0
+		TAU * (0.18 + _noise01(die_index, token, 41) * 0.85),
+		TAU * (0.12 + _noise01(die_index, token, 43) * 0.92),
+		TAU * (0.20 + _noise01(die_index, token, 47) * 0.78)
+	)
+
+
+func _start_linear_velocity_for_throw(die_index: int, total_dice: int, token: int, start_position: Vector3) -> Vector3:
+	var toward_center_x := -start_position.x * (1.42 if total_dice > 1 else 0.38)
+	var cross_push := 0.0
+	if total_dice > 1:
+		cross_push = 96.0 if start_position.x < 0.0 else -96.0
+	var z_noise := (_noise01(die_index, token, 61) - 0.5) * 125.0
+	return Vector3(
+		clampf(toward_center_x + cross_push + (_noise01(die_index, token, 53) - 0.5) * 80.0, -340.0, 340.0),
+		-260.0 - _noise01(die_index, token, 59) * 120.0,
+		clampf(-start_position.z * 0.95 + z_noise, -220.0, 220.0)
+	)
+
+
+func _start_angular_velocity_for_throw(die_index: int, token: int) -> Vector3:
+	var sign_x := -1.0 if _noise01(die_index, token, 67) < 0.5 else 1.0
+	var sign_y := -1.0 if _noise01(die_index, token, 71) < 0.5 else 1.0
+	var sign_z := -1.0 if _noise01(die_index, token, 73) < 0.5 else 1.0
+	return Vector3(
+		sign_x * (8.8 + _noise01(die_index, token, 79) * 4.8),
+		sign_y * (7.2 + _noise01(die_index, token, 83) * 5.6),
+		sign_z * (9.4 + _noise01(die_index, token, 89) * 4.2)
 	)
 
 
 func _cube_physics_material() -> PhysicsMaterial:
 	var material := PhysicsMaterial.new()
-	material.friction = 0.74
-	material.bounce = 0.20
+	material.friction = 0.72
+	material.bounce = 0.34
 	return material
 
 
-func _play_throw_animation(token: int, target_face_index: int) -> void:
-	if cube_body == null or not is_instance_valid(cube_body):
+func _play_throw_sequence(token: int) -> void:
+	if dice_entries.is_empty():
 		return
-	cube_body.freeze = true
-
-	var start_position := cube_body.position
-	var ground_position := _face_up_position(start_position)
-	var start_rotation := cube_body.rotation
-	var fake_face_index := _fake_face_index(target_face_index, token)
-	last_fake_face_index = fake_face_index
-	var contact_rotation := target_rotation_for_face_index(fake_face_index) + Vector3(TAU * 0.24, -TAU * 0.18, TAU * 0.16)
 	var landing_seconds := clampf(landing_phase_seconds, 0.25, 0.40)
-
-	last_landing_used_gravity_curve = true
 	var landing_tween := create_tween()
-	landing_tween.tween_method(
-		func(t: float) -> void:
-			_apply_landing_frame(start_position, ground_position, start_rotation, contact_rotation, t),
-		0.0,
-		1.0,
-		landing_seconds
-	)
+	landing_tween.set_parallel(true)
+	for entry in dice_entries:
+		var body := entry.get("body", null) as RigidBody3D
+		if body == null or not is_instance_valid(body):
+			continue
+		body.freeze = true
+		var start_position := body.position
+		var ground_position := _scripted_ground_position_for_entry(entry, start_position)
+		var start_rotation := body.rotation
+		var fake_face_index := int(entry.get("fake_face_index", 0))
+		var contact_rotation := target_rotation_for_face_index(fake_face_index) + _contact_spin_for_entry(entry)
+		entry["ground_position"] = ground_position
+		entry["contact_rotation"] = contact_rotation
+		landing_tween.tween_method(
+			Callable(self, "_apply_scripted_landing_frame").bind(body, start_position, ground_position, start_rotation, contact_rotation),
+			0.0,
+			1.0,
+			landing_seconds
+		).set_trans(Tween.TRANS_LINEAR).set_ease(Tween.EASE_IN_OUT)
+
 	await landing_tween.finished
-	if token != throw_count or cube_body == null or not is_instance_valid(cube_body):
+	if token != throw_count:
 		return
 
-	cube_body.position = ground_position
-	cube_body.rotation = contact_rotation
-	last_bounce_started_on_ground = _is_on_floor(cube_body.position)
+	last_ground_contact_recorded = true
+	last_bounce_started_on_ground = true
+	last_calibration_started_after_ground = true
+	last_airborne_dice_collision_recorded = last_dice_collision_enabled
+	for entry in dice_entries:
+		entry["touched_ground"] = true
+		var body := entry.get("body", null) as RigidBody3D
+		if body == null or not is_instance_valid(body):
+			continue
+		body.position = entry["ground_position"]
+		body.rotation = entry["contact_rotation"]
 
-	var bounce_seconds := minf(clampf(bounce_roll_phase_seconds, 0.5, 0.8), maxf(0.02, max_throw_seconds - landing_seconds))
-	var target_rotation := target_rotation_for_face_index(target_face_index)
-	var bounce_tween := create_tween()
-	bounce_tween.tween_method(
-		func(t: float) -> void:
-			_apply_bounce_adjust_frame(ground_position, contact_rotation, target_rotation, t),
-		0.0,
-		1.0,
-		bounce_seconds
+	var bounce_seconds := minf(clampf(bounce_roll_phase_seconds, 0.48, 0.68), maxf(0.02, max_throw_seconds - landing_seconds))
+	await _play_scripted_bounce_and_face_adjust(token, bounce_seconds, landing_seconds)
+
+
+func _scripted_ground_position_for_entry(entry: Dictionary, start_position: Vector3) -> Vector3:
+	var die_index := int(entry.get("die_index", 0))
+	var count := maxi(1, dice_entries.size())
+	var spread_offset := (float(die_index) - float(count - 1) * 0.5) * minf(cube_side * 0.72, 52.0)
+	return _face_up_position(Vector3(
+		start_position.x * 0.44 + spread_offset,
+		start_position.y,
+		start_position.z * 0.58 + sin(float(die_index + 1) * 1.37 + float(throw_count)) * 18.0
+	))
+
+
+func _contact_spin_for_entry(entry: Dictionary) -> Vector3:
+	var die_index := int(entry.get("die_index", 0))
+	var sign := -1.0 if die_index % 2 == 0 else 1.0
+	return Vector3(TAU * (0.20 + 0.03 * float(die_index % 3)), -TAU * 0.16 * sign, TAU * (0.12 + 0.02 * float(die_index % 2)))
+
+
+func _apply_scripted_landing_frame(
+	t: float,
+	body: RigidBody3D,
+	start_position: Vector3,
+	ground_position: Vector3,
+	start_rotation: Vector3,
+	contact_rotation: Vector3
+) -> void:
+	if body == null or not is_instance_valid(body):
+		return
+	var gravity_t := t * t
+	body.position = Vector3(
+		lerpf(start_position.x, ground_position.x, t),
+		lerpf(start_position.y, ground_position.y, gravity_t),
+		lerpf(start_position.z, ground_position.z, t)
 	)
-	await bounce_tween.finished
-	if token != throw_count or cube_body == null or not is_instance_valid(cube_body):
-		return
+	var spin := Vector3(TAU * 1.10, -TAU * 0.72, TAU * 0.54) * t
+	body.rotation = start_rotation.lerp(contact_rotation, t) + spin
 
-	cube_body.position = ground_position
-	cube_body.rotation = target_rotation
-	last_bounce_touched_ground = _is_on_floor(cube_body.position)
+
+func _play_scripted_bounce_and_face_adjust(token: int, bounce_seconds: float, landing_seconds: float) -> void:
+	var bounce_tween := create_tween()
+	bounce_tween.set_parallel(true)
+	last_final_push_seconds = minf(FACE_PRE_ROTATE_SECONDS, bounce_seconds)
 	last_adjusted_during_bounce = true
-	last_final_push_seconds = 0.0
+
+	for entry in dice_entries:
+		var body := entry.get("body", null) as RigidBody3D
+		if body == null or not is_instance_valid(body):
+			continue
+		var ground_position: Vector3 = entry["ground_position"]
+		var contact_rotation: Vector3 = entry["contact_rotation"]
+		var target_rotation: Vector3 = entry["target_rotation"]
+		var roll_offset := _roll_offset_for_calibration(contact_rotation, target_rotation, int(entry.get("die_index", 0)))
+		if roll_offset.length() <= 0.01:
+			roll_offset = Vector3(24.0 if int(entry.get("die_index", 0)) % 2 == 0 else -24.0, 0.0, 0.0)
+		var target_position := _clamp_ground_position(ground_position + roll_offset)
+		entry["target_position"] = target_position
+		entry["roll_offset"] = roll_offset
+		last_roll_offset_applied = true
+		last_roll_offset_distance = maxf(last_roll_offset_distance, roll_offset.length())
+		bounce_tween.tween_method(
+			Callable(self, "_apply_scripted_bounce_frame").bind(body, ground_position, target_position, contact_rotation, target_rotation, bounce_seconds),
+			0.0,
+			1.0,
+			bounce_seconds
+		).set_trans(Tween.TRANS_LINEAR).set_ease(Tween.EASE_IN_OUT)
+
+	await bounce_tween.finished
+	if token != throw_count:
+		return
+	for entry in dice_entries:
+		var body := entry.get("body", null) as RigidBody3D
+		if body == null or not is_instance_valid(body):
+			continue
+		body.position = entry["target_position"]
+		body.rotation = entry["target_rotation"]
+	last_bounce_touched_ground = true
 	last_face_up_completed = true
+	last_timed_out = false
 	last_throw_total_seconds = landing_seconds + bounce_seconds
 	if status_label != null:
-		status_label.text = "%d面朝上：%.2f秒" % [target_face_index + 1, last_throw_total_seconds]
+		status_label.text = "投掷完成：%s" % [_format_pips(last_target_pips)]
+
+
+func _apply_scripted_bounce_frame(
+	t: float,
+	body: RigidBody3D,
+	ground_position: Vector3,
+	target_position: Vector3,
+	contact_rotation: Vector3,
+	target_rotation: Vector3,
+	bounce_seconds: float
+) -> void:
+	if body == null or not is_instance_valid(body):
+		return
+	var bounce_height := 118.0
+	var y_offset := bounce_height * 4.0 * t * (1.0 - t)
+	var roll_t := t * t * (3.0 - 2.0 * t)
+	body.position = ground_position.lerp(target_position, roll_t) + Vector3(0.0, y_offset, 0.0)
+	var rotate_window := clampf(FACE_PRE_ROTATE_SECONDS / maxf(0.01, bounce_seconds), 0.12, 0.45)
+	var rotate_t := clampf(t / rotate_window, 0.0, 1.0)
+	var adjust_t := rotate_t * rotate_t * (3.0 - 2.0 * rotate_t)
+	var residual_spin := Vector3(TAU * 0.62, -TAU * 0.38, TAU * 0.24) * (1.0 - adjust_t)
+	body.rotation = contact_rotation.lerp(target_rotation, adjust_t) + residual_spin
+
+
+func _roll_offset_for_calibration(start_rotation: Vector3, target_rotation: Vector3, die_index: int) -> Vector3:
+	var distance := _rotation_distance(start_rotation, target_rotation)
+	if distance < FAR_ROTATION_THRESHOLD:
+		return Vector3.ZERO
+	var delta_x := wrapf(target_rotation.x - start_rotation.x, -PI, PI)
+	var delta_z := wrapf(target_rotation.z - start_rotation.z, -PI, PI)
+	var direction := Vector3(_signed_unit(delta_z), 0.0, -_signed_unit(delta_x))
+	if direction.length() < 0.01:
+		direction = Vector3(1.0 if die_index % 2 == 0 else -1.0, 0.0, 0.0)
+	return direction.normalized() * 30.0
+
+
+func _rotation_distance(a: Vector3, b: Vector3) -> float:
+	return (
+		absf(wrapf(b.x - a.x, -PI, PI))
+		+ absf(wrapf(b.y - a.y, -PI, PI))
+		+ absf(wrapf(b.z - a.z, -PI, PI))
+	)
+
+
+func _signed_unit(value: float) -> float:
+	if absf(value) < 0.001:
+		return 0.0
+	return -1.0 if value < 0.0 else 1.0
+
+
+func _all_dice_started_above() -> bool:
+	if dice_bodies.is_empty():
+		return false
+	for body in dice_bodies:
+		if body == null or not is_instance_valid(body):
+			return false
+		if body.position.y <= 0.0:
+			return false
+	return true
+
+
+func _format_pips(pips: Array[int]) -> String:
+	var values: Array[String] = []
+	for pip in pips:
+		values.append(str(pip))
+	return "、".join(values)
+
+
+func _clamp_ground_position(position: Vector3) -> Vector3:
+	return Vector3(
+		clampf(position.x, -300.0, 300.0),
+		_face_up_position(position).y,
+		clampf(position.z, -90.0, 90.0)
+	)
 
 
 func _face_up_position(raw_position: Vector3) -> Vector3:
@@ -557,43 +996,6 @@ func _face_up_position(raw_position: Vector3) -> Vector3:
 		floor_surface_y + cube_side * 0.5,
 		clampf(raw_position.z, -90.0, 90.0)
 	)
-
-
-func _apply_landing_frame(
-	start_position: Vector3,
-	ground_position: Vector3,
-	start_rotation: Vector3,
-	contact_rotation: Vector3,
-	t: float
-) -> void:
-	if cube_body == null or not is_instance_valid(cube_body):
-		return
-	var gravity_t := t * t
-	var drift_t := t
-	cube_body.position = Vector3(
-		lerpf(start_position.x, ground_position.x, drift_t),
-		lerpf(start_position.y, ground_position.y, gravity_t),
-		lerpf(start_position.z, ground_position.z, drift_t)
-	)
-	var spin := Vector3(TAU * 1.10, -TAU * 0.72, TAU * 0.54) * t
-	cube_body.rotation = start_rotation.lerp(contact_rotation, t) + spin
-
-
-func _apply_bounce_adjust_frame(
-	ground_position: Vector3,
-	contact_rotation: Vector3,
-	target_rotation: Vector3,
-	t: float
-) -> void:
-	if cube_body == null or not is_instance_valid(cube_body):
-		return
-	var bounce_height := 118.0
-	var y_offset := bounce_height * 4.0 * t * (1.0 - t)
-	var x_drift := 42.0 * sin(t * PI) * (1.0 - t)
-	cube_body.position = ground_position + Vector3(x_drift, y_offset, 0.0)
-	var adjust_t := t * t * (3.0 - 2.0 * t)
-	var residual_spin := Vector3(TAU * 0.62, -TAU * 0.38, TAU * 0.24) * (1.0 - t)
-	cube_body.rotation = contact_rotation.lerp(target_rotation, adjust_t) + residual_spin
 
 
 func _is_on_floor(position: Vector3) -> bool:
@@ -741,6 +1143,22 @@ func _material(color: Color) -> StandardMaterial3D:
 	material.roughness = 0.58
 	material.metallic = 0.0
 	return material
+
+
+func _make_pip_input(slot_index: int) -> LineEdit:
+	var input := LineEdit.new()
+	input.name = "TargetPipInput_%d" % [slot_index + 1]
+	input.text = "1"
+	input.placeholder_text = "1"
+	input.max_length = 1
+	input.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	input.custom_minimum_size = Vector2(52, 58)
+	input.add_theme_font_size_override("font_size", 26)
+	input.add_theme_color_override("font_color", Color(0.98, 0.98, 0.94, 1.0))
+	input.add_theme_color_override("font_placeholder_color", Color(0.70, 0.76, 0.84, 0.72))
+	input.add_theme_stylebox_override("normal", _make_panel_style(Color(0.025, 0.065, 0.11, 0.98), Color(0.58, 0.72, 0.92, 0.72), 2, 6))
+	input.add_theme_stylebox_override("focus", _make_panel_style(Color(0.03, 0.11, 0.18, 0.98), Color(1.0, 0.92, 0.58, 0.92), 2, 6))
+	return input
 
 
 func _make_button(text: String, normal_color: Color, hover_color: Color) -> Button:
