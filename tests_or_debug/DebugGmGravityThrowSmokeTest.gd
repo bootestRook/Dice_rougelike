@@ -52,7 +52,8 @@ func _init() -> void:
 			_send_mouse_button(camera_view_button, MOUSE_BUTTON_LEFT)
 			await process_frame
 			var top_position: Vector3 = sandbox.call("get_camera_position")
-			all_passed = _check("camera switches to top view", bool(sandbox.call("is_camera_top_view")) and top_position.y > top_position.z) and all_passed
+			all_passed = _check("camera button shows oblique top view", camera_view_button.text == "视角：斜上方") and all_passed
+			all_passed = _check("camera switches to oblique top view", bool(sandbox.call("is_camera_top_view")) and top_position.y > top_position.z and absf(top_position.x) > 1.0 and absf(top_position.z) > 1.0) and all_passed
 			_send_mouse_button(camera_view_button, MOUSE_BUTTON_LEFT)
 			await process_frame
 			var restored_side_position: Vector3 = sandbox.call("get_camera_position")
@@ -83,6 +84,9 @@ func _init() -> void:
 			var ground_positions: Array = sandbox.call("get_last_ground_positions")
 			all_passed = _check("dice land inside random circular area", ground_positions.size() == 4 and _positions_inside_landing_circle(ground_positions, float(sandbox.call("get_landing_area_radius")))) and all_passed
 			all_passed = _check("dice landing scatter does not collapse into a line", _positions_use_two_axes(ground_positions)) and all_passed
+			var landing_seconds_by_die: Array = sandbox.call("get_last_landing_seconds_by_die")
+			var landing_speeds: Array = sandbox.call("get_last_landing_speeds")
+			all_passed = _check("dice land at staggered randomized speeds", _float_values_between(landing_seconds_by_die, 4, 0.25, 0.44) and _float_array_varies(landing_seconds_by_die, 4, 0.01) and _float_array_varies(landing_speeds, 4, 4.0)) and all_passed
 			await create_timer(1.20).timeout
 			all_passed = _check("landing uses physical gravity curve", bool(sandbox.call("did_last_landing_use_gravity_curve"))) and all_passed
 			all_passed = _check("ground contact is recorded before calibration", bool(sandbox.call("did_last_record_ground_contact"))) and all_passed
@@ -94,10 +98,22 @@ func _init() -> void:
 			var bounce_directions: Array = sandbox.call("get_last_bounce_directions")
 			var turn_speeds: Array = sandbox.call("get_last_turn_speeds")
 			var turn_distances: Array = sandbox.call("get_last_turn_distances")
+			var bounce_seconds_by_die: Array = sandbox.call("get_last_bounce_seconds_by_die")
+			var bounce_heights: Array = sandbox.call("get_last_bounce_heights")
+			var bounce_up_speeds: Array = sandbox.call("get_last_bounce_up_speeds")
+			var collision_push_distances: Array = sandbox.call("get_last_collision_push_distances")
+			var turn_start_ratios: Array = sandbox.call("get_last_turn_start_ratios")
+			var turn_end_ratios: Array = sandbox.call("get_last_turn_end_ratios")
+			var turn_curve_powers: Array = sandbox.call("get_last_turn_curve_powers")
 			all_passed = _check("bounce uses randomized horizontal directions", _directions_are_randomized(bounce_directions, 4)) and all_passed
 			all_passed = _check("turn speed and distance are recorded", _positive_float_array(turn_speeds, 4) and _positive_float_array(turn_distances, 4)) and all_passed
+			all_passed = _check("dice collision push is applied after landing", _positive_float_array(collision_push_distances, 4)) and all_passed
+			all_passed = _check("bounce duration speed and height are randomized in small ranges", _float_values_between(bounce_seconds_by_die, 4, 0.44, 0.68) and _float_values_between(bounce_heights, 4, 44.0, 58.0) and _float_values_between(bounce_up_speeds, 4, 250.0, 530.0) and _float_array_varies(bounce_seconds_by_die, 4, 0.01) and _float_array_varies(bounce_heights, 4, 0.5) and _float_array_varies(bounce_up_speeds, 4, 1.0) and _float_array_varies(turn_speeds, 4, 0.01)) and all_passed
+			all_passed = _check("target rotation starts early and finishes before final tail", _float_values_between(turn_start_ratios, 4, 0.04, 0.11) and _float_values_between(turn_end_ratios, 4, 0.45, 0.87) and _turn_windows_are_gradual(turn_start_ratios, turn_end_ratios)) and all_passed
+			all_passed = _check("target rotation curve is based on current face distance", _float_values_between(turn_curve_powers, 4, 0.70, 1.0) and _float_array_varies(turn_curve_powers, 4, 0.01)) and all_passed
 			all_passed = _check("turn effort applies slight roll", bool(sandbox.call("did_last_apply_roll_offset")) and float(sandbox.call("get_last_roll_offset_distance")) > 14.0) and all_passed
 			all_passed = _check("dice settle target pips up", bool(sandbox.call("was_last_face_up_completed")) and _same_int_array(sandbox.call("get_last_target_face_numbers"), [6, 2, 6, 1])) and all_passed
+			all_passed = _check("dice final positions do not overlap", bool(sandbox.call("did_last_apply_collision_separation")) and _positions_have_min_clearance(sandbox.call("get_last_final_positions"), float(sandbox.call("get_minimum_die_clearance")))) and all_passed
 			all_passed = _check("dice throw presentation keeps old compact duration", _is_between(float(sandbox.call("get_last_throw_total_seconds")), 0.75, 1.05)) and all_passed
 		if throw_button != null:
 			sandbox.call("set_debug_dice_count", 2)
@@ -240,6 +256,19 @@ func _positions_use_two_axes(values: Array) -> bool:
 	return (max_x - min_x) > 18.0 and (max_z - min_z) > 18.0
 
 
+func _positions_have_min_clearance(values: Array, min_clearance: float) -> bool:
+	if values.size() < 2:
+		return false
+	for left_index in range(values.size()):
+		var left_position: Vector3 = values[left_index]
+		for right_index in range(left_index + 1, values.size()):
+			var right_position: Vector3 = values[right_index]
+			var distance := Vector2(left_position.x, left_position.z).distance_to(Vector2(right_position.x, right_position.z))
+			if distance < min_clearance - 0.1:
+				return false
+	return true
+
+
 func _directions_are_randomized(values: Array, expected_count: int) -> bool:
 	if values.size() != expected_count:
 		return false
@@ -265,5 +294,34 @@ func _positive_float_array(values: Array, expected_count: int) -> bool:
 		return false
 	for value in values:
 		if float(value) <= 0.0:
+			return false
+	return true
+
+
+func _float_values_between(values: Array, expected_count: int, min_value: float, max_value: float) -> bool:
+	if values.size() != expected_count:
+		return false
+	for value in values:
+		if not _is_between(float(value), min_value, max_value):
+			return false
+	return true
+
+
+func _float_array_varies(values: Array, expected_count: int, min_delta: float) -> bool:
+	if values.size() != expected_count:
+		return false
+	var min_value := INF
+	var max_value := -INF
+	for value in values:
+		min_value = minf(min_value, float(value))
+		max_value = maxf(max_value, float(value))
+	return max_value - min_value >= min_delta
+
+
+func _turn_windows_are_gradual(start_values: Array, end_values: Array) -> bool:
+	if start_values.size() != end_values.size() or start_values.is_empty():
+		return false
+	for index in range(start_values.size()):
+		if float(end_values[index]) - float(start_values[index]) < 0.36:
 			return false
 	return true
