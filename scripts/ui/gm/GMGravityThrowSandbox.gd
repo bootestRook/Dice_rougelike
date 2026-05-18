@@ -7,7 +7,6 @@ signal back_requested
 
 @export var fall_height: float = 320.0
 @export var cube_side: float = 72.0
-@export var landing_phase_seconds: float = 0.32
 @export var bounce_roll_phase_seconds: float = 0.56
 @export var final_push_min_seconds: float = 0.30
 @export var final_push_max_seconds: float = 0.50
@@ -17,22 +16,19 @@ const MIN_DICE_COUNT := 1
 const MAX_DICE_COUNT := 6
 const MIN_TARGET_PIP := 1
 const MAX_TARGET_PIP := 6
-const LANDING_AREA_RADIUS := 92.0
 const GROUND_LIMIT_X := 300.0
 const GROUND_LIMIT_Z := 96.0
-const LANDING_SECONDS_MIN_FACTOR := 0.84
-const LANDING_SECONDS_MAX_FACTOR := 1.24
 const BOUNCE_SECONDS_MIN_FACTOR := 0.88
 const BOUNCE_SECONDS_MAX_FACTOR := 1.16
-const BOUNCE_HEIGHT_MIN := 44.0
-const BOUNCE_HEIGHT_MAX := 58.0
-const TURN_SPEED_MIN := 5.6
-const TURN_SPEED_MAX := 8.8
-const TURN_SECONDS_RANDOM_MIN_FACTOR := 0.88
-const TURN_SECONDS_RANDOM_MAX_FACTOR := 1.14
-const TURN_START_MIN_RATIO := 0.04
-const TURN_START_MAX_RATIO := 0.10
-const TURN_END_MAX_RATIO := 0.86
+const BOUNCE_HEIGHT_MIN := 26.0
+const BOUNCE_HEIGHT_MAX := 54.0
+const TURN_SPEED_MIN := 4.2
+const TURN_SPEED_MAX := 12.4
+const TURN_SECONDS_RANDOM_MIN_FACTOR := 0.82
+const TURN_SECONDS_RANDOM_MAX_FACTOR := 1.22
+const TURN_START_MIN_RATIO := 0.02
+const TURN_START_MAX_RATIO := 0.18
+const TURN_END_MAX_RATIO := 0.92
 const DIRECTIONAL_ROLL_SPIN_STRENGTH := 0.34
 const RESIDUAL_DIRECTIONAL_SPIN_MIN := 0.46
 const RESIDUAL_DIRECTIONAL_SPIN_MAX := 0.68
@@ -40,6 +36,19 @@ const SETTLE_WOBBLE_ANGLE_MIN := 0.045
 const SETTLE_WOBBLE_ANGLE_MAX := 0.090
 const SETTLE_WOBBLE_FREQUENCY_MIN := 1.65
 const SETTLE_WOBBLE_FREQUENCY_MAX := 2.45
+const TRUE_PHYSICS_MIN_SECONDS := 0.22
+const TRUE_PHYSICS_MAX_SECONDS := 0.58
+const TRUE_PHYSICS_CONTACT_SETTLE_SECONDS := 0.035
+const TRUE_PHYSICS_LOW_LINEAR_SPEED := 220.0
+const TRUE_PHYSICS_LOW_ANGULAR_SPEED := 9.5
+const TRUE_PHYSICS_FLOOR_CONTACT_EPSILON := 10.0
+const AIRBORNE_SLAM_SECONDS_MIN := 0.22
+const AIRBORNE_SLAM_SECONDS_MAX := 0.30
+const AIRBORNE_SLAM_CURVE_POWER := 1.42
+const AIRBORNE_SLAM_SPEED_MULTIPLIER := 1.65
+const FORCE_LINEAR_REFERENCE_SPEED := 520.0
+const FORCE_ANGULAR_REFERENCE_SPEED := 18.0
+const LOW_FORCE_FAR_ROLL_BONUS := 46.0
 const COLLISION_PUSH_RADIUS_FACTOR := 2.25
 const DICE_COLLISION_CLEARANCE_FACTOR := 1.16
 const CAMERA_VIEW_TOP := &"top"
@@ -107,8 +116,18 @@ var last_collision_push_distances: Array[float] = []
 var last_turn_start_ratios: Array[float] = []
 var last_turn_end_ratios: Array[float] = []
 var last_turn_curve_powers: Array[float] = []
+var last_calibration_force_factors: Array[float] = []
+var last_calibration_roll_boosts: Array[float] = []
 var last_final_positions: Array[Vector3] = []
 var last_collision_separation_applied: bool = false
+var last_true_physics_used: bool = false
+var last_real_physics_released: bool = false
+var last_physics_seconds: float = 0.0
+var last_physics_ground_contact_count: int = 0
+var last_physics_contact_counts: Array[int] = []
+var last_physics_final_linear_speeds: Array[float] = []
+var last_physics_final_angular_speeds: Array[float] = []
+var last_freeze_after_physics: bool = false
 
 
 func _ready() -> void:
@@ -186,8 +205,18 @@ func clear_sandbox() -> void:
 	last_turn_start_ratios.clear()
 	last_turn_end_ratios.clear()
 	last_turn_curve_powers.clear()
+	last_calibration_force_factors.clear()
+	last_calibration_roll_boosts.clear()
 	last_final_positions.clear()
 	last_collision_separation_applied = false
+	last_true_physics_used = false
+	last_real_physics_released = false
+	last_physics_seconds = 0.0
+	last_physics_ground_contact_count = 0
+	last_physics_contact_counts.clear()
+	last_physics_final_linear_speeds.clear()
+	last_physics_final_angular_speeds.clear()
+	last_freeze_after_physics = false
 	_clear_dice()
 	if status_label != null:
 		status_label.text = "等待投掷。"
@@ -262,10 +291,6 @@ func did_last_bounce_start_on_ground() -> bool:
 
 func was_last_adjusted_during_bounce() -> bool:
 	return last_adjusted_during_bounce
-
-
-func get_landing_phase_seconds() -> float:
-	return landing_phase_seconds
 
 
 func get_bounce_roll_phase_seconds() -> float:
@@ -394,6 +419,14 @@ func get_last_turn_curve_powers() -> Array[float]:
 	return last_turn_curve_powers.duplicate()
 
 
+func get_last_calibration_force_factors() -> Array[float]:
+	return last_calibration_force_factors.duplicate()
+
+
+func get_last_calibration_roll_boosts() -> Array[float]:
+	return last_calibration_roll_boosts.duplicate()
+
+
 func get_last_final_positions() -> Array[Vector3]:
 	return last_final_positions.duplicate()
 
@@ -406,8 +439,44 @@ func did_last_apply_collision_separation() -> bool:
 	return last_collision_separation_applied
 
 
-func get_landing_area_radius() -> float:
-	return LANDING_AREA_RADIUS
+func did_last_use_true_physics() -> bool:
+	return last_true_physics_used
+
+
+func did_last_release_real_physics() -> bool:
+	return last_real_physics_released
+
+
+func get_last_physics_seconds() -> float:
+	return last_physics_seconds
+
+
+func get_last_physics_ground_contact_count() -> int:
+	return last_physics_ground_contact_count
+
+
+func get_last_physics_contact_counts() -> Array[int]:
+	return last_physics_contact_counts.duplicate()
+
+
+func get_last_physics_final_linear_speeds() -> Array[float]:
+	return last_physics_final_linear_speeds.duplicate()
+
+
+func get_last_physics_final_angular_speeds() -> Array[float]:
+	return last_physics_final_angular_speeds.duplicate()
+
+
+func did_last_freeze_after_physics() -> bool:
+	return last_freeze_after_physics
+
+
+func get_ground_limit_x() -> float:
+	return GROUND_LIMIT_X
+
+
+func get_ground_limit_z() -> float:
+	return GROUND_LIMIT_Z
 
 
 func get_visible_pip_count() -> int:
@@ -698,8 +767,8 @@ func _create_static_bounds() -> void:
 	if physics_root == null:
 		return
 	var material := PhysicsMaterial.new()
-	material.friction = 0.82
-	material.bounce = 0.24
+	material.friction = 0.96
+	material.bounce = 0.08
 
 	floor_body = _add_static_box(
 		"ThrowFloor",
@@ -828,8 +897,18 @@ func _throw_dice(target_pips: Array[int]) -> void:
 	last_turn_start_ratios.clear()
 	last_turn_end_ratios.clear()
 	last_turn_curve_powers.clear()
+	last_calibration_force_factors.clear()
+	last_calibration_roll_boosts.clear()
 	last_final_positions.clear()
 	last_collision_separation_applied = false
+	last_true_physics_used = false
+	last_real_physics_released = false
+	last_physics_seconds = 0.0
+	last_physics_ground_contact_count = 0
+	last_physics_contact_counts.clear()
+	last_physics_final_linear_speeds.clear()
+	last_physics_final_angular_speeds.clear()
+	last_freeze_after_physics = false
 
 	for die_index in range(last_dice_count):
 		var pip := clampi(target_pips[die_index], MIN_TARGET_PIP, MAX_TARGET_PIP)
@@ -854,6 +933,13 @@ func _throw_dice(target_pips: Array[int]) -> void:
 			"bounce_direction": Vector3.RIGHT,
 			"turn_speed": 0.0,
 			"turn_distance": 0.0,
+			"initial_linear_velocity": body.linear_velocity,
+			"initial_angular_velocity": body.angular_velocity,
+			"first_ground_contact_seconds": -1.0,
+			"first_ground_contact_speed": 0.0,
+			"physics_contact_count": 0,
+			"slam_start_position": body.position,
+			"slam_seconds": _airborne_slam_seconds_for_die(die_index, throw_count),
 		})
 		last_visible_pip_counts.append(body.find_children("Pip*", "MeshInstance3D", true, false).size())
 		if die_index == 0:
@@ -873,12 +959,13 @@ func _throw_dice(target_pips: Array[int]) -> void:
 func _create_die_body(die_index: int, total_dice: int, token: int) -> RigidBody3D:
 	var body := RigidBody3D.new()
 	body.name = "GMThrowDie_%d" % [die_index + 1]
-	body.mass = 1.0
-	body.gravity_scale = 88.0
-	body.linear_damp = 0.06
-	body.angular_damp = 0.22
+	body.mass = 2.4
+	body.gravity_scale = 285.0
+	body.linear_damp = 0.20
+	body.angular_damp = 0.48
 	body.contact_monitor = true
 	body.max_contacts_reported = 16
+	body.continuous_cd = true
 	body.collision_layer = 1
 	body.collision_mask = 1
 	body.physics_material_override = _cube_physics_material(die_index, token)
@@ -917,9 +1004,21 @@ func _start_position_for_throw(die_index: int, total_dice: int, token: int) -> V
 	var x := center_offset * spacing
 	if count == 1:
 		x = sin(float(token) * 1.73) * 112.0
-	var y := fall_height + float(die_index % 2) * 30.0
+	var y := fall_height * 0.68 + float(die_index % 2) * 24.0
 	var z := cos(float(die_index + 1) * 1.21 + float(token) * 0.37) * 74.0
 	return Vector3(clampf(x, -290.0, 290.0), y, clampf(z, -96.0, 96.0))
+
+
+func _airborne_slam_seconds_for_die(die_index: int, token: int) -> float:
+	var slot_t := 0.5
+	if last_dice_count > 1:
+		slot_t = float(die_index) / float(last_dice_count - 1)
+	var jitter := (_noise01(die_index + 97, token, 541) - 0.5) * 0.035
+	return clampf(
+		lerpf(AIRBORNE_SLAM_SECONDS_MIN, AIRBORNE_SLAM_SECONDS_MAX, slot_t) + jitter,
+		AIRBORNE_SLAM_SECONDS_MIN,
+		AIRBORNE_SLAM_SECONDS_MAX
+	)
 
 
 func _start_rotation_for_throw(die_index: int, token: int) -> Vector3:
@@ -938,7 +1037,7 @@ func _start_linear_velocity_for_throw(die_index: int, total_dice: int, token: in
 	var z_noise := (_noise01(die_index, token, 61) - 0.5) * 125.0
 	return Vector3(
 		clampf(toward_center_x + cross_push + (_noise01(die_index, token, 53) - 0.5) * 80.0, -340.0, 340.0),
-		-260.0 - _noise01(die_index, token, 59) * 120.0,
+		-860.0 - _noise01(die_index, token, 59) * 220.0,
 		clampf(-start_position.z * 0.95 + z_noise, -220.0, 220.0)
 	)
 
@@ -956,102 +1055,198 @@ func _start_angular_velocity_for_throw(die_index: int, token: int) -> Vector3:
 
 func _cube_physics_material(die_index: int, token: int) -> PhysicsMaterial:
 	var material := PhysicsMaterial.new()
-	material.friction = lerpf(0.68, 0.78, _noise01(die_index + 19, token, 97))
-	material.bounce = lerpf(0.28, 0.42, _noise01(die_index + 23, token, 101))
+	material.friction = lerpf(0.92, 0.99, _noise01(die_index + 19, token, 97))
+	material.bounce = lerpf(0.05, 0.13, _noise01(die_index + 23, token, 101))
 	return material
 
 
 func _play_throw_sequence(token: int) -> void:
 	if dice_entries.is_empty():
 		return
-	var base_landing_seconds := clampf(landing_phase_seconds, 0.25, 0.40)
-	var max_landing_seconds := 0.0
-	var landing_tween := create_tween()
-	landing_tween.set_parallel(true)
+	var physics_seconds := await _play_true_physics_until_calibration(token)
+	if token != throw_count:
+		return
+
+	_capture_physics_entries_for_calibration()
+	last_ground_contact_recorded = last_physics_ground_contact_count > 0
+	last_bounce_started_on_ground = last_ground_contact_recorded
+	last_calibration_started_after_ground = last_ground_contact_recorded
+	last_airborne_dice_collision_recorded = last_dice_collision_enabled and last_ground_contact_recorded
+
+	var max_bounce_seconds := maxf(0.02, max_throw_seconds - physics_seconds)
+	await _play_scripted_bounce_and_face_adjust(token, max_bounce_seconds, physics_seconds)
+
+
+func _play_true_physics_until_calibration(token: int) -> float:
+	last_true_physics_used = true
+	last_real_physics_released = true
+	last_physics_seconds = 0.0
+	last_physics_ground_contact_count = 0
+	last_physics_contact_counts.clear()
+	last_physics_final_linear_speeds.clear()
+	last_physics_final_angular_speeds.clear()
+	last_landing_seconds_by_die.clear()
+	last_landing_speeds.clear()
+
+	for entry in dice_entries:
+		var body := entry.get("body", null) as RigidBody3D
+		if body == null or not is_instance_valid(body):
+			continue
+		body.freeze = false
+		body.sleeping = false
+		body.linear_velocity = entry.get("initial_linear_velocity", body.linear_velocity)
+		body.angular_velocity = entry.get("initial_angular_velocity", body.angular_velocity)
+		body.apply_central_impulse(body.linear_velocity * body.mass * 0.06)
+		body.apply_torque_impulse(body.angular_velocity * body.mass * 0.18)
+
+	var elapsed := 0.0
+	var tick_seconds := 1.0 / float(Engine.physics_ticks_per_second)
+	var latest_contact_seconds := -1.0
+	while elapsed < TRUE_PHYSICS_MAX_SECONDS:
+		await get_tree().physics_frame
+		if token != throw_count:
+			return elapsed
+		elapsed += tick_seconds
+		_apply_airborne_slam_assist(elapsed)
+		latest_contact_seconds = maxf(latest_contact_seconds, _record_physics_contacts(elapsed))
+		if elapsed < TRUE_PHYSICS_MIN_SECONDS:
+			continue
+		if latest_contact_seconds < 0.0:
+			continue
+		if elapsed - latest_contact_seconds < TRUE_PHYSICS_CONTACT_SETTLE_SECONDS:
+			continue
+		if _all_physics_entries_ready_for_calibration():
+			break
+
+	last_physics_seconds = elapsed
+	return elapsed
+
+
+func _apply_airborne_slam_assist(elapsed: float) -> void:
+	for entry in dice_entries:
+		if float(entry.get("first_ground_contact_seconds", -1.0)) >= 0.0:
+			continue
+		var body := entry.get("body", null) as RigidBody3D
+		if body == null or not is_instance_valid(body):
+			continue
+		var start_position: Vector3 = entry.get("slam_start_position", body.position)
+		var slam_seconds := maxf(0.01, float(entry.get("slam_seconds", AIRBORNE_SLAM_SECONDS_MIN)))
+		var ground_y := _face_up_position(body.position).y
+		var progress := clampf(elapsed / slam_seconds, 0.0, 1.0)
+		var fall_t := pow(progress, AIRBORNE_SLAM_CURVE_POWER)
+		var next_y := lerpf(start_position.y, ground_y, fall_t)
+		var drop_distance := maxf(0.0, start_position.y - ground_y)
+		var slam_speed := (drop_distance / slam_seconds) * AIRBORNE_SLAM_SPEED_MULTIPLIER
+		var velocity := body.linear_velocity
+		velocity.y = -slam_speed
+		body.linear_velocity = velocity
+		if progress < 1.0:
+			body.position = Vector3(body.position.x, maxf(next_y, ground_y), body.position.z)
+			continue
+		body.position = _face_up_position(body.position)
+		entry["first_ground_contact_seconds"] = elapsed
+		entry["first_ground_contact_speed"] = maxf(body.linear_velocity.length(), slam_speed)
+		entry["physics_contact_count"] = maxi(int(entry.get("physics_contact_count", 0)), 1)
+		body.linear_velocity = Vector3(velocity.x * 0.42, 0.0, velocity.z * 0.42)
+
+
+func _record_physics_contacts(elapsed: float) -> float:
+	var latest_contact_seconds := -1.0
+	for entry in dice_entries:
+		var body := entry.get("body", null) as RigidBody3D
+		if body == null or not is_instance_valid(body):
+			continue
+		var contact_count := body.get_colliding_bodies().size()
+		entry["physics_contact_count"] = maxi(int(entry.get("physics_contact_count", 0)), contact_count)
+		if not _body_has_floor_contact(body):
+			continue
+		if float(entry.get("first_ground_contact_seconds", -1.0)) >= 0.0:
+			latest_contact_seconds = maxf(latest_contact_seconds, float(entry["first_ground_contact_seconds"]))
+			continue
+		entry["first_ground_contact_seconds"] = elapsed
+		entry["first_ground_contact_speed"] = body.linear_velocity.length()
+		latest_contact_seconds = maxf(latest_contact_seconds, elapsed)
+	return latest_contact_seconds
+
+
+func _all_physics_entries_ready_for_calibration() -> bool:
+	for entry in dice_entries:
+		var body := entry.get("body", null) as RigidBody3D
+		if body == null or not is_instance_valid(body):
+			return false
+		if float(entry.get("first_ground_contact_seconds", -1.0)) < 0.0:
+			return false
+		if body.linear_velocity.length() > TRUE_PHYSICS_LOW_LINEAR_SPEED:
+			return false
+		if body.angular_velocity.length() > TRUE_PHYSICS_LOW_ANGULAR_SPEED:
+			return false
+	return true
+
+
+func _capture_physics_entries_for_calibration() -> void:
+	last_ground_positions.clear()
+	last_landing_seconds_by_die.clear()
+	last_landing_speeds.clear()
+	last_physics_contact_counts.clear()
+	last_physics_final_linear_speeds.clear()
+	last_physics_final_angular_speeds.clear()
+	last_physics_ground_contact_count = 0
+
+	for entry in dice_entries:
+		var body := entry.get("body", null) as RigidBody3D
+		if body == null or not is_instance_valid(body):
+			continue
+		var contact_seconds := float(entry.get("first_ground_contact_seconds", -1.0))
+		var had_contact := contact_seconds >= 0.0 or _body_is_near_floor(body)
+		if had_contact:
+			last_physics_ground_contact_count += 1
+		if contact_seconds < 0.0:
+			contact_seconds = last_physics_seconds
+		if had_contact and int(entry.get("physics_contact_count", 0)) <= 0:
+			entry["physics_contact_count"] = 1
+		entry["touched_ground"] = had_contact
+		entry["ground_position"] = _clamp_ground_position(body.position)
+		entry["contact_rotation"] = body.rotation
+		entry["physics_linear_velocity"] = body.linear_velocity
+		entry["physics_angular_velocity"] = body.angular_velocity
+		entry["physics_linear_speed"] = body.linear_velocity.length()
+		entry["physics_angular_speed"] = body.angular_velocity.length()
+		var contact_speed := maxf(maxf(float(entry.get("first_ground_contact_speed", 0.0)), body.linear_velocity.length()), 1.0)
+		last_landing_seconds_by_die.append(contact_seconds)
+		last_landing_speeds.append(contact_speed)
+		last_physics_contact_counts.append(int(entry.get("physics_contact_count", 0)))
+		last_physics_final_linear_speeds.append(body.linear_velocity.length())
+		last_physics_final_angular_speeds.append(body.angular_velocity.length())
+
+	_resolve_landing_collision_pushes()
 	for entry in dice_entries:
 		var body := entry.get("body", null) as RigidBody3D
 		if body == null or not is_instance_valid(body):
 			continue
 		body.freeze = true
-		var start_position := body.position
-		var ground_position := _random_ground_position_for_entry(entry, start_position)
-		var start_rotation := body.rotation
-		var fake_face_index := int(entry.get("fake_face_index", 0))
-		var contact_rotation := target_rotation_for_face_index(fake_face_index) + _contact_spin_for_entry(entry)
-		entry["ground_position"] = ground_position
-		entry["contact_rotation"] = contact_rotation
-		entry["start_position"] = start_position
-		entry["start_rotation"] = start_rotation
-		entry["landing_seconds"] = _random_landing_seconds_for_entry(entry, token, base_landing_seconds)
-		max_landing_seconds = maxf(max_landing_seconds, float(entry["landing_seconds"]))
-
-	_resolve_landing_collision_pushes()
-	last_ground_positions.clear()
-	for entry in dice_entries:
-		var body := entry.get("body", null) as RigidBody3D
-		if body == null or not is_instance_valid(body):
-			continue
-		var start_position: Vector3 = entry["start_position"]
-		var ground_position: Vector3 = entry["ground_position"]
-		var start_rotation: Vector3 = entry["start_rotation"]
-		var contact_rotation: Vector3 = entry["contact_rotation"]
-		var landing_seconds := float(entry["landing_seconds"])
-		last_ground_positions.append(ground_position)
-		last_landing_seconds_by_die.append(landing_seconds)
-		last_landing_speeds.append(start_position.distance_to(ground_position) / maxf(0.01, landing_seconds))
-		landing_tween.tween_method(
-			Callable(self, "_apply_scripted_landing_frame").bind(body, start_position, ground_position, start_rotation, contact_rotation),
-			0.0,
-			1.0,
-			landing_seconds
-		).set_trans(Tween.TRANS_LINEAR).set_ease(Tween.EASE_IN_OUT)
-
-	await landing_tween.finished
-	if token != throw_count:
-		return
-
-	last_ground_contact_recorded = true
-	last_bounce_started_on_ground = true
-	last_calibration_started_after_ground = true
-	last_airborne_dice_collision_recorded = last_dice_collision_enabled
-	for entry in dice_entries:
-		entry["touched_ground"] = true
-		var body := entry.get("body", null) as RigidBody3D
-		if body == null or not is_instance_valid(body):
-			continue
+		body.sleeping = true
+		body.linear_velocity = Vector3.ZERO
+		body.angular_velocity = Vector3.ZERO
 		body.position = entry["ground_position"]
 		body.rotation = entry["contact_rotation"]
-
-	var max_bounce_seconds := maxf(0.02, max_throw_seconds - max_landing_seconds)
-	await _play_scripted_bounce_and_face_adjust(token, max_bounce_seconds, max_landing_seconds)
-
-
-func _random_ground_position_for_entry(entry: Dictionary, start_position: Vector3) -> Vector3:
-	var die_index := int(entry.get("die_index", 0))
-	var best_position := _face_up_position(Vector3.ZERO)
-	var best_clearance := -1.0
-	for attempt in range(12):
-		var angle := TAU * _noise01(die_index + 1, throw_count + attempt, 211 + attempt * 17)
-		var radius := sqrt(_noise01(die_index + 3, throw_count + attempt, 223 + attempt * 19)) * LANDING_AREA_RADIUS
-		var candidate := _face_up_position(Vector3(cos(angle) * radius, start_position.y, sin(angle) * radius))
-		var clearance := _landing_clearance(candidate)
-		if clearance > best_clearance:
-			best_clearance = clearance
-			best_position = candidate
-		if clearance >= _minimum_die_clearance():
-			break
-	last_ground_positions.append(best_position)
-	return best_position
+		last_ground_positions.append(entry["ground_position"])
+	last_freeze_after_physics = true
 
 
-func _random_landing_seconds_for_entry(entry: Dictionary, token: int, base_seconds: float) -> float:
-	var die_index := int(entry.get("die_index", 0))
-	var factor := lerpf(
-		LANDING_SECONDS_MIN_FACTOR,
-		LANDING_SECONDS_MAX_FACTOR,
-		_noise01(die_index + 17, token, 277)
-	)
-	return clampf(base_seconds * factor, 0.25, 0.44)
+func _body_is_near_floor(body: RigidBody3D) -> bool:
+	if body == null or not is_instance_valid(body):
+		return false
+	var floor_epsilon := maxf(TRUE_PHYSICS_FLOOR_CONTACT_EPSILON, cube_side * 0.72)
+	return body.position.y <= _face_up_position(body.position).y + floor_epsilon
+
+
+func _body_has_floor_contact(body: RigidBody3D) -> bool:
+	if body == null or not is_instance_valid(body):
+		return false
+	for collider in body.get_colliding_bodies():
+		if collider == floor_body:
+			return true
+	return _body_is_near_floor(body)
 
 
 func _resolve_landing_collision_pushes() -> void:
@@ -1077,8 +1272,8 @@ func _resolve_landing_collision_pushes() -> void:
 				var push := direction * (overlap * 0.5 + 4.0)
 				var left_push: Vector3 = left_entry["collision_push_offset"]
 				var right_push: Vector3 = right_entry["collision_push_offset"]
-				left_entry["ground_position"] = _clamp_landing_position(left_position + push)
-				right_entry["ground_position"] = _clamp_landing_position(right_position - push)
+				left_entry["ground_position"] = _clamp_ground_position(left_position + push)
+				right_entry["ground_position"] = _clamp_ground_position(right_position - push)
 				left_entry["collision_push_offset"] = left_push + push
 				right_entry["collision_push_offset"] = right_push - push
 				last_collision_separation_applied = true
@@ -1089,54 +1284,8 @@ func _fallback_push_direction(left_index: int, right_index: int) -> Vector3:
 	return Vector3(cos(angle), 0.0, sin(angle)).normalized()
 
 
-func _clamp_landing_position(position: Vector3) -> Vector3:
-	var ground_position := _face_up_position(position)
-	var horizontal := Vector2(ground_position.x, ground_position.z)
-	if horizontal.length() > LANDING_AREA_RADIUS:
-		horizontal = horizontal.normalized() * LANDING_AREA_RADIUS
-	return Vector3(horizontal.x, ground_position.y, horizontal.y)
-
-
 func _minimum_die_clearance() -> float:
 	return cube_side * DICE_COLLISION_CLEARANCE_FACTOR
-
-
-func _landing_clearance(candidate: Vector3) -> float:
-	if last_ground_positions.is_empty():
-		return INF
-	var min_clearance := INF
-	var candidate_2d := Vector2(candidate.x, candidate.z)
-	for position in last_ground_positions:
-		var distance := candidate_2d.distance_to(Vector2(position.x, position.z))
-		min_clearance = minf(min_clearance, distance)
-	return min_clearance
-
-
-func _contact_spin_for_entry(entry: Dictionary) -> Vector3:
-	var die_index := int(entry.get("die_index", 0))
-	var sign := -1.0 if die_index % 2 == 0 else 1.0
-	return Vector3(TAU * (0.20 + 0.03 * float(die_index % 3)), -TAU * 0.16 * sign, TAU * (0.12 + 0.02 * float(die_index % 2)))
-
-
-func _apply_scripted_landing_frame(
-	t: float,
-	body: RigidBody3D,
-	start_position: Vector3,
-	ground_position: Vector3,
-	start_rotation: Vector3,
-	contact_rotation: Vector3
-) -> void:
-	if body == null or not is_instance_valid(body):
-		return
-	var gravity_t := t * t
-	body.position = Vector3(
-		lerpf(start_position.x, ground_position.x, t),
-		lerpf(start_position.y, ground_position.y, gravity_t),
-		lerpf(start_position.z, ground_position.z, t)
-	)
-	_separate_dice_body_from_neighbors(body)
-	var spin := Vector3(TAU * 1.10, -TAU * 0.72, TAU * 0.54) * t
-	body.rotation = start_rotation.lerp(contact_rotation, t) + spin
 
 
 func _play_scripted_bounce_and_face_adjust(token: int, max_bounce_seconds: float, landing_seconds: float) -> void:
@@ -1144,6 +1293,8 @@ func _play_scripted_bounce_and_face_adjust(token: int, max_bounce_seconds: float
 	bounce_tween.set_parallel(true)
 	last_final_push_seconds = 0.0
 	last_adjusted_during_bounce = true
+	last_calibration_force_factors.clear()
+	last_calibration_roll_boosts.clear()
 	var longest_bounce_seconds := 0.0
 
 	for entry in dice_entries:
@@ -1155,32 +1306,43 @@ func _play_scripted_bounce_and_face_adjust(token: int, max_bounce_seconds: float
 		var target_rotation: Vector3 = entry["target_rotation"]
 		var die_index := int(entry.get("die_index", 0))
 		var target_face_index := int(entry.get("target_face_index", 0))
-		var bounce_seconds := _random_bounce_seconds_for_entry(entry, token, max_bounce_seconds)
-		var bounce_height := _random_bounce_height_for_entry(entry, token)
+		var turn_distance := _rotation_distance(contact_rotation, target_rotation)
+		var force_t := _remaining_force_factor_for_entry(entry)
+		var turn_distance_t := _turn_distance_factor(turn_distance)
+		var bounce_seconds := _dynamic_bounce_seconds_for_entry(entry, token, max_bounce_seconds, force_t, turn_distance_t)
+		var bounce_height := _dynamic_bounce_height_for_entry(entry, token, force_t, turn_distance_t)
 		var bounce_up_speed := _bounce_up_speed(bounce_height, bounce_seconds)
-		var roll_spin_scale := lerpf(0.86, 1.18, _noise01(die_index + 39, token, 389))
+		var roll_spin_scale := _dynamic_roll_spin_scale(entry, token, force_t)
 		longest_bounce_seconds = maxf(longest_bounce_seconds, bounce_seconds)
 		last_bounce_seconds_by_die.append(bounce_seconds)
 		last_bounce_heights.append(bounce_height)
 		last_bounce_up_speeds.append(bounce_up_speed)
-		var turn_distance := _rotation_distance(contact_rotation, target_rotation)
 		var curve_power := _turn_curve_power_for_distance(turn_distance)
-		var requested_turn_speed := _random_turn_speed_for_entry(entry, token, turn_distance)
-		var turn_time_factor := _random_turn_time_factor_for_entry(entry, token)
-		var turn_start_t := lerpf(TURN_START_MIN_RATIO, TURN_START_MAX_RATIO, _noise01(die_index + 5, token, 307))
+		var requested_turn_speed := _dynamic_turn_speed_for_entry(entry, token, turn_distance, force_t)
+		var turn_time_factor := _dynamic_turn_time_factor_for_entry(entry, token, force_t)
+		var turn_start_t := _dynamic_turn_start_ratio(entry, token, force_t, turn_distance_t)
+		var min_turn_ratio := lerpf(0.30, 0.54, force_t)
+		var max_turn_ratio := lerpf(0.54, 0.88, force_t)
+		if force_t < 0.35 and turn_distance_t > 0.50:
+			min_turn_ratio += 0.06
+			max_turn_ratio += 0.06
 		var turn_seconds := clampf(
 			turn_distance / maxf(0.01, requested_turn_speed) * turn_time_factor,
-			bounce_seconds * 0.44,
-			bounce_seconds * 0.76
+			bounce_seconds * min_turn_ratio,
+			bounce_seconds * max_turn_ratio
 		)
 		var turn_end_t := turn_start_t + turn_seconds / maxf(0.01, bounce_seconds)
-		if turn_end_t > TURN_END_MAX_RATIO:
-			turn_end_t = TURN_END_MAX_RATIO
+		var turn_end_max := lerpf(0.70, TURN_END_MAX_RATIO, force_t)
+		if force_t < 0.35 and turn_distance_t > 0.50:
+			turn_end_max = maxf(turn_end_max, 0.78)
+		if turn_end_t > turn_end_max:
+			turn_end_t = turn_end_max
 			turn_start_t = maxf(TURN_START_MIN_RATIO, turn_end_t - turn_seconds / maxf(0.01, bounce_seconds))
 		turn_seconds = maxf(0.01, (turn_end_t - turn_start_t) * bounce_seconds)
 		var turn_speed := turn_distance / turn_seconds
-		var bounce_direction := _random_bounce_direction_for_entry(entry, token)
-		var roll_distance := _roll_distance_for_turn(turn_distance, turn_speed)
+		var bounce_direction := _calibration_bounce_direction_for_entry(entry, token, force_t)
+		var roll_boost := _low_force_far_roll_boost(force_t, turn_distance_t)
+		var roll_distance := _dynamic_roll_distance_for_turn(turn_distance, turn_speed, force_t) + roll_boost
 		var collision_push_offset := _collision_push_offset_for_entry(entry, token, ground_position)
 		var roll_offset := bounce_direction * roll_distance + collision_push_offset
 		var target_position := _clamp_ground_position(ground_position + roll_offset)
@@ -1207,6 +1369,8 @@ func _play_scripted_bounce_and_face_adjust(token: int, max_bounce_seconds: float
 		last_turn_start_ratios.append(turn_start_t)
 		last_turn_end_ratios.append(turn_end_t)
 		last_turn_curve_powers.append(curve_power)
+		last_calibration_force_factors.append(force_t)
+		last_calibration_roll_boosts.append(roll_boost)
 		last_final_push_seconds = maxf(last_final_push_seconds, turn_seconds)
 
 	_resolve_target_collision_pushes()
@@ -1363,7 +1527,7 @@ func _resolve_target_collision_pushes() -> void:
 	if dice_entries.size() <= 1:
 		return
 	var min_distance := _minimum_die_clearance()
-	for _iteration in range(4):
+	for _iteration in range(10):
 		for left_index in range(dice_entries.size()):
 			for right_index in range(left_index + 1, dice_entries.size()):
 				var left_entry := dice_entries[left_index]
@@ -1380,6 +1544,48 @@ func _resolve_target_collision_pushes() -> void:
 				left_entry["target_position"] = _clamp_ground_position(left_position + push)
 				right_entry["target_position"] = _clamp_ground_position(right_position - push)
 				last_collision_separation_applied = true
+	if not _target_positions_have_min_clearance(min_distance):
+		_spread_target_positions_on_grid(min_distance)
+
+
+func _target_positions_have_min_clearance(min_distance: float) -> bool:
+	for left_index in range(dice_entries.size()):
+		for right_index in range(left_index + 1, dice_entries.size()):
+			var left_entry := dice_entries[left_index]
+			var right_entry := dice_entries[right_index]
+			var left_position: Vector3 = left_entry["target_position"]
+			var right_position: Vector3 = right_entry["target_position"]
+			var distance := Vector2(left_position.x, left_position.z).distance_to(Vector2(right_position.x, right_position.z))
+			if distance < min_distance - 0.1:
+				return false
+	return true
+
+
+func _spread_target_positions_on_grid(min_distance: float) -> void:
+	var count := dice_entries.size()
+	if count <= 1:
+		return
+	var columns := ceili(sqrt(float(count)))
+	var rows := ceili(float(count) / float(columns))
+	var half_width := float(columns - 1) * min_distance * 0.5
+	var half_depth := float(rows - 1) * min_distance * 0.5
+	var center := Vector3.ZERO
+	for entry in dice_entries:
+		center += entry.get("target_position", Vector3.ZERO)
+	center /= float(count)
+	center = _clamp_ground_position(center)
+	center.x = clampf(center.x, -GROUND_LIMIT_X + half_width, GROUND_LIMIT_X - half_width)
+	center.z = clampf(center.z, -GROUND_LIMIT_Z + half_depth, GROUND_LIMIT_Z - half_depth)
+	for index in range(count):
+		var column := index % columns
+		var row := int(index / columns)
+		var offset := Vector3(
+			(float(column) - float(columns - 1) * 0.5) * min_distance,
+			0.0,
+			(float(row) - float(rows - 1) * 0.5) * min_distance
+		)
+		dice_entries[index]["target_position"] = _clamp_ground_position(center + offset)
+	last_collision_separation_applied = true
 
 
 func _separate_dice_body_from_neighbors(body: RigidBody3D) -> void:
@@ -1404,40 +1610,78 @@ func _separate_dice_body_from_neighbors(body: RigidBody3D) -> void:
 		last_collision_separation_applied = true
 
 
-func _random_bounce_seconds_for_entry(entry: Dictionary, token: int, max_bounce_seconds: float) -> float:
-	var die_index := int(entry.get("die_index", 0))
-	var factor := lerpf(
-		BOUNCE_SECONDS_MIN_FACTOR,
-		BOUNCE_SECONDS_MAX_FACTOR,
-		_noise01(die_index + 29, token, 397)
-	)
-	return minf(clampf(bounce_roll_phase_seconds * factor, 0.44, 0.68), max_bounce_seconds)
+func _remaining_force_factor_for_entry(entry: Dictionary) -> float:
+	var linear_speed := float(entry.get("physics_linear_speed", 0.0))
+	var angular_speed := float(entry.get("physics_angular_speed", 0.0))
+	var linear_t := clampf(linear_speed / FORCE_LINEAR_REFERENCE_SPEED, 0.0, 1.0)
+	var angular_t := clampf(angular_speed / FORCE_ANGULAR_REFERENCE_SPEED, 0.0, 1.0)
+	return clampf(linear_t * 0.66 + angular_t * 0.34, 0.0, 1.0)
 
 
-func _random_bounce_height_for_entry(entry: Dictionary, token: int) -> float:
+func _turn_distance_factor(turn_distance: float) -> float:
+	return clampf(turn_distance / (TAU * 1.4), 0.0, 1.0)
+
+
+func _dynamic_bounce_seconds_for_entry(
+	entry: Dictionary,
+	token: int,
+	max_bounce_seconds: float,
+	force_t: float,
+	turn_distance_t: float
+) -> float:
 	var die_index := int(entry.get("die_index", 0))
-	return lerpf(BOUNCE_HEIGHT_MIN, BOUNCE_HEIGHT_MAX, _noise01(die_index + 31, token, 401))
+	var slot_t := 0.5
+	if last_dice_count > 1:
+		slot_t = float(die_index) / float(last_dice_count - 1)
+	var jitter := (_noise01(die_index + 29, token, 397) - 0.5) * 0.13
+	var force_seconds := lerpf(0.32, 0.72, force_t)
+	var distance_tail := turn_distance_t * lerpf(0.05, 0.11, 1.0 - force_t)
+	var stagger := lerpf(-0.08, 0.08, clampf(slot_t + jitter, 0.0, 1.0))
+	var seconds := force_seconds + distance_tail + stagger
+	return minf(clampf(seconds, 0.28, 0.78), max_bounce_seconds)
+
+
+func _dynamic_bounce_height_for_entry(entry: Dictionary, token: int, force_t: float, turn_distance_t: float) -> float:
+	var die_index := int(entry.get("die_index", 0))
+	var jitter := (_noise01(die_index + 31, token, 401) - 0.5) * 5.0
+	return clampf(lerpf(BOUNCE_HEIGHT_MIN, BOUNCE_HEIGHT_MAX, force_t) + turn_distance_t * 5.0 + jitter, 20.0, 62.0)
 
 
 func _bounce_up_speed(bounce_height: float, bounce_seconds: float) -> float:
 	return 4.0 * bounce_height / maxf(0.01, bounce_seconds)
 
 
-func _random_turn_speed_for_entry(entry: Dictionary, token: int, turn_distance: float) -> float:
+func _dynamic_roll_spin_scale(entry: Dictionary, token: int, force_t: float) -> float:
 	var die_index := int(entry.get("die_index", 0))
-	var distance_t := clampf(turn_distance / (TAU * 1.4), 0.0, 1.0)
-	var base_speed := lerpf(TURN_SPEED_MIN, TURN_SPEED_MAX, distance_t)
+	var random_factor := lerpf(0.90, 1.10, _noise01(die_index + 39, token, 389))
+	return lerpf(0.74, 1.34, force_t) * random_factor
+
+
+func _dynamic_turn_speed_for_entry(entry: Dictionary, token: int, turn_distance: float, force_t: float) -> float:
+	var die_index := int(entry.get("die_index", 0))
+	var distance_t := _turn_distance_factor(turn_distance)
+	var base_speed := lerpf(TURN_SPEED_MAX, TURN_SPEED_MIN, force_t)
+	base_speed = lerpf(base_speed, TURN_SPEED_MAX, distance_t * (1.0 - force_t) * 0.55)
 	var random_factor := lerpf(0.92, 1.08, _noise01(die_index + 33, token, 421))
 	return clampf(base_speed * random_factor, TURN_SPEED_MIN, TURN_SPEED_MAX)
 
 
-func _random_turn_time_factor_for_entry(entry: Dictionary, token: int) -> float:
+func _dynamic_turn_time_factor_for_entry(entry: Dictionary, token: int, force_t: float) -> float:
 	var die_index := int(entry.get("die_index", 0))
 	var slot_t := 0.5
 	if last_dice_count > 1:
 		slot_t = float(die_index) / float(last_dice_count - 1)
-	var jitter := (_noise01(die_index + 41, token, 433) - 0.5) * 0.18
-	return lerpf(TURN_SECONDS_RANDOM_MIN_FACTOR, TURN_SECONDS_RANDOM_MAX_FACTOR, clampf(slot_t + jitter, 0.0, 1.0))
+	var jitter := (_noise01(die_index + 41, token, 433) - 0.5) * 0.24
+	var stagger_factor := lerpf(TURN_SECONDS_RANDOM_MIN_FACTOR, TURN_SECONDS_RANDOM_MAX_FACTOR, clampf(slot_t + jitter, 0.0, 1.0))
+	return stagger_factor * lerpf(0.82, 1.24, force_t)
+
+
+func _dynamic_turn_start_ratio(entry: Dictionary, token: int, force_t: float, turn_distance_t: float) -> float:
+	var die_index := int(entry.get("die_index", 0))
+	var base := lerpf(TURN_START_MIN_RATIO, TURN_START_MAX_RATIO, force_t)
+	var far_start_pull := turn_distance_t * (1.0 - force_t) * 0.035
+	var jitter := (_noise01(die_index + 5, token, 307) - 0.5) * 0.055
+	return clampf(base - far_start_pull + jitter, TURN_START_MIN_RATIO, TURN_START_MAX_RATIO)
 
 
 func _turn_curve_power_for_distance(turn_distance: float) -> float:
@@ -1471,7 +1715,17 @@ func _collision_push_offset_for_entry(entry: Dictionary, token: int, ground_posi
 	return push.normalized() * clampf(push.length(), 6.0, 34.0)
 
 
-func _random_bounce_direction_for_entry(entry: Dictionary, token: int) -> Vector3:
+func _calibration_bounce_direction_for_entry(entry: Dictionary, token: int, force_t: float) -> Vector3:
+	var velocity: Vector3 = entry.get("physics_linear_velocity", Vector3.ZERO)
+	var flat_velocity := Vector3(velocity.x, 0.0, velocity.z)
+	if flat_velocity.length() > 18.0:
+		var natural_direction := flat_velocity.normalized()
+		var random_direction := _fallback_roll_direction_for_entry(entry, token)
+		return natural_direction.lerp(random_direction, clampf(0.32 - force_t * 0.18, 0.10, 0.32)).normalized()
+	return _fallback_roll_direction_for_entry(entry, token)
+
+
+func _fallback_roll_direction_for_entry(entry: Dictionary, token: int) -> Vector3:
 	var die_index := int(entry.get("die_index", 0))
 	var angle := TAU * _noise01(die_index + 7, token, 331)
 	return Vector3(cos(angle), 0.0, sin(angle)).normalized()
@@ -1499,10 +1753,17 @@ func _settle_wobble_frequency_for_entry(entry: Dictionary, token: int) -> float:
 	return lerpf(SETTLE_WOBBLE_FREQUENCY_MIN, SETTLE_WOBBLE_FREQUENCY_MAX, _noise01(die_index + 47, token, 463))
 
 
-func _roll_distance_for_turn(turn_distance: float, turn_speed: float) -> float:
+func _low_force_far_roll_boost(force_t: float, turn_distance_t: float) -> float:
+	var low_force_t := pow(1.0 - clampf(force_t, 0.0, 1.0), 1.35)
+	var far_t := pow(clampf(turn_distance_t, 0.0, 1.0), 1.2)
+	return LOW_FORCE_FAR_ROLL_BONUS * low_force_t * far_t
+
+
+func _dynamic_roll_distance_for_turn(turn_distance: float, turn_speed: float, force_t: float) -> float:
 	var distance_from_angle := turn_distance * 6.8
 	var distance_from_speed := turn_speed * 1.55
-	return clampf(10.0 + distance_from_angle + distance_from_speed, 14.0, 62.0)
+	var force_scale := lerpf(0.72, 1.12, force_t)
+	return clampf((10.0 + distance_from_angle + distance_from_speed) * force_scale, 12.0, 68.0)
 
 
 func _lerp_rotation_euler(from_rotation: Vector3, to_rotation: Vector3, weight: float) -> Vector3:

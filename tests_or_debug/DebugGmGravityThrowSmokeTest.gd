@@ -77,22 +77,25 @@ func _init() -> void:
 			all_passed = _check("target pip inputs are constrained", _same_int_array(sandbox.call("get_last_target_pips"), [6, 2, 6, 1])) and all_passed
 			var pip_counts: Array = sandbox.call("get_visible_pip_counts")
 			all_passed = _check("each dice renders all pip marks", _all_int_values(pip_counts, 21) and pip_counts.size() == 4) and all_passed
-			all_passed = _check("scripted physical throw is recorded before calibration", bool(sandbox.call("did_last_use_airborne_physics"))) and all_passed
+			all_passed = _check("real physics throw is released before calibration", bool(sandbox.call("did_last_use_airborne_physics")) and bool(sandbox.call("did_last_use_true_physics")) and bool(sandbox.call("did_last_release_real_physics"))) and all_passed
 			all_passed = _check("multi dice collision is enabled", bool(sandbox.call("did_last_enable_dice_collision"))) and all_passed
-			all_passed = _check("landing phase restores old 0.3 second feel", _is_between(float(sandbox.call("get_landing_phase_seconds")), 0.25, 0.40)) and all_passed
+			all_passed = _check("front half uses real physics window", _is_between(float(sandbox.call("get_last_physics_seconds")), 0.0, 0.05)) and all_passed
 			all_passed = _check("bounce phase restores old half-second feel", _is_between(float(sandbox.call("get_bounce_roll_phase_seconds")), 0.48, 0.68)) and all_passed
+			await create_timer(1.60).timeout
+			all_passed = _check("front half completes fast heavy physics before calibration", _is_between(float(sandbox.call("get_last_physics_seconds")), 0.22, 0.65)) and all_passed
+			all_passed = _check("calibration freezes dice after real physics", bool(sandbox.call("did_last_freeze_after_physics"))) and all_passed
+			all_passed = _check("all dice record physical ground contact", int(sandbox.call("get_last_physics_ground_contact_count")) == 4 and _positive_int_array(sandbox.call("get_last_physics_contact_counts"), 4)) and all_passed
 			var ground_positions: Array = sandbox.call("get_last_ground_positions")
-			all_passed = _check("dice land inside random circular area", ground_positions.size() == 4 and _positions_inside_landing_circle(ground_positions, float(sandbox.call("get_landing_area_radius")))) and all_passed
+			all_passed = _check("dice land inside throw bounds", ground_positions.size() == 4 and _positions_inside_throw_bounds(ground_positions, float(sandbox.call("get_ground_limit_x")), float(sandbox.call("get_ground_limit_z")))) and all_passed
 			all_passed = _check("dice landing scatter does not collapse into a line", _positions_use_two_axes(ground_positions)) and all_passed
 			var landing_seconds_by_die: Array = sandbox.call("get_last_landing_seconds_by_die")
 			var landing_speeds: Array = sandbox.call("get_last_landing_speeds")
-			all_passed = _check("dice land at staggered randomized speeds", _float_values_between(landing_seconds_by_die, 4, 0.25, 0.44) and _float_array_varies(landing_seconds_by_die, 4, 0.01) and _float_array_varies(landing_speeds, 4, 4.0)) and all_passed
-			await create_timer(1.20).timeout
+			all_passed = _check("dice physical contact timings and speeds are recorded", _float_values_between(landing_seconds_by_die, 4, 0.20, 0.65) and _float_values_above(landing_speeds, 4, 700.0)) and all_passed
 			all_passed = _check("landing uses physical gravity curve", bool(sandbox.call("did_last_landing_use_gravity_curve"))) and all_passed
 			all_passed = _check("ground contact is recorded before calibration", bool(sandbox.call("did_last_record_ground_contact"))) and all_passed
 			all_passed = _check("calibration starts after ground contact", bool(sandbox.call("did_last_start_calibration_after_ground"))) and all_passed
 			all_passed = _check("bounce roll returns to the ground", bool(sandbox.call("did_last_bounce_touch_ground"))) and all_passed
-			all_passed = _check("target face turn is gradual during bounce", _is_between(float(sandbox.call("get_last_final_push_seconds")), 0.26, 0.55)) and all_passed
+			all_passed = _check("target face turn is gradual during bounce", _is_between(float(sandbox.call("get_last_final_push_seconds")), 0.24, 0.78)) and all_passed
 			all_passed = _check("dice visits fake face before target", int(sandbox.call("get_last_fake_face_number")) != int(sandbox.call("get_last_target_face_number"))) and all_passed
 			all_passed = _check("dice adjusts toward target during bounce", bool(sandbox.call("was_last_adjusted_during_bounce"))) and all_passed
 			var bounce_directions: Array = sandbox.call("get_last_bounce_directions")
@@ -110,21 +113,24 @@ func _init() -> void:
 			var turn_start_ratios: Array = sandbox.call("get_last_turn_start_ratios")
 			var turn_end_ratios: Array = sandbox.call("get_last_turn_end_ratios")
 			var turn_curve_powers: Array = sandbox.call("get_last_turn_curve_powers")
+			var calibration_force_factors: Array = sandbox.call("get_last_calibration_force_factors")
+			var calibration_roll_boosts: Array = sandbox.call("get_last_calibration_roll_boosts")
 			all_passed = _check("bounce uses randomized horizontal directions", _directions_are_randomized(bounce_directions, 4)) and all_passed
 			all_passed = _check("bounce directions follow final movement", _directions_follow_movement(ground_positions, sandbox.call("get_last_final_positions"), bounce_directions)) and all_passed
 			all_passed = _check("bounce roll axes follow movement direction", _roll_axes_follow_directions(bounce_directions, bounce_roll_axes)) and all_passed
-			all_passed = _check("directional roll spin is visually stronger", _float_values_between(directional_roll_strengths, 4, 0.28, 0.42)) and all_passed
+			all_passed = _check("directional roll spin follows remaining force", _float_values_between(directional_roll_strengths, 4, 0.20, 0.55)) and all_passed
 			all_passed = _check("turn speed and distance are recorded", _positive_float_array(turn_speeds, 4) and _positive_float_array(turn_distances, 4)) and all_passed
-			all_passed = _check("target turn timing uses small randomized window", _float_values_between(turn_time_factors, 4, 0.88, 1.14) and _float_array_varies(turn_time_factors, 4, 0.10)) and all_passed
+			all_passed = _check("target turn timing uses physics-influenced stagger", _float_values_between(turn_time_factors, 4, 0.65, 1.55) and _float_array_varies(turn_time_factors, 4, 0.18)) and all_passed
 			all_passed = _check("dice collision push is applied after landing", _positive_float_array(collision_push_distances, 4)) and all_passed
 			all_passed = _check("settle wobble is recorded in physical-looking ranges", _float_values_between(settle_wobble_angles, 4, 0.045, 0.090) and _float_values_between(settle_wobble_frequencies, 4, 1.65, 2.45) and _float_array_varies(settle_wobble_angles, 4, 0.01) and _float_array_varies(settle_wobble_frequencies, 4, 0.08)) and all_passed
-			all_passed = _check("bounce duration speed and height are randomized in small ranges", _float_values_between(bounce_seconds_by_die, 4, 0.44, 0.68) and _float_values_between(bounce_heights, 4, 44.0, 58.0) and _float_values_between(bounce_up_speeds, 4, 250.0, 530.0) and _float_array_varies(bounce_seconds_by_die, 4, 0.01) and _float_array_varies(bounce_heights, 4, 0.5) and _float_array_varies(bounce_up_speeds, 4, 1.0) and _float_array_varies(turn_speeds, 4, 0.01)) and all_passed
-			all_passed = _check("target rotation starts early and finishes before final tail", _float_values_between(turn_start_ratios, 4, 0.04, 0.11) and _float_values_between(turn_end_ratios, 4, 0.45, 0.87) and _turn_windows_are_gradual(turn_start_ratios, turn_end_ratios)) and all_passed
+			all_passed = _check("bounce duration speed and height respond to remaining force", _float_values_between(bounce_seconds_by_die, 4, 0.28, 0.80) and _float_values_between(bounce_heights, 4, 20.0, 64.0) and _float_values_between(bounce_up_speeds, 4, 120.0, 760.0) and _float_array_varies(bounce_seconds_by_die, 4, 0.06) and _float_array_varies(bounce_heights, 4, 0.5) and _float_array_varies(bounce_up_speeds, 4, 1.0) and _float_array_varies(turn_speeds, 4, 0.01)) and all_passed
+			all_passed = _check("target rotation completion is staggered per die", _float_values_between(turn_start_ratios, 4, 0.02, 0.19) and _float_values_between(turn_end_ratios, 4, 0.50, 0.93) and _float_array_varies(turn_end_ratios, 4, 0.02) and _turn_windows_are_gradual(turn_start_ratios, turn_end_ratios)) and all_passed
+			all_passed = _check("calibration records per-die remaining force and roll assist", _float_values_between(calibration_force_factors, 4, 0.0, 1.0) and _positive_float_array(calibration_roll_boosts, 4) and _float_array_varies(calibration_force_factors, 4, 0.02)) and all_passed
 			all_passed = _check("target rotation curve is based on current face distance", _float_values_between(turn_curve_powers, 4, 0.70, 1.0) and _float_array_varies(turn_curve_powers, 4, 0.01)) and all_passed
 			all_passed = _check("turn effort applies slight roll", bool(sandbox.call("did_last_apply_roll_offset")) and float(sandbox.call("get_last_roll_offset_distance")) > 14.0) and all_passed
 			all_passed = _check("dice settle target pips up", bool(sandbox.call("was_last_face_up_completed")) and _same_int_array(sandbox.call("get_last_target_face_numbers"), [6, 2, 6, 1])) and all_passed
-			all_passed = _check("dice final positions do not overlap", bool(sandbox.call("did_last_apply_collision_separation")) and _positions_have_min_clearance(sandbox.call("get_last_final_positions"), float(sandbox.call("get_minimum_die_clearance")))) and all_passed
-			all_passed = _check("dice throw presentation keeps old compact duration", _is_between(float(sandbox.call("get_last_throw_total_seconds")), 0.75, 1.05)) and all_passed
+			all_passed = _check("dice final positions do not overlap", _positions_have_min_clearance(sandbox.call("get_last_final_positions"), float(sandbox.call("get_minimum_die_clearance")))) and all_passed
+			all_passed = _check("dice throw presentation remains compact", _is_between(float(sandbox.call("get_last_throw_total_seconds")), 0.75, 1.55)) and all_passed
 		if throw_button != null:
 			sandbox.call("set_debug_dice_count", 2)
 			sandbox.call("set_debug_target_pip", 0, "3")
@@ -242,10 +248,12 @@ func _all_string_values(values: Array, expected: String) -> bool:
 	return true
 
 
-func _positions_inside_landing_circle(values: Array, radius: float) -> bool:
+func _positions_inside_throw_bounds(values: Array, limit_x: float, limit_z: float) -> bool:
 	for value in values:
 		var position: Vector3 = value
-		if Vector2(position.x, position.z).length() > radius + 0.1:
+		if absf(position.x) > limit_x + 0.1:
+			return false
+		if absf(position.z) > limit_z + 0.1:
 			return false
 	return true
 
@@ -334,6 +342,24 @@ func _positive_float_array(values: Array, expected_count: int) -> bool:
 		return false
 	for value in values:
 		if float(value) <= 0.0:
+			return false
+	return true
+
+
+func _float_values_above(values: Array, expected_count: int, min_value: float) -> bool:
+	if values.size() != expected_count:
+		return false
+	for value in values:
+		if float(value) < min_value:
+			return false
+	return true
+
+
+func _positive_int_array(values: Array, expected_count: int) -> bool:
+	if values.size() != expected_count:
+		return false
+	for value in values:
+		if int(value) <= 0:
 			return false
 	return true
 
