@@ -4,6 +4,7 @@ class_name MainPrototypeView
 
 const GameFlowController = preload("res://scripts/runtime/GameFlowController.gd")
 const RunState = preload("res://scripts/core/battle/RunState.gd")
+const GMGravityThrowSandbox = preload("res://scripts/ui/gm/GMGravityThrowSandbox.gd")
 const DEFAULT_MENU_ART = preload("res://scenes/main/resources/MainMenuArtConfig.tres")
 
 
@@ -17,11 +18,41 @@ const RUN_RESULT_SCREEN_PATH := "res://scenes/run/RunResultScreen.tscn"
 
 var game_flow_controller: GameFlowController = null
 var current_view_id: StringName = &""
+var start_button_control: Control = null
+var gm_test_button_control: Control = null
+var exit_button_control: Control = null
+var gm_gravity_button_control: Control = null
+var gm_back_button_control: Control = null
+var gm_sandbox_control: GMGravityThrowSandbox = null
 
 
 func _ready() -> void:
+	mouse_filter = Control.MOUSE_FILTER_PASS
 	_create_flow_controller()
 	_show_main_menu()
+
+
+func _input(event: InputEvent) -> void:
+	var mouse_event := event as InputEventMouseButton
+	if mouse_event == null or mouse_event.button_index != MOUSE_BUTTON_LEFT or mouse_event.pressed:
+		return
+	if current_view_id == &"main":
+		if _click_hits_control(mouse_event.global_position, start_button_control):
+			get_viewport().set_input_as_handled()
+			_on_start_battle_pressed()
+		elif _click_hits_control(mouse_event.global_position, gm_test_button_control):
+			get_viewport().set_input_as_handled()
+			_on_gm_test_pressed()
+		elif _click_hits_control(mouse_event.global_position, exit_button_control):
+			get_viewport().set_input_as_handled()
+			_on_exit_pressed()
+	elif current_view_id == &"gm_test":
+		if _click_hits_control(mouse_event.global_position, gm_gravity_button_control):
+			get_viewport().set_input_as_handled()
+			_on_gm_gravity_throw_pressed()
+		elif _click_hits_control(mouse_event.global_position, gm_back_button_control):
+			get_viewport().set_input_as_handled()
+			_on_gm_menu_back_pressed()
 
 
 func _create_flow_controller() -> void:
@@ -40,11 +71,13 @@ func _show_main_menu() -> void:
 
 func _build_view() -> void:
 	current_view_id = &"main"
+	_reset_view_controls()
 	_clear_screen()
 
 	var art := _get_menu_art()
 	var root := Control.new()
 	root.name = "MainMenuRoot"
+	root.mouse_filter = Control.MOUSE_FILTER_PASS
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(root)
 
@@ -89,6 +122,7 @@ func _add_background(root: Control, art: MainMenuArtConfig) -> void:
 func _add_logo(root: Control, art: MainMenuArtConfig) -> void:
 	var logo_area := Control.new()
 	logo_area.name = "LogoArea"
+	logo_area.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_apply_anchor_rect(logo_area, art.logo_area)
 	root.add_child(logo_area)
 
@@ -117,9 +151,9 @@ func _add_version_label(root: Control, art: MainMenuArtConfig) -> void:
 	var version_label := Label.new()
 	version_label.name = "VersionLabel"
 	version_label.text = art.version_text
+	version_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	version_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	version_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	version_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	version_label.add_theme_font_size_override("font_size", 28)
 	version_label.add_theme_color_override("font_color", art.text_color)
 	version_label.add_theme_color_override("font_shadow_color", art.dark_text_shadow_color)
@@ -135,6 +169,7 @@ func _add_version_label(root: Control, art: MainMenuArtConfig) -> void:
 func _add_button_bar(root: Control, art: MainMenuArtConfig) -> void:
 	var panel_root := Control.new()
 	panel_root.name = "ButtonBar"
+	panel_root.mouse_filter = Control.MOUSE_FILTER_PASS
 	_apply_anchor_rect(panel_root, art.button_bar_area)
 	root.add_child(panel_root)
 
@@ -160,6 +195,7 @@ func _add_button_bar(root: Control, art: MainMenuArtConfig) -> void:
 
 	var margin := MarginContainer.new()
 	margin.name = "ButtonMargin"
+	margin.mouse_filter = Control.MOUSE_FILTER_PASS
 	margin.add_theme_constant_override("margin_left", 18)
 	margin.add_theme_constant_override("margin_top", 14)
 	margin.add_theme_constant_override("margin_right", 18)
@@ -169,13 +205,14 @@ func _add_button_bar(root: Control, art: MainMenuArtConfig) -> void:
 
 	var buttons := HBoxContainer.new()
 	buttons.name = "Buttons"
+	buttons.mouse_filter = Control.MOUSE_FILTER_PASS
 	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
 	buttons.add_theme_constant_override("separation", 28)
 	buttons.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	buttons.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	margin.add_child(buttons)
 
-	buttons.add_child(_make_art_button(
+	start_button_control = _make_art_button(
 		str(TranslationServer.translate(&"AUTO.TEXT.2857A3704A65")),
 		art.start_button_size,
 		art.start_button_normal_texture,
@@ -186,8 +223,22 @@ func _add_button_bar(root: Control, art: MainMenuArtConfig) -> void:
 		art.start_button_pressed_color,
 		art,
 		_on_start_battle_pressed
-	))
-	buttons.add_child(_make_art_button(
+	)
+	buttons.add_child(start_button_control)
+	gm_test_button_control = _make_art_button(
+		"GM测试",
+		Vector2(280, 104),
+		null,
+		null,
+		null,
+		Color(0.90, 0.48, 0.04, 0.94),
+		Color(1.0, 0.60, 0.10, 0.98),
+		Color(0.64, 0.30, 0.02, 0.98),
+		art,
+		_on_gm_test_pressed
+	)
+	buttons.add_child(gm_test_button_control)
+	exit_button_control = _make_art_button(
 		str(TranslationServer.translate(&"AUTO.TEXT.FEECB1E6ADEC")),
 		art.exit_button_size,
 		art.exit_button_normal_texture,
@@ -198,7 +249,140 @@ func _add_button_bar(root: Control, art: MainMenuArtConfig) -> void:
 		art.exit_button_pressed_color,
 		art,
 		_on_exit_pressed
-	))
+	)
+	buttons.add_child(exit_button_control)
+
+
+func _show_gm_test_menu() -> void:
+	current_view_id = &"gm_test"
+	_reset_view_controls()
+	_clear_screen()
+
+	var art := _get_menu_art()
+	var root := Control.new()
+	root.name = "GMTestRoot"
+	root.mouse_filter = Control.MOUSE_FILTER_PASS
+	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(root)
+
+	_add_background(root, art)
+	_add_center_panel(root, "GM测试", _gm_test_entries(), _on_gm_menu_back_pressed)
+
+
+func _show_gm_gravity_throw_sandbox() -> void:
+	current_view_id = &"gm_gravity_throw"
+	_reset_view_controls()
+	_clear_screen()
+
+	var art := _get_menu_art()
+	var root := Control.new()
+	root.name = "GMGravityThrowRoot"
+	root.mouse_filter = Control.MOUSE_FILTER_PASS
+	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(root)
+
+	_add_background(root, art)
+
+	gm_sandbox_control = GMGravityThrowSandbox.new()
+	gm_sandbox_control.name = "GMGravityThrowSandbox"
+	gm_sandbox_control.back_requested.connect(_on_gm_sandbox_back_requested)
+	gm_sandbox_control.anchor_left = 0.08
+	gm_sandbox_control.anchor_top = 0.08
+	gm_sandbox_control.anchor_right = 0.92
+	gm_sandbox_control.anchor_bottom = 0.92
+	root.add_child(gm_sandbox_control)
+
+
+func _gm_test_entries() -> Array[Dictionary]:
+	return [
+		{
+			"text": "骰子重力投掷",
+			"callback": _on_gm_gravity_throw_pressed,
+		},
+	]
+
+
+func _add_center_panel(
+	root: Control,
+	title_text: String,
+	entries: Array[Dictionary],
+	back_callback: Callable
+) -> void:
+	var panel := PanelContainer.new()
+	panel.name = "GMTestPanel"
+	panel.mouse_filter = Control.MOUSE_FILTER_PASS
+	panel.anchor_left = 0.30
+	panel.anchor_top = 0.19
+	panel.anchor_right = 0.70
+	panel.anchor_bottom = 0.82
+	panel.add_theme_stylebox_override(
+		"panel",
+		_make_panel_style(Color(0.025, 0.035, 0.052, 0.88), Color(0.72, 0.82, 0.94, 0.82), 3, 8)
+	)
+	root.add_child(panel)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 44)
+	margin.add_theme_constant_override("margin_top", 40)
+	margin.add_theme_constant_override("margin_right", 44)
+	margin.add_theme_constant_override("margin_bottom", 40)
+	panel.add_child(margin)
+
+	var content := VBoxContainer.new()
+	content.name = "GMTestContent"
+	content.alignment = BoxContainer.ALIGNMENT_CENTER
+	content.add_theme_constant_override("separation", 24)
+	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	margin.add_child(content)
+
+	var title := Label.new()
+	title.name = "GMTestTitle"
+	title.text = title_text
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 52)
+	title.add_theme_color_override("font_color", Color(1.0, 0.96, 0.82, 1.0))
+	title.add_theme_color_override("font_shadow_color", Color(0.02, 0.02, 0.03, 0.96))
+	title.add_theme_constant_override("shadow_offset_x", 3)
+	title.add_theme_constant_override("shadow_offset_y", 4)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content.add_child(title)
+
+	for entry in entries:
+		var button := _make_gm_plain_button(str(entry.get("text", "")), Color(0.07, 0.34, 0.76, 0.96), Color(0.10, 0.48, 0.92, 0.98))
+		var callback: Callable = entry.get("callback", Callable())
+		if callback.is_valid():
+			button.pressed.connect(callback)
+		content.add_child(button)
+		if button.text == "骰子重力投掷":
+			gm_gravity_button_control = button
+
+	gm_back_button_control = _make_gm_plain_button("返回主页", Color(0.72, 0.16, 0.08, 0.96), Color(0.94, 0.24, 0.12, 0.98))
+	gm_back_button_control.pressed.connect(back_callback)
+	content.add_child(gm_back_button_control)
+
+
+func _make_gm_plain_button(text: String, normal_color: Color, hover_color: Color) -> Button:
+	var button := Button.new()
+	button.name = text
+	button.text = text
+	button.custom_minimum_size = Vector2(360, 86)
+	button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	button.focus_mode = Control.FOCUS_NONE
+	button.clip_text = true
+	button.add_theme_font_size_override("font_size", 34)
+	button.add_theme_color_override("font_color", Color(0.98, 0.98, 0.94, 1.0))
+	button.add_theme_color_override("font_hover_color", Color(1.0, 0.98, 0.86, 1.0))
+	button.add_theme_color_override("font_pressed_color", Color(1.0, 0.94, 0.72, 1.0))
+	button.add_theme_color_override("font_shadow_color", Color(0.02, 0.02, 0.03, 0.92))
+	button.add_theme_constant_override("shadow_offset_x", 2)
+	button.add_theme_constant_override("shadow_offset_y", 3)
+	button.add_theme_stylebox_override("normal", _make_panel_style(normal_color, Color(0.98, 0.90, 0.55, 0.88), 2, 7))
+	button.add_theme_stylebox_override("hover", _make_panel_style(hover_color, Color(1.0, 0.96, 0.68, 0.95), 2, 7))
+	button.add_theme_stylebox_override("pressed", _make_panel_style(normal_color.darkened(0.18), Color(1.0, 0.88, 0.44, 0.95), 2, 7))
+	button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	return button
 
 
 func _make_title_label(art: MainMenuArtConfig, color: Color, offset: Vector2, font_size: int) -> Label:
@@ -232,28 +416,12 @@ func _make_art_button(
 	art: MainMenuArtConfig,
 	pressed_callback: Callable
 ) -> Control:
-	var wrapper := Control.new()
-	wrapper.custom_minimum_size = minimum_size
-	wrapper.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	wrapper.size_flags_vertical = Control.SIZE_EXPAND_FILL
-
-	var fallback_panel := PanelContainer.new()
-	fallback_panel.name = "FallbackPanel"
-	fallback_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	fallback_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	wrapper.add_child(fallback_panel)
-
-	var texture_rect := TextureRect.new()
-	texture_rect.name = "ButtonArt"
-	texture_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	texture_rect.stretch_mode = TextureRect.STRETCH_SCALE
-	texture_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	texture_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	wrapper.add_child(texture_rect)
-
 	var button := Button.new()
 	button.name = text
 	button.text = text
+	button.custom_minimum_size = minimum_size
+	button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	button.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	button.focus_mode = Control.FOCUS_NONE
 	button.clip_text = true
 	button.add_theme_font_size_override("font_size", 44)
@@ -265,7 +433,23 @@ func _make_art_button(
 	button.add_theme_constant_override("shadow_offset_y", 4)
 	for state in ["normal", "hover", "pressed", "disabled", "focus"]:
 		button.add_theme_stylebox_override(state, StyleBoxEmpty.new())
-	button.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+	var fallback_panel := PanelContainer.new()
+	fallback_panel.name = "FallbackPanel"
+	fallback_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fallback_panel.show_behind_parent = true
+	fallback_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	button.add_child(fallback_panel)
+
+	var texture_rect := TextureRect.new()
+	texture_rect.name = "ButtonArt"
+	texture_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	texture_rect.stretch_mode = TextureRect.STRETCH_SCALE
+	texture_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	texture_rect.show_behind_parent = true
+	texture_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	button.add_child(texture_rect)
+
 	button.pressed.connect(pressed_callback)
 	button.mouse_entered.connect(func() -> void:
 		_apply_button_visual(texture_rect, fallback_panel, hover_texture, normal_texture, hover_color)
@@ -281,10 +465,9 @@ func _make_art_button(
 		var next_color := hover_color if button.is_hovered() else normal_color
 		_apply_button_visual(texture_rect, fallback_panel, next_texture, normal_texture, next_color)
 	)
-	wrapper.add_child(button)
 
 	_apply_button_visual(texture_rect, fallback_panel, normal_texture, normal_texture, normal_color)
-	return wrapper
+	return button
 
 
 func _apply_button_visual(
@@ -332,6 +515,24 @@ func _apply_anchor_rect(control: Control, rect: Rect2) -> void:
 
 func _on_start_battle_pressed() -> void:
 	game_flow_controller.start_new_run()
+
+
+func _on_gm_test_pressed() -> void:
+	_show_gm_test_menu()
+
+
+func _on_gm_gravity_throw_pressed() -> void:
+	_show_gm_gravity_throw_sandbox()
+
+
+func _on_gm_menu_back_pressed() -> void:
+	_show_main_menu()
+
+
+func _on_gm_sandbox_back_requested() -> void:
+	if gm_sandbox_control != null and is_instance_valid(gm_sandbox_control):
+		gm_sandbox_control.clear_sandbox()
+	_show_gm_test_menu()
 
 
 func _on_exit_pressed() -> void:
@@ -398,6 +599,25 @@ func _clear_screen() -> void:
 		if child != game_flow_controller:
 			remove_child(child)
 			child.queue_free()
+	gm_sandbox_control = null
+
+
+func _reset_view_controls() -> void:
+	start_button_control = null
+	gm_test_button_control = null
+	exit_button_control = null
+	gm_gravity_button_control = null
+	gm_back_button_control = null
+	gm_sandbox_control = null
+
+
+func _click_hits_control(position: Vector2, control: Control) -> bool:
+	if control == null or not control.visible or not control.is_inside_tree():
+		return false
+	var button := control as BaseButton
+	if button != null and button.disabled:
+		return false
+	return control.get_global_rect().has_point(position)
 
 
 func _current_battle_screen() -> Control:
