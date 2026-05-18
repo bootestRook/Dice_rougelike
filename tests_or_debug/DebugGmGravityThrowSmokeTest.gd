@@ -38,7 +38,7 @@ func _init() -> void:
 		all_passed = _check("sandbox collision bounds do not render occluding wall meshes", int(sandbox.call("get_visible_boundary_mesh_count")) == 0) and all_passed
 		var dice_count_control := _find_node_by_name(sandbox, "DiceCountSpinBox")
 		var throw_button := _find_button_by_text(sandbox, "投掷骰子")
-		var camera_view_button := _find_button_by_text(sandbox, "视角：侧面")
+		var camera_view_button := _find_button_by_text(sandbox, "视角：斜上方")
 		var back_button := _find_button_by_text(sandbox, "返回列表")
 		all_passed = _check("sandbox has dice count selector", dice_count_control is SpinBox) and all_passed
 		all_passed = _check("sandbox has six target pip inputs", int(sandbox.call("get_target_pip_input_count")) == 6) and all_passed
@@ -47,17 +47,17 @@ func _init() -> void:
 		all_passed = _check("sandbox has camera view button", camera_view_button != null) and all_passed
 		all_passed = _check("sandbox has return button", back_button != null) and all_passed
 		if camera_view_button != null:
-			var side_position: Vector3 = sandbox.call("get_camera_position")
-			all_passed = _check("camera defaults to side view", not bool(sandbox.call("is_camera_top_view")) and side_position.z > side_position.y) and all_passed
-			_send_mouse_button(camera_view_button, MOUSE_BUTTON_LEFT)
-			await process_frame
 			var top_position: Vector3 = sandbox.call("get_camera_position")
-			all_passed = _check("camera button shows oblique top view", camera_view_button.text == "视角：斜上方") and all_passed
-			all_passed = _check("camera switches to oblique top view", bool(sandbox.call("is_camera_top_view")) and top_position.y > top_position.z and absf(top_position.x) > 1.0 and absf(top_position.z) > 1.0) and all_passed
+			all_passed = _check("camera defaults to oblique top view", bool(sandbox.call("is_camera_top_view")) and top_position.y > top_position.z and absf(top_position.x) > 1.0 and absf(top_position.z) > 1.0) and all_passed
 			_send_mouse_button(camera_view_button, MOUSE_BUTTON_LEFT)
 			await process_frame
-			var restored_side_position: Vector3 = sandbox.call("get_camera_position")
-			all_passed = _check("camera switches back to side view", not bool(sandbox.call("is_camera_top_view")) and restored_side_position.z > restored_side_position.y) and all_passed
+			var side_position: Vector3 = sandbox.call("get_camera_position")
+			all_passed = _check("camera button shows side view", camera_view_button.text == "视角：侧面") and all_passed
+			all_passed = _check("camera switches to side view", not bool(sandbox.call("is_camera_top_view")) and side_position.z > side_position.y) and all_passed
+			_send_mouse_button(camera_view_button, MOUSE_BUTTON_LEFT)
+			await process_frame
+			var restored_top_position: Vector3 = sandbox.call("get_camera_position")
+			all_passed = _check("camera switches back to oblique top view", bool(sandbox.call("is_camera_top_view")) and restored_top_position.y > restored_top_position.z and absf(restored_top_position.x) > 1.0 and absf(restored_top_position.z) > 1.0) and all_passed
 		if throw_button != null:
 			sandbox.call("set_debug_dice_count", 4)
 			sandbox.call("set_debug_target_pip", 0, "6")
@@ -96,8 +96,13 @@ func _init() -> void:
 			all_passed = _check("dice visits fake face before target", int(sandbox.call("get_last_fake_face_number")) != int(sandbox.call("get_last_target_face_number"))) and all_passed
 			all_passed = _check("dice adjusts toward target during bounce", bool(sandbox.call("was_last_adjusted_during_bounce"))) and all_passed
 			var bounce_directions: Array = sandbox.call("get_last_bounce_directions")
+			var bounce_roll_axes: Array = sandbox.call("get_last_bounce_roll_axes")
 			var turn_speeds: Array = sandbox.call("get_last_turn_speeds")
 			var turn_distances: Array = sandbox.call("get_last_turn_distances")
+			var turn_time_factors: Array = sandbox.call("get_last_turn_time_factors")
+			var directional_roll_strengths: Array = sandbox.call("get_last_directional_roll_strengths")
+			var settle_wobble_angles: Array = sandbox.call("get_last_settle_wobble_angles")
+			var settle_wobble_frequencies: Array = sandbox.call("get_last_settle_wobble_frequencies")
 			var bounce_seconds_by_die: Array = sandbox.call("get_last_bounce_seconds_by_die")
 			var bounce_heights: Array = sandbox.call("get_last_bounce_heights")
 			var bounce_up_speeds: Array = sandbox.call("get_last_bounce_up_speeds")
@@ -106,8 +111,13 @@ func _init() -> void:
 			var turn_end_ratios: Array = sandbox.call("get_last_turn_end_ratios")
 			var turn_curve_powers: Array = sandbox.call("get_last_turn_curve_powers")
 			all_passed = _check("bounce uses randomized horizontal directions", _directions_are_randomized(bounce_directions, 4)) and all_passed
+			all_passed = _check("bounce directions follow final movement", _directions_follow_movement(ground_positions, sandbox.call("get_last_final_positions"), bounce_directions)) and all_passed
+			all_passed = _check("bounce roll axes follow movement direction", _roll_axes_follow_directions(bounce_directions, bounce_roll_axes)) and all_passed
+			all_passed = _check("directional roll spin is visually stronger", _float_values_between(directional_roll_strengths, 4, 0.28, 0.42)) and all_passed
 			all_passed = _check("turn speed and distance are recorded", _positive_float_array(turn_speeds, 4) and _positive_float_array(turn_distances, 4)) and all_passed
+			all_passed = _check("target turn timing uses small randomized window", _float_values_between(turn_time_factors, 4, 0.88, 1.14) and _float_array_varies(turn_time_factors, 4, 0.10)) and all_passed
 			all_passed = _check("dice collision push is applied after landing", _positive_float_array(collision_push_distances, 4)) and all_passed
+			all_passed = _check("settle wobble is recorded in physical-looking ranges", _float_values_between(settle_wobble_angles, 4, 0.045, 0.090) and _float_values_between(settle_wobble_frequencies, 4, 1.65, 2.45) and _float_array_varies(settle_wobble_angles, 4, 0.01) and _float_array_varies(settle_wobble_frequencies, 4, 0.08)) and all_passed
 			all_passed = _check("bounce duration speed and height are randomized in small ranges", _float_values_between(bounce_seconds_by_die, 4, 0.44, 0.68) and _float_values_between(bounce_heights, 4, 44.0, 58.0) and _float_values_between(bounce_up_speeds, 4, 250.0, 530.0) and _float_array_varies(bounce_seconds_by_die, 4, 0.01) and _float_array_varies(bounce_heights, 4, 0.5) and _float_array_varies(bounce_up_speeds, 4, 1.0) and _float_array_varies(turn_speeds, 4, 0.01)) and all_passed
 			all_passed = _check("target rotation starts early and finishes before final tail", _float_values_between(turn_start_ratios, 4, 0.04, 0.11) and _float_values_between(turn_end_ratios, 4, 0.45, 0.87) and _turn_windows_are_gradual(turn_start_ratios, turn_end_ratios)) and all_passed
 			all_passed = _check("target rotation curve is based on current face distance", _float_values_between(turn_curve_powers, 4, 0.70, 1.0) and _float_array_varies(turn_curve_powers, 4, 0.01)) and all_passed
@@ -287,6 +297,36 @@ func _directions_are_randomized(values: Array, expected_count: int) -> bool:
 		if absf(wrapf(angle - first_angle, -PI, PI)) > 0.12:
 			has_different_angle = true
 	return has_different_angle
+
+
+func _directions_follow_movement(starts: Array, ends: Array, directions: Array) -> bool:
+	if starts.size() != ends.size() or starts.size() != directions.size() or starts.is_empty():
+		return false
+	for index in range(starts.size()):
+		var start_position: Vector3 = starts[index]
+		var end_position: Vector3 = ends[index]
+		var direction: Vector3 = directions[index]
+		var delta := Vector3(end_position.x - start_position.x, 0.0, end_position.z - start_position.z)
+		if delta.length() <= 0.001:
+			return false
+		var expected_direction := delta.normalized()
+		if direction.normalized().dot(expected_direction) < 0.99:
+			return false
+	return true
+
+
+func _roll_axes_follow_directions(directions: Array, roll_axes: Array) -> bool:
+	if directions.size() != roll_axes.size() or directions.is_empty():
+		return false
+	for index in range(directions.size()):
+		var direction: Vector3 = directions[index]
+		var roll_axis: Vector3 = roll_axes[index]
+		if direction.length() <= 0.001 or roll_axis.length() <= 0.001:
+			return false
+		var expected_axis := Vector3.UP.cross(Vector3(direction.x, 0.0, direction.z).normalized()).normalized()
+		if roll_axis.normalized().dot(expected_axis) < 0.99:
+			return false
+	return true
 
 
 func _positive_float_array(values: Array, expected_count: int) -> bool:

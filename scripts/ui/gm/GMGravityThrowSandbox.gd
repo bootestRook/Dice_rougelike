@@ -28,18 +28,27 @@ const BOUNCE_HEIGHT_MIN := 44.0
 const BOUNCE_HEIGHT_MAX := 58.0
 const TURN_SPEED_MIN := 5.6
 const TURN_SPEED_MAX := 8.8
+const TURN_SECONDS_RANDOM_MIN_FACTOR := 0.88
+const TURN_SECONDS_RANDOM_MAX_FACTOR := 1.14
 const TURN_START_MIN_RATIO := 0.04
 const TURN_START_MAX_RATIO := 0.10
 const TURN_END_MAX_RATIO := 0.86
+const DIRECTIONAL_ROLL_SPIN_STRENGTH := 0.34
+const RESIDUAL_DIRECTIONAL_SPIN_MIN := 0.46
+const RESIDUAL_DIRECTIONAL_SPIN_MAX := 0.68
+const SETTLE_WOBBLE_ANGLE_MIN := 0.045
+const SETTLE_WOBBLE_ANGLE_MAX := 0.090
+const SETTLE_WOBBLE_FREQUENCY_MIN := 1.65
+const SETTLE_WOBBLE_FREQUENCY_MAX := 2.45
 const COLLISION_PUSH_RADIUS_FACTOR := 2.25
 const DICE_COLLISION_CLEARANCE_FACTOR := 1.16
-const CAMERA_VIEW_SIDE := &"side"
 const CAMERA_VIEW_TOP := &"top"
+const CAMERA_VIEW_SIDE := &"side"
 
 var viewport_container: SubViewportContainer = null
 var sub_viewport: SubViewport = null
 var camera: Camera3D = null
-var camera_view_id: StringName = CAMERA_VIEW_SIDE
+var camera_view_id: StringName = CAMERA_VIEW_TOP
 var world_root: Node3D = null
 var physics_root: Node3D = null
 var cube_body: RigidBody3D = null
@@ -82,8 +91,13 @@ var last_timed_out: bool = false
 var last_visible_pip_counts: Array[int] = []
 var last_ground_positions: Array[Vector3] = []
 var last_bounce_directions: Array[Vector3] = []
+var last_bounce_roll_axes: Array[Vector3] = []
 var last_turn_speeds: Array[float] = []
 var last_turn_distances: Array[float] = []
+var last_turn_time_factors: Array[float] = []
+var last_directional_roll_strengths: Array[float] = []
+var last_settle_wobble_angles: Array[float] = []
+var last_settle_wobble_frequencies: Array[float] = []
 var last_landing_seconds_by_die: Array[float] = []
 var last_landing_speeds: Array[float] = []
 var last_bounce_seconds_by_die: Array[float] = []
@@ -156,8 +170,13 @@ func clear_sandbox() -> void:
 	last_visible_pip_counts.clear()
 	last_ground_positions.clear()
 	last_bounce_directions.clear()
+	last_bounce_roll_axes.clear()
 	last_turn_speeds.clear()
 	last_turn_distances.clear()
+	last_turn_time_factors.clear()
+	last_directional_roll_strengths.clear()
+	last_settle_wobble_angles.clear()
+	last_settle_wobble_frequencies.clear()
 	last_landing_seconds_by_die.clear()
 	last_landing_speeds.clear()
 	last_bounce_seconds_by_die.clear()
@@ -311,12 +330,32 @@ func get_last_bounce_directions() -> Array[Vector3]:
 	return last_bounce_directions.duplicate()
 
 
+func get_last_bounce_roll_axes() -> Array[Vector3]:
+	return last_bounce_roll_axes.duplicate()
+
+
 func get_last_turn_speeds() -> Array[float]:
 	return last_turn_speeds.duplicate()
 
 
 func get_last_turn_distances() -> Array[float]:
 	return last_turn_distances.duplicate()
+
+
+func get_last_turn_time_factors() -> Array[float]:
+	return last_turn_time_factors.duplicate()
+
+
+func get_last_directional_roll_strengths() -> Array[float]:
+	return last_directional_roll_strengths.duplicate()
+
+
+func get_last_settle_wobble_angles() -> Array[float]:
+	return last_settle_wobble_angles.duplicate()
+
+
+func get_last_settle_wobble_frequencies() -> Array[float]:
+	return last_settle_wobble_frequencies.duplicate()
 
 
 func get_last_landing_seconds_by_die() -> Array[float]:
@@ -496,7 +535,7 @@ func _build_ui() -> void:
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title)
 
-	camera_view_button = _make_button("视角：侧面", Color(0.08, 0.31, 0.36, 0.96), Color(0.10, 0.45, 0.52, 0.98))
+	camera_view_button = _make_button("视角：斜上方", Color(0.08, 0.31, 0.36, 0.96), Color(0.10, 0.45, 0.52, 0.98))
 	camera_view_button.name = "CameraViewButton"
 	camera_view_button.custom_minimum_size = Vector2(180, 66)
 	camera_view_button.pressed.connect(_toggle_camera_view)
@@ -773,8 +812,13 @@ func _throw_dice(target_pips: Array[int]) -> void:
 	last_visible_pip_counts.clear()
 	last_ground_positions.clear()
 	last_bounce_directions.clear()
+	last_bounce_roll_axes.clear()
 	last_turn_speeds.clear()
 	last_turn_distances.clear()
+	last_turn_time_factors.clear()
+	last_directional_roll_strengths.clear()
+	last_settle_wobble_angles.clear()
+	last_settle_wobble_frequencies.clear()
 	last_landing_seconds_by_die.clear()
 	last_landing_speeds.clear()
 	last_bounce_seconds_by_die.clear()
@@ -1122,11 +1166,12 @@ func _play_scripted_bounce_and_face_adjust(token: int, max_bounce_seconds: float
 		var turn_distance := _rotation_distance(contact_rotation, target_rotation)
 		var curve_power := _turn_curve_power_for_distance(turn_distance)
 		var requested_turn_speed := _random_turn_speed_for_entry(entry, token, turn_distance)
+		var turn_time_factor := _random_turn_time_factor_for_entry(entry, token)
 		var turn_start_t := lerpf(TURN_START_MIN_RATIO, TURN_START_MAX_RATIO, _noise01(die_index + 5, token, 307))
 		var turn_seconds := clampf(
-			turn_distance / maxf(0.01, requested_turn_speed),
-			bounce_seconds * 0.48,
-			bounce_seconds * 0.78
+			turn_distance / maxf(0.01, requested_turn_speed) * turn_time_factor,
+			bounce_seconds * 0.44,
+			bounce_seconds * 0.76
 		)
 		var turn_end_t := turn_start_t + turn_seconds / maxf(0.01, bounce_seconds)
 		if turn_end_t > TURN_END_MAX_RATIO:
@@ -1153,19 +1198,19 @@ func _play_scripted_bounce_and_face_adjust(token: int, max_bounce_seconds: float
 		entry["turn_start_t"] = turn_start_t
 		entry["turn_end_t"] = turn_end_t
 		entry["turn_curve_power"] = curve_power
-		entry["residual_spin"] = _residual_spin_for_entry(entry, bounce_direction)
 		last_roll_offset_applied = true
 		last_roll_offset_distance = maxf(last_roll_offset_distance, roll_offset.length())
 		last_collision_push_distances.append(collision_push_offset.length())
-		last_bounce_directions.append(bounce_direction)
 		last_turn_speeds.append(turn_speed)
 		last_turn_distances.append(turn_distance)
+		last_turn_time_factors.append(turn_time_factor)
 		last_turn_start_ratios.append(turn_start_t)
 		last_turn_end_ratios.append(turn_end_t)
 		last_turn_curve_powers.append(curve_power)
 		last_final_push_seconds = maxf(last_final_push_seconds, turn_seconds)
 
 	_resolve_target_collision_pushes()
+	_sync_bounce_motion_directions(token)
 
 	for entry in dice_entries:
 		var body := entry.get("body", null) as RigidBody3D
@@ -1185,7 +1230,10 @@ func _play_scripted_bounce_and_face_adjust(token: int, max_bounce_seconds: float
 				entry["residual_spin"],
 				float(entry["bounce_height"]),
 				float(entry["roll_spin_scale"]),
-				float(entry["turn_curve_power"])
+				float(entry["turn_curve_power"]),
+				entry["settle_wobble_axis"],
+				float(entry["settle_wobble_angle"]),
+				float(entry["settle_wobble_frequency"])
 			),
 			0.0,
 			1.0,
@@ -1225,7 +1273,10 @@ func _apply_scripted_bounce_frame(
 	residual_spin: Vector3,
 	bounce_height: float,
 	roll_spin_scale: float,
-	turn_curve_power: float
+	turn_curve_power: float,
+	settle_wobble_axis: Vector3,
+	settle_wobble_angle: float,
+	settle_wobble_frequency: float
 ) -> void:
 	if body == null or not is_instance_valid(body):
 		return
@@ -1235,13 +1286,77 @@ func _apply_scripted_bounce_frame(
 	_separate_dice_body_from_neighbors(body)
 	var rotate_t := clampf((t - turn_start_t) / maxf(0.01, turn_end_t - turn_start_t), 0.0, 1.0)
 	var adjust_t := _rotation_curve_progress(rotate_t, turn_curve_power)
-	var roll_spin := Vector3(
-		bounce_direction.z * TAU * 0.18,
-		TAU * 0.08 * sin(t * PI),
-		-bounce_direction.x * TAU * 0.18
-	) * roll_spin_scale * (1.0 - adjust_t) * (1.0 - t * 0.32)
+	var roll_axis := _roll_axis_for_direction(bounce_direction)
+	var directional_spin_fade := (1.0 - adjust_t * 0.70) * pow(maxf(0.0, 1.0 - t), 0.42)
+	var roll_spin := (
+		roll_axis * TAU * DIRECTIONAL_ROLL_SPIN_STRENGTH
+		+ Vector3(0.0, TAU * 0.07 * sin(t * PI), 0.0)
+	) * roll_spin_scale * directional_spin_fade
 	var current_rotation := contact_rotation + residual_spin * (1.0 - adjust_t) * (1.0 - t * 0.24) + roll_spin
-	body.rotation = _lerp_rotation_euler(current_rotation, target_rotation, adjust_t)
+	body.rotation = _lerp_rotation_euler(current_rotation, target_rotation, adjust_t) + _settle_wobble_rotation(
+		t,
+		turn_end_t,
+		settle_wobble_axis,
+		settle_wobble_angle,
+		settle_wobble_frequency
+	)
+
+
+func _sync_bounce_motion_directions(token: int) -> void:
+	last_bounce_directions.clear()
+	last_bounce_roll_axes.clear()
+	last_directional_roll_strengths.clear()
+	last_settle_wobble_angles.clear()
+	last_settle_wobble_frequencies.clear()
+	for entry in dice_entries:
+		var motion_direction := _movement_direction_for_entry(entry)
+		var roll_axis := _roll_axis_for_direction(motion_direction)
+		var wobble_angle := _settle_wobble_angle_for_entry(entry, token)
+		var wobble_frequency := _settle_wobble_frequency_for_entry(entry, token)
+		entry["bounce_direction"] = motion_direction
+		entry["residual_spin"] = _residual_spin_for_entry(entry, motion_direction)
+		entry["settle_wobble_axis"] = roll_axis
+		entry["settle_wobble_angle"] = wobble_angle
+		entry["settle_wobble_frequency"] = wobble_frequency
+		last_bounce_directions.append(motion_direction)
+		last_bounce_roll_axes.append(roll_axis)
+		last_directional_roll_strengths.append(DIRECTIONAL_ROLL_SPIN_STRENGTH * float(entry.get("roll_spin_scale", 1.0)))
+		last_settle_wobble_angles.append(wobble_angle)
+		last_settle_wobble_frequencies.append(wobble_frequency)
+
+
+func _movement_direction_for_entry(entry: Dictionary) -> Vector3:
+	var ground_position: Vector3 = entry.get("ground_position", Vector3.ZERO)
+	var target_position: Vector3 = entry.get("target_position", ground_position)
+	var delta := Vector3(target_position.x - ground_position.x, 0.0, target_position.z - ground_position.z)
+	if delta.length() > 0.001:
+		return delta.normalized()
+	var fallback: Vector3 = entry.get("bounce_direction", Vector3.RIGHT)
+	fallback.y = 0.0
+	return fallback.normalized() if fallback.length() > 0.001 else Vector3.RIGHT
+
+
+static func _roll_axis_for_direction(direction: Vector3) -> Vector3:
+	var flat_direction := Vector3(direction.x, 0.0, direction.z)
+	if flat_direction.length() <= 0.001:
+		flat_direction = Vector3.RIGHT
+	return Vector3.UP.cross(flat_direction.normalized()).normalized()
+
+
+func _settle_wobble_rotation(
+	t: float,
+	turn_end_t: float,
+	wobble_axis: Vector3,
+	wobble_angle: float,
+	wobble_frequency: float
+) -> Vector3:
+	if t <= turn_end_t:
+		return Vector3.ZERO
+	var settle_t := clampf((t - turn_end_t) / maxf(0.01, 1.0 - turn_end_t), 0.0, 1.0)
+	var decay := pow(1.0 - settle_t, 1.75)
+	var wobble := sin(settle_t * TAU * wobble_frequency) * wobble_angle * decay
+	var side_wobble := sin(settle_t * TAU * (wobble_frequency + 0.35)) * wobble_angle * 0.34 * decay
+	return wobble_axis * wobble + Vector3(0.0, side_wobble, 0.0)
 
 
 func _resolve_target_collision_pushes() -> void:
@@ -1316,6 +1431,15 @@ func _random_turn_speed_for_entry(entry: Dictionary, token: int, turn_distance: 
 	return clampf(base_speed * random_factor, TURN_SPEED_MIN, TURN_SPEED_MAX)
 
 
+func _random_turn_time_factor_for_entry(entry: Dictionary, token: int) -> float:
+	var die_index := int(entry.get("die_index", 0))
+	var slot_t := 0.5
+	if last_dice_count > 1:
+		slot_t = float(die_index) / float(last_dice_count - 1)
+	var jitter := (_noise01(die_index + 41, token, 433) - 0.5) * 0.18
+	return lerpf(TURN_SECONDS_RANDOM_MIN_FACTOR, TURN_SECONDS_RANDOM_MAX_FACTOR, clampf(slot_t + jitter, 0.0, 1.0))
+
+
 func _turn_curve_power_for_distance(turn_distance: float) -> float:
 	var distance_t := clampf(turn_distance / (TAU * 1.4), 0.0, 1.0)
 	return lerpf(0.96, 0.74, distance_t)
@@ -1356,11 +1480,23 @@ func _random_bounce_direction_for_entry(entry: Dictionary, token: int) -> Vector
 func _residual_spin_for_entry(entry: Dictionary, bounce_direction: Vector3) -> Vector3:
 	var die_index := int(entry.get("die_index", 0))
 	var yaw_sign := -1.0 if _noise01(die_index + 9, throw_count, 347) < 0.5 else 1.0
-	return Vector3(
-		bounce_direction.z * TAU * lerpf(0.28, 0.48, _noise01(die_index + 11, throw_count, 353)),
+	var roll_axis := _roll_axis_for_direction(bounce_direction)
+	var roll_spin := roll_axis * TAU * lerpf(RESIDUAL_DIRECTIONAL_SPIN_MIN, RESIDUAL_DIRECTIONAL_SPIN_MAX, _noise01(die_index + 11, throw_count, 353))
+	return roll_spin + Vector3(
+		0.0,
 		yaw_sign * TAU * lerpf(0.12, 0.26, _noise01(die_index + 13, throw_count, 359)),
-		-bounce_direction.x * TAU * lerpf(0.28, 0.48, _noise01(die_index + 15, throw_count, 367))
+		0.0
 	)
+
+
+func _settle_wobble_angle_for_entry(entry: Dictionary, token: int) -> float:
+	var die_index := int(entry.get("die_index", 0))
+	return lerpf(SETTLE_WOBBLE_ANGLE_MIN, SETTLE_WOBBLE_ANGLE_MAX, _noise01(die_index + 45, token, 457))
+
+
+func _settle_wobble_frequency_for_entry(entry: Dictionary, token: int) -> float:
+	var die_index := int(entry.get("die_index", 0))
+	return lerpf(SETTLE_WOBBLE_FREQUENCY_MIN, SETTLE_WOBBLE_FREQUENCY_MAX, _noise01(die_index + 47, token, 463))
 
 
 func _roll_distance_for_turn(turn_distance: float, turn_speed: float) -> float:
