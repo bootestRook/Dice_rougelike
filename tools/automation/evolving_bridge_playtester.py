@@ -71,6 +71,11 @@ class RunResult:
     hands: int
     installed: int
     elapsed: float
+    candidate_profile: str = ""
+    target_score: int = 0
+    battle_score: int = 0
+    shortfall: int = 0
+    failure_reason: str = ""
     decisions: list[str] = field(default_factory=list)
 
 
@@ -193,6 +198,34 @@ def launch_godot(args: argparse.Namespace, project: Path) -> subprocess.Popen[An
     return subprocess.Popen(command, cwd=project, creationflags=creationflags)
 
 
+def close_client_safely(client: BridgeClient | None) -> None:
+    if client is None:
+        return
+    try:
+        client.command("set_input_lock", locked=False)
+    except Exception:
+        pass
+    client.close()
+
+
+def stop_process_safely(process: subprocess.Popen[Any] | None) -> None:
+    if process is None:
+        return
+    if os.name == "nt":
+        subprocess.run(
+            ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+        return
+    process.terminate()
+    try:
+        process.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        process.kill()
+
+
 def load_state(path: Path) -> dict[str, Any]:
     if path.exists():
         with path.open("r", encoding="utf-8") as fh:
@@ -216,12 +249,67 @@ def save_state(path: Path, state: dict[str, Any]) -> None:
         json.dump(state, fh, ensure_ascii=False, indent=2)
 
 
+def merge_historical_best(state: dict[str, Any], reports_dir: Path, current_state_file: Path) -> bool:
+    current_best = float(state.get("best_fitness", -1.0))
+    merged = False
+    current_resolved = current_state_file.resolve()
+    candidates = list(reports_dir.rglob("strategy_state.json"))
+    candidates.extend(reports_dir.glob("*_state.json"))
+    for candidate in candidates:
+        try:
+            if candidate.resolve() == current_resolved:
+                continue
+            with candidate.open("r", encoding="utf-8") as fh:
+                data = json.load(fh)
+        except (OSError, json.JSONDecodeError):
+            continue
+        if not isinstance(data, dict):
+            continue
+        candidate_weights = data.get("best_weights")
+        if not isinstance(candidate_weights, dict):
+            continue
+        candidate_fitness = float(data.get("best_fitness", -1.0))
+        if candidate_fitness > current_best:
+            current_best = candidate_fitness
+            state["best_fitness"] = candidate_fitness
+            state["best_weights"] = {key: float(value) for key, value in candidate_weights.items()}
+            state["historical_best_source"] = str(candidate)
+            state["historical_best_imported_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            merged = True
+    return merged
+
+
 def mutated_weights(base: dict[str, float], rng: random.Random, scale: float) -> dict[str, float]:
     weights: dict[str, float] = {}
     for key, value in base.items():
         factor = 1.0 + rng.gauss(0.0, scale)
         weights[key] = max(0.0, float(value) * factor)
     return weights
+
+
+def candidate_weights(
+    base: dict[str, float],
+    rng: random.Random,
+    scale: float,
+    run_index: int,
+) -> tuple[dict[str, float], str]:
+    if run_index == 1 or run_index % 12 == 0:
+        return base.copy(), "基准复测"
+    if run_index % 5 == 0:
+        return mutated_weights(base, rng, scale * 2.25), "大步探索"
+    if run_index % 3 == 0:
+        return mutated_weights(base, rng, scale * 0.45), "小步微调"
+    return mutated_weights(base, rng, scale), "常规探索"
+
+
+def classify_failure_reason(won: bool, hit_step_limit: bool, shortfall: int) -> str:
+    if won:
+        return "通关"
+    if hit_step_limit:
+        return "步数上限"
+    if shortfall > 0:
+        return "战力不足"
+    return "流程失败"
 
 
 def bridge_snapshot(client: BridgeClient) -> dict[str, Any]:
@@ -362,21 +450,32 @@ def choose_install_target(snapshot: dict[str, Any], weights: dict[str, float]) -
     return best[1], best[2]
 
 
-def play_run(client: BridgeClient, run_number: int, weights: dict[str, float], max_steps: int) -> RunResult:
+def play_run(
+    client: BridgeClient,
+    run_number: int,
+    weights: dict[str, float],
+    max_steps: int,
+    candidate_profile: str,
+) -> RunResult:
     start = time.time()
     client.command("start_run")
     decisions: list[str] = []
     last_snapshot = bridge_snapshot(client)
+    last_battle_snapshot: dict[str, Any] = {}
+    hit_step_limit = True
 
     for _step in range(max_steps):
         snapshot = bridge_snapshot(client)
         last_snapshot = snapshot
         run = snapshot.get("run", {})
         battle = snapshot.get("battle", {})
+        if isinstance(battle, dict) and "target_score" in battle:
+            last_battle_snapshot = battle
         flow_state = str(snapshot.get("flow_state", ""))
         view = str(snapshot.get("view", ""))
 
         if run.get("won") or run.get("lost") or flow_state in ("run_victory", "run_defeat"):
+            hit_step_limit = False
             break
 
         if run.get("pending_piece"):
@@ -431,6 +530,9 @@ def play_run(client: BridgeClient, run_number: int, weights: dict[str, float], m
 
     final = bridge_snapshot(client) or last_snapshot
     run = final.get("run", {})
+    final_battle_snapshot = final.get("battle", {})
+    if not isinstance(final_battle_snapshot, dict) or "target_score" not in final_battle_snapshot:
+        final_battle_snapshot = last_battle_snapshot
     battle = int(run.get("battle", 0))
     max_battles = int(run.get("max_battles", 24))
     won = bool(run.get("won", False))
@@ -439,6 +541,10 @@ def play_run(client: BridgeClient, run_number: int, weights: dict[str, float], m
     best_hand = int(run.get("best_hand_score", 0))
     hands = int(run.get("total_hands_scored", 0))
     installed = int(run.get("installed_piece_count", 0))
+    target_score = int(final_battle_snapshot.get("target_score", run.get("target_score", 0))) if final_battle_snapshot else 0
+    battle_score = int(final_battle_snapshot.get("total_score", 0)) if final_battle_snapshot else 0
+    shortfall = max(0, target_score - battle_score) if not won else 0
+    failure_reason = classify_failure_reason(won, hit_step_limit, shortfall)
     fitness = (
         battle * 10000.0
         + total_score * 0.05
@@ -460,6 +566,11 @@ def play_run(client: BridgeClient, run_number: int, weights: dict[str, float], m
         hands=hands,
         installed=installed,
         elapsed=time.time() - start,
+        candidate_profile=candidate_profile,
+        target_score=target_score,
+        battle_score=battle_score,
+        shortfall=shortfall,
+        failure_reason=failure_reason,
         decisions=decisions,
     )
 
@@ -476,30 +587,87 @@ def write_reports(report_dir: Path, results: list[RunResult], state: dict[str, A
     best_progress = max((result.battle for result in results), default=0)
     max_battles = max((result.max_battles for result in results), default=0)
     average_fitness = sum(result.fitness for result in results) / completed
+    average_elapsed = sum(result.elapsed for result in results) / completed
+    total_elapsed = sum(result.elapsed for result in results)
+    wins = sum(1 for result in results if result.won)
+    failures = [result for result in results if not result.won]
+    average_shortfall = sum(result.shortfall for result in failures) / max(1, len(failures))
     state_file_text = str(state.get("state_file", ""))
     last_seed = state.get("last_seed", "")
+    historical_best_source = str(state.get("historical_best_source", ""))
+    progress_counts: dict[int, int] = {}
+    reason_counts: dict[str, int] = {}
+    profile_counts: dict[str, int] = {}
+    for result in results:
+        progress_counts[result.battle] = progress_counts.get(result.battle, 0) + 1
+        reason = result.failure_reason or ("通关" if result.won else "未知")
+        reason_counts[reason] = reason_counts.get(reason, 0) + 1
+        profile = result.candidate_profile or "未知"
+        profile_counts[profile] = profile_counts.get(profile, 0) + 1
     lines = [
         "# 进化桥接游玩报告",
         "",
-        f"- 运行时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-        f"- 完成局数：{len(results)}",
-        f"- 通关局数：{sum(1 for result in results if result.won)} / {len(results)}",
-        f"- 平均推进：{average_progress:.2f} / {max_battles} 关（{average_progress_percent:.1f}%）",
-        f"- 最远推进：{best_progress} / {max_battles} 关",
-        f"- 平均适应度：{average_fitness:.2f}",
-        f"- 当前最佳适应度：{float(state.get('best_fitness', -1.0)):.2f}",
-        f"- 策略状态文件：`{state_file_text}`",
-        f"- 本批随机种子：`{last_seed}`",
+        "## 总览",
         "",
-        "| 局数 | 结果 | 推进 | 适应度 | 最佳单手 | 总结算战力 | 安装数 | 耗时 |",
-        "|---:|---|---:|---:|---:|---:|---:|---:|",
+        "| 指标 | 数值 |",
+        "|---|---:|",
+        f"| 运行时间 | {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} |",
+        f"| 完成局数 | {len(results)} |",
+        f"| 通关局数 | {wins} / {len(results)} |",
+        f"| 平均推进 | {average_progress:.2f} / {max_battles} 关（{average_progress_percent:.1f}%） |",
+        f"| 最远推进 | {best_progress} / {max_battles} 关 |",
+        f"| 平均适应度 | {average_fitness:.2f} |",
+        f"| 当前最佳适应度 | {float(state.get('best_fitness', -1.0)):.2f} |",
+        f"| 平均失败差额 | {average_shortfall:.1f} |",
+        f"| 总耗时 | {total_elapsed:.2f}s |",
+        f"| 平均耗时 | {average_elapsed:.2f}s |",
+        f"| 本批随机种子 | `{last_seed}` |",
+        f"| 策略状态文件 | `{state_file_text}` |",
     ]
+    if historical_best_source:
+        lines.append(f"| 历史最佳来源 | `{historical_best_source}` |")
+    lines.extend([
+        "",
+        "## 推进分布",
+        "",
+        "| 推进关数 | 局数 | 占比 |",
+        "|---:|---:|---:|",
+    ])
+    for progress in sorted(progress_counts):
+        count = progress_counts[progress]
+        lines.append(f"| {progress}/{max_battles} | {count} | {count / completed * 100.0:.1f}% |")
+    lines.extend([
+        "",
+        "## 失败原因",
+        "",
+        "| 原因 | 局数 | 占比 |",
+        "|---|---:|---:|",
+    ])
+    for reason, count in sorted(reason_counts.items(), key=lambda item: (-item[1], item[0])):
+        lines.append(f"| {reason} | {count} | {count / completed * 100.0:.1f}% |")
+    lines.extend([
+        "",
+        "## 策略类型",
+        "",
+        "| 类型 | 局数 | 占比 |",
+        "|---|---:|---:|",
+    ])
+    for profile, count in sorted(profile_counts.items(), key=lambda item: (-item[1], item[0])):
+        lines.append(f"| {profile} | {count} | {count / completed * 100.0:.1f}% |")
+    lines.extend([
+        "",
+        "## 每局摘要",
+        "",
+        "| 局数 | 结果 | 策略 | 推进 | 本关分数/目标 | 差额 | 适应度 | 最佳单手 | 总结算战力 | 安装数 | 耗时 |",
+        "|---:|---|---|---:|---:|---:|---:|---:|---:|---:|---:|",
+    ])
     for result in results:
         status = "通关" if result.won else "失败"
         lines.append(
-            f"| {result.run_number} | {status} | {result.battle}/{result.max_battles} | "
-            f"{result.fitness:.1f} | {result.best_hand} | {result.total_score} | "
-            f"{result.installed} | {result.elapsed:.2f}s |"
+            f"| {result.run_number} | {status} | {result.candidate_profile} | "
+            f"{result.battle}/{result.max_battles} | {result.battle_score}/{result.target_score} | "
+            f"{result.shortfall} | {result.fitness:.1f} | {result.best_hand} | "
+            f"{result.total_score} | {result.installed} | {result.elapsed:.2f}s |"
         )
     (report_dir / "summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
@@ -508,7 +676,11 @@ def write_reports(report_dir: Path, results: list[RunResult], state: dict[str, A
             f"# 第 {result.run_number:02d} 局",
             "",
             f"- 结果：{'通关' if result.won else '失败'}",
+            f"- 策略：{result.candidate_profile}",
             f"- 推进：{result.battle}/{result.max_battles}",
+            f"- 失败原因：{result.failure_reason}",
+            f"- 本关分数 / 目标：{result.battle_score} / {result.target_score}",
+            f"- 差额：{result.shortfall}",
             f"- 适应度：{result.fitness:.2f}",
             f"- 最佳单手：{result.best_hand}",
             f"- 总结算战力：{result.total_score}",
@@ -536,8 +708,11 @@ def main() -> int:
     report_dir = Path(args.report_dir) if args.report_dir else project / "reports" / f"evolving_bridge_playtest_{timestamp}"
     state_file = Path(args.state_file) if args.state_file else project / "reports" / "evolving_bridge_strategy_state.json"
     state = load_state(state_file)
+    imported_historical_best = merge_historical_best(state, project / "reports", state_file)
     state["state_file"] = str(state_file)
     state["last_seed"] = args.seed
+    if imported_historical_best:
+        save_state(state_file, state)
 
     process = launch_godot(args, project)
     client: BridgeClient | None = None
@@ -547,8 +722,25 @@ def main() -> int:
         for run_index in range(1, args.runs + 1):
             global_run_index = len(state.get("runs", [])) + 1
             base_weights = {key: float(value) for key, value in state.get("best_weights", DEFAULT_WEIGHTS).items()}
-            weights = mutated_weights(base_weights, rng, args.mutation_scale)
-            result = play_run(client, run_index, weights, args.max_steps)
+            weights, candidate_profile = candidate_weights(base_weights, rng, args.mutation_scale, run_index)
+            try:
+                result = play_run(client, run_index, weights, args.max_steps, candidate_profile)
+            except Exception as exc:  # noqa: BLE001 - keep long batches alive across bridge resets
+                if args.connect_only:
+                    raise
+                print(f"第 {run_index:02d} 局连接中断，重启 Godot 后重试：{exc}")
+                close_client_safely(client)
+                stop_process_safely(process)
+                process = launch_godot(args, project)
+                client = wait_for_bridge(args.port, args.startup_timeout)
+                try:
+                    result = play_run(client, run_index, weights, args.max_steps, candidate_profile)
+                except Exception as retry_exc:  # noqa: BLE001 - write partial report before exiting
+                    state["last_error"] = str(retry_exc)
+                    if results:
+                        write_reports(report_dir, results, state)
+                        print(f"运行中断，已保存部分报告：{report_dir}")
+                    raise
             results.append(result)
             if result.fitness >= float(state.get("best_fitness", -1.0)):
                 state["best_fitness"] = result.fitness
@@ -556,9 +748,14 @@ def main() -> int:
             state.setdefault("runs", []).append({
                 "run": global_run_index,
                 "batch_run": run_index,
+                "candidate_profile": result.candidate_profile,
                 "fitness": result.fitness,
                 "won": result.won,
                 "battle": result.battle,
+                "target_score": result.target_score,
+                "battle_score": result.battle_score,
+                "shortfall": result.shortfall,
+                "failure_reason": result.failure_reason,
                 "best_hand": result.best_hand,
                 "total_score": result.total_score,
                 "installed": result.installed,
@@ -567,25 +764,17 @@ def main() -> int:
             save_state(state_file, state)
             print(
                 f"第 {run_index:02d} 局：{'通关' if result.won else '失败'}，"
-                f"推进 {result.battle}/{result.max_battles}，适应度 {result.fitness:.1f}，"
+                f"{result.candidate_profile}，推进 {result.battle}/{result.max_battles}，"
+                f"差额 {result.shortfall}，适应度 {result.fitness:.1f}，"
                 f"耗时 {result.elapsed:.2f}s"
             )
         write_reports(report_dir, results, state)
         print(f"报告目录：{report_dir}")
         return 0
     finally:
-        if client is not None:
-            try:
-                client.command("set_input_lock", locked=False)
-            except Exception:
-                pass
-            client.close()
-        if process is not None and not args.keep_open:
-            process.terminate()
-            try:
-                process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                process.kill()
+        close_client_safely(client)
+        if not args.keep_open:
+            stop_process_safely(process)
 
 
 if __name__ == "__main__":
