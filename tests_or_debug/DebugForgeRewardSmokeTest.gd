@@ -32,10 +32,18 @@ func _init() -> void:
 	var full_pool := reward_generator.generate_forge_choices(99)
 	var pip_6 := _find_piece_by_id(full_pool, &"pip_6")
 	var red_6 := _find_piece_by_id(full_pool, &"red_6")
+	var blue_2 := _find_piece_by_id(full_pool, &"blue_2")
+	var gold_5 := _find_piece_by_id(full_pool, &"gold_5")
 	var burst_1 := _find_piece_by_id(full_pool, &"burst_1")
+	var burst_6 := _find_piece_by_id(full_pool, &"burst_6")
+	var stay_4 := _find_piece_by_id(full_pool, &"stay_4")
 	all_passed = _check("pip_6 forge piece exists", pip_6 != null) and all_passed
 	all_passed = _check("red_6 forge piece exists", red_6 != null) and all_passed
+	all_passed = _check("blue_2 forge piece exists", blue_2 != null) and all_passed
+	all_passed = _check("gold_5 forge piece exists", gold_5 != null) and all_passed
 	all_passed = _check("burst_1 forge piece exists", burst_1 != null) and all_passed
+	all_passed = _check("burst_6 forge piece exists", burst_6 != null) and all_passed
+	all_passed = _check("stay_4 forge piece exists", stay_4 != null) and all_passed
 
 	var forge_service := ForgeService.new()
 	if pip_6 != null:
@@ -52,6 +60,26 @@ func _init() -> void:
 		forge_service.apply_piece(burst_1, run_state.dice[2], 2)
 	var burst_face_ok := run_state.dice[2].faces[2].pip == 1 and run_state.dice[2].faces[2].ornament_id == &"orn_burst"
 	all_passed = _check("burst_1 sets pip and ornament", burst_face_ok) and all_passed
+
+	if blue_2 != null:
+		forge_service.apply_piece(blue_2, run_state.dice[5], 0)
+	var blue_2_face_ok := run_state.dice[5].faces[0].pip == 2 and run_state.dice[5].faces[0].mark_id == &"mark_blue"
+	all_passed = _check("blue_2 sets pip and mark", blue_2_face_ok) and all_passed
+
+	if gold_5 != null:
+		forge_service.apply_piece(gold_5, run_state.dice[5], 1)
+	var gold_5_face_ok := run_state.dice[5].faces[1].pip == 5 and run_state.dice[5].faces[1].mark_id == &"mark_gold"
+	all_passed = _check("gold_5 sets pip and mark", gold_5_face_ok) and all_passed
+
+	if burst_6 != null:
+		forge_service.apply_piece(burst_6, run_state.dice[5], 2)
+	var burst_6_face_ok := run_state.dice[5].faces[2].pip == 6 and run_state.dice[5].faces[2].ornament_id == &"orn_burst"
+	all_passed = _check("burst_6 sets pip and ornament", burst_6_face_ok) and all_passed
+
+	if stay_4 != null:
+		forge_service.apply_piece(stay_4, run_state.dice[5], 3)
+	var stay_4_face_ok := run_state.dice[5].faces[3].pip == 4 and run_state.dice[5].faces[3].ornament_id == &"orn_stay"
+	all_passed = _check("stay_4 sets pip and ornament", stay_4_face_ok) and all_passed
 
 	var slot_die := run_state.dice[3]
 	forge_service.apply_piece(_make_piece(&"slot_pip_6", [_make_int_op(ForgeOperationDef.OP_SET_PIP, 6)]), slot_die, 0)
@@ -79,7 +107,7 @@ func _init() -> void:
 
 	var forge_screen := ForgeInstallScreen.new()
 	forge_screen.setup(null, run_state, red_6)
-	all_passed = _check("normal face does not ask replace confirmation", not forge_screen._needs_replace_confirmation(5, 0)) and all_passed
+	all_passed = _check("normal face does not ask replace confirmation", not forge_screen._needs_replace_confirmation(5, 4)) and all_passed
 	all_passed = _check("visible forged face asks replace confirmation", forge_screen._needs_replace_confirmation(0, 0)) and all_passed
 	all_passed = _check("history-only forged face asks replace confirmation", forge_screen._needs_replace_confirmation(4, 5)) and all_passed
 	forge_screen.free()

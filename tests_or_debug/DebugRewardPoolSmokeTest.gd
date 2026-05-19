@@ -19,9 +19,12 @@ const LEGACY_IDS := [
 ]
 
 const EXPECTED_NORMAL_IDS := [
-	&"pip_6",
 	&"pip_1",
+	&"pip_2",
 	&"pip_3",
+	&"pip_4",
+	&"pip_5",
+	&"pip_6",
 	&"ornament_chip",
 	&"ornament_mult",
 	&"ornament_wild",
@@ -36,9 +39,30 @@ const EXPECTED_NORMAL_IDS := [
 	&"mark_red",
 	&"mark_blue",
 	&"mark_purple",
-	&"red_6",
-	&"burst_1",
-	&"stay_6",
+	&"mark_gold",
+	&"mark_white",
+]
+
+const COMPOSITE_PREFIXES := [
+	&"red",
+	&"blue",
+	&"purple",
+	&"gold",
+	&"burst",
+	&"stay",
+]
+
+const INTERNAL_TEXT_TOKENS := [
+	"red_",
+	"blue_",
+	"purple_",
+	"gold_",
+	"burst_",
+	"stay_",
+	"mark_",
+	"orn_",
+	"OP_SET",
+	"SET_",
 ]
 
 
@@ -65,6 +89,9 @@ func _init() -> void:
 	all_passed = _check("pool sample contains no legacy ids", not _has_any_piece(pool_sample, LEGACY_IDS)) and all_passed
 	for expected_id in EXPECTED_NORMAL_IDS:
 		all_passed = _check("pool contains %s" % [str(expected_id)], _has_piece(pool_sample, expected_id)) and all_passed
+	for expected_id in _expected_composite_ids():
+		all_passed = _check("pool contains %s" % [str(expected_id)], _has_piece(pool_sample, expected_id)) and all_passed
+	all_passed = _check("composite rewards have visible Chinese text", _composite_rewards_have_visible_text(pool_sample)) and all_passed
 
 	print("PASS: DebugRewardPoolSmokeTest" if all_passed else "FAIL: DebugRewardPoolSmokeTest")
 	print("--- DebugRewardPoolSmokeTest: end ---")
@@ -87,6 +114,13 @@ func _has_piece(choices: Array[ForgePieceDef], id: StringName) -> bool:
 	return false
 
 
+func _find_piece(choices: Array[ForgePieceDef], id: StringName) -> ForgePieceDef:
+	for choice in choices:
+		if choice != null and choice.id == id:
+			return choice
+	return null
+
+
 func _has_any_piece(choices: Array[ForgePieceDef], ids: Array) -> bool:
 	for id in ids:
 		if _has_piece(choices, id):
@@ -106,6 +140,28 @@ func _ids_text(choices: Array[ForgePieceDef]) -> String:
 	for choice in choices:
 		ids.append(str(choice.id if choice != null else &"null"))
 	return "[" + ", ".join(ids) + "]"
+
+
+func _expected_composite_ids() -> Array[StringName]:
+	var ids: Array[StringName] = []
+	for prefix in COMPOSITE_PREFIXES:
+		for pip in range(1, 7):
+			ids.append(StringName("%s_%d" % [str(prefix), pip]))
+	return ids
+
+
+func _composite_rewards_have_visible_text(choices: Array[ForgePieceDef]) -> bool:
+	for id in _expected_composite_ids():
+		var piece := _find_piece(choices, id)
+		if piece == null:
+			return false
+		var text := piece.get_display_text()
+		if text == "":
+			return false
+		for token in INTERNAL_TEXT_TOKENS:
+			if text.contains(str(token)):
+				return false
+	return true
 
 
 func _all_catalog_pieces_have_tags(generator: RewardGenerator) -> bool:

@@ -529,11 +529,29 @@ msgstr "Pip Plate: 1"
 msgid "FORGE_PART.PIP_1.DESC"
 msgstr "Change one face to 1 pip."
 
+msgid "FORGE_PART.PIP_2.NAME"
+msgstr "点数片：2"
+
+msgid "FORGE_PART.PIP_2.DESC"
+msgstr "将一个骰面改为 2 点。"
+
 msgid "FORGE_PART.PIP_3.NAME"
 msgstr "Pip Plate: 3"
 
 msgid "FORGE_PART.PIP_3.DESC"
 msgstr "Change one face to 3 pips."
+
+msgid "FORGE_PART.PIP_4.NAME"
+msgstr "点数片：4"
+
+msgid "FORGE_PART.PIP_4.DESC"
+msgstr "将一个骰面改为 4 点。"
+
+msgid "FORGE_PART.PIP_5.NAME"
+msgstr "点数片：5"
+
+msgid "FORGE_PART.PIP_5.DESC"
+msgstr "将一个骰面改为 5 点。"
 
 msgid "FORGE_PART.ORNAMENT_CHIP.NAME"
 msgstr "Chip Ornament"
@@ -702,6 +720,30 @@ msgstr "Stay 6"
 
 msgid "FORGE_PART.STAY_6.DESC"
 msgstr "Change one face to 6 pips and install a stay ornament."
+
+msgid "FORGE_PART.COMPOSITE_RED.DESC"
+msgstr "将一个骰面改为 %d 点，并安装红印。"
+
+msgid "FORGE_PART.COMPOSITE_BLUE.DESC"
+msgstr "将一个骰面改为 %d 点，并安装蓝印。"
+
+msgid "FORGE_PART.COMPOSITE_PURPLE.DESC"
+msgstr "将一个骰面改为 %d 点，并安装紫印。"
+
+msgid "FORGE_PART.COMPOSITE_GOLD.DESC"
+msgstr "将一个骰面改为 %d 点，并安装金印。"
+
+msgid "FORGE_PART.COMPOSITE_BURST.NAME_PREFIX"
+msgstr "爆裂"
+
+msgid "FORGE_PART.COMPOSITE_BURST.DESC"
+msgstr "将一个骰面改为 %d 点，并安装爆裂面饰。"
+
+msgid "FORGE_PART.COMPOSITE_STAY.NAME_PREFIX"
+msgstr "留场"
+
+msgid "FORGE_PART.COMPOSITE_STAY.DESC"
+msgstr "将一个骰面改为 %d 点，并安装留场面饰。"
 
 msgid "FORGE_PART.GLASS_1.NAME"
 msgstr "Low Glass"

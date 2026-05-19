@@ -15,9 +15,12 @@ const FoundryServiceCatalog = preload("res://scripts/rules/forge/FoundryServiceC
 
 
 const NORMAL_REWARD_POOL_IDS := [
-	&"pip_6",
 	&"pip_1",
+	&"pip_2",
 	&"pip_3",
+	&"pip_4",
+	&"pip_5",
+	&"pip_6",
 	&"ornament_chip",
 	&"ornament_mult",
 	&"ornament_wild",
@@ -34,8 +37,41 @@ const NORMAL_REWARD_POOL_IDS := [
 	&"mark_purple",
 	&"mark_gold",
 	&"mark_white",
+	&"red_1",
+	&"red_2",
+	&"red_3",
+	&"red_4",
+	&"red_5",
 	&"red_6",
+	&"blue_1",
+	&"blue_2",
+	&"blue_3",
+	&"blue_4",
+	&"blue_5",
+	&"blue_6",
+	&"purple_1",
+	&"purple_2",
+	&"purple_3",
+	&"purple_4",
+	&"purple_5",
+	&"purple_6",
+	&"gold_1",
+	&"gold_2",
+	&"gold_3",
+	&"gold_4",
+	&"gold_5",
+	&"gold_6",
 	&"burst_1",
+	&"burst_2",
+	&"burst_3",
+	&"burst_4",
+	&"burst_5",
+	&"burst_6",
+	&"stay_1",
+	&"stay_2",
+	&"stay_3",
+	&"stay_4",
+	&"stay_5",
 	&"stay_6",
 ]
 
@@ -208,7 +244,7 @@ func _has_direct_power_choice(choices: Array[ForgePieceDef]) -> bool:
 
 
 func _is_direct_power_piece(piece: ForgePieceDef) -> bool:
-	return piece != null and DIRECT_POWER_IDS.has(piece.id)
+	return piece != null and (DIRECT_POWER_IDS.has(piece.id) or _is_direct_power_composite_id(piece.id))
 
 
 func _build_reward_pool_for_battle(_battle_index: int) -> Array[ForgePieceDef]:
@@ -229,10 +265,13 @@ func _build_pool_from_ids(ids: Array) -> Array[ForgePieceDef]:
 
 
 func _build_piece_catalog() -> Dictionary:
-	return {
-		&"pip_6": _make_piece(&"pip_6", [_make_int_op(ForgeOperationDef.OP_SET_PIP, 6)], &"common", [&"six", &"power"]),
+	var catalog := {
 		&"pip_1": _make_piece(&"pip_1", [_make_int_op(ForgeOperationDef.OP_SET_PIP, 1)], &"common", [&"low"]),
+		&"pip_2": _make_piece(&"pip_2", [_make_int_op(ForgeOperationDef.OP_SET_PIP, 2)], &"common", [&"low", &"straight", &"even"]),
 		&"pip_3": _make_piece(&"pip_3", [_make_int_op(ForgeOperationDef.OP_SET_PIP, 3)], &"common", [&"straight", &"odd"]),
+		&"pip_4": _make_piece(&"pip_4", [_make_int_op(ForgeOperationDef.OP_SET_PIP, 4)], &"common", [&"low", &"straight", &"even"]),
+		&"pip_5": _make_piece(&"pip_5", [_make_int_op(ForgeOperationDef.OP_SET_PIP, 5)], &"common", [&"straight", &"odd"]),
+		&"pip_6": _make_piece(&"pip_6", [_make_int_op(ForgeOperationDef.OP_SET_PIP, 6)], &"common", [&"six", &"power"]),
 		&"ornament_chip": _make_piece(&"ornament_chip", [_make_id_op(ForgeOperationDef.OP_SET_ORNAMENT, &"orn_chip")], &"common", [&"ornament", &"stable", &"chips"]),
 		&"ornament_mult": _make_piece(&"ornament_mult", [_make_id_op(ForgeOperationDef.OP_SET_ORNAMENT, &"orn_mult")], &"common", [&"ornament", &"mult"]),
 		&"ornament_wild": _make_piece(&"ornament_wild", [_make_id_op(ForgeOperationDef.OP_SET_ORNAMENT, &"orn_wild")], &"uncommon", [&"ornament", &"straight", &"stable"]),
@@ -257,9 +296,6 @@ func _build_piece_catalog() -> Dictionary:
 		&"upgrade_combo_four_kind": _make_piece(&"upgrade_combo_four_kind", [_make_id_op(ForgeOperationDef.OP_COMBO_UPGRADE, &"four_kind")], &"common", [&"upgrade", &"stable"]),
 		&"upgrade_combo_straight": _make_piece(&"upgrade_combo_straight", [_make_id_op(ForgeOperationDef.OP_COMBO_UPGRADE, &"straight")], &"common", [&"upgrade", &"stable"]),
 		&"upgrade_combo_five_kind": _make_piece(&"upgrade_combo_five_kind", [_make_id_op(ForgeOperationDef.OP_COMBO_UPGRADE, &"five_kind")], &"common", [&"upgrade", &"stable"]),
-		&"red_6": _make_piece(&"red_6", [_make_int_op(ForgeOperationDef.OP_SET_PIP, 6), _make_id_op(ForgeOperationDef.OP_SET_MARK, &"mark_red")], &"common", [&"six", &"mark", &"extra_trigger", &"burst"]),
-		&"burst_1": _make_piece(&"burst_1", [_make_int_op(ForgeOperationDef.OP_SET_PIP, 1), _make_id_op(ForgeOperationDef.OP_SET_ORNAMENT, &"orn_burst")], &"common", [&"low", &"ornament", &"burst", &"xmult"]),
-		&"stay_6": _make_piece(&"stay_6", [_make_int_op(ForgeOperationDef.OP_SET_PIP, 6), _make_id_op(ForgeOperationDef.OP_SET_ORNAMENT, &"orn_stay")], &"common", [&"six", &"stay", &"ornament"]),
 		&"cleanse": _make_piece(&"cleanse", [_make_op(ForgeOperationDef.OP_CLEANSE)], &"common", [&"stable"]),
 
 		&"material_glass": _make_piece(&"material_glass", [_make_id_op(ForgeOperationDef.OP_SET_MATERIAL, &"glass")], &"common", [&"ornament", &"burst", &"xmult"]),
@@ -272,6 +308,62 @@ func _build_piece_catalog() -> Dictionary:
 		&"rune_even": _make_piece(&"rune_even", [_make_id_op(ForgeOperationDef.OP_SET_RUNE, &"even")], &"common", [&"even"]),
 		&"upgrade_1": _make_piece(&"upgrade_1", [_make_int_op(ForgeOperationDef.OP_UPGRADE, 1)], &"common", [&"stable"]),
 	}
+	_add_mark_pip_pieces(catalog, &"red", &"mark_red", &"common", [&"mark", &"extra_trigger", &"burst"])
+	_add_mark_pip_pieces(catalog, &"blue", &"mark_blue", &"common", [&"mark", &"stay", &"stable"])
+	_add_mark_pip_pieces(catalog, &"purple", &"mark_purple", &"common", [&"mark", &"reroll"])
+	_add_mark_pip_pieces(catalog, &"gold", &"mark_gold", &"uncommon", [&"mark", &"gold", &"stable"])
+	_add_ornament_pip_pieces(catalog, &"burst", &"orn_burst", &"common", [&"ornament", &"burst", &"xmult"])
+	_add_ornament_pip_pieces(catalog, &"stay", &"orn_stay", &"common", [&"ornament", &"stay", &"stable"])
+	return catalog
+
+
+func _add_mark_pip_pieces(catalog: Dictionary, id_prefix: StringName, mark_id: StringName, rarity: StringName, tags: Array) -> void:
+	for pip in range(1, 7):
+		var id := StringName("%s_%d" % [str(id_prefix), pip])
+		catalog[id] = _make_piece(id, [
+			_make_int_op(ForgeOperationDef.OP_SET_PIP, pip),
+			_make_id_op(ForgeOperationDef.OP_SET_MARK, mark_id),
+		], rarity, _merge_tags(_pip_tags(pip), tags))
+
+
+func _add_ornament_pip_pieces(catalog: Dictionary, id_prefix: StringName, ornament_id: StringName, rarity: StringName, tags: Array) -> void:
+	for pip in range(1, 7):
+		var id := StringName("%s_%d" % [str(id_prefix), pip])
+		catalog[id] = _make_piece(id, [
+			_make_int_op(ForgeOperationDef.OP_SET_PIP, pip),
+			_make_id_op(ForgeOperationDef.OP_SET_ORNAMENT, ornament_id),
+		], rarity, _merge_tags(_pip_tags(pip), tags))
+
+
+func _pip_tags(pip: int) -> Array[StringName]:
+	match pip:
+		1:
+			return [&"low"]
+		2:
+			return [&"low", &"straight", &"even"]
+		3:
+			return [&"straight", &"odd"]
+		4:
+			return [&"low", &"straight", &"even"]
+		5:
+			return [&"straight", &"odd"]
+		6:
+			return [&"six", &"power"]
+		_:
+			return []
+
+
+func _merge_tags(first: Array, second: Array) -> Array[StringName]:
+	var result: Array[StringName] = []
+	for tag in first:
+		var normalized := StringName(str(tag))
+		if normalized != &"" and not result.has(normalized):
+			result.append(normalized)
+	for tag in second:
+		var next_normalized := StringName(str(tag))
+		if next_normalized != &"" and not result.has(next_normalized):
+			result.append(next_normalized)
+	return result
 
 
 func _make_piece(id: StringName, ops: Array, rarity: StringName = &"common", tags: Array = []) -> ForgePieceDef:
@@ -294,18 +386,109 @@ func _make_piece(id: StringName, ops: Array, rarity: StringName = &"common", tag
 	return piece
 
 
+func _composite_display_name_for_id(id: StringName) -> String:
+	var parsed := _parse_pip_composite_id(id)
+	if parsed.is_empty():
+		return ""
+	var prefix_text := _composite_name_prefix(StringName(str(parsed.get("prefix", &""))))
+	if prefix_text == "":
+		return ""
+	return "%s %d" % [prefix_text, int(parsed.get("pip", 0))]
+
+
+func _composite_description_for_id(id: StringName) -> String:
+	var parsed := _parse_pip_composite_id(id)
+	if parsed.is_empty():
+		return ""
+	var pip := int(parsed.get("pip", 0))
+	match StringName(str(parsed.get("prefix", &""))):
+		&"red":
+			return str(TranslationServer.translate(&"FORGE_PART.COMPOSITE_RED.DESC")) % [pip]
+		&"blue":
+			return str(TranslationServer.translate(&"FORGE_PART.COMPOSITE_BLUE.DESC")) % [pip]
+		&"purple":
+			return str(TranslationServer.translate(&"FORGE_PART.COMPOSITE_PURPLE.DESC")) % [pip]
+		&"gold":
+			return str(TranslationServer.translate(&"FORGE_PART.COMPOSITE_GOLD.DESC")) % [pip]
+		&"burst":
+			return str(TranslationServer.translate(&"FORGE_PART.COMPOSITE_BURST.DESC")) % [pip]
+		&"stay":
+			return str(TranslationServer.translate(&"FORGE_PART.COMPOSITE_STAY.DESC")) % [pip]
+		_:
+			return ""
+
+
+func _composite_name_prefix(prefix: StringName) -> String:
+	match prefix:
+		&"red":
+			return str(TranslationServer.translate(&"AUTO.TEXT.79C2CA946E6B"))
+		&"blue":
+			return str(TranslationServer.translate(&"AUTO.TEXT.DF9F6D1541D3"))
+		&"purple":
+			return str(TranslationServer.translate(&"AUTO.TEXT.8EBB318D3D60"))
+		&"gold":
+			return str(TranslationServer.translate(&"AUTO.TEXT.C95B7D8DF883"))
+		&"burst":
+			return str(TranslationServer.translate(&"FORGE_PART.COMPOSITE_BURST.NAME_PREFIX"))
+		&"stay":
+			return str(TranslationServer.translate(&"FORGE_PART.COMPOSITE_STAY.NAME_PREFIX"))
+		_:
+			return ""
+
+
+func _is_direct_power_composite_id(id: StringName) -> bool:
+	var parsed := _parse_pip_composite_id(id)
+	if parsed.is_empty():
+		return false
+	var prefix := StringName(str(parsed.get("prefix", &"")))
+	var pip := int(parsed.get("pip", 0))
+	return pip == 6 or [&"red", &"gold", &"burst", &"stay"].has(prefix)
+
+
+func _parse_pip_composite_id(id: StringName) -> Dictionary:
+	var text := str(id)
+	var separator := text.rfind("_")
+	if separator <= 0 or separator >= text.length() - 1:
+		return {}
+	var prefix := text.substr(0, separator)
+	var suffix := text.substr(separator + 1)
+	if not suffix.is_valid_int():
+		return {}
+	var pip := int(suffix)
+	if pip < 1 or pip > 6:
+		return {}
+	match prefix:
+		"red", "blue", "purple", "gold", "burst", "stay":
+			return {
+				"prefix": StringName(prefix),
+				"pip": pip,
+			}
+		_:
+			return {}
+
+
 func _display_name_for_id(id: StringName) -> String:
 	var combo_item := ComboUpgradeItem.from_item_id(id)
 	if combo_item != null:
 		return combo_item.display_name
 
+	var composite_name := _composite_display_name_for_id(id)
+	if composite_name != "":
+		return composite_name
+
 	match id:
-		&"pip_6":
-			return str(TranslationServer.translate(&"AUTO.TEXT.C02DD5A6CE94"))
 		&"pip_1":
 			return str(TranslationServer.translate(&"AUTO.TEXT.D6015166CA43"))
+		&"pip_2":
+			return str(TranslationServer.translate(&"FORGE_PART.PIP_2.NAME"))
 		&"pip_3":
 			return str(TranslationServer.translate(&"AUTO.TEXT.5831FA30C96E"))
+		&"pip_4":
+			return str(TranslationServer.translate(&"FORGE_PART.PIP_4.NAME"))
+		&"pip_5":
+			return str(TranslationServer.translate(&"FORGE_PART.PIP_5.NAME"))
+		&"pip_6":
+			return str(TranslationServer.translate(&"AUTO.TEXT.C02DD5A6CE94"))
 		&"ornament_chip":
 			return str(TranslationServer.translate(&"AUTO.TEXT.117883B0EBE1"))
 		&"ornament_mult":
@@ -338,12 +521,8 @@ func _display_name_for_id(id: StringName) -> String:
 			return str(TranslationServer.translate(&"AUTO.TEXT.C95B7D8DF883"))
 		&"mark_white":
 			return str(TranslationServer.translate(&"AUTO.TEXT.2E1D574ED743"))
-		&"red_6":
-			return str(TranslationServer.translate(&"AUTO.TEXT.3EA7BBD5DA04"))
-		&"burst_1", &"glass_1":
+		&"glass_1":
 			return str(TranslationServer.translate(&"AUTO.TEXT.BC7DA19E882B"))
-		&"stay_6":
-			return str(TranslationServer.translate(&"AUTO.TEXT.712EB6CA9E9D"))
 		&"cleanse":
 			return str(TranslationServer.translate(&"AUTO.TEXT.16544158C110"))
 		&"rune_six", &"rune_straight", &"rune_pair", &"rune_odd", &"rune_even", &"upgrade_1":
@@ -365,13 +544,22 @@ func _description_for_id(id: StringName) -> String:
 		return str(TranslationServer.translate(&"AUTO.TEXT.48C725A7FD3F"))
 	if ComboUpgradeItem.from_item_id(id) != null:
 		return str(TranslationServer.translate(&"AUTO.TEXT.B147441759D4"))
+	var composite_description := _composite_description_for_id(id)
+	if composite_description != "":
+		return composite_description
 	match id:
-		&"pip_6":
-			return str(TranslationServer.translate(&"AUTO.TEXT.24E797AEACB8"))
 		&"pip_1":
 			return str(TranslationServer.translate(&"AUTO.TEXT.2A2DE5E19D26"))
+		&"pip_2":
+			return str(TranslationServer.translate(&"FORGE_PART.PIP_2.DESC"))
 		&"pip_3":
 			return str(TranslationServer.translate(&"AUTO.TEXT.BC90445D994E"))
+		&"pip_4":
+			return str(TranslationServer.translate(&"FORGE_PART.PIP_4.DESC"))
+		&"pip_5":
+			return str(TranslationServer.translate(&"FORGE_PART.PIP_5.DESC"))
+		&"pip_6":
+			return str(TranslationServer.translate(&"AUTO.TEXT.24E797AEACB8"))
 		&"ornament_chip":
 			return str(TranslationServer.translate(&"AUTO.TEXT.98262A372A55"))
 		&"ornament_mult":
@@ -406,12 +594,8 @@ func _description_for_id(id: StringName) -> String:
 			return str(TranslationServer.translate(&"AUTO.TEXT.DA4587CAAA98"))
 		&"upgrade_combo_scatter", &"upgrade_combo_pair", &"upgrade_combo_two_pair", &"upgrade_combo_three_kind", &"upgrade_combo_full_house", &"upgrade_combo_four_kind", &"upgrade_combo_straight", &"upgrade_combo_five_kind":
 			return str(TranslationServer.translate(&"AUTO.TEXT.B147441759D4"))
-		&"red_6":
-			return str(TranslationServer.translate(&"AUTO.TEXT.51F26FB0850B"))
-		&"burst_1", &"glass_1":
+		&"glass_1":
 			return str(TranslationServer.translate(&"AUTO.TEXT.3A3EE1B5AB90"))
-		&"stay_6":
-			return str(TranslationServer.translate(&"AUTO.TEXT.B3DE28F6E415"))
 		&"cleanse":
 			return str(TranslationServer.translate(&"AUTO.TEXT.8D4E7410F9F2"))
 		&"rune_six", &"rune_straight", &"rune_pair", &"rune_odd", &"rune_even", &"upgrade_1":
