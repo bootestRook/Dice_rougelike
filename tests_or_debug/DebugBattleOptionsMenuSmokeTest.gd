@@ -52,7 +52,7 @@ func _init() -> void:
 	if restart_button != null:
 		restart_button.pressed.emit()
 		await process_frame
-		all_passed = _check("restart starts a new battle flow", flow.current_state_id == &"battle" and flow.get_run_state() != null) and all_passed
+		all_passed = _check("restart starts a new run at map phase", flow.current_state_id == &"map" and flow.get_run_state() != null) and all_passed
 		all_passed = _check("restart unpauses the tree", not paused) and all_passed
 
 	await create_timer(0.2).timeout

@@ -9,10 +9,12 @@ const DEFAULT_MENU_ART = preload("res://scenes/main/resources/MainMenuArtConfig.
 
 
 const BATTLE_SCREEN_PATH := "res://scenes/battle/BattleScreen.tscn"
+const MapStageViewScript = preload("res://scripts/ui/map/MapStageView.gd")
 const FORGE_INSTALL_SCREEN_PATH := "res://scenes/forge/ForgeInstallScreen.tscn"
 const REWARD_SCREEN_PATH := "res://scenes/reward/RewardScreen.tscn"
 const RUN_RESULT_SCREEN_PATH := "res://scenes/run/RunResultScreen.tscn"
 const SHOP_SCREEN_PATH := "res://scenes/shop/ShopScreen.tscn"
+const GM_PHYSICS_DICE_TEST_SCREEN_PATH := "res://scenes/debug/GmPhysicsDiceTestScreen.tscn"
 
 
 @export var menu_art_config: MainMenuArtConfig = DEFAULT_MENU_ART
@@ -21,6 +23,12 @@ var game_flow_controller: GameFlowController = null
 var current_view_id: StringName = &""
 var automation_bridge: AutomationBridge = null
 var automation_input_shield: Control = null
+var run_stage_root: Control = null
+var main_stage_container: Control = null
+var run_stage_input_shield: Control = null
+var battle_stage_view: Control = null
+var map_stage_view: Control = null
+var battle_screen: Control = null
 
 
 func _ready() -> void:
@@ -32,6 +40,7 @@ func _ready() -> void:
 func _create_flow_controller() -> void:
 	game_flow_controller = GameFlowController.new()
 	add_child(game_flow_controller)
+	game_flow_controller.map_requested.connect(_on_map_requested)
 	game_flow_controller.battle_requested.connect(_on_battle_requested)
 	game_flow_controller.reward_requested.connect(_on_reward_requested)
 	game_flow_controller.forge_install_requested.connect(_on_forge_install_requested)
@@ -194,6 +203,18 @@ func _add_button_bar(root: Control, art: MainMenuArtConfig) -> void:
 		_on_start_battle_pressed
 	))
 	buttons.add_child(_make_art_button(
+		"GM物理投骰",
+		Vector2(320, art.start_button_size.y),
+		null,
+		null,
+		null,
+		Color(0.06, 0.48, 0.56, 0.94),
+		Color(0.08, 0.60, 0.70, 0.98),
+		Color(0.03, 0.33, 0.42, 0.98),
+		art,
+		_on_gm_physics_dice_test_pressed
+	))
+	buttons.add_child(_make_art_button(
 		str(TranslationServer.translate(&"AUTO.TEXT.FEECB1E6ADEC")),
 		art.exit_button_size,
 		art.exit_button_normal_texture,
@@ -340,22 +361,52 @@ func _on_start_battle_pressed() -> void:
 	game_flow_controller.start_new_run()
 
 
+func _on_gm_physics_dice_test_pressed() -> void:
+	current_view_id = &"gm_physics_dice_test"
+	_clear_screen()
+	var screen = load(GM_PHYSICS_DICE_TEST_SCREEN_PATH).instantiate()
+	if screen.has_method("setup"):
+		screen.call("setup", Callable(self, "_show_main_menu"))
+	add_child(screen)
+
+
 func _on_exit_pressed() -> void:
 	get_tree().quit()
 
 
 func _on_battle_requested(requested_run_state: RunState) -> void:
 	current_view_id = &"battle"
-	var existing_battle_screen := _current_battle_screen()
-	if existing_battle_screen != null:
-		if existing_battle_screen.has_method("start_battle_with_run_state"):
-			existing_battle_screen.call("start_battle_with_run_state", game_flow_controller, requested_run_state)
-			return
+	_ensure_run_stage(game_flow_controller.get_map_state() if game_flow_controller != null else {})
+	_ensure_battle_stage_screen(requested_run_state, true)
+	await _ensure_map_stage_view(game_flow_controller.get_map_state() if game_flow_controller != null else {})
+	if map_stage_view != null and map_stage_view.has_method("play_lower"):
+		_set_run_stage_input_locked(true)
+		await map_stage_view.call("play_lower")
+		_set_run_stage_input_locked(false)
+	elif map_stage_view != null:
+		map_stage_view.visible = false
+		_set_run_stage_input_locked(false)
+	if battle_screen != null and battle_screen.has_method("start_battle_with_run_state"):
+		battle_screen.call("start_battle_with_run_state", game_flow_controller, requested_run_state)
 
-	_clear_screen()
-	var battle_screen = load(BATTLE_SCREEN_PATH).instantiate()
-	battle_screen.setup(game_flow_controller, requested_run_state)
-	add_child(battle_screen)
+
+func _on_map_requested(map_state: Dictionary) -> void:
+	current_view_id = &"map"
+	_ensure_run_stage(map_state)
+	_ensure_battle_stage_screen(game_flow_controller.get_run_state() if game_flow_controller != null else null, true)
+	_prepare_battle_screen_for_map_stage()
+	await _ensure_map_stage_view(map_state)
+	_prepare_battle_screen_for_map_stage()
+	if map_stage_view != null:
+		if map_stage_view.has_method("setup"):
+			map_stage_view.call("setup", game_flow_controller, map_state)
+		if map_stage_view.has_method("play_raise"):
+			_set_run_stage_input_locked(true)
+			await map_stage_view.call("play_raise")
+			_set_run_stage_input_locked(false)
+		else:
+			map_stage_view.visible = true
+			_set_run_stage_input_locked(false)
 
 
 func _on_reward_requested(choices: Array) -> void:
@@ -407,17 +458,117 @@ func _on_flow_state_changed(state_id: StringName) -> void:
 		_show_main_menu()
 
 
+func _ensure_run_stage(map_state: Dictionary = {}) -> void:
+	if run_stage_root != null and is_instance_valid(run_stage_root):
+		return
+
+	_clear_screen()
+	run_stage_root = Control.new()
+	run_stage_root.name = "RunStageRoot"
+	run_stage_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(run_stage_root)
+
+	main_stage_container = Control.new()
+	main_stage_container.name = "MainStageContainer"
+	main_stage_container.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	run_stage_root.add_child(main_stage_container)
+
+	battle_stage_view = Control.new()
+	battle_stage_view.name = "BattleStageView"
+	battle_stage_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	main_stage_container.add_child(battle_stage_view)
+
+	_ensure_run_stage_input_shield()
+
+
+func _ensure_battle_stage_screen(requested_run_state: RunState, defer_start: bool = false) -> void:
+	if battle_stage_view == null or not is_instance_valid(battle_stage_view):
+		_ensure_run_stage(game_flow_controller.get_map_state() if game_flow_controller != null else {})
+
+	var existing_battle_screen := _current_battle_screen()
+	if existing_battle_screen != null:
+		battle_screen = existing_battle_screen
+		if not defer_start and existing_battle_screen.has_method("start_battle_with_run_state"):
+			existing_battle_screen.call("start_battle_with_run_state", game_flow_controller, requested_run_state)
+		return
+
+	battle_screen = load(BATTLE_SCREEN_PATH).instantiate() as Control
+	battle_screen.setup(game_flow_controller, requested_run_state, defer_start)
+	battle_stage_view.add_child(battle_screen)
+
+
+func _ensure_map_stage_view(map_state: Dictionary = {}) -> void:
+	if battle_screen == null or not is_instance_valid(battle_screen):
+		return
+	if not battle_screen.is_node_ready():
+		await battle_screen.ready
+	if map_stage_view == null or not is_instance_valid(map_stage_view):
+		map_stage_view = MapStageViewScript.new() as Control
+		map_stage_view.name = "MapStageView"
+	if map_stage_view.has_method("setup"):
+		map_stage_view.call("setup", game_flow_controller, map_state)
+	if map_stage_view.has_signal("interaction_lock_changed") and not map_stage_view.is_connected("interaction_lock_changed", Callable(self, "_on_map_interaction_lock_changed")):
+		map_stage_view.connect("interaction_lock_changed", Callable(self, "_on_map_interaction_lock_changed"))
+	if battle_screen.has_method("attach_map_stage_view"):
+		battle_screen.call("attach_map_stage_view", map_stage_view)
+
+
+func _ensure_run_stage_input_shield() -> void:
+	if run_stage_root == null or not is_instance_valid(run_stage_root):
+		return
+	if run_stage_input_shield != null and is_instance_valid(run_stage_input_shield):
+		return
+	run_stage_input_shield = Control.new()
+	run_stage_input_shield.name = "RunStageInputShield"
+	run_stage_input_shield.mouse_filter = Control.MOUSE_FILTER_STOP
+	run_stage_input_shield.z_index = 4090
+	run_stage_input_shield.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	run_stage_input_shield.visible = false
+	run_stage_root.add_child(run_stage_input_shield)
+
+
+func _set_run_stage_input_locked(locked: bool) -> void:
+	_ensure_run_stage_input_shield()
+	if run_stage_input_shield != null and is_instance_valid(run_stage_input_shield):
+		run_stage_input_shield.visible = locked
+
+
+func _on_map_interaction_lock_changed(locked: bool) -> void:
+	_set_run_stage_input_locked(locked)
+
+
+func _prepare_battle_screen_for_map_stage() -> void:
+	var existing_battle_screen := _current_battle_screen()
+	if existing_battle_screen != null and existing_battle_screen.has_method("prepare_for_map_stage"):
+		existing_battle_screen.call("prepare_for_map_stage")
+
+
 func _clear_screen() -> void:
 	for child in get_children():
 		if child != game_flow_controller and child != automation_bridge and child != automation_input_shield:
 			remove_child(child)
 			child.queue_free()
+	run_stage_root = null
+	main_stage_container = null
+	run_stage_input_shield = null
+	battle_stage_view = null
+	map_stage_view = null
+	battle_screen = null
 
 
 func _current_battle_screen() -> Control:
-	for child in get_children():
+	if battle_screen != null and is_instance_valid(battle_screen):
+		return battle_screen
+	return _find_battle_screen(self)
+
+
+func _find_battle_screen(root_node: Node) -> Control:
+	for child in root_node.get_children():
 		if child is Control and child.has_method("start_battle_with_run_state") and child.has_method("show_reward_choices"):
 			return child as Control
+		var nested := _find_battle_screen(child)
+		if nested != null:
+			return nested
 	return null
 
 
@@ -518,6 +669,8 @@ func automation_get_snapshot() -> Dictionary:
 	var battle_screen := _current_battle_screen()
 	if battle_screen != null and battle_screen.has_method("automation_get_snapshot"):
 		snapshot["battle"] = battle_screen.call("automation_get_snapshot")
+	if map_stage_view != null and is_instance_valid(map_stage_view) and map_stage_view.has_method("automation_get_snapshot"):
+		snapshot["map"] = map_stage_view.call("automation_get_snapshot")
 	return snapshot
 
 
@@ -600,7 +753,11 @@ func _automation_run_snapshot(state: RunState) -> Dictionary:
 		})
 	return {
 		"battle": state.battle_index + 1,
+		"circle": state.get_circle_number(),
+		"max_circles": state.max_circles,
 		"max_battles": state.max_battles,
+		"circle_action_count": state.current_circle_action_count,
+		"danger_bonus_percent": state.get_danger_bonus_percent(),
 		"target_score": state.get_target_score(),
 		"is_boss": state.is_boss_battle(),
 		"is_final": state.is_final_battle(),

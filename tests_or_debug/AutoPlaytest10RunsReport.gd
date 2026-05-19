@@ -84,6 +84,8 @@ func _play_run(run_number: int, run_seed: int) -> Dictionary:
 
 	while not run_state.run_won and not run_state.run_lost:
 		_use_available_items(run_state, item_use_records)
+		run_state.set_current_encounter_node_type(&"boss")
+		run_state.current_circle_action_count = 5
 		var battle_record := _play_battle(run_state, run_seed + run_state.battle_index * 100, lines)
 		battle_records.append(battle_record)
 

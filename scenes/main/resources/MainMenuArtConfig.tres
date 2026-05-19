@@ -6,5 +6,5 @@
 [resource]
 script = ExtResource("1_config_script")
 background_texture = ExtResource("2_background")
-title_text = "Dice King"
-version_text = "1.0.0-FULL"
+title_text = "骰王远征"
+version_text = "原型 1.0.0"

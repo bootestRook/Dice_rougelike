@@ -24,8 +24,12 @@ var pending_reroll_target: int = -1
 var pending_money_target: int = -1
 var reroll_feedback_id: int = 0
 var money_feedback_id: int = 0
+var circle_base_score_target: int = -1
+var circle_base_score_display: int = -1
+var circle_base_score_feedback_id: int = 0
 var hand_count_tween: Tween = null
 var money_count_tween: Tween = null
+var circle_base_score_tween: Tween = null
 var victory_target_tween: Tween = null
 var victory_target_layer: Control = null
 var victory_target_label: Label = null
@@ -51,6 +55,7 @@ var combo_header_frame: Control = null
 @onready var battle_progress_row: HBoxContainer = $SidebarMargin/Rows/BottomRow/BattleResourcePanel/ResourceMargin/ResourceRows/BattleProgressRow
 @onready var battle_stat_panel: PanelContainer = %BattleStatPanel
 @onready var max_battle_stat_panel: PanelContainer = %MaxBattleStatPanel
+@onready var battle_title: Label = %BattleTitle
 @onready var current_title: Label = %CurrentTitle
 @onready var combo_title: Label = %ComboTitle
 @onready var formula_title: Label = %FormulaTitle
@@ -124,8 +129,11 @@ func render(state: BattleHudState) -> void:
 	_set_formula_text(state)
 	_set_hand_counter_text(state.current_hand, state.max_hands)
 	_set_reroll_text(state.rerolls_left, hand_changed_for_refresh)
-	battle_value.text = "1"
-	max_battle_value.text = str(maxi(1, state.battle_number))
+	if battle_title != null:
+		battle_title.text = "基础分"
+		_apply_single_line_label(battle_title)
+	_set_circle_base_score_text(maxi(0, state.circle_base_score))
+	max_battle_value.text = "%d/%d" % [maxi(1, state.battle_number), maxi(1, state.max_battles)]
 	_set_money_text(state.money)
 	info_button.disabled = state.controls_locked
 	options_button.disabled = state.controls_locked
@@ -239,8 +247,12 @@ func _apply_normal_target_display(state: BattleHudState) -> void:
 		_apply_target_value_layout()
 		call_deferred("_fit_target_value_font_size")
 	if reward_label != null:
-		reward_label.visible = true
-		reward_label.text = str(TranslationServer.translate(&"AUTO.TEXT.2091A36B7297")) % [state.reward_level]
+		if state.circle_base_score > 0:
+			reward_label.visible = false
+			reward_label.text = ""
+		else:
+			reward_label.visible = true
+			reward_label.text = str(TranslationServer.translate(&"AUTO.TEXT.2091A36B7297")) % [state.reward_level]
 
 
 func _apply_victory_target_display() -> void:
@@ -644,6 +656,53 @@ func _set_reroll_text(rerolls: int, hand_refreshed: bool = false) -> void:
 		return
 	reroll_value.text = str(rerolls)
 	last_rendered_rerolls = rerolls
+
+
+func _set_circle_base_score_text(target_score: int) -> void:
+	if battle_value == null:
+		return
+	if circle_base_score_target < 0:
+		circle_base_score_target = target_score
+		circle_base_score_display = target_score
+		battle_value.text = _format_number(target_score)
+		return
+	if target_score == circle_base_score_target:
+		return
+
+	circle_base_score_feedback_id += 1
+	if circle_base_score_tween != null and circle_base_score_tween.is_valid():
+		circle_base_score_tween.kill()
+	var start_score := circle_base_score_display if circle_base_score_display >= 0 else circle_base_score_target
+	circle_base_score_target = target_score
+	_play_circle_base_score_count(start_score, target_score, circle_base_score_feedback_id)
+
+
+func _play_circle_base_score_count(start_score: int, target_score: int, feedback_id: int) -> void:
+	if battle_value == null:
+		return
+	if start_score == target_score:
+		_set_circle_base_score_display_value(float(target_score))
+		return
+	var distance := absi(target_score - start_score)
+	var duration: float = clampf(0.24 + float(distance) / 900.0, 0.28, 0.72)
+	circle_base_score_tween = create_tween()
+	circle_base_score_tween.tween_method(
+		Callable(self, "_set_circle_base_score_display_value"),
+		float(start_score),
+		float(target_score),
+		duration
+	).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	await circle_base_score_tween.finished
+	if feedback_id != circle_base_score_feedback_id:
+		return
+	_set_circle_base_score_display_value(float(target_score))
+
+
+func _set_circle_base_score_display_value(value: float) -> void:
+	if battle_value == null:
+		return
+	circle_base_score_display = roundi(value)
+	battle_value.text = _format_number(circle_base_score_display)
 
 
 func _play_money_decrease(amount: int, target_money: int, feedback_id: int) -> void:

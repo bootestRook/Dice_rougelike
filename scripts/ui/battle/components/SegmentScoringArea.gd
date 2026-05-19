@@ -8,9 +8,13 @@ const BattleUiStyleConfig = preload("res://scripts/ui/battle/resources/BattleUiS
 const BattleIconLibrary = preload("res://scripts/ui/battle/resources/BattleIconLibrary.gd")
 const DiceVisualLibrary = preload("res://scripts/ui/battle/resources/DiceVisualLibrary.gd")
 const RichTextHighlighter = preload("res://scripts/ui/RichTextHighlighter.gd")
+const DisplayNames = preload("res://scripts/ui/DisplayNames.gd")
+const FaceState = preload("res://scripts/core/dice/FaceState.gd")
 
 
 signal reward_choice_pressed(choice)
+signal reward_ornament_link_requested(id: StringName)
+signal reward_mark_link_requested(id: StringName)
 
 
 var style_config: BattleUiStyleConfig = null
@@ -234,6 +238,11 @@ func _make_reward_rich_label(text: String, font_size: int, color: Color) -> Rich
 		RichTextHighlighter.setup_rich_label(label, text, font_size, color, style_config.font)
 	else:
 		RichTextHighlighter.setup_rich_label(label, text, font_size, color)
+	label.text = _reward_text_to_bbcode(text)
+	if _reward_text_has_info_link(text):
+		label.mouse_filter = Control.MOUSE_FILTER_STOP
+		label.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		label.meta_clicked.connect(_on_reward_info_meta_clicked)
 	return label
 
 
@@ -284,6 +293,120 @@ func _make_reward_card_style() -> StyleBoxFlat:
 	style.shadow_size = 16
 	style.shadow_offset = Vector2(0.0, 6.0)
 	return style
+
+
+func _reward_text_to_bbcode(text: String) -> String:
+	var keywords := _reward_info_keywords()
+	var result := PackedStringArray()
+	var index := 0
+	while index < text.length():
+		var keyword := _reward_info_keyword_at(text, index, keywords)
+		if not keyword.is_empty():
+			result.append(_reward_info_link_bbcode(keyword))
+			index += str(keyword["name"]).length()
+			continue
+
+		var next_index := index + 1
+		while next_index < text.length() and _reward_info_keyword_at(text, next_index, keywords).is_empty():
+			next_index += 1
+		result.append(RichTextHighlighter.score_text_to_bbcode(text.substr(index, next_index - index)))
+		index = next_index
+	return "".join(result)
+
+
+func _reward_text_has_info_link(text: String) -> bool:
+	var keywords := _reward_info_keywords()
+	for index in range(text.length()):
+		if not _reward_info_keyword_at(text, index, keywords).is_empty():
+			return true
+	return false
+
+
+func _reward_info_keyword_at(text: String, index: int, keywords: Array[Dictionary]) -> Dictionary:
+	for keyword in keywords:
+		var name := str(keyword["name"])
+		if name == "" or index + name.length() > text.length():
+			continue
+		if text.substr(index, name.length()) == name:
+			return keyword
+	return {}
+
+
+func _reward_info_keywords() -> Array[Dictionary]:
+	var keywords: Array[Dictionary] = []
+	for id in _reward_ornament_ids():
+		_append_reward_info_keyword(keywords, &"ornament", id, DisplayNames.ornament_name(id))
+	for id in _reward_mark_ids():
+		_append_reward_info_keyword(keywords, &"mark", id, DisplayNames.mark_name(id))
+	keywords.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return str(a["name"]).length() > str(b["name"]).length()
+	)
+	return keywords
+
+
+func _append_reward_info_keyword(keywords: Array[Dictionary], kind: StringName, id: StringName, display_name: String) -> void:
+	if display_name == "" or display_name == str(TranslationServer.translate(&"AUTO.TEXT.72077749F794")):
+		return
+	for keyword in keywords:
+		if str(keyword["name"]) == display_name and StringName(str(keyword["kind"])) == kind:
+			return
+	keywords.append({
+		"kind": kind,
+		"id": id,
+		"name": display_name,
+	})
+
+
+func _reward_ornament_ids() -> Array[StringName]:
+	return [
+		FaceState.ORN_CHIP,
+		FaceState.ORN_MULT,
+		FaceState.ORN_WILD,
+		FaceState.ORN_BURST,
+		FaceState.ORN_STAY,
+		FaceState.ORN_STONE,
+		FaceState.ORN_GOLD,
+		FaceState.ORN_LUCKY,
+		FaceState.ORN_FOIL,
+		FaceState.ORN_HOLO,
+		FaceState.ORN_POLY,
+	]
+
+
+func _reward_mark_ids() -> Array[StringName]:
+	return [
+		FaceState.MARK_RED,
+		FaceState.MARK_BLUE,
+		FaceState.MARK_PURPLE,
+		FaceState.MARK_GOLD,
+		FaceState.MARK_WHITE,
+		&"black",
+	]
+
+
+func _reward_info_link_bbcode(keyword: Dictionary) -> String:
+	var kind := StringName(str(keyword["kind"]))
+	var id := StringName(str(keyword["id"]))
+	var display_name := str(keyword["name"])
+	var color := style_config.info_link_text_color.to_html(false) if style_config != null else "ff9300"
+	return "[url=%s:%s][u][color=#%s]%s[/color][/u][/url]" % [
+		str(kind),
+		str(id),
+		color,
+		_escape_bbcode(display_name),
+	]
+
+
+func _on_reward_info_meta_clicked(meta) -> void:
+	var text := str(meta)
+	if text.begins_with("ornament:"):
+		reward_ornament_link_requested.emit(StringName(text.trim_prefix("ornament:")))
+	elif text.begins_with("mark:"):
+		reward_mark_link_requested.emit(StringName(text.trim_prefix("mark:")))
+
+
+func _escape_bbcode(text: String) -> String:
+	return text.replace("[", "\\[").replace("]", "\\]")
 
 
 func _ensure_round_marker() -> void:
@@ -387,13 +510,7 @@ func _set_round_marker_text(current_hand: int) -> void:
 func _stage_status_text(state: BattleHudState) -> String:
 	if state == null:
 		return ""
-	if state.max_selected_dice <= 0:
-		return state.status_text
-	var selected_text := str(TranslationServer.translate(&"AUTO.TEXT.34EB0A73B9C4")) % [
-		state.selected_dice_indices.size(),
-		state.max_selected_dice,
-	]
-	return "" if state.status_text == selected_text else state.status_text
+	return "行动 %d次" % [maxi(0, state.circle_action_count)]
 
 
 func _render_log(lines: Array[String]) -> void:

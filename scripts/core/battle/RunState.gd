@@ -21,6 +21,29 @@ const DiceToolCatalog = preload("res://scripts/rules/dice_tools/DiceToolCatalog.
 const MAX_RECENT_SETTLEMENT_LOGS := 5
 const DEFAULT_ITEM_SLOT_CAPACITY := 3
 const DEFAULT_DICE_TOOL_CAPACITY := 3
+const ENCOUNTER_BATTLE := &"battle"
+const ENCOUNTER_ELITE := &"elite"
+const ENCOUNTER_BOSS := &"boss"
+const ENCOUNTER_TYPE_MULTIPLIERS := {
+	ENCOUNTER_BATTLE: 1.0,
+	ENCOUNTER_ELITE: 1.5,
+	ENCOUNTER_BOSS: 2.0,
+}
+const DANGER_BONUS_PERCENTS := [
+	0,
+	0,
+	2,
+	4,
+	7,
+	10,
+	15,
+	21,
+	28,
+	36,
+	45,
+	55,
+	65,
+]
 
 
 var dice: Array[DieState] = []
@@ -37,34 +60,23 @@ var battle_index: int = 0
 var current_battle: BattleState = null
 var last_reward_choices: Array[ForgePieceDef] = []
 var pending_forge_piece: ForgePieceDef = null
-var max_battles: int = 24
-var target_scores: Array[int] = [
+var max_circles: int = 8
+var current_circle_index: int = 0
+var current_circle_action_count: int = 0
+var current_encounter_node_type: StringName = ENCOUNTER_BATTLE
+var max_battles: int = 8
+var circle_base_scores: Array[int] = [
 	300,
-	450,
-	600,
-	800,
-	1200,
-	1600,
-	2000,
-	3000,
-	4000,
-	5000,
-	7500,
-	10000,
-	11000,
-	16500,
-	22000,
-	20000,
-	30000,
-	40000,
-	35000,
-	52500,
-	70000,
-	50000,
-	75000,
-	100000,
+	500,
+	750,
+	1000,
+	1500,
+	2200,
+	3200,
+	4500,
 ]
-var boss_battle_numbers: Array[int] = [3, 6, 9, 12, 15, 18, 21, 24]
+var target_scores: Array[int] = []
+var boss_battle_numbers: Array[int] = []
 var run_won: bool = false
 var run_lost: bool = false
 var total_hands_scored: int = 0
@@ -109,6 +121,11 @@ func _init() -> void:
 
 func setup_new_run() -> void:
 	battle_index = 0
+	current_circle_index = 0
+	current_circle_action_count = 0
+	current_encounter_node_type = ENCOUNTER_BATTLE
+	max_battles = max_circles
+	target_scores = circle_base_scores
 	current_battle = null
 	last_reward_choices.clear()
 	pending_forge_piece = null
@@ -183,16 +200,94 @@ func get_total_face_count() -> int:
 
 
 func advance_battle() -> void:
+	var completed_node_type := current_encounter_node_type
 	battle_index += 1
 	current_battle = null
+	if completed_node_type == ENCOUNTER_BOSS:
+		advance_circle_after_boss()
+	current_encounter_node_type = ENCOUNTER_BATTLE
 
 
-func get_target_score() -> int:
-	if target_scores.is_empty():
+func advance_circle_after_boss() -> void:
+	if current_circle_index < maxi(0, max_circles - 1):
+		current_circle_index += 1
+	reset_circle_pressure()
+
+
+func reset_circle_pressure() -> void:
+	current_circle_action_count = 0
+
+
+func record_map_movement_action() -> void:
+	current_circle_action_count += 1
+
+
+func set_current_encounter_node_type(node_type: StringName) -> void:
+	current_encounter_node_type = normalized_encounter_node_type(node_type)
+
+
+func normalized_encounter_node_type(node_type: StringName) -> StringName:
+	match node_type:
+		ENCOUNTER_ELITE:
+			return ENCOUNTER_ELITE
+		ENCOUNTER_BOSS:
+			return ENCOUNTER_BOSS
+		_:
+			return ENCOUNTER_BATTLE
+
+
+func get_circle_number() -> int:
+	return current_circle_index + 1
+
+
+func get_current_circle_base_score() -> int:
+	if circle_base_scores.is_empty():
 		return 850
 
-	var index: int = clampi(battle_index, 0, target_scores.size() - 1)
-	return target_scores[index]
+	var index: int = clampi(current_circle_index, 0, circle_base_scores.size() - 1)
+	return circle_base_scores[index]
+
+
+func get_current_circle_adjusted_base_score(action_count: int = -1) -> int:
+	return int(round(float(get_current_circle_base_score()) * get_danger_multiplier(action_count)))
+
+
+func get_danger_bonus_percent(action_count: int = -1) -> int:
+	var resolved_count := current_circle_action_count if action_count < 0 else action_count
+	if resolved_count <= 0:
+		return 0
+	var index := mini(resolved_count, DANGER_BONUS_PERCENTS.size() - 1)
+	return int(DANGER_BONUS_PERCENTS[index])
+
+
+func get_danger_multiplier(action_count: int = -1) -> float:
+	return 1.0 + float(get_danger_bonus_percent(action_count)) / 100.0
+
+
+func get_encounter_type_multiplier(node_type: StringName = &"") -> float:
+	var resolved_type := current_encounter_node_type if node_type == &"" else normalized_encounter_node_type(node_type)
+	return float(ENCOUNTER_TYPE_MULTIPLIERS.get(resolved_type, 1.0))
+
+
+func get_target_score(node_type: StringName = &"") -> int:
+	var base_score := get_current_circle_base_score()
+	var multiplier := get_encounter_type_multiplier(node_type)
+	var danger_multiplier := get_danger_multiplier()
+	return int(round(float(base_score) * multiplier * danger_multiplier))
+
+
+func get_target_breakdown(node_type: StringName = &"") -> Dictionary:
+	var resolved_type := current_encounter_node_type if node_type == &"" else normalized_encounter_node_type(node_type)
+	return {
+		"circle": get_circle_number(),
+		"base_score": get_current_circle_base_score(),
+		"encounter_type": resolved_type,
+		"encounter_multiplier": get_encounter_type_multiplier(resolved_type),
+		"action_count": current_circle_action_count,
+		"danger_bonus_percent": get_danger_bonus_percent(),
+		"danger_multiplier": get_danger_multiplier(),
+		"target_score": get_target_score(resolved_type),
+	}
 
 
 func has_free_item_slot() -> bool:
@@ -346,11 +441,11 @@ func install_dice_tool_item(item_id: StringName) -> bool:
 
 
 func is_final_battle() -> bool:
-	return battle_index >= max_battles - 1
+	return is_boss_battle() and current_circle_index >= max_circles - 1
 
 
 func is_boss_battle() -> bool:
-	return boss_battle_numbers.has(battle_index + 1)
+	return current_encounter_node_type == ENCOUNTER_BOSS
 
 
 func mark_run_won() -> void:
@@ -502,8 +597,9 @@ func has_installed_piece_on_face(die_index: int, face_index: int) -> bool:
 
 func get_run_summary_text() -> String:
 	var lines := PackedStringArray()
-	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.799A766B4D0D")) % [min(battle_index + (1 if run_won else 0), max_battles), max_battles])
-	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.CDE75A9B4341")) % [battle_index + 1])
+	lines.append("当前圈数：%d / %d" % [min(get_circle_number() + (1 if run_won else 0), max_circles), max_circles])
+	lines.append("已完成战斗：%d" % [battle_index])
+	lines.append("本圈行动：%d 次，危急值：+%d%%" % [current_circle_action_count, get_danger_bonus_percent()])
 	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.AAD002B83E9D")) % [total_hands_scored])
 	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.2444EE1FC9E1")) % [total_score_scored])
 	lines.append(str(TranslationServer.translate(&"AUTO.TEXT.F31F59CBCB2C")) % [best_hand_score])

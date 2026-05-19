@@ -15,7 +15,8 @@ func _init() -> void:
 
 	var run_state := RunState.new()
 	run_state.setup_new_run()
-	run_state.battle_index = 2
+	run_state.current_circle_index = 2
+	run_state.current_circle_action_count = 5
 
 	var scene := load("res://scenes/battle/BattleScreen.tscn")
 	var battle_screen = scene.instantiate()
@@ -36,11 +37,15 @@ func _init() -> void:
 	var mult_value := _find_node_by_name(battle_screen, "FormulaMultValue") as Label
 	var x_label := _find_node_by_name(battle_screen, "FormulaXLabel") as Label
 	var target_value := _find_node_by_name(battle_screen, "TargetValue") as Label
+	var reward_label := _find_node_by_name(battle_screen, "RewardLabel") as Label
+	var battle_title := _find_node_by_name(battle_screen, "BattleTitle") as Label
+	var battle_value := _find_node_by_name(battle_screen, "BattleValue") as Label
+	var status_label := _find_node_by_name(battle_screen, "StatusLabel") as Label
 	var chips_texture := _find_node_by_name(battle_screen, "FormulaChipsTexture") as TextureRect
 	var mult_texture := _find_node_by_name(battle_screen, "FormulaMultTexture") as TextureRect
 	var max_battle_value := _find_node_by_name(battle_screen, "MaxBattleValue") as Label
 	var left_sidebar = battle_screen.get("left_sidebar")
-	all_passed = _check("sidebar nodes exist", formula_panel != null and resource_panel != null and formula_value != null and formula_badges != null and chips_badge != null and mult_badge != null and chips_value != null and mult_value != null and x_label != null and target_value != null and max_battle_value != null and left_sidebar != null) and all_passed
+	all_passed = _check("sidebar nodes exist", formula_panel != null and resource_panel != null and formula_value != null and formula_badges != null and chips_badge != null and mult_badge != null and chips_value != null and mult_value != null and x_label != null and target_value != null and reward_label != null and battle_title != null and battle_value != null and status_label != null and max_battle_value != null and left_sidebar != null) and all_passed
 
 	var base_formula_height := formula_panel.size.y
 	var base_resource_y := resource_panel.global_position.y
@@ -65,7 +70,11 @@ func _init() -> void:
 	all_passed = _check("formula separator stays inside formula panel", _rect_contains(formula_panel.get_global_rect(), x_label.get_global_rect(), 1.0)) and all_passed
 	all_passed = _check("target score value is visible", target_value.visible and target_value.text != "" and target_value.size.y >= 50.0) and all_passed
 	all_passed = _check("target score value stays inside target panel", _rect_contains((_find_node_by_name(battle_screen, "TargetScorePanel") as Control).get_global_rect(), target_value.get_global_rect(), 1.0)) and all_passed
-	all_passed = _check("stage value follows battle index", max_battle_value.text == "3") and all_passed
+	all_passed = _check("target panel no longer shows circle base score", (not reward_label.visible or reward_label.text == "") and not reward_label.text.contains("基础分")) and all_passed
+	all_passed = _check("sidebar former danger slot shows adjusted base score", battle_title.text == "基础分" and battle_title.autowrap_mode == TextServer.AUTOWRAP_OFF and battle_value.text == "825") and all_passed
+	all_passed = _check("sidebar former danger slot omits map action count and danger", not battle_value.text.contains("次") and not battle_value.text.contains("%")) and all_passed
+	all_passed = _check("stage status shows action count", status_label.text == "行动 5次") and all_passed
+	all_passed = _check("stage value follows circle index", max_battle_value.text == "3/8") and all_passed
 
 	if left_sidebar.has_method("render") and battle_screen.has_method("_build_hud_state"):
 		var final_score_state: BattleHudState = battle_screen._build_hud_state()
@@ -76,6 +85,14 @@ func _init() -> void:
 		await process_frame
 		await process_frame
 		all_passed = _check("formula badge row does not move when final score appears", formula_badges.global_position.distance_to(base_badges_position) <= 1.0) and all_passed
+
+		var count_state: BattleHudState = battle_screen._build_hud_state()
+		count_state.circle_base_score = 900
+		left_sidebar.render(count_state)
+		var text_after_render := battle_value.text
+		all_passed = _check("base score change starts count animation instead of direct switch", text_after_render != "900") and all_passed
+		await create_timer(0.8).timeout
+		all_passed = _check("base score count animation reaches target", battle_value.text == "900") and all_passed
 
 	battle_screen.queue_free()
 	print("PASS: DebugLeftSidebarFixedLayoutSmokeTest" if all_passed else "FAIL: DebugLeftSidebarFixedLayoutSmokeTest")
@@ -110,4 +127,3 @@ func _check(label: String, passed: bool) -> bool:
 	if not passed:
 		push_error(label)
 	return passed
-

@@ -3,6 +3,7 @@ class_name BattleScreen
 
 
 const BattleController = preload("res://scripts/runtime/BattleController.gd")
+const BattleConfig = preload("res://scripts/core/battle/BattleConfig.gd")
 const DisplayNames = preload("res://scripts/ui/DisplayNames.gd")
 const GameFlowController = preload("res://scripts/runtime/GameFlowController.gd")
 const RunState = preload("res://scripts/core/battle/RunState.gd")
@@ -60,13 +61,19 @@ var scoring_area: Control = null
 var dice_bench_area: Control = null
 var combo_info_popup: Control = null
 var layout_root: Control = null
+var battle_main_stage_area: Control = null
+var battle_stage_content: Control = null
+var map_stage_overlay_host: Control = null
 var animation_layer: Control = null
 var options_menu_overlay: Control = null
 var options_menu_previous_pause_state: bool = false
 var install_focus_overlay: Control = null
 var last_score_result: ScoreResult = null
 var current_preview_result: ScoreResult = null
-var status_text: String = str(TranslationServer.translate(&"AUTO.TEXT.DE7851F4F172"))
+var status_text: String = ""
+var circle_base_display_action_count: int = -1
+var map_base_score_settled_roll_count: int = 0
+var map_base_score_pending_roll_count: int = -1
 var wild_selection_dialog: ConfirmationDialog = null
 var wild_button_rows: Dictionary = {}
 var local_combo_appearance_counts: Dictionary = {}
@@ -99,6 +106,7 @@ var dice_tool_face_copy_active: bool = false
 var pending_install_piece: ForgePieceDef = null
 var selected_install_die_index: int = -1
 var selected_install_face_index: int = -1
+var defer_initial_battle_start: bool = false
 
 
 enum BattleUiState {
@@ -115,15 +123,23 @@ enum BattleUiState {
 var battle_ui_state: int = BattleUiState.IDLE
 
 
-func setup(new_game_flow_controller: GameFlowController = null, new_run_state: RunState = null) -> void:
+func setup(
+	new_game_flow_controller: GameFlowController = null,
+	new_run_state: RunState = null,
+	new_defer_initial_battle_start: bool = false
+) -> void:
 	game_flow_controller = new_game_flow_controller
 	run_state = new_run_state
+	defer_initial_battle_start = new_defer_initial_battle_start
+	_connect_game_flow_signals()
 
 
 func start_battle_with_run_state(new_game_flow_controller: GameFlowController = null, new_run_state: RunState = null) -> void:
 	if new_game_flow_controller != null:
 		game_flow_controller = new_game_flow_controller
 	run_state = new_run_state
+	_connect_game_flow_signals()
+	defer_initial_battle_start = false
 	_clear_reward_phase_ui()
 	_clear_battle_animation_layer()
 	cleanup_resolution_area()
@@ -135,21 +151,137 @@ func start_battle_with_run_state(new_game_flow_controller: GameFlowController = 
 	if combo_info_popup != null:
 		combo_info_popup.visible = false
 	if controller != null:
-		controller.start_battle(null, run_state)
+		controller.start_battle(_battle_config_for_next_start(), run_state)
+
+
+func prepare_for_map_stage() -> void:
+	_clear_reward_phase_ui()
+	cleanup_resolution_area()
+	_clear_battle_animation_layer()
+	current_preview_result = null
+	if combo_info_popup != null:
+		combo_info_popup.visible = false
+	_refresh_hud()
 
 
 func _ready() -> void:
 	_ensure_resources()
 	_build_view()
 	_create_controller()
-	controller.start_battle(null, run_state)
+	if defer_initial_battle_start:
+		if run_state != null:
+			run_state.ensure_starting_dice()
+		_refresh_hud()
+	else:
+		controller.start_battle(_battle_config_for_next_start(), run_state)
 	call_deferred("_apply_resolution_scale")
+
+
+func _battle_config_for_next_start() -> BattleConfig:
+	if game_flow_controller == null:
+		return null
+	var map_state: Dictionary = game_flow_controller.get_map_state()
+	if not bool(map_state.get("pending_boss_battle", false)):
+		return null
+	var config := BattleConfig.new()
+	config.is_boss_battle = true
+	return config
 
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_RESIZED:
 		_apply_resolution_scale()
 		_update_install_focus_overlay_layout()
+
+
+func get_map_stage_overlay_host() -> Control:
+	return map_stage_overlay_host
+
+
+func attach_map_stage_view(map_view: Control) -> void:
+	if map_view == null:
+		return
+	if map_stage_overlay_host == null:
+		return
+	if map_view.get_parent() != map_stage_overlay_host:
+		if map_view.get_parent() != null:
+			map_view.get_parent().remove_child(map_view)
+		map_stage_overlay_host.add_child(map_view)
+	map_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+
+func _connect_game_flow_signals() -> void:
+	if game_flow_controller == null:
+		return
+	if game_flow_controller.has_signal("run_state_changed") and not game_flow_controller.run_state_changed.is_connected(_on_external_run_state_changed):
+		game_flow_controller.run_state_changed.connect(_on_external_run_state_changed)
+	if game_flow_controller.has_signal("map_state_changed") and not game_flow_controller.map_state_changed.is_connected(_on_external_map_state_changed):
+		game_flow_controller.map_state_changed.connect(_on_external_map_state_changed)
+	if game_flow_controller.has_signal("map_movement_settled") and not game_flow_controller.map_movement_settled.is_connected(_on_external_map_movement_settled):
+		game_flow_controller.map_movement_settled.connect(_on_external_map_movement_settled)
+
+
+func _on_external_run_state_changed(new_run_state: RunState) -> void:
+	if new_run_state != null:
+		run_state = new_run_state
+	_update_circle_base_display_state(_current_map_state())
+	_refresh_hud()
+
+
+func _on_external_map_state_changed(map_state: Dictionary) -> void:
+	_update_circle_base_display_state(map_state)
+	_refresh_hud()
+
+
+func _on_external_map_movement_settled(map_state: Dictionary) -> void:
+	_settle_circle_base_display_state(map_state)
+	_refresh_hud()
+
+
+func _current_map_state() -> Dictionary:
+	if game_flow_controller == null:
+		return {}
+	return game_flow_controller.get_map_state()
+
+
+func _update_circle_base_display_state(map_state: Dictionary) -> void:
+	if run_state == null:
+		circle_base_display_action_count = -1
+		map_base_score_pending_roll_count = -1
+		return
+	if circle_base_display_action_count < 0:
+		circle_base_display_action_count = run_state.current_circle_action_count
+	if game_flow_controller == null or game_flow_controller.current_state_id != &"map":
+		circle_base_display_action_count = run_state.current_circle_action_count
+		map_base_score_settled_roll_count = int(map_state.get("roll_count", map_base_score_settled_roll_count))
+		map_base_score_pending_roll_count = -1
+		return
+
+	var roll_count := int(map_state.get("roll_count", 0))
+	if roll_count > map_base_score_settled_roll_count:
+		map_base_score_pending_roll_count = roll_count
+		return
+
+	map_base_score_settled_roll_count = roll_count
+	map_base_score_pending_roll_count = -1
+	circle_base_display_action_count = run_state.current_circle_action_count
+
+
+func _settle_circle_base_display_state(map_state: Dictionary) -> void:
+	if run_state == null:
+		return
+	var roll_count := int(map_state.get("roll_count", 0))
+	map_base_score_settled_roll_count = roll_count
+	map_base_score_pending_roll_count = -1
+	circle_base_display_action_count = int(map_state.get("circle_action_count", run_state.current_circle_action_count))
+
+
+func _circle_base_action_count_for_display() -> int:
+	if run_state == null:
+		return 0
+	if circle_base_display_action_count < 0:
+		circle_base_display_action_count = run_state.current_circle_action_count
+	return circle_base_display_action_count
 
 
 func _input(event: InputEvent) -> void:
@@ -224,9 +356,22 @@ func _build_view() -> void:
 	if top_inventory_bar.has_method("setup"):
 		top_inventory_bar.setup(style_config, icon_library, inventory_slot_view_scene)
 
+	battle_main_stage_area = Control.new()
+	battle_main_stage_area.name = "BattleMainStageArea"
+	battle_main_stage_area.clip_contents = true
+	battle_main_stage_area.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	battle_main_stage_area.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	main_area.add_child(battle_main_stage_area)
+
+	battle_stage_content = VBoxContainer.new()
+	battle_stage_content.name = "BattleStageContent"
+	battle_stage_content.add_theme_constant_override("separation", style_config.layout_gap)
+	battle_stage_content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	battle_main_stage_area.add_child(battle_stage_content)
+
 	scoring_area = _instantiate_control(segment_scoring_area_scene, PanelContainer.new())
 	scoring_area.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	main_area.add_child(scoring_area)
+	battle_stage_content.add_child(scoring_area)
 	if scoring_area.has_method("setup"):
 		scoring_area.setup(
 			style_config,
@@ -238,9 +383,13 @@ func _build_view() -> void:
 		)
 	if scoring_area.has_signal("reward_choice_pressed"):
 		scoring_area.reward_choice_pressed.connect(_on_reward_choice_pressed)
+	if scoring_area.has_signal("reward_ornament_link_requested"):
+		scoring_area.reward_ornament_link_requested.connect(_on_ornament_link_requested)
+	if scoring_area.has_signal("reward_mark_link_requested"):
+		scoring_area.reward_mark_link_requested.connect(_on_mark_link_requested)
 
 	dice_bench_area = _instantiate_control(dice_bench_area_scene, PanelContainer.new())
-	main_area.add_child(dice_bench_area)
+	battle_stage_content.add_child(dice_bench_area)
 	if dice_bench_area.has_method("setup"):
 		dice_bench_area.setup(
 			style_config,
@@ -268,6 +417,14 @@ func _build_view() -> void:
 		dice_bench_area.install_face_selected.connect(_on_install_face_selected)
 	if dice_bench_area.has_signal("install_requested"):
 		dice_bench_area.install_requested.connect(_on_install_requested)
+
+	map_stage_overlay_host = Control.new()
+	map_stage_overlay_host.name = "MapStageOverlayHost"
+	map_stage_overlay_host.clip_contents = true
+	map_stage_overlay_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	map_stage_overlay_host.z_index = 80
+	map_stage_overlay_host.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	battle_main_stage_area.add_child(map_stage_overlay_host)
 
 	_ensure_combo_info_popup()
 
@@ -769,6 +926,9 @@ func _on_install_requested(die_index: int, face_index: int) -> void:
 		if not game_flow_controller.install_pending_piece(target_die_index, target_face_index):
 			status_text = str(TranslationServer.translate(&"AUTO.TEXT.C0469EBB56C8"))
 			_refresh_hud()
+		else:
+			_clear_reward_phase_ui()
+			_refresh_hud()
 		return
 	_install_pending_piece_locally(target_die_index, target_face_index)
 
@@ -1128,7 +1288,6 @@ func _update_install_focus_overlay_layout() -> void:
 	if not install_focus_overlay.visible:
 		return
 
-	install_focus_overlay.size = layout_root.size
 	var root_size := layout_root.size
 	var bench_rect := _control_rect_in_layout_root(dice_bench_area).grow(8.0)
 	bench_rect.position.x = clampf(bench_rect.position.x, 0.0, root_size.x)
@@ -1824,8 +1983,11 @@ func _build_hud_state() -> BattleHudState:
 	state.status_text = status_text
 
 	if run_state != null:
-		state.battle_number = run_state.battle_index + 1
-		state.max_battles = run_state.max_battles
+		state.battle_number = run_state.get_circle_number()
+		state.max_battles = run_state.max_circles
+		state.circle_base_score = run_state.get_current_circle_adjusted_base_score(_circle_base_action_count_for_display())
+		state.danger_bonus_percent = run_state.get_danger_bonus_percent()
+		state.circle_action_count = run_state.current_circle_action_count
 		state.item_capacity = run_state.item_slot_capacity
 
 	if controller == null:

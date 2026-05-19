@@ -1229,7 +1229,7 @@ msgid "AUTO.TEXT.1F6C99CA29E0"
 msgstr "最近结算摘要（%d / %d）："
 
 msgid "AUTO.TEXT.205AFF990BC5"
-msgstr "难度"
+msgstr "危急"
 
 msgid "AUTO.TEXT.2091A36B7297"
 msgstr "奖励: %s"
@@ -1265,7 +1265,7 @@ msgid "AUTO.TEXT.23ADBAE60C54"
 msgstr "骰子信息"
 
 msgid "AUTO.TEXT.23CC91624DF3"
-msgstr "关卡"
+msgstr "圈数"
 
 msgid "AUTO.TEXT.2444EE1FC9E1"
 msgstr "总获得战力：%d"

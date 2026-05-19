@@ -16,10 +16,29 @@ func _init() -> void:
 	flow.start_new_run()
 
 	all_passed = _check("run_state exists after start_new_run", flow.get_run_state() != null) and all_passed
+	all_passed = _check("start_new_run enters map phase", flow.current_state_id == &"map") and all_passed
+	all_passed = _check("demo map has 32 nodes", flow.get_map_state().get("nodes", []).size() == 32) and all_passed
+	all_passed = _check("demo map follows node bag counts", _map_node_bag_is_valid(flow.get_map_state().get("nodes", []))) and all_passed
+	all_passed = _check("map state exposes circle base score", int(flow.get_map_state().get("circle_base_score", 0)) == flow.get_run_state().get_current_circle_base_score()) and all_passed
 	all_passed = _check("starting run has 6 dice", flow.get_run_state().dice.size() == 6) and all_passed
 	all_passed = _check("battle_index starts at 0", flow.get_run_state().battle_index == 0) and all_passed
-	all_passed = _check_target_curve() and all_passed
-	all_passed = _check_boss_schedule() and all_passed
+	all_passed = _check("new run starts on start node", int(flow.get_map_state().get("current_index", -1)) == 0) and all_passed
+	all_passed = _check_one_die_map_roll() and all_passed
+	all_passed = _check_danger_target_formula() and all_passed
+	all_passed = _check_circle_boss_final_rule() and all_passed
+	all_passed = _check_map_boss_stop_and_return_refresh(flow) and all_passed
+
+	var reached_battle_node := false
+	for _attempt in range(8):
+		var map_roll := flow.roll_map_movement()
+		var roll_values: Array = map_roll.get("state", {}).get("last_rolls", [])
+		all_passed = _check("map movement rolls two normal D6", _is_two_d6_roll(roll_values)) and all_passed
+		all_passed = _check("map movement steps equal both dice", int(map_roll.get("steps", 0)) == int(roll_values[0]) + int(roll_values[1])) and all_passed
+		if bool(map_roll.get("pending_battle", false)):
+			reached_battle_node = true
+			break
+	all_passed = _check("map movement can reach a battle node", reached_battle_node) and all_passed
+	all_passed = _check("enter battle from map switches to battle phase", reached_battle_node and flow.request_enter_battle_from_map() and flow.current_state_id == &"battle") and all_passed
 
 	flow.on_battle_won()
 	all_passed = _check("non-final win generates 3 rewards", flow.get_run_state().last_reward_choices.size() == 3) and all_passed
@@ -30,13 +49,15 @@ func _init() -> void:
 	all_passed = _check("installed_piece_count increased", flow.get_run_state().installed_piece_count == 1) and all_passed
 	all_passed = _check("installed_piece_history has record", flow.get_run_state().installed_piece_history.size() == 1) and all_passed
 	all_passed = _check("battle_index advanced after install", flow.get_run_state().battle_index == 1) and all_passed
+	all_passed = _check("after reward install returns to map phase", flow.current_state_id == &"map") and all_passed
 	_record_sample_settlements(flow.get_run_state())
 	all_passed = _check("recent settlement logs are capped at 5", flow.get_run_state().recent_settlement_logs.size() == 5) and all_passed
 	all_passed = _check("oldest settlement log was trimmed", int(flow.get_run_state().recent_settlement_logs[0].get("hand", 0)) == 2) and all_passed
 	all_passed = _check("best hand score records highest actual result", flow.get_run_state().best_hand_score == 105) and all_passed
 	all_passed = _check("effect trigger counts accumulate", int(flow.get_run_state().effect_trigger_counts.get(&"ornament_burst", 0)) == 6) and all_passed
 
-	flow.get_run_state().battle_index = flow.get_run_state().max_battles - 1
+	flow.get_run_state().current_circle_index = flow.get_run_state().max_circles - 1
+	flow.get_run_state().set_current_encounter_node_type(&"boss")
 	flow.on_battle_won()
 	all_passed = _check("final battle win marks run_won", flow.get_run_state().run_won) and all_passed
 	all_passed = _check("final battle win does not keep normal rewards", flow.get_run_state().last_reward_choices.is_empty()) and all_passed
@@ -63,62 +84,168 @@ func _check(label: String, passed: bool) -> bool:
 	return passed
 
 
-func _check_target_curve() -> bool:
-	var run_state := RunState.new()
-	run_state.setup_new_run()
+func _is_two_d6_roll(values: Array) -> bool:
+	if values.size() != 2:
+		return false
+	for value in values:
+		var pip := int(value)
+		if pip < 1 or pip > 6:
+			return false
+	return true
 
-	var expected_scores: Array[int] = [
-		300,
-		450,
-		600,
-		800,
-		1200,
-		1600,
-		2000,
-		3000,
-		4000,
-		5000,
-		7500,
-		10000,
-		11000,
-		16500,
-		22000,
-		20000,
-		30000,
-		40000,
-		35000,
-		52500,
-		70000,
-		50000,
-		75000,
-		100000,
-	]
+
+func _check_one_die_map_roll() -> bool:
+	var flow := GameFlowController.new()
+	flow.start_new_run()
+	var result := flow.roll_map_movement([0])
+	var state: Dictionary = result.get("state", {})
+	var roll_values: Array = state.get("last_rolls", [])
+	var rolled_indices: Array = state.get("last_rolled_dice_indices", [])
 	var all_passed := true
-	all_passed = _check("run has 24 battles", run_state.max_battles == expected_scores.size()) and all_passed
-	for index in range(expected_scores.size()):
-		if index > 0:
-			run_state.advance_battle()
-		all_passed = _check(
-			"battle %d target_score == %d" % [index + 1, expected_scores[index]],
-			run_state.get_target_score() == expected_scores[index]
-		) and all_passed
+	all_passed = _check("map movement can roll one selected die", bool(result.get("success", false))) and all_passed
+	all_passed = _check("one-die map roll records selected die index", rolled_indices.size() == 1 and int(rolled_indices[0]) == 0) and all_passed
+	all_passed = _check("one-die map roll keeps two result slots", roll_values.size() == 2) and all_passed
+	all_passed = _check("one-die map roll leaves unselected die empty", roll_values.size() == 2 and int(roll_values[1]) == 0) and all_passed
+	all_passed = _check("one-die map roll result is normal D6", roll_values.size() == 2 and int(roll_values[0]) >= 1 and int(roll_values[0]) <= 6) and all_passed
+	all_passed = _check("one-die map movement uses selected die only", int(result.get("steps", 0)) == int(roll_values[0])) and all_passed
+	all_passed = _check("one-die map roll increases circle action count", int(state.get("circle_action_count", 0)) == 1) and all_passed
+	flow.free()
 	return all_passed
 
 
-func _check_boss_schedule() -> bool:
+func _check_map_boss_stop_and_return_refresh(flow: GameFlowController) -> bool:
+	flow.map_position_index = 30
+	if flow.map_nodes.size() > 3:
+		flow.map_nodes[3]["is_cleared"] = true
+	var result := flow.roll_map_movement()
+	var after_state := flow.get_map_state()
+	var after_nodes: Array = after_state.get("nodes", [])
+	var all_passed := true
+	all_passed = _check("map stops on final boss node before start", bool(result.get("stopped_by_boss", false)) and int(after_state.get("current_index", -1)) == 31) and all_passed
+	all_passed = _check("map boss stop truncates remaining movement", int(result.get("actual_steps", 0)) == 1) and all_passed
+	all_passed = _check("map boss node requires battle", bool(after_state.get("pending_battle", false)) and bool(after_state.get("pending_boss_battle", false))) and all_passed
+	all_passed = _check("map boss stop does not refresh before battle", int(after_state.get("refresh_count", 0)) == 0) and all_passed
+	all_passed = _check("boss-triggering movement counts for danger", int(after_state.get("circle_action_count", 0)) == 1) and all_passed
+	flow.get_run_state().set_current_encounter_node_type(&"boss")
+	flow.get_run_state().advance_battle()
+	flow.return_to_map_after_battle()
+	var returned_state := flow.get_map_state()
+	var returned_nodes: Array = returned_state.get("nodes", [])
+	all_passed = _check("boss battle return moves player to start node", int(returned_state.get("current_index", -1)) == 0) and all_passed
+	all_passed = _check("boss battle return refreshes map", int(returned_state.get("refresh_count", 0)) == 1) and all_passed
+	all_passed = _check("boss battle return clears old cleared flags", returned_nodes.size() > 3 and not bool(returned_nodes[3].get("is_cleared", true))) and all_passed
+	all_passed = _check("refreshed boss map keeps 32 nodes", returned_nodes.size() == 32) and all_passed
+	all_passed = _check("refreshed boss map follows node bag counts", _map_node_bag_is_valid(returned_nodes)) and all_passed
+	all_passed = _check("boss battle return advances circle", flow.get_run_state().get_circle_number() == 2) and all_passed
+	all_passed = _check("boss battle return clears danger", int(returned_state.get("circle_action_count", -1)) == 0 and int(returned_state.get("danger_bonus_percent", -1)) == 0) and all_passed
+	flow.start_new_run()
+	return all_passed
+
+
+func _map_node_bag_is_valid(nodes: Array) -> bool:
+	if nodes.size() != 32:
+		return false
+	var counts := {}
+	for node in nodes:
+		var type_id := StringName(str(node.get("node_type", "")))
+		counts[type_id] = int(counts.get(type_id, 0)) + 1
+	if int(counts.get(&"start", 0)) != 1:
+		return false
+	if int(counts.get(&"boss", 0)) != 1:
+		return false
+	if int(counts.get(&"battle", 0)) != 10:
+		return false
+	if int(counts.get(&"elite", 0)) != 2:
+		return false
+	if int(counts.get(&"shop", 0)) != 3:
+		return false
+	if int(counts.get(&"forge", 0)) != 2:
+		return false
+	if int(counts.get(&"reward", 0)) != 5:
+		return false
+	if int(counts.get(&"event", 0)) != 4:
+		return false
+	if int(counts.get(&"penalty", 0)) != 2:
+		return false
+	if int(counts.get(&"rest", 0)) != 2:
+		return false
+	if StringName(str(nodes[0].get("node_type", ""))) != &"start":
+		return false
+	if StringName(str(nodes[nodes.size() - 1].get("node_type", ""))) != &"boss":
+		return false
+	return _map_spacing_is_valid(nodes)
+
+
+func _map_spacing_is_valid(nodes: Array) -> bool:
+	for index in range(nodes.size()):
+		var type_id := StringName(str(nodes[index].get("node_type", "")))
+		if type_id == &"penalty":
+			if index <= 2:
+				return false
+			if index > 0 and StringName(str(nodes[index - 1].get("node_type", ""))) == &"penalty":
+				return false
+			if index + 1 < nodes.size() and StringName(str(nodes[index + 1].get("node_type", ""))) == &"penalty":
+				return false
+			if index > 0 and StringName(str(nodes[index - 1].get("node_type", ""))) == &"elite":
+				return false
+			if index + 1 < nodes.size() and StringName(str(nodes[index + 1].get("node_type", ""))) == &"elite":
+				return false
+	return true
+
+
+func _check_danger_target_formula() -> bool:
 	var run_state := RunState.new()
 	run_state.setup_new_run()
 
-	var boss_battles := [3, 6, 9, 12, 15, 18, 21, 24]
 	var all_passed := true
-	for index in range(run_state.max_battles):
-		run_state.battle_index = index
-		var battle_number := index + 1
-		var expected_boss := boss_battles.has(battle_number)
+	var expected_danger := {
+		1: 0,
+		2: 2,
+		3: 4,
+		4: 7,
+		5: 10,
+		6: 15,
+		7: 21,
+		8: 28,
+		9: 36,
+		10: 45,
+		11: 55,
+		12: 65,
+		13: 65,
+	}
+	all_passed = _check("run has 8 circles", run_state.max_circles == 8) and all_passed
+	all_passed = _check("circle 4 base score is 1000", run_state.circle_base_scores[3] == 1000) and all_passed
+	for action_count in expected_danger.keys():
 		all_passed = _check(
-			"battle %d boss flag == %s" % [battle_number, str(expected_boss)],
-			run_state.is_boss_battle() == expected_boss
+			"action %d danger bonus == %d%%" % [action_count, int(expected_danger[action_count])],
+			run_state.get_danger_bonus_percent(action_count) == int(expected_danger[action_count])
 		) and all_passed
+
+	run_state.current_circle_index = 3
+	run_state.current_circle_action_count = 8
+	all_passed = _check("circle 4 adjusted base score uses danger", run_state.get_current_circle_adjusted_base_score() == 1280) and all_passed
+	all_passed = _check("circle 4 normal target uses danger", run_state.get_target_score(&"battle") == 1280) and all_passed
+	all_passed = _check("circle 4 elite target uses 1.5x and danger", run_state.get_target_score(&"elite") == 1920) and all_passed
+	all_passed = _check("circle 4 boss target uses 2x and danger", run_state.get_target_score(&"boss") == 2560) and all_passed
+	var breakdown := run_state.get_target_breakdown(&"elite")
+	all_passed = _check("target breakdown exposes danger fields", int(breakdown.get("action_count", 0)) == 8 and int(breakdown.get("danger_bonus_percent", 0)) == 28) and all_passed
+	return all_passed
+
+
+func _check_circle_boss_final_rule() -> bool:
+	var run_state := RunState.new()
+	run_state.setup_new_run()
+
+	var all_passed := true
+	run_state.set_current_encounter_node_type(&"battle")
+	all_passed = _check("battle node is not boss", not run_state.is_boss_battle()) and all_passed
+	run_state.set_current_encounter_node_type(&"elite")
+	all_passed = _check("elite node is not boss", not run_state.is_boss_battle()) and all_passed
+	run_state.set_current_encounter_node_type(&"boss")
+	all_passed = _check("boss node sets boss flag", run_state.is_boss_battle()) and all_passed
+	all_passed = _check("boss before final circle is not final battle", not run_state.is_final_battle()) and all_passed
+	run_state.current_circle_index = run_state.max_circles - 1
+	all_passed = _check("boss on circle 8 is final battle", run_state.is_final_battle()) and all_passed
 	return all_passed
 
 

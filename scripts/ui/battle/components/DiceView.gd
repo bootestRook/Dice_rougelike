@@ -138,6 +138,7 @@ func render(
 
 	if die_data == null:
 		disabled = true
+		tooltip_text = ""
 		_clear_visuals()
 		_stop_hover_effect(true)
 		return
@@ -146,7 +147,7 @@ func render(
 	title_label.visible = false
 	button_pressed = die_data.selected
 	disabled = die_data.disabled
-	tooltip_text = "%s / D%d" % [die_data.body_name, die_data.face_count]
+	tooltip_text = ""
 	_refresh_visuals()
 	if not _can_play_hover_effect():
 		_stop_hover_effect(false)
