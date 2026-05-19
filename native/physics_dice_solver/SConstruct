@@ -1,0 +1,14 @@
+#!/usr/bin/env python
+
+env = SConscript("../../third_party/godot-cpp/SConstruct")
+
+env.Append(CPPPATH=["src/"])
+sources = Glob("src/*.cpp")
+
+library = env.SharedLibrary(
+    "../../addons/physics_dice_solver/bin/native_physics_dice_solver{}{}".format(env["suffix"], env["SHLIBSUFFIX"]),
+    source=sources,
+)
+
+env.NoCache(library)
+Default(library)

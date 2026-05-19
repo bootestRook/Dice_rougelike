@@ -32,6 +32,10 @@ project/assembly_name="Dice_Rougelike"
 
 locale/translations=PackedStringArray("res://i18n/zh_Hans.po", "res://i18n/en.po")
 
+[native_extensions]
+
+paths=["res://addons/physics_dice_solver/physics_dice_solver.gdextension"]
+
 [physics]
 
 3d/physics_engine="Jolt Physics"

@@ -1,0 +1,782 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>3D 骰子下落物理模拟</title>
+  <meta name="description" content="浏览器内 3D 骰子下落物理模拟，可预模拟指定最终点数。" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --panel: rgba(17, 24, 39, 0.78);
+      --panel-strong: rgba(17, 24, 39, 0.96);
+      --stroke: rgba(255, 255, 255, 0.18);
+      --text: #f8fafc;
+      --muted: #b6c2d9;
+      --accent: #6ee7f9;
+      --accent-2: #f472b6;
+      --ok: #86efac;
+      --warn: #fcd34d;
+      --shadow: rgba(0, 0, 0, 0.34);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      width: 100%; height: 100%; margin: 0; overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 14%, rgba(111, 231, 249, 0.22), transparent 35%),
+        radial-gradient(circle at 80% 90%, rgba(244, 114, 182, 0.17), transparent 34%),
+        linear-gradient(180deg, #101827 0%, #090e1a 100%);
+      color: var(--text);
+    }
+    #app { position: fixed; inset: 0; }
+    canvas.webgl { position: absolute; inset: 0; display: block; width: 100%; height: 100%; outline: none; }
+    .hud {
+      position: fixed; inset: 18px 18px auto 18px; display: flex; align-items: flex-start;
+      justify-content: space-between; gap: 16px; pointer-events: none; z-index: 10;
+    }
+    .panel, .result-panel {
+      pointer-events: auto; border: 1px solid var(--stroke); border-radius: 22px;
+      background: var(--panel); backdrop-filter: blur(20px) saturate(1.15);
+      box-shadow: 0 24px 60px var(--shadow);
+    }
+    .panel { width: min(500px, calc(100vw - 36px)); padding: 16px; }
+    .title-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    h1 { margin: 0; font-size: 18px; line-height: 1.25; letter-spacing: 0.02em; font-weight: 800; }
+    .badge { white-space: nowrap; border: 1px solid rgba(110, 231, 249, 0.35); border-radius: 999px; padding: 5px 9px; font-size: 12px; line-height: 1; color: #dffaff; background: rgba(8, 145, 178, 0.18); }
+    .subcopy { margin: 0 0 15px; color: var(--muted); font-size: 13px; line-height: 1.55; }
+    .control-grid { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: end; }
+    .field label, .target-head { display: flex; justify-content: space-between; gap: 10px; color: #dbeafe; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+    .field label { margin-bottom: 7px; }
+    .counter { min-width: 2.2em; color: var(--accent); text-align: right; font-variant-numeric: tabular-nums; font-weight: 800; }
+    input[type="range"] { width: 100%; accent-color: var(--accent); cursor: pointer; }
+    button {
+      appearance: none; border: 0; border-radius: 16px; padding: 11px 14px; color: #07111f;
+      font-weight: 900; letter-spacing: 0.02em; background: linear-gradient(135deg, var(--accent) 0%, #a7f3d0 100%);
+      box-shadow: 0 12px 26px rgba(110, 231, 249, 0.22); cursor: pointer;
+      transition: transform 120ms ease, filter 120ms ease, opacity 120ms ease;
+    }
+    button:hover { transform: translateY(-1px); filter: brightness(1.06); }
+    button:active { transform: translateY(1px) scale(0.99); }
+    button:disabled { opacity: 0.52; cursor: not-allowed; transform: none; }
+    button.secondary { color: var(--text); background: rgba(255, 255, 255, 0.10); border: 1px solid rgba(255, 255, 255, 0.14); box-shadow: none; }
+    button.mini { border-radius: 999px; padding: 7px 10px; font-size: 12px; line-height: 1; letter-spacing: 0; white-space: nowrap; }
+    .button-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .chip { display: inline-flex; align-items: center; gap: 6px; min-height: 29px; border: 1px solid rgba(255,255,255,.16); border-radius: 999px; padding: 6px 10px; color: #dbeafe; background: rgba(255,255,255,.08); font-size: 12px; user-select: none; }
+    .chip input { margin: 0; accent-color: var(--accent-2); }
+    .target-block { margin-top: 14px; padding: 13px; border: 1px solid rgba(255,255,255,.13); border-radius: 18px; background: rgba(255,255,255,.06); }
+    .target-head { align-items: center; margin-bottom: 6px; }
+    .target-actions { display: flex; gap: 7px; align-items: center; }
+    .target-help { margin: 0 0 10px; color: rgba(203,213,225,.86); font-size: 11px; line-height: 1.45; }
+    .target-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .target-cell { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 6px; min-width: 0; padding: 7px 8px; border: 1px solid rgba(255,255,255,.14); border-radius: 13px; background: rgba(255,255,255,.07); color: #dbeafe; font-size: 12px; }
+    .target-cell.inactive { opacity: .36; }
+    .target-cell span { min-width: 24px; color: var(--accent); font-weight: 900; font-variant-numeric: tabular-nums; }
+    .target-cell select { width: 100%; min-height: 28px; border: 1px solid rgba(255,255,255,.16); border-radius: 10px; padding: 4px 6px; color: var(--text); background: rgba(15,23,42,.92); font: inherit; font-weight: 800; outline: none; cursor: pointer; }
+    .target-cell select:focus { border-color: rgba(110,231,249,.62); box-shadow: 0 0 0 3px rgba(110,231,249,.16); }
+    .result-panel { width: min(330px, calc(100vw - 36px)); padding: 14px; }
+    .result-label { margin: 0 0 10px; color: var(--muted); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+    .sum { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+    .sum strong { font-size: 42px; line-height: 1; font-variant-numeric: tabular-nums; }
+    .sum span { color: var(--muted); font-size: 13px; }
+    #faces { display: flex; flex-wrap: wrap; gap: 8px; min-height: 36px; }
+    .face-token { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 12px; color: #06111f; background: linear-gradient(145deg, #f8fafc, #dbeafe); box-shadow: inset 0 -2px 3px rgba(0,0,0,.18), 0 8px 18px rgba(0,0,0,.22); font-weight: 900; font-size: 18px; font-variant-numeric: tabular-nums; }
+    .face-token.targeted { outline: 2px solid rgba(110,231,249,.9); outline-offset: 2px; }
+    .status { margin-top: 10px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .progress { height: 6px; margin-top: 10px; overflow: hidden; border-radius: 999px; background: rgba(255,255,255,.1); }
+    .progress i { display: block; width: var(--p, 0%); height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width .12s linear; }
+    .loader { position: fixed; left: 50%; top: 50%; z-index: 20; width: min(400px, calc(100vw - 40px)); transform: translate(-50%, -50%); border: 1px solid var(--stroke); border-radius: 22px; padding: 18px; color: var(--text); background: var(--panel-strong); box-shadow: 0 24px 70px rgba(0,0,0,.45); text-align: center; backdrop-filter: blur(20px); }
+    .loader h2 { margin: 0 0 8px; font-size: 18px; }
+    .loader p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+    .loader.error { text-align: left; border-color: rgba(251,113,133,.42); }
+    .loader.error h2 { color: #fecdd3; }
+    .loader[hidden] { display: none; }
+    .corner-note { position: fixed; right: 18px; bottom: 18px; z-index: 9; max-width: min(620px, calc(100vw - 36px)); padding: 9px 12px; border: 1px solid rgba(255,255,255,.12); border-radius: 999px; color: rgba(226,232,240,.82); background: rgba(15,23,42,.52); backdrop-filter: blur(14px); font-size: 12px; pointer-events: none; }
+    noscript { position: fixed; z-index: 100; inset: 20px; display: grid; place-items: center; color: #fff; background: #111827; border-radius: 20px; padding: 20px; text-align: center; }
+    @media (max-width: 900px) { .hud { inset: 12px 12px auto 12px; display: grid; grid-template-columns: 1fr; } .panel, .result-panel { width: calc(100vw - 24px); } .result-panel { order: 2; } .subcopy { display: none; } .corner-note { display: none; } }
+    @media (max-width: 520px) { .control-grid { grid-template-columns: 1fr; } .target-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .target-head { display: grid; } .target-actions { justify-content: stretch; } .target-actions button { flex: 1; } }
+  </style>
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/" } }
+  </script>
+</head>
+<body>
+  <noscript>此 WebApp 需要启用 JavaScript 才能运行 3D 物理模拟。</noscript>
+  <div id="app"></div>
+  <section class="hud" aria-label="controls">
+    <div class="panel">
+      <div class="title-row"><h1>3D 骰子下落物理模拟</h1><span class="badge">最多 6 个</span></div>
+      <p class="subcopy">指定点数时会先在后台预模拟，找到自然命中的投掷参数后再正式落下。正式播放中不再强制转面、不滑移校正。</p>
+      <div class="control-grid">
+        <div class="field"><label for="diceCount"><span>骰子数量</span><span class="counter" id="diceCountValue">4</span></label><input id="diceCount" type="range" min="1" max="6" step="1" value="4" /></div>
+        <button id="dropBtn" type="button">落下 / 重投</button>
+      </div>
+      <div class="button-row"><button id="resetBtn" class="secondary" type="button">清空桌面</button><button id="cameraBtn" class="secondary" type="button">重置视角</button></div>
+      <div class="target-block" aria-label="final face controls">
+        <div class="target-head"><span>每颗骰子的最终点数</span><div class="target-actions"><button id="fillTargetsBtn" class="secondary mini" type="button">随机填目标</button><button id="clearTargetsBtn" class="secondary mini" type="button">全部随机</button></div></div>
+        <p class="target-help">选“随机”则完全读取物理结果；选 1–6 会先后台试投，模拟命中后才开始正式落下。多骰指定会等待更久，但不会用后段强制校正。</p>
+        <div id="targetGrid" class="target-grid"></div>
+      </div>
+      <div class="chips" aria-label="options"><label class="chip"><input id="soundToggle" type="checkbox" checked />碰撞音效</label><label class="chip"><input id="slowToggle" type="checkbox" />慢动作</label><label class="chip"><input id="colorToggle" type="checkbox" checked />彩色骰子</label></div>
+    </div>
+    <aside class="result-panel" aria-live="polite">
+      <p class="result-label">当前结果</p>
+      <div class="sum"><strong id="sumValue">—</strong><span id="sumSuffix">等待投掷</span></div>
+      <div id="faces"></div>
+      <div class="status" id="statusText">选择数量和目标点数后点击“落下 / 重投”。</div>
+      <div class="progress" id="progressWrap" hidden><i id="progressBar"></i></div>
+    </aside>
+  </section>
+  <div class="corner-note">大桌面 + 物理托盘边界；蓝色描边表示该骰子使用了后台预模拟目标点数。</div>
+  <div id="loader" class="loader"><h2>正在加载 3D 物理引擎…</h2><p>需要浏览器可访问 jsDelivr CDN；建议用本地服务器打开。</p></div>
+
+  <script type="module">
+    const loader = document.getElementById('loader');
+    let THREE, CANNON, OrbitControls, RoundedBoxGeometry;
+    try {
+      [THREE, CANNON, { OrbitControls }, { RoundedBoxGeometry }] = await Promise.all([
+        import('three'),
+        import('https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js'),
+        import('three/addons/controls/OrbitControls.js'),
+        import('three/addons/geometries/RoundedBoxGeometry.js')
+      ]);
+      loader.hidden = true;
+      boot();
+    } catch (error) {
+      console.error(error);
+      loader.classList.add('error');
+      loader.hidden = false;
+      loader.innerHTML = '<h2>加载失败</h2><p>Three.js 或 Cannon-ES 没有成功加载。请确认网络可以访问 CDN，并用 <code>python3 -m http.server</code> 或 VS Code Live Server 打开本目录。</p>';
+    }
+
+    function boot() {
+      const app = document.getElementById('app');
+      const countInput = document.getElementById('diceCount');
+      const countValue = document.getElementById('diceCountValue');
+      const dropBtn = document.getElementById('dropBtn');
+      const resetBtn = document.getElementById('resetBtn');
+      const cameraBtn = document.getElementById('cameraBtn');
+      const soundToggle = document.getElementById('soundToggle');
+      const slowToggle = document.getElementById('slowToggle');
+      const colorToggle = document.getElementById('colorToggle');
+      const sumValue = document.getElementById('sumValue');
+      const sumSuffix = document.getElementById('sumSuffix');
+      const faces = document.getElementById('faces');
+      const statusText = document.getElementById('statusText');
+      const targetGrid = document.getElementById('targetGrid');
+      const fillTargetsBtn = document.getElementById('fillTargetsBtn');
+      const clearTargetsBtn = document.getElementById('clearTargetsBtn');
+      const progressWrap = document.getElementById('progressWrap');
+      const progressBar = document.getElementById('progressBar');
+
+      const TABLE_WIDTH = 12.8;
+      const TABLE_DEPTH = 9.2;
+      const TABLE_THICKNESS = 0.26;
+      const WALL_HEIGHT = 0.74;
+      const WALL_THICKNESS = 0.34;
+      const DIE_SIZE = 0.72;
+      const DIE_HALF = DIE_SIZE / 2;
+      const PIP_RADIUS = 0.038;
+      const PIP_DEPTH = 0.018;
+      const PIP_SPACING = 0.165;
+      const FIXED_STEP = 1 / 60;
+      const MAX_SIM_STEPS = 60 * 8;
+      const QUIET_LINEAR = 0.065;
+      const QUIET_ANGULAR = 0.11;
+      const QUIET_FRAMES = 42;
+      const TARGET_MAX_ATTEMPTS_PER_DIE = 3000;
+      const FULL_VERIFY_ATTEMPTS = 18;
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0a1020);
+      scene.fog = new THREE.Fog(0x0a1020, 12, 23);
+
+      const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+      const defaultCameraPosition = new THREE.Vector3(5.8, 7.7, 7.4);
+      camera.position.copy(defaultCameraPosition);
+      camera.lookAt(0, 0.2, 0);
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.05;
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.domElement.className = 'webgl';
+      app.appendChild(renderer.domElement);
+
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.075;
+      controls.minDistance = 6.2;
+      controls.maxDistance = 16;
+      controls.maxPolarAngle = Math.PI * 0.49;
+      controls.target.set(0, 0.2, 0);
+
+      const mainPhysics = createPhysicsWorld();
+      const world = mainPhysics.world;
+      const diceMaterialPhysics = mainPhysics.diceMaterial;
+
+      const ambient = new THREE.HemisphereLight(0xdbeafe, 0x0f172a, 1.4);
+      scene.add(ambient);
+      const keyLight = new THREE.DirectionalLight(0xffffff, 3.35);
+      keyLight.position.set(-4.8, 9.5, 5.6);
+      keyLight.castShadow = true;
+      keyLight.shadow.mapSize.set(2048, 2048);
+      keyLight.shadow.camera.near = 0.5;
+      keyLight.shadow.camera.far = 22;
+      keyLight.shadow.camera.left = -9;
+      keyLight.shadow.camera.right = 9;
+      keyLight.shadow.camera.top = 9;
+      keyLight.shadow.camera.bottom = -9;
+      keyLight.shadow.bias = -0.00018;
+      scene.add(keyLight);
+      const rimLight = new THREE.PointLight(0xf472b6, 1.25, 14);
+      rimLight.position.set(4.7, 3.4, -4.6);
+      scene.add(rimLight);
+      const cyanLight = new THREE.PointLight(0x67e8f9, 1.0, 14);
+      cyanLight.position.set(-5.0, 3.1, 4.2);
+      scene.add(cyanLight);
+
+      const dice = [];
+      const targetControls = [];
+      const clock = new THREE.Clock();
+      let settleTimer = 0;
+      let hasAnnouncedResult = false;
+      let rolling = false;
+      let planning = false;
+      let activeTargets = [];
+      let audioCtx = null;
+      let lastAudioTime = 0;
+
+      const faceDefinitions = [
+        { value: 1, normal: new THREE.Vector3(0, 1, 0),  u: new THREE.Vector3(1, 0, 0),  v: new THREE.Vector3(0, 0, -1) },
+        { value: 6, normal: new THREE.Vector3(0, -1, 0), u: new THREE.Vector3(1, 0, 0),  v: new THREE.Vector3(0, 0, 1) },
+        { value: 2, normal: new THREE.Vector3(0, 0, 1),  u: new THREE.Vector3(1, 0, 0),  v: new THREE.Vector3(0, 1, 0) },
+        { value: 5, normal: new THREE.Vector3(0, 0, -1), u: new THREE.Vector3(-1, 0, 0), v: new THREE.Vector3(0, 1, 0) },
+        { value: 3, normal: new THREE.Vector3(1, 0, 0),  u: new THREE.Vector3(0, 0, -1), v: new THREE.Vector3(0, 1, 0) },
+        { value: 4, normal: new THREE.Vector3(-1, 0, 0), u: new THREE.Vector3(0, 0, 1),  v: new THREE.Vector3(0, 1, 0) }
+      ];
+      const faceNormalsForResult = faceDefinitions.map(face => ({ value: face.value, normal: new CANNON.Vec3(face.normal.x, face.normal.y, face.normal.z) }));
+      const dicePalette = [0x3ec8ff, 0x8b5cf6, 0xf6a545, 0xff5c8a, 0x42d392, 0xf97316];
+      const ivoryPalette = [0xf8fafc, 0xf1f5f9, 0xfaf7ef, 0xf5f1e8, 0xf8fafc, 0xf1f5f9];
+      const pipGeometry = new THREE.CylinderGeometry(PIP_RADIUS, PIP_RADIUS, PIP_DEPTH, 26);
+      const pipWhiteMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.32, metalness: 0.02 });
+      const pipDarkMaterial = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.42, metalness: 0.02 });
+
+      createTable();
+      createAmbientParticles();
+      createTargetControls();
+
+      function createPhysicsWorld() {
+        const localWorld = new CANNON.World({ gravity: new CANNON.Vec3(0, -9.82, 0) });
+        localWorld.allowSleep = true;
+        localWorld.broadphase = new CANNON.SAPBroadphase(localWorld);
+        localWorld.solver.iterations = 18;
+        localWorld.solver.tolerance = 0.0008;
+
+        const diceMaterial = new CANNON.Material('dice');
+        const tableMaterial = new CANNON.Material('table');
+        const wallMaterial = new CANNON.Material('wall');
+        localWorld.defaultContactMaterial.friction = 0.38;
+        localWorld.defaultContactMaterial.restitution = 0.22;
+        localWorld.addContactMaterial(new CANNON.ContactMaterial(diceMaterial, tableMaterial, { friction: 0.52, restitution: 0.28, contactEquationStiffness: 1e7, contactEquationRelaxation: 3 }));
+        localWorld.addContactMaterial(new CANNON.ContactMaterial(diceMaterial, diceMaterial, { friction: 0.36, restitution: 0.24, contactEquationStiffness: 1e7, contactEquationRelaxation: 3 }));
+        localWorld.addContactMaterial(new CANNON.ContactMaterial(diceMaterial, wallMaterial, { friction: 0.42, restitution: 0.22, contactEquationStiffness: 1e7, contactEquationRelaxation: 3 }));
+
+        addPhysicsTable(localWorld, tableMaterial, wallMaterial);
+        return { world: localWorld, diceMaterial, tableMaterial, wallMaterial };
+      }
+
+      function addPhysicsTable(localWorld, tableMaterial, wallMaterial) {
+        const floorBody = new CANNON.Body({ mass: 0, material: tableMaterial });
+        floorBody.addShape(new CANNON.Box(new CANNON.Vec3(TABLE_WIDTH / 2, TABLE_THICKNESS / 2, TABLE_DEPTH / 2)));
+        floorBody.position.set(0, -TABLE_THICKNESS / 2, 0);
+        localWorld.addBody(floorBody);
+        const high = WALL_HEIGHT * 1.35;
+        addPhysicsWall(localWorld, wallMaterial, 0, high / 2, -TABLE_DEPTH / 2 - WALL_THICKNESS / 2, TABLE_WIDTH + WALL_THICKNESS * 2, high, WALL_THICKNESS);
+        addPhysicsWall(localWorld, wallMaterial, 0, high / 2, TABLE_DEPTH / 2 + WALL_THICKNESS / 2, TABLE_WIDTH + WALL_THICKNESS * 2, high, WALL_THICKNESS);
+        addPhysicsWall(localWorld, wallMaterial, -TABLE_WIDTH / 2 - WALL_THICKNESS / 2, high / 2, 0, WALL_THICKNESS, high, TABLE_DEPTH);
+        addPhysicsWall(localWorld, wallMaterial, TABLE_WIDTH / 2 + WALL_THICKNESS / 2, high / 2, 0, WALL_THICKNESS, high, TABLE_DEPTH);
+      }
+
+      function addPhysicsWall(localWorld, material, x, y, z, width, height, depth) {
+        const body = new CANNON.Body({ mass: 0, material });
+        body.addShape(new CANNON.Box(new CANNON.Vec3(width / 2, height / 2, depth / 2)));
+        body.position.set(x, y, z);
+        localWorld.addBody(body);
+      }
+
+      function createTable() {
+        const boardTexture = makeBoardTexture();
+        boardTexture.colorSpace = THREE.SRGBColorSpace;
+        boardTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        const base = new THREE.Mesh(new THREE.BoxGeometry(TABLE_WIDTH, TABLE_THICKNESS, TABLE_DEPTH), new THREE.MeshStandardMaterial({ color: 0x25345a, roughness: 0.74, metalness: 0.05 }));
+        base.position.y = -TABLE_THICKNESS / 2;
+        base.receiveShadow = true;
+        scene.add(base);
+        const top = new THREE.Mesh(new THREE.PlaneGeometry(TABLE_WIDTH, TABLE_DEPTH), new THREE.MeshStandardMaterial({ map: boardTexture, color: 0xffffff, roughness: 0.83, metalness: 0.0 }));
+        top.rotation.x = -Math.PI / 2;
+        top.position.y = 0.004;
+        top.receiveShadow = true;
+        scene.add(top);
+        const railMaterials = [new THREE.MeshStandardMaterial({ color: 0x244c86, roughness: 0.58, metalness: 0.12 }), new THREE.MeshStandardMaterial({ color: 0x7c3aed, roughness: 0.58, metalness: 0.12 })];
+        addVisualWall('north', 0, WALL_HEIGHT / 2, -TABLE_DEPTH / 2 - WALL_THICKNESS / 2, TABLE_WIDTH + WALL_THICKNESS * 2, WALL_HEIGHT, WALL_THICKNESS, railMaterials[0]);
+        addVisualWall('south', 0, WALL_HEIGHT / 2, TABLE_DEPTH / 2 + WALL_THICKNESS / 2, TABLE_WIDTH + WALL_THICKNESS * 2, WALL_HEIGHT, WALL_THICKNESS, railMaterials[1]);
+        addVisualWall('west', -TABLE_WIDTH / 2 - WALL_THICKNESS / 2, WALL_HEIGHT / 2, 0, WALL_THICKNESS, WALL_HEIGHT, TABLE_DEPTH, railMaterials[0]);
+        addVisualWall('east', TABLE_WIDTH / 2 + WALL_THICKNESS / 2, WALL_HEIGHT / 2, 0, WALL_THICKNESS, WALL_HEIGHT, TABLE_DEPTH, railMaterials[1]);
+      }
+
+      function addVisualWall(name, x, y, z, width, height, depth, material) {
+        const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), material);
+        mesh.name = `rail-${name}`;
+        mesh.position.set(x, y, z);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        scene.add(mesh);
+      }
+
+      function makeBoardTexture() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 1024; canvas.height = 768;
+        const ctx = canvas.getContext('2d');
+        const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        grad.addColorStop(0, '#f3f5ff'); grad.addColorStop(0.5, '#edf1ff'); grad.addColorStop(1, '#e8ecff');
+        ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.save(); ctx.globalAlpha = 0.14; ctx.fillStyle = '#4f46e5';
+        for (let y = 20; y < canvas.height; y += 42) for (let x = 20; x < canvas.width; x += 42) ctx.fillRect(x, y, 21, 21);
+        ctx.restore();
+        ctx.save(); ctx.strokeStyle = 'rgba(59, 130, 246, 0.22)'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(canvas.width / 2, 90); ctx.lineTo(canvas.width / 2, canvas.height - 90); ctx.stroke();
+        ctx.setLineDash([22, 18]); ctx.strokeStyle = 'rgba(236, 72, 153, 0.2)'; ctx.beginPath(); ctx.moveTo(88, canvas.height / 2); ctx.lineTo(canvas.width - 88, canvas.height / 2); ctx.stroke(); ctx.restore();
+        drawDropZone(ctx, canvas.width / 2, canvas.height / 2);
+        ctx.save(); ctx.fillStyle = 'rgba(15, 23, 42, 0.20)'; ctx.font = '700 32px ui-sans-serif, system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('DROP ZONE', canvas.width / 2, canvas.height / 2 + 92); ctx.restore();
+        return new THREE.CanvasTexture(canvas);
+      }
+
+      function drawDropZone(ctx, cx, cy) {
+        ctx.save(); ctx.translate(cx, cy); ctx.strokeStyle = 'rgba(99, 102, 241, 0.18)'; ctx.fillStyle = 'rgba(99, 102, 241, 0.07)'; ctx.lineWidth = 6;
+        ctx.beginPath(); ctx.arc(0, 0, 102, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.setLineDash([13, 12]); ctx.strokeStyle = 'rgba(244, 114, 182, 0.30)'; ctx.beginPath(); ctx.arc(0, 0, 68, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+      }
+
+      function createAmbientParticles() {
+        const geometry = new THREE.BufferGeometry();
+        const count = 90;
+        const positions = new Float32Array(count * 3);
+        for (let i = 0; i < count; i++) {
+          positions[i * 3] = (Math.random() - 0.5) * TABLE_WIDTH * 0.92;
+          positions[i * 3 + 1] = 0.035 + Math.random() * 0.025;
+          positions[i * 3 + 2] = (Math.random() - 0.5) * TABLE_DEPTH * 0.9;
+        }
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const material = new THREE.PointsMaterial({ color: 0xffe08a, size: 0.035, transparent: true, opacity: 0.42, depthWrite: false });
+        scene.add(new THREE.Points(geometry, material));
+      }
+
+      function createTargetControls() {
+        targetGrid.innerHTML = '';
+        targetControls.length = 0;
+        for (let i = 0; i < 6; i++) {
+          const cell = document.createElement('label');
+          cell.className = 'target-cell';
+          const label = document.createElement('span');
+          label.textContent = `#${i + 1}`;
+          const select = document.createElement('select');
+          select.innerHTML = '<option value="">随机</option><option value="1">1 点</option><option value="2">2 点</option><option value="3">3 点</option><option value="4">4 点</option><option value="5">5 点</option><option value="6">6 点</option>';
+          cell.append(label, select);
+          targetGrid.appendChild(cell);
+          targetControls.push({ cell, select });
+        }
+        refreshTargetControls();
+      }
+
+      function refreshTargetControls() {
+        const count = clamp(parseInt(countInput.value, 10) || 1, 1, 6);
+        targetControls.forEach((entry, index) => {
+          const active = index < count;
+          entry.cell.classList.toggle('inactive', !active);
+          entry.select.disabled = !active || planning;
+        });
+      }
+
+      function readTargets(count) {
+        return targetControls.slice(0, count).map(entry => {
+          const value = parseInt(entry.select.value, 10);
+          return Number.isFinite(value) ? value : null;
+        });
+      }
+
+      function createDie(index) {
+        const useColors = colorToggle.checked;
+        const color = useColors ? dicePalette[index % dicePalette.length] : ivoryPalette[index % ivoryPalette.length];
+        const pipMaterial = useColors ? pipWhiteMaterial : pipDarkMaterial;
+        const baseMaterial = new THREE.MeshPhysicalMaterial({ color, roughness: 0.34, metalness: 0.02, clearcoat: 0.36, clearcoatRoughness: 0.32, sheen: 0.15, sheenRoughness: 0.52 });
+        const group = new THREE.Group();
+        const cube = new THREE.Mesh(new RoundedBoxGeometry(DIE_SIZE, DIE_SIZE, DIE_SIZE, 5, 0.085), baseMaterial);
+        cube.castShadow = true; cube.receiveShadow = true; group.add(cube);
+        for (const face of faceDefinitions) for (const [uOffset, vOffset] of getPipPattern(face.value)) group.add(createPip(face.normal, face.u, face.v, uOffset, vOffset, pipMaterial));
+        scene.add(group);
+        const body = makeDiceBody(diceMaterialPhysics);
+        body.addEventListener('collide', event => {
+          const impact = event.contact && typeof event.contact.getImpactVelocityAlongNormal === 'function' ? Math.abs(event.contact.getImpactVelocityAlongNormal()) : body.velocity.length();
+          if (impact > 1.2) playImpact(impact);
+        });
+        world.addBody(body);
+        return { mesh: group, body, index };
+      }
+
+      function makeDiceBody(material) {
+        const body = new CANNON.Body({ mass: 1, material, linearDamping: 0.018, angularDamping: 0.038, allowSleep: true, sleepSpeedLimit: 0.075, sleepTimeLimit: 0.55 });
+        body.addShape(new CANNON.Box(new CANNON.Vec3(DIE_HALF, DIE_HALF, DIE_HALF)));
+        return body;
+      }
+
+      function createPip(normal, u, v, uOffset, vOffset, material) {
+        const n = normal.clone().normalize();
+        const pip = new THREE.Mesh(pipGeometry, material);
+        pip.castShadow = true; pip.receiveShadow = true;
+        pip.position.copy(n.clone().multiplyScalar(DIE_HALF + PIP_DEPTH / 2 + 0.003).add(u.clone().multiplyScalar(uOffset)).add(v.clone().multiplyScalar(vOffset)));
+        pip.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), n);
+        return pip;
+      }
+
+      function getPipPattern(value) {
+        const d = PIP_SPACING;
+        switch (value) {
+          case 1: return [[0, 0]];
+          case 2: return [[-d, -d], [d, d]];
+          case 3: return [[-d, -d], [0, 0], [d, d]];
+          case 4: return [[-d, -d], [-d, d], [d, -d], [d, d]];
+          case 5: return [[-d, -d], [-d, d], [0, 0], [d, -d], [d, d]];
+          case 6: return [[-d, -d], [-d, 0], [-d, d], [d, -d], [d, 0], [d, d]];
+          default: return [];
+        }
+      }
+
+      async function dropDice() {
+        if (planning) return;
+        ensureAudio();
+        const count = clamp(parseInt(countInput.value, 10) || 1, 1, 6);
+        countInput.value = String(count);
+        countValue.textContent = String(count);
+        const targets = readTargets(count);
+        activeTargets = targets;
+        const hasTargets = targets.some(value => value !== null);
+
+        clearDice(false);
+        rolling = false;
+        settleTimer = 0;
+        hasAnnouncedResult = false;
+        updateResultUI([], hasTargets ? '预模拟中' : '投掷中…', hasTargets ? '正在后台寻找自然命中目标点数的投掷参数。正式画面暂不落骰。' : '等待骰子完全停止。', targets);
+
+        let plan;
+        if (hasTargets) {
+          setPlanning(true);
+          try {
+            plan = await buildPreSimPlan(count, targets);
+          } catch (error) {
+            console.error(error);
+            setPlanning(false);
+            updateResultUI([], '预模拟失败', '未找到稳定命中的投掷参数。请减少指定骰子数量或重试。', targets);
+            return;
+          }
+          setPlanning(false);
+          updateResultUI([], '投掷中…', '预模拟完成，正在播放完整物理投掷。播放过程中不会强制转面。', targets);
+        } else {
+          plan = Array.from({ length: count }, (_, index) => makeInitialParams(index, count, false));
+        }
+
+        applyPlan(plan);
+      }
+
+      function applyPlan(plan) {
+        clearDice(false);
+        rolling = true;
+        settleTimer = 0;
+        hasAnnouncedResult = false;
+        for (let i = 0; i < plan.length; i++) {
+          const die = createDie(i);
+          dice.push(die);
+          applyParamsToBody(die.body, plan[i]);
+          die.mesh.position.copy(die.body.position);
+          die.mesh.quaternion.copy(die.body.quaternion);
+          die.body.wakeUp();
+        }
+      }
+
+      async function buildPreSimPlan(count, targets) {
+        const hasTargets = targets.some(value => value !== null);
+        if (!hasTargets) return Array.from({ length: count }, (_, index) => makeInitialParams(index, count, false));
+
+        for (let fullTry = 1; fullTry <= FULL_VERIFY_ATTEMPTS; fullTry++) {
+          const plan = [];
+          for (let i = 0; i < count; i++) {
+            const target = targets[i];
+            if (target === null) {
+              plan[i] = makeInitialParams(i, count, true);
+            } else {
+              plan[i] = await findSingleTargetParams(i, count, target, fullTry);
+            }
+          }
+          setPreSimProgress(Math.min(96, 72 + fullTry), `全局验证 ${fullTry}/${FULL_VERIFY_ATTEMPTS}：检查多骰同时播放后是否仍命中目标。`);
+          await yieldFrame();
+          const verified = simulateFullPlan(plan, targets).ok;
+          if (verified) {
+            setPreSimProgress(100, '已找到自然命中目标点数的投掷参数。');
+            await yieldFrame();
+            return plan;
+          }
+        }
+        throw new Error('pre-simulation could not find a fully verified plan');
+      }
+
+      async function findSingleTargetParams(index, count, targetValue, fullTry) {
+        for (let attempt = 1; attempt <= TARGET_MAX_ATTEMPTS_PER_DIE; attempt++) {
+          const params = makeInitialParams(index, count, true);
+          const result = simulateSingle(params);
+          if (result.value === targetValue && result.safe) return params;
+          if (attempt % 12 === 0) {
+            const base = ((index + 0.2) / count) * 72;
+            const local = Math.min(10, attempt / TARGET_MAX_ATTEMPTS_PER_DIE * 10);
+            setPreSimProgress(Math.min(95, base + local), `第 ${index + 1} 颗目标 ${targetValue} 点：第 ${attempt} 次后台试投。`);
+            await yieldFrame();
+          }
+        }
+        throw new Error(`target ${targetValue} not found for die ${index + 1}`);
+      }
+
+      function makeInitialParams(index, count, targetMode) {
+        const cols = Math.ceil(count / 2);
+        const col = index % cols;
+        const row = Math.floor(index / cols);
+        const spacingX = targetMode ? 1.9 : 1.18;
+        const spacingZ = targetMode ? 1.6 : 1.0;
+        const laneX = (col - (cols - 1) / 2) * spacingX;
+        const laneZ = (row - 0.5) * spacingZ;
+        const q = new CANNON.Quaternion();
+        q.setFromEuler(rand(0, Math.PI * 2), rand(0, Math.PI * 2), rand(0, Math.PI * 2), 'XYZ');
+        const lateral = targetMode ? 0.46 : 1.15;
+        const cross = targetMode ? 0.34 : 1.2;
+        const y = 4.45 + index * 0.18 + rand(0, targetMode ? 0.7 : 1.25);
+        return {
+          position: [laneX + rand(-0.18, 0.18), y, laneZ + rand(-0.18, 0.18)],
+          quaternion: [q.x, q.y, q.z, q.w],
+          velocity: [rand(-lateral, lateral), rand(-0.64, 0.08), rand(-cross, cross)],
+          angularVelocity: [rand(-8.8, 8.8), rand(-8.8, 8.8), rand(-8.8, 8.8)]
+        };
+      }
+
+      function simulateSingle(params) {
+        const sim = createPhysicsWorld();
+        const body = makeDiceBody(sim.diceMaterial);
+        sim.world.addBody(body);
+        applyParamsToBody(body, params);
+        const result = stepUntilSettled(sim.world, [body]);
+        const value = getUpFaceValue(body);
+        const safe = isBodySafe(body) && result.settled;
+        return { value, safe, settled: result.settled };
+      }
+
+      function simulateFullPlan(plan, targets) {
+        const sim = createPhysicsWorld();
+        const bodies = plan.map(params => {
+          const body = makeDiceBody(sim.diceMaterial);
+          sim.world.addBody(body);
+          applyParamsToBody(body, params);
+          return body;
+        });
+        const result = stepUntilSettled(sim.world, bodies);
+        const values = bodies.map(body => getUpFaceValue(body));
+        const allMatch = targets.every((target, index) => target === null || values[index] === target);
+        const allSafe = bodies.every(body => isBodySafe(body));
+        return { ok: result.settled && allSafe && allMatch, values };
+      }
+
+      function stepUntilSettled(localWorld, bodies) {
+        let quietFrames = 0;
+        for (let step = 0; step < MAX_SIM_STEPS; step++) {
+          localWorld.step(FIXED_STEP);
+          const allQuiet = bodies.every(isBodyQuiet);
+          quietFrames = allQuiet ? quietFrames + 1 : 0;
+          if (quietFrames >= QUIET_FRAMES) return { settled: true, steps: step };
+        }
+        return { settled: false, steps: MAX_SIM_STEPS };
+      }
+
+      function isBodyQuiet(body) {
+        return body.position.y < 1.05 && body.velocity.length() < QUIET_LINEAR && body.angularVelocity.length() < QUIET_ANGULAR;
+      }
+
+      function isBodySafe(body) {
+        return Math.abs(body.position.x) < TABLE_WIDTH / 2 - 0.75 && Math.abs(body.position.z) < TABLE_DEPTH / 2 - 0.75 && body.position.y > 0 && body.position.y < 1.1;
+      }
+
+      function applyParamsToBody(body, params) {
+        body.position.set(params.position[0], params.position[1], params.position[2]);
+        body.quaternion.set(params.quaternion[0], params.quaternion[1], params.quaternion[2], params.quaternion[3]);
+        body.velocity.set(params.velocity[0], params.velocity[1], params.velocity[2]);
+        body.angularVelocity.set(params.angularVelocity[0], params.angularVelocity[1], params.angularVelocity[2]);
+        body.force.set(0, 0, 0);
+        body.torque.set(0, 0, 0);
+        body.wakeUp();
+      }
+
+      function setPlanning(value) {
+        planning = value;
+        dropBtn.disabled = value;
+        resetBtn.disabled = value;
+        fillTargetsBtn.disabled = value;
+        clearTargetsBtn.disabled = value;
+        countInput.disabled = value;
+        refreshTargetControls();
+        progressWrap.hidden = !value;
+        if (!value) progressBar.style.setProperty('--p', '0%');
+      }
+
+      function setPreSimProgress(percent, text) {
+        progressWrap.hidden = false;
+        progressBar.style.setProperty('--p', `${clamp(percent, 0, 100)}%`);
+        statusText.textContent = text;
+      }
+
+      function yieldFrame() {
+        return new Promise(resolve => requestAnimationFrame(resolve));
+      }
+
+      function clearDice(resetResult = true) {
+        for (const die of dice) {
+          scene.remove(die.mesh);
+          world.removeBody(die.body);
+        }
+        dice.length = 0;
+        rolling = false;
+        settleTimer = 0;
+        hasAnnouncedResult = false;
+        if (resetResult) updateResultUI([], '等待投掷', '选择数量和目标点数后点击“落下 / 重投”。', readTargets(clamp(parseInt(countInput.value, 10) || 1, 1, 6)));
+      }
+
+      function updateResultUI(values, suffix, status, targets = activeTargets) {
+        faces.innerHTML = '';
+        if (values.length === 0) {
+          sumValue.textContent = '—';
+        } else {
+          sumValue.textContent = String(values.reduce((acc, value) => acc + value, 0));
+          for (let i = 0; i < values.length; i++) {
+            const token = document.createElement('span');
+            token.className = `face-token${targets[i] !== null && targets[i] !== undefined ? ' targeted' : ''}`;
+            token.textContent = String(values[i]);
+            faces.appendChild(token);
+          }
+        }
+        sumSuffix.textContent = suffix;
+        statusText.textContent = status;
+      }
+
+      function getUpFaceValue(body) {
+        const up = new CANNON.Vec3(0, 1, 0);
+        const temp = new CANNON.Vec3();
+        let bestValue = 1;
+        let bestDot = -Infinity;
+        for (const face of faceNormalsForResult) {
+          body.quaternion.vmult(face.normal, temp);
+          const dot = temp.dot(up);
+          if (dot > bestDot) { bestDot = dot; bestValue = face.value; }
+        }
+        return bestValue;
+      }
+
+      function checkSettled(delta) {
+        if (!rolling || dice.length === 0 || hasAnnouncedResult || planning) return;
+        const allSlow = dice.every(die => isBodyQuiet(die.body));
+        settleTimer = allSlow ? settleTimer + delta : 0;
+        if (settleTimer > 0.75) {
+          const values = dice.map(die => getUpFaceValue(die.body));
+          hasAnnouncedResult = true;
+          rolling = false;
+          updateResultUI(values, `共 ${values.length} 个骰子`, '已落定。指定点数的骰子结果来自后台预模拟，不是停稳后校正。', activeTargets);
+        }
+      }
+
+      function playImpact(impact) {
+        if (!soundToggle.checked || !audioCtx) return;
+        const now = audioCtx.currentTime;
+        if (now - lastAudioTime < 0.028) return;
+        lastAudioTime = now;
+        const duration = 0.045;
+        const sampleRate = audioCtx.sampleRate;
+        const frameCount = Math.max(1, Math.floor(sampleRate * duration));
+        const buffer = audioCtx.createBuffer(1, frameCount, sampleRate);
+        const data = buffer.getChannelData(0);
+        const volume = Math.min(0.22, 0.028 + impact * 0.018);
+        for (let i = 0; i < frameCount; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / frameCount, 2.2);
+        const source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = 720 + Math.random() * 720;
+        filter.Q.value = 0.85;
+        const gain = audioCtx.createGain();
+        gain.gain.setValueAtTime(volume, now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+        source.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
+        source.start(now); source.stop(now + duration);
+      }
+
+      function ensureAudio() {
+        if (!soundToggle.checked) return;
+        try {
+          if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          if (audioCtx.state === 'suspended') audioCtx.resume();
+        } catch (_) { audioCtx = null; }
+      }
+
+      function resetCamera() {
+        camera.position.copy(defaultCameraPosition);
+        controls.target.set(0, 0.2, 0);
+        controls.update();
+      }
+      function rand(min, max) { return min + Math.random() * (max - min); }
+      function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
+      function resize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      }
+      function animate() {
+        requestAnimationFrame(animate);
+        const delta = Math.min(clock.getDelta(), 1 / 30);
+        const timeScale = slowToggle.checked ? 0.34 : 1;
+        if (!planning) world.step(FIXED_STEP, delta * timeScale, 6);
+        for (const die of dice) {
+          die.mesh.position.copy(die.body.position);
+          die.mesh.quaternion.copy(die.body.quaternion);
+        }
+        checkSettled(delta * timeScale);
+        controls.update();
+        renderer.render(scene, camera);
+      }
+
+      countInput.addEventListener('input', () => { countValue.textContent = countInput.value; refreshTargetControls(); });
+      dropBtn.addEventListener('click', dropDice);
+      resetBtn.addEventListener('click', () => clearDice(true));
+      cameraBtn.addEventListener('click', resetCamera);
+      fillTargetsBtn.addEventListener('click', () => {
+        const count = clamp(parseInt(countInput.value, 10) || 1, 1, 6);
+        for (let i = 0; i < count; i++) targetControls[i].select.value = String(1 + Math.floor(Math.random() * 6));
+        refreshTargetControls();
+      });
+      clearTargetsBtn.addEventListener('click', () => { targetControls.forEach(entry => { entry.select.value = ''; }); refreshTargetControls(); });
+      colorToggle.addEventListener('change', () => { if (dice.length > 0 && !planning) dropDice(); });
+      window.addEventListener('resize', resize);
+
+      updateResultUI([], '等待投掷', '选择数量和目标点数后点击“落下 / 重投”。', readTargets(4));
+      dropDice();
+      animate();
+    }
+  </script>
+</body>
+</html>
