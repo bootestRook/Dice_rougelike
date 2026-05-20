@@ -8,15 +8,22 @@ const GmDiceViewportScript = preload("res://scripts/ui/debug/gm_dice_port/GmDice
 const GmReadyMgrScript = preload("res://scripts/ui/debug/gm_dice_port/GmReadyMgr.gd")
 const GmBattleMgrScript = preload("res://scripts/ui/debug/gm_dice_port/GmBattleMgr.gd")
 const GmGameMgrScript = preload("res://scripts/ui/debug/gm_dice_port/GmGameMgr.gd")
+const GmDiceFlowModuleScript = preload("res://scripts/ui/debug/gm_dice_port/GmDiceFlowModule.gd")
 const GmSceneBridgeScript = preload("res://scripts/ui/debug/gm_dice_port/GmSceneBridge.gd")
 
 
 signal back_requested
 signal roll_requested(payload: Dictionary)
+signal resolution_requested(payload: Dictionary)
+signal dice_exit_requested(payload: Dictionary)
 signal snapshot_changed(snapshot: Dictionary)
 
 
 const DEFAULT_TARGET_SCORE := 100
+const AUTO_ROLL_ALL_AFTER_ENTER_DELAY := 1.0
+const AUTO_ROLL_ALL_AFTER_EXIT_RETURN_DELAY := 1.0
+const AUTO_ROLL_ALL_RETRY_DELAY := 0.20
+const AUTO_ROLL_ALL_MAX_RETRIES := 50
 
 
 @export_group("Camera")
@@ -30,19 +37,46 @@ const DEFAULT_TARGET_SCORE := 100
 
 var back_callback: Callable
 var scene_bridge: Node = null
-var dice_viewport: SubViewportContainer = null
+var dice_viewport: GmDiceViewport = null
 var ready_mgr: GmReadyMgr = null
 var battle_mgr: GmBattleMgr = null
 var game_mgr: GmGameMgr = null
+var dice_flow_module: GmDiceFlowModule = null
 var hud: GmDiceHud = null
 var target_score := DEFAULT_TARGET_SCORE
-var throw_tuning := {
-	"forward_speed": 10.0,
-	"lateral_speed": 5.0,
-	"upward_speed": 3.2,
-	"angular_speed": 28.0,
-	"torque_impulse": 24.0,
+var idle_drift_tuning := {
+	"min_seconds": 1.15,
+	"max_seconds": 2.35,
+	"max_distance": 0.07,
+	"speed": 0.05,
 }
+var throw_speed_tuning := {
+	"linear_speed_min": 8.0,
+	"linear_speed_max": 12.0,
+}
+var throw_spin_tuning := {
+	"angular_speed_min": 4.0,
+	"angular_speed_max": 9.5,
+	"torque_min": 2.0,
+	"torque_max": 5.0,
+}
+var exit_return_tuning := {
+	"screen_x": 0.66,
+	"screen_y": 0.44,
+	"spawn_y": 20.0,
+}
+var unselected_hold_tuning := {
+	"screen_x": 0.50,
+	"screen_y": 0.84,
+	"max_width": 2.10,
+	"duration": 0.36,
+}
+var auto_roll_all_pending := false
+var auto_roll_all_active := false
+var auto_roll_all_request_count := 0
+var auto_roll_all_last_delay_seconds := 0.0
+var _auto_roll_all_roll_in_progress := false
+var _auto_roll_all_generation := 0
 
 
 func setup(return_callback: Callable = Callable()) -> void:
@@ -61,6 +95,8 @@ func _ready() -> void:
 	_build_managers()
 	game_mgr.boot(4)
 	_update_hud()
+	if dice_flow_module != null:
+		dice_flow_module.request_entry_auto_roll()
 
 
 func _physics_process(_delta: float) -> void:
@@ -70,7 +106,14 @@ func _physics_process(_delta: float) -> void:
 
 func automation_get_snapshot() -> Dictionary:
 	var snapshot := game_mgr.get_snapshot() if game_mgr != null else {}
-	snapshot["throw_tuning"] = throw_tuning.duplicate()
+	snapshot["idle_drift_tuning"] = idle_drift_tuning.duplicate()
+	snapshot["throw_speed_tuning"] = throw_speed_tuning.duplicate()
+	snapshot["throw_spin_tuning"] = throw_spin_tuning.duplicate()
+	snapshot["exit_return_tuning"] = _resolved_exit_return_tuning()
+	snapshot["unselected_hold_tuning"] = _resolved_unselected_hold_tuning()
+	var flow_fields := _dice_flow_snapshot_fields()
+	for key in flow_fields.keys():
+		snapshot[key] = flow_fields[key]
 	var hud_targets := hud.get_targets() if hud != null else []
 	var camera_state: Dictionary = dice_viewport.get_camera_state() if dice_viewport != null else {
 		"display_mode": "fixed_2_5d_subviewport",
@@ -98,8 +141,14 @@ func automation_configure_session(config: Dictionary) -> void:
 		automation_set_dice_count(int(config["dice_count"]))
 	if config.has("targets"):
 		automation_set_targets(config["targets"] as Array)
-	if config.has("throw_tuning") and config["throw_tuning"] is Dictionary:
-		automation_set_throw_tuning(config["throw_tuning"] as Dictionary)
+	if config.has("idle_drift_tuning") and config["idle_drift_tuning"] is Dictionary:
+		automation_set_idle_drift_tuning(config["idle_drift_tuning"] as Dictionary)
+	if config.has("throw_speed_tuning") and config["throw_speed_tuning"] is Dictionary:
+		automation_set_throw_speed_tuning(config["throw_speed_tuning"] as Dictionary)
+	if config.has("throw_spin_tuning") and config["throw_spin_tuning"] is Dictionary:
+		automation_set_throw_spin_tuning(config["throw_spin_tuning"] as Dictionary)
+	if config.has("exit_return_tuning") and config["exit_return_tuning"] is Dictionary:
+		automation_set_exit_return_tuning(config["exit_return_tuning"] as Dictionary)
 	if config.has("camera_tuning") and config["camera_tuning"] is Dictionary:
 		automation_set_camera_tuning(config["camera_tuning"] as Dictionary)
 	_update_hud()
@@ -126,12 +175,77 @@ func automation_set_targets(values: Array) -> void:
 	_update_hud()
 
 
-func automation_set_throw_tuning(config: Dictionary) -> void:
+func automation_select_dice(indices: Array) -> void:
+	if _is_selection_input_locked():
+		_update_hud()
+		return
+	if game_mgr != null:
+		game_mgr.set_selected_dice_indices(indices)
+	_update_hud()
+
+
+func automation_toggle_select(index: int) -> void:
+	if _is_selection_input_locked():
+		_update_hud()
+		return
+	if game_mgr != null:
+		game_mgr.toggle_select(index)
+	_update_hud()
+
+
+func automation_clear_selection() -> void:
+	if game_mgr != null:
+		game_mgr.clear_selection()
+	_update_hud()
+
+
+func automation_click_dice(index: int) -> void:
+	if _is_selection_input_locked():
+		_update_hud()
+		return
+	if dice_viewport == null:
+		return
+	var points := dice_viewport.get_dice_local_points()
+	if index < 0 or index >= points.size():
+		return
+	var dice := dice_viewport.pick_dice_at_local_position(points[index])
+	if dice != null:
+		_on_dice_viewport_dice_clicked(dice)
+
+
+func automation_set_idle_drift_tuning(config: Dictionary) -> void:
 	if hud != null:
-		hud.set_throw_tuning(config)
-	throw_tuning = hud.get_throw_tuning() if hud != null else config.duplicate(true)
+		hud.set_idle_drift_tuning(config)
+	idle_drift_tuning = hud.get_idle_drift_tuning() if hud != null else config.duplicate(true)
 	if battle_mgr != null:
-		battle_mgr.set_throw_tuning(throw_tuning)
+		battle_mgr.set_idle_drift_tuning(idle_drift_tuning)
+	_update_hud()
+
+
+func automation_set_throw_speed_tuning(config: Dictionary) -> void:
+	if hud != null:
+		hud.set_throw_speed_tuning(config)
+	throw_speed_tuning = hud.get_throw_speed_tuning() if hud != null else config.duplicate(true)
+	if battle_mgr != null:
+		battle_mgr.set_throw_speed_tuning(throw_speed_tuning)
+	_update_hud()
+
+
+func automation_set_throw_spin_tuning(config: Dictionary) -> void:
+	if hud != null:
+		hud.set_throw_spin_tuning(config)
+	throw_spin_tuning = hud.get_throw_spin_tuning() if hud != null else config.duplicate(true)
+	if battle_mgr != null:
+		battle_mgr.set_throw_spin_tuning(throw_spin_tuning)
+	_update_hud()
+
+
+func automation_set_exit_return_tuning(config: Dictionary) -> void:
+	if hud != null:
+		hud.set_exit_return_tuning(config)
+	exit_return_tuning = _normalized_exit_return_tuning(hud.get_exit_return_tuning() if hud != null else config)
+	if battle_mgr != null:
+		battle_mgr.set_exit_return_tuning(_resolved_exit_return_tuning())
 	_update_hud()
 
 
@@ -148,16 +262,21 @@ func automation_drop_random(count: int = 2) -> void:
 	for _i in range(clampi(count, 1, 6)):
 		targets.append(null)
 	automation_set_targets(targets)
+	if game_mgr != null:
+		game_mgr.select_all_dice()
 	_drop_with_current_settings(false)
 
 
 func automation_roll_targets(values: Array) -> void:
 	automation_set_dice_count(values.size())
 	automation_set_targets(values)
+	if game_mgr != null:
+		game_mgr.select_all_dice()
 	_drop_with_current_settings(true)
 
 
 func automation_clear() -> void:
+	_cancel_auto_roll_all()
 	if scene_bridge != null:
 		scene_bridge.notify_clear()
 	if game_mgr != null:
@@ -165,17 +284,43 @@ func automation_clear() -> void:
 	_update_hud()
 
 
-func _drop_with_current_settings(use_targets: bool) -> void:
+func automation_request_dice_exit() -> void:
+	_request_dice_exit_with_current_state()
+
+
+func automation_request_dice_return() -> void:
+	_request_dice_return_from_exit()
+
+
+func automation_request_auto_roll_all(delay_seconds := 0.0) -> void:
+	_request_auto_roll_all(delay_seconds)
+
+
+func _drop_with_current_settings(use_targets: bool, from_auto_roll_all := false) -> void:
 	if game_mgr == null:
 		return
+	if not from_auto_roll_all:
+		_cancel_auto_roll_all()
 	var targets := hud.get_targets() if hud != null else []
 	if hud != null:
-		throw_tuning = hud.get_throw_tuning()
+		idle_drift_tuning = hud.get_idle_drift_tuning()
+		throw_speed_tuning = hud.get_throw_speed_tuning()
+		throw_spin_tuning = hud.get_throw_spin_tuning()
+		exit_return_tuning = _normalized_exit_return_tuning(hud.get_exit_return_tuning())
 	if battle_mgr != null:
-		battle_mgr.set_throw_tuning(throw_tuning)
+		battle_mgr.set_idle_drift_tuning(idle_drift_tuning)
+		battle_mgr.set_throw_speed_tuning(throw_speed_tuning)
+		battle_mgr.set_throw_spin_tuning(throw_spin_tuning)
+		battle_mgr.set_exit_return_tuning(_resolved_exit_return_tuning())
+		battle_mgr.set_unselected_hold_tuning(_resolved_unselected_hold_tuning())
 	if scene_bridge != null:
-		var payload: Dictionary = scene_bridge.make_roll_payload(use_targets, game_mgr.dice_count, targets)
-		payload["throw_tuning"] = throw_tuning.duplicate()
+		var selected_indices := game_mgr.get_selected_dice_indices()
+		var payload: Dictionary = scene_bridge.make_roll_payload(use_targets, game_mgr.dice_count, targets, selected_indices)
+		payload["idle_drift_tuning"] = idle_drift_tuning.duplicate()
+		payload["throw_speed_tuning"] = throw_speed_tuning.duplicate()
+		payload["throw_spin_tuning"] = throw_spin_tuning.duplicate()
+		payload["exit_return_tuning"] = exit_return_tuning.duplicate()
+		payload["auto_roll_all"] = from_auto_roll_all
 		roll_requested.emit(payload)
 	game_mgr.set_targets(targets)
 	game_mgr.roll_current(use_targets)
@@ -201,6 +346,7 @@ func _build_dice_viewport() -> void:
 	dice_viewport.name = "DiceViewport"
 	add_child(dice_viewport)
 	dice_viewport.build()
+	dice_viewport.dice_clicked.connect(_on_dice_viewport_dice_clicked)
 	dice_viewport.configure_camera(camera_fov, camera_position, camera_look_at)
 	dice_viewport.configure_ready_row_height(dice_initial_height)
 	dice_viewport.configure_key_light(key_light_pitch, key_light_yaw)
@@ -212,14 +358,26 @@ func _build_hud() -> void:
 	add_child(hud)
 	hud.build()
 	hud.set_camera_tuning(_camera_tuning())
+	hud.set_idle_drift_tuning(idle_drift_tuning)
+	hud.set_throw_speed_tuning(throw_speed_tuning)
+	hud.set_throw_spin_tuning(throw_spin_tuning)
+	hud.set_exit_return_tuning(exit_return_tuning)
 	hud.roll_requested.connect(_on_hud_roll_requested)
 	hud.clear_requested.connect(_on_hud_clear_requested)
 	hud.back_requested.connect(_on_hud_back_requested)
+	hud.dice_exit_requested.connect(_on_hud_dice_exit_requested)
+	hud.dice_return_requested.connect(_on_hud_dice_return_requested)
 	hud.dice_count_changed.connect(_on_hud_dice_count_changed)
 	hud.targets_changed.connect(_on_hud_targets_changed)
-	hud.throw_tuning_changed.connect(_on_hud_throw_tuning_changed)
+	hud.idle_drift_tuning_changed.connect(_on_hud_idle_drift_tuning_changed)
+	hud.throw_speed_tuning_changed.connect(_on_hud_throw_speed_tuning_changed)
+	hud.throw_spin_tuning_changed.connect(_on_hud_throw_spin_tuning_changed)
+	hud.exit_return_tuning_changed.connect(_on_hud_exit_return_tuning_changed)
 	hud.camera_tuning_changed.connect(_on_hud_camera_tuning_changed)
-	throw_tuning = hud.get_throw_tuning()
+	idle_drift_tuning = hud.get_idle_drift_tuning()
+	throw_speed_tuning = hud.get_throw_speed_tuning()
+	throw_spin_tuning = hud.get_throw_spin_tuning()
+	exit_return_tuning = _normalized_exit_return_tuning(hud.get_exit_return_tuning())
 
 
 func _build_managers() -> void:
@@ -241,10 +399,16 @@ func _build_managers() -> void:
 	battle_mgr.name = "BattleMgr"
 	managers.add_child(battle_mgr)
 	battle_mgr.setup(ready_mgr, dice_viewport.dice_container)
-	battle_mgr.set_throw_tuning(throw_tuning)
+	battle_mgr.set_idle_drift_tuning(idle_drift_tuning)
+	battle_mgr.set_throw_speed_tuning(throw_speed_tuning)
+	battle_mgr.set_throw_spin_tuning(throw_spin_tuning)
+	battle_mgr.set_exit_return_tuning(_resolved_exit_return_tuning())
+	battle_mgr.set_unselected_hold_tuning(_resolved_unselected_hold_tuning())
 	battle_mgr.score_updated.connect(_on_battle_snapshot_changed)
 	battle_mgr.roll_started.connect(_on_battle_snapshot_changed)
 	battle_mgr.roll_finished.connect(_on_battle_snapshot_changed)
+	battle_mgr.resolution_requested.connect(_on_battle_resolution_requested)
+	battle_mgr.dice_exit_requested.connect(_on_battle_dice_exit_requested)
 	battle_mgr.dice_roster_changed.connect(_on_battle_snapshot_changed)
 
 	game_mgr = GmGameMgrScript.new() as GmGameMgr
@@ -253,9 +417,29 @@ func _build_managers() -> void:
 	game_mgr.setup(ready_mgr, battle_mgr, GmDiceDefinitionScript.create_standard_d6())
 	game_mgr.state_changed.connect(_on_game_state_changed)
 
+	dice_flow_module = GmDiceFlowModuleScript.new() as GmDiceFlowModule
+	dice_flow_module.name = "DiceFlowModule"
+	managers.add_child(dice_flow_module)
+	dice_flow_module.setup(
+		game_mgr,
+		battle_mgr,
+		Callable(self, "_roll_all_dice_without_targets_from_flow"),
+		Callable(self, "_update_hud")
+	)
+	dice_flow_module.state_changed.connect(_on_dice_flow_state_changed)
+
 
 func _on_hud_roll_requested(use_targets: bool) -> void:
 	_drop_with_current_settings(use_targets)
+
+
+func _on_dice_viewport_dice_clicked(dice) -> void:
+	if _is_selection_input_locked():
+		_update_hud()
+		return
+	if battle_mgr != null:
+		battle_mgr.toggle_select_by_avatar(dice)
+	_update_hud()
 
 
 func _on_hud_clear_requested() -> void:
@@ -270,6 +454,14 @@ func _on_hud_back_requested() -> void:
 		back_callback.call()
 
 
+func _on_hud_dice_exit_requested() -> void:
+	_request_dice_exit_with_current_state()
+
+
+func _on_hud_dice_return_requested() -> void:
+	_request_dice_return_from_exit()
+
+
 func _on_hud_dice_count_changed(count: int) -> void:
 	if game_mgr != null:
 		game_mgr.set_dice_count(count)
@@ -282,10 +474,29 @@ func _on_hud_targets_changed(values: Array) -> void:
 	_update_hud()
 
 
-func _on_hud_throw_tuning_changed(config: Dictionary) -> void:
-	throw_tuning = config.duplicate()
+func _on_hud_idle_drift_tuning_changed(config: Dictionary) -> void:
+	idle_drift_tuning = config.duplicate()
 	if battle_mgr != null:
-		battle_mgr.set_throw_tuning(throw_tuning)
+		battle_mgr.set_idle_drift_tuning(idle_drift_tuning)
+
+
+func _on_hud_throw_speed_tuning_changed(config: Dictionary) -> void:
+	throw_speed_tuning = config.duplicate()
+	if battle_mgr != null:
+		battle_mgr.set_throw_speed_tuning(throw_speed_tuning)
+
+
+func _on_hud_throw_spin_tuning_changed(config: Dictionary) -> void:
+	throw_spin_tuning = config.duplicate()
+	if battle_mgr != null:
+		battle_mgr.set_throw_spin_tuning(throw_spin_tuning)
+
+
+func _on_hud_exit_return_tuning_changed(config: Dictionary) -> void:
+	exit_return_tuning = _normalized_exit_return_tuning(config)
+	if battle_mgr != null:
+		battle_mgr.set_exit_return_tuning(_resolved_exit_return_tuning())
+		battle_mgr.set_unselected_hold_tuning(_resolved_unselected_hold_tuning())
 
 
 func _on_hud_camera_tuning_changed(config: Dictionary) -> void:
@@ -294,6 +505,79 @@ func _on_hud_camera_tuning_changed(config: Dictionary) -> void:
 
 func _on_battle_snapshot_changed(_snapshot: Dictionary) -> void:
 	_update_hud()
+
+
+func _on_battle_resolution_requested(payload: Dictionary) -> void:
+	if scene_bridge != null and scene_bridge.has_method("notify_resolution_requested"):
+		scene_bridge.call("notify_resolution_requested", payload)
+	resolution_requested.emit(payload.duplicate(true))
+	_update_hud()
+
+
+func _on_battle_dice_exit_requested(payload: Dictionary) -> void:
+	if scene_bridge != null and scene_bridge.has_method("notify_dice_exit_requested"):
+		scene_bridge.call("notify_dice_exit_requested", payload)
+	dice_exit_requested.emit(payload.duplicate(true))
+	_update_hud()
+
+
+func _request_dice_exit_with_current_state() -> void:
+	if battle_mgr != null and battle_mgr.has_method("request_dice_exit_from_current_state"):
+		battle_mgr.call("request_dice_exit_from_current_state")
+	_update_hud()
+
+
+func _request_dice_return_from_exit() -> void:
+	if battle_mgr != null and battle_mgr.has_method("request_dice_return_from_exit"):
+		battle_mgr.call("request_dice_return_from_exit")
+	_update_hud()
+
+
+func _request_auto_roll_all(delay_seconds := AUTO_ROLL_ALL_AFTER_EXIT_RETURN_DELAY) -> void:
+	if dice_flow_module != null:
+		dice_flow_module.request_auto_roll_all(delay_seconds)
+		_sync_dice_flow_fields(dice_flow_module.get_snapshot_fields())
+
+
+func _cancel_auto_roll_all() -> void:
+	if dice_flow_module != null:
+		dice_flow_module.cancel()
+		_sync_dice_flow_fields(dice_flow_module.get_snapshot_fields())
+
+
+func _roll_all_dice_without_targets_from_flow() -> void:
+	_drop_with_current_settings(false, true)
+
+
+func _is_auto_roll_all_input_locked() -> bool:
+	return dice_flow_module.is_selection_input_locked() if dice_flow_module != null else auto_roll_all_active
+
+
+func _is_selection_input_locked() -> bool:
+	return _is_auto_roll_all_input_locked()
+
+
+func _on_dice_flow_state_changed(snapshot: Dictionary) -> void:
+	_sync_dice_flow_fields(snapshot)
+
+
+func _dice_flow_snapshot_fields() -> Dictionary:
+	var fields := dice_flow_module.get_snapshot_fields() if dice_flow_module != null else {
+		"auto_roll_all_pending": auto_roll_all_pending,
+		"auto_roll_all_active": auto_roll_all_active,
+		"auto_roll_all_input_locked": _is_auto_roll_all_input_locked(),
+		"auto_roll_all_request_count": auto_roll_all_request_count,
+		"auto_roll_all_last_delay_seconds": auto_roll_all_last_delay_seconds,
+	}
+	_sync_dice_flow_fields(fields)
+	return fields
+
+
+func _sync_dice_flow_fields(snapshot: Dictionary) -> void:
+	auto_roll_all_pending = bool(snapshot.get("auto_roll_all_pending", auto_roll_all_pending))
+	auto_roll_all_active = bool(snapshot.get("auto_roll_all_active", auto_roll_all_active))
+	auto_roll_all_request_count = int(snapshot.get("auto_roll_all_request_count", auto_roll_all_request_count))
+	auto_roll_all_last_delay_seconds = float(snapshot.get("auto_roll_all_last_delay_seconds", auto_roll_all_last_delay_seconds))
 
 
 func _on_game_state_changed(_state_id: StringName, _snapshot: Dictionary) -> void:
@@ -341,6 +625,8 @@ func _apply_camera_tuning(config: Dictionary) -> void:
 		dice_viewport.call("configure_key_light", key_light_pitch, key_light_yaw)
 	if ready_mgr != null and ready_mgr.has_method("refresh_ready_positions"):
 		ready_mgr.call("refresh_ready_positions")
+	if battle_mgr != null:
+		battle_mgr.set_exit_return_tuning(_resolved_exit_return_tuning())
 
 
 func _make_panel_style(fill: Color, border: Color, border_width: int, radius: int) -> StyleBoxFlat:
@@ -356,6 +642,47 @@ func _make_panel_style(fill: Color, border: Color, border_width: int, radius: in
 	style.corner_radius_bottom_right = radius
 	style.corner_radius_bottom_left = radius
 	return style
+
+
+func _normalized_exit_return_tuning(config: Dictionary) -> Dictionary:
+	var screen_x := float(config.get("screen_x", exit_return_tuning.get("screen_x", 0.66)))
+	if config.has("spawn_x"):
+		screen_x = clampf(float(config["spawn_x"]) / 8.0, 0.0, 1.0)
+	return {
+		"screen_x": clampf(screen_x, 0.0, 1.0),
+		"screen_y": clampf(float(config.get("screen_y", exit_return_tuning.get("screen_y", 0.44))), 0.0, 1.0),
+		"spawn_y": clampf(float(config.get("spawn_y", exit_return_tuning.get("spawn_y", 20.0))), 0.0, 30.0),
+	}
+
+
+func _resolved_exit_return_tuning() -> Dictionary:
+	var config := _normalized_exit_return_tuning(exit_return_tuning)
+	if dice_viewport != null and dice_viewport.has_method("screen_entry_to_world_position"):
+		config["entry_world_position"] = dice_viewport.call(
+			"screen_entry_to_world_position",
+			float(config["screen_x"]),
+			float(config["screen_y"]),
+			float(config["spawn_y"]),
+			dice_initial_height
+		)
+	return config
+
+
+func _resolved_unselected_hold_tuning() -> Dictionary:
+	var config := {
+		"screen_x": clampf(float(unselected_hold_tuning.get("screen_x", 0.50)), 0.0, 1.0),
+		"screen_y": clampf(float(unselected_hold_tuning.get("screen_y", 0.84)), 0.0, 1.0),
+		"max_width": clampf(float(unselected_hold_tuning.get("max_width", 2.10)), 0.10, 8.0),
+		"duration": clampf(float(unselected_hold_tuning.get("duration", 0.36)), 0.05, 2.0),
+	}
+	if dice_viewport != null and dice_viewport.has_method("screen_point_to_world_on_y"):
+		config["center_world_position"] = dice_viewport.call(
+			"screen_point_to_world_on_y",
+			float(config["screen_x"]),
+			float(config["screen_y"]),
+			dice_initial_height
+		)
+	return config
 
 
 func _camera_pitch_degrees() -> float:

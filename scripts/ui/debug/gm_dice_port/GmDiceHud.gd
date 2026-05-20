@@ -5,9 +5,14 @@ class_name GmDiceHud
 signal roll_requested(use_targets: bool)
 signal clear_requested
 signal back_requested
+signal dice_exit_requested
+signal dice_return_requested
 signal dice_count_changed(count: int)
 signal targets_changed(values: Array)
-signal throw_tuning_changed(config: Dictionary)
+signal idle_drift_tuning_changed(config: Dictionary)
+signal throw_speed_tuning_changed(config: Dictionary)
+signal throw_spin_tuning_changed(config: Dictionary)
+signal exit_return_tuning_changed(config: Dictionary)
 signal camera_tuning_changed(config: Dictionary)
 
 
@@ -17,6 +22,8 @@ var dice_count_minus_button: Button = null
 var dice_count_plus_button: Button = null
 var drop_button: Button = null
 var random_drop_button: Button = null
+var fly_exit_button: Button = null
+var return_button: Button = null
 var reset_button: Button = null
 var back_button: Button = null
 var random_target_button: Button = null
@@ -32,19 +39,18 @@ var goal_label: Label = null
 var roll_count_label: Label = null
 var debug_label: Label = null
 var target_controls: Array[OptionButton] = []
-var tuning_sliders := {}
-var tuning_value_labels := {}
+var idle_drift_sliders := {}
+var idle_drift_value_labels := {}
+var throw_speed_sliders := {}
+var throw_speed_value_labels := {}
+var throw_spin_sliders := {}
+var throw_spin_value_labels := {}
+var exit_return_sliders := {}
+var exit_return_value_labels := {}
 var camera_sliders := {}
 var camera_value_labels := {}
 
 var _current_values: Array = []
-var _default_tuning := {
-	"forward_speed": 10.0,
-	"lateral_speed": 5.0,
-	"upward_speed": 3.2,
-	"angular_speed": 28.0,
-	"torque_impulse": 24.0,
-}
 var _default_camera_tuning := {
 	"fov": 38.0,
 	"position_y": 18.5,
@@ -54,6 +60,27 @@ var _default_camera_tuning := {
 	"dice_initial_height": 7.5,
 	"key_light_pitch": -63.0,
 	"key_light_yaw": 115.0,
+}
+var _default_idle_drift_tuning := {
+	"min_seconds": 1.15,
+	"max_seconds": 2.35,
+	"max_distance": 0.07,
+	"speed": 0.05,
+}
+var _default_throw_speed_tuning := {
+	"linear_speed_min": 8.0,
+	"linear_speed_max": 12.0,
+}
+var _default_throw_spin_tuning := {
+	"angular_speed_min": 4.0,
+	"angular_speed_max": 9.5,
+	"torque_min": 2.0,
+	"torque_max": 5.0,
+}
+var _default_exit_return_tuning := {
+	"screen_x": 0.66,
+	"screen_y": 0.44,
+	"spawn_y": 20.0,
 }
 
 
@@ -65,7 +92,7 @@ func _ready() -> void:
 func build() -> void:
 	name = "GmDiceHud"
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	mouse_filter = Control.MOUSE_FILTER_PASS
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_build_stage_frame()
 	_build_top_icons()
 	_build_throw_dock()
@@ -99,25 +126,153 @@ func get_targets() -> Array:
 	return values
 
 
-func get_throw_tuning() -> Dictionary:
-	var config := {}
-	for key in _default_tuning.keys():
-		var slider = tuning_sliders.get(key)
-		config[key] = float(slider.value) if slider is HSlider else float(_default_tuning[key])
-	return config
+func get_idle_drift_tuning() -> Dictionary:
+	var min_slider = idle_drift_sliders.get("min_seconds")
+	var max_slider = idle_drift_sliders.get("max_seconds")
+	var min_seconds := float(min_slider.value) if min_slider is HSlider else float(_default_idle_drift_tuning["min_seconds"])
+	var max_seconds := float(max_slider.value) if max_slider is HSlider else float(_default_idle_drift_tuning["max_seconds"])
+	if max_seconds < min_seconds:
+		max_seconds = min_seconds
+	var distance_slider = idle_drift_sliders.get("max_distance")
+	var speed_slider = idle_drift_sliders.get("speed")
+	return {
+		"min_seconds": min_seconds,
+		"max_seconds": max_seconds,
+		"max_distance": float(distance_slider.value) if distance_slider is HSlider else float(_default_idle_drift_tuning["max_distance"]),
+		"speed": float(speed_slider.value) if speed_slider is HSlider else float(_default_idle_drift_tuning["speed"]),
+	}
 
 
-func set_throw_tuning(config: Dictionary) -> void:
-	for key in _default_tuning.keys():
-		var slider = tuning_sliders.get(key)
-		var value_label = tuning_value_labels.get(key)
-		var value := float(config.get(key, _default_tuning[key]))
+func set_idle_drift_tuning(config: Dictionary) -> void:
+	var min_seconds := float(config.get("min_seconds", _default_idle_drift_tuning["min_seconds"]))
+	var max_seconds := float(config.get("max_seconds", _default_idle_drift_tuning["max_seconds"]))
+	if max_seconds < min_seconds:
+		max_seconds = min_seconds
+	var resolved := {
+		"min_seconds": min_seconds,
+		"max_seconds": max_seconds,
+		"max_distance": float(config.get("max_distance", _default_idle_drift_tuning["max_distance"])),
+		"speed": float(config.get("speed", _default_idle_drift_tuning["speed"])),
+	}
+	for key in _default_idle_drift_tuning.keys():
+		var slider = idle_drift_sliders.get(key)
+		var value_label = idle_drift_value_labels.get(key)
+		var value := float(resolved.get(key, _default_idle_drift_tuning[key]))
+		if slider is HSlider:
+			value = clampf(value, float(slider.min_value), float(slider.max_value))
+			slider.set_value_no_signal(value)
+		if value_label is Label:
+			value_label.text = "%.2f" % value
+	idle_drift_tuning_changed.emit(get_idle_drift_tuning())
+
+
+func get_throw_speed_tuning() -> Dictionary:
+	var min_slider = throw_speed_sliders.get("linear_speed_min")
+	var max_slider = throw_speed_sliders.get("linear_speed_max")
+	var speed_min := float(min_slider.value) if min_slider is HSlider else float(_default_throw_speed_tuning["linear_speed_min"])
+	var speed_max := float(max_slider.value) if max_slider is HSlider else float(_default_throw_speed_tuning["linear_speed_max"])
+	if speed_max < speed_min:
+		speed_max = speed_min
+	return {
+		"linear_speed_min": speed_min,
+		"linear_speed_max": speed_max,
+	}
+
+
+func set_throw_speed_tuning(config: Dictionary) -> void:
+	var speed_min := float(config.get("linear_speed_min", _default_throw_speed_tuning["linear_speed_min"]))
+	var speed_max := float(config.get("linear_speed_max", _default_throw_speed_tuning["linear_speed_max"]))
+	if speed_max < speed_min:
+		speed_max = speed_min
+	var resolved := {
+		"linear_speed_min": speed_min,
+		"linear_speed_max": speed_max,
+	}
+	for key in _default_throw_speed_tuning.keys():
+		var slider = throw_speed_sliders.get(key)
+		var value_label = throw_speed_value_labels.get(key)
+		var value := float(resolved.get(key, _default_throw_speed_tuning[key]))
 		if slider is HSlider:
 			value = clampf(value, float(slider.min_value), float(slider.max_value))
 			slider.set_value_no_signal(value)
 		if value_label is Label:
 			value_label.text = "%.1f" % value
-	throw_tuning_changed.emit(get_throw_tuning())
+	throw_speed_tuning_changed.emit(get_throw_speed_tuning())
+
+
+func get_throw_spin_tuning() -> Dictionary:
+	var angular_min_slider = throw_spin_sliders.get("angular_speed_min")
+	var angular_max_slider = throw_spin_sliders.get("angular_speed_max")
+	var torque_min_slider = throw_spin_sliders.get("torque_min")
+	var torque_max_slider = throw_spin_sliders.get("torque_max")
+	var angular_min := float(angular_min_slider.value) if angular_min_slider is HSlider else float(_default_throw_spin_tuning["angular_speed_min"])
+	var angular_max := float(angular_max_slider.value) if angular_max_slider is HSlider else float(_default_throw_spin_tuning["angular_speed_max"])
+	var torque_min := float(torque_min_slider.value) if torque_min_slider is HSlider else float(_default_throw_spin_tuning["torque_min"])
+	var torque_max := float(torque_max_slider.value) if torque_max_slider is HSlider else float(_default_throw_spin_tuning["torque_max"])
+	if angular_max < angular_min:
+		angular_max = angular_min
+	if torque_max < torque_min:
+		torque_max = torque_min
+	return {
+		"angular_speed_min": angular_min,
+		"angular_speed_max": angular_max,
+		"torque_min": torque_min,
+		"torque_max": torque_max,
+	}
+
+
+func set_throw_spin_tuning(config: Dictionary) -> void:
+	var angular_min := float(config.get("angular_speed_min", _default_throw_spin_tuning["angular_speed_min"]))
+	var angular_max := float(config.get("angular_speed_max", _default_throw_spin_tuning["angular_speed_max"]))
+	var torque_min := float(config.get("torque_min", _default_throw_spin_tuning["torque_min"]))
+	var torque_max := float(config.get("torque_max", _default_throw_spin_tuning["torque_max"]))
+	if angular_max < angular_min:
+		angular_max = angular_min
+	if torque_max < torque_min:
+		torque_max = torque_min
+	var resolved := {
+		"angular_speed_min": angular_min,
+		"angular_speed_max": angular_max,
+		"torque_min": torque_min,
+		"torque_max": torque_max,
+	}
+	for key in _default_throw_spin_tuning.keys():
+		var slider = throw_spin_sliders.get(key)
+		var value_label = throw_spin_value_labels.get(key)
+		var value := float(resolved.get(key, _default_throw_spin_tuning[key]))
+		if slider is HSlider:
+			value = clampf(value, float(slider.min_value), float(slider.max_value))
+			slider.set_value_no_signal(value)
+		if value_label is Label:
+			value_label.text = "%.1f" % value
+	throw_spin_tuning_changed.emit(get_throw_spin_tuning())
+
+
+func get_exit_return_tuning() -> Dictionary:
+	var screen_x_slider = exit_return_sliders.get("screen_x")
+	var screen_y_slider = exit_return_sliders.get("screen_y")
+	var spawn_y_slider = exit_return_sliders.get("spawn_y")
+	return {
+		"screen_x": float(screen_x_slider.value) if screen_x_slider is HSlider else float(_default_exit_return_tuning["screen_x"]),
+		"screen_y": float(screen_y_slider.value) if screen_y_slider is HSlider else float(_default_exit_return_tuning["screen_y"]),
+		"spawn_y": float(spawn_y_slider.value) if spawn_y_slider is HSlider else float(_default_exit_return_tuning["spawn_y"]),
+	}
+
+
+func set_exit_return_tuning(config: Dictionary) -> void:
+	var resolved_config := config.duplicate(true)
+	if resolved_config.has("spawn_x") and not resolved_config.has("screen_x"):
+		resolved_config["screen_x"] = clampf(float(resolved_config["spawn_x"]) / 8.0, 0.0, 1.0)
+	for key in _default_exit_return_tuning.keys():
+		var slider = exit_return_sliders.get(key)
+		var value_label = exit_return_value_labels.get(key)
+		var value := float(resolved_config.get(key, _default_exit_return_tuning[key]))
+		if slider is HSlider:
+			value = clampf(value, float(slider.min_value), float(slider.max_value))
+			slider.set_value_no_signal(value)
+		if value_label is Label:
+			value_label.text = "%.2f" % value
+	exit_return_tuning_changed.emit(get_exit_return_tuning())
 
 
 func get_camera_tuning() -> Dictionary:
@@ -143,10 +298,23 @@ func set_camera_tuning(config: Dictionary) -> void:
 func update_state(snapshot: Dictionary) -> void:
 	_current_values = snapshot.get("last_values", [])
 	var face_indices: Array = snapshot.get("last_face_indices", [])
+	var selected_indices: Array = snapshot.get("selected_dice_indices", [])
 	var rolling := bool(snapshot.get("rolling", false))
+	var active_dice := int(snapshot.get("active_dice", 0))
+	var dice_exit_animating := bool(snapshot.get("dice_exit_animating", false))
+	var dice_exit_completed := bool(snapshot.get("dice_exit_completed", false))
+	var dice_exit_return_animating := bool(snapshot.get("dice_exit_return_animating", false))
+	var dice_ready_to_return := dice_exit_completed or _all_dice_exited(snapshot)
 	_render_results(_current_values, face_indices)
+	if drop_button != null:
+		drop_button.disabled = rolling or dice_exit_animating or dice_exit_return_animating or dice_ready_to_return or selected_indices.is_empty()
+		drop_button.text = "投掷所选" if not selected_indices.is_empty() else "选择骰子"
+	if fly_exit_button != null:
+		fly_exit_button.disabled = rolling or dice_exit_animating or dice_exit_return_animating or dice_ready_to_return or active_dice <= 0
+	if return_button != null:
+		return_button.disabled = dice_exit_animating or dice_exit_return_animating or not dice_ready_to_return
 	if status_label != null:
-		status_label.text = "投掷中" if rolling else "待投掷"
+		status_label.text = "投掷中" if rolling else ("已选 %d 颗骰子" % selected_indices.size() if not selected_indices.is_empty() else "请选择骰子")
 	if debug_label != null:
 		debug_label.text = _physics_debug_text(snapshot)
 
@@ -175,7 +343,7 @@ func _build_stage_frame() -> void:
 func _build_top_icons() -> void:
 	var row := HBoxContainer.new()
 	row.name = "TopIconBar"
-	row.anchor_left = 0.845
+	row.anchor_left = 0.650
 	row.anchor_top = 0.030
 	row.anchor_right = 0.985
 	row.anchor_bottom = 0.105
@@ -183,6 +351,13 @@ func _build_top_icons() -> void:
 	row.add_theme_constant_override("separation", 10)
 	add_child(row)
 
+	fly_exit_button = _make_icon_button("飞走", "FlyAwayButton")
+	fly_exit_button.pressed.connect(func() -> void: dice_exit_requested.emit())
+	row.add_child(fly_exit_button)
+	return_button = _make_icon_button("回归", "ReturnButton")
+	return_button.disabled = true
+	return_button.pressed.connect(func() -> void: dice_return_requested.emit())
+	row.add_child(return_button)
 	tuning_button = _make_icon_button("参数", "TuningButton")
 	tuning_button.pressed.connect(func() -> void:
 		if tuning_panel != null:
@@ -241,7 +416,8 @@ func _build_throw_dock() -> void:
 	dice_count_plus_button.pressed.connect(func() -> void: _adjust_dice_count(1))
 	row.add_child(dice_count_plus_button)
 
-	drop_button = _make_button("投掷", "DropButton", Vector2(190, 70), 42)
+	drop_button = _make_button("选择骰子", "DropButton", Vector2(190, 70), 42)
+	drop_button.disabled = true
 	drop_button.pressed.connect(func() -> void: roll_requested.emit(true))
 	row.add_child(drop_button)
 
@@ -253,7 +429,7 @@ func _build_throw_dock() -> void:
 
 func _build_tuning_panel() -> void:
 	tuning_panel = PanelContainer.new()
-	tuning_panel.name = "ThrowTuningPanel"
+	tuning_panel.name = "TuningPanel"
 	tuning_panel.anchor_left = 0.690
 	tuning_panel.anchor_top = 0.120
 	tuning_panel.anchor_right = 0.985
@@ -265,33 +441,63 @@ func _build_tuning_panel() -> void:
 
 	var margin := _make_margin(12, 10, 12, 12)
 	tuning_panel.add_child(margin)
+	var scroll := ScrollContainer.new()
+	scroll.name = "TuningScroll"
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	margin.add_child(scroll)
 	var layout := VBoxContainer.new()
+	layout.name = "ThrowTuningLayout"
+	layout.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	layout.add_theme_constant_override("separation", 7)
-	margin.add_child(layout)
+	scroll.add_child(layout)
 
-	var title := _make_label("投掷参数", 18, Color(0.88, 1.00, 0.94))
-	layout.add_child(title)
-	_add_tuning_slider(layout, "forward_speed", "前向速度", 1.0, 16.0, _default_tuning["forward_speed"])
-	_add_tuning_slider(layout, "lateral_speed", "横向速度", 0.0, 9.0, _default_tuning["lateral_speed"])
-	_add_tuning_slider(layout, "upward_speed", "向上速度", 0.0, 7.0, _default_tuning["upward_speed"])
-	_add_tuning_slider(layout, "angular_speed", "角速度", 0.0, 48.0, _default_tuning["angular_speed"])
-	_add_tuning_slider(layout, "torque_impulse", "扭矩冲量", 0.0, 48.0, _default_tuning["torque_impulse"])
+	var throw_speed_group := _add_tuning_group(layout, "ThrowSpeedTuningGroup", "投掷初速度")
+	_add_throw_speed_slider(throw_speed_group, "linear_speed_min", "初速度下限", 0.0, 12.0, _default_throw_speed_tuning["linear_speed_min"])
+	_add_throw_speed_slider(throw_speed_group, "linear_speed_max", "初速度上限", 0.0, 12.0, _default_throw_speed_tuning["linear_speed_max"])
+
+	var throw_spin_group := _add_tuning_group(layout, "ThrowSpinTuningGroup", "投掷旋转参数")
+	_add_throw_spin_slider(throw_spin_group, "angular_speed_min", "角速度下限", 0.0, 24.0, _default_throw_spin_tuning["angular_speed_min"])
+	_add_throw_spin_slider(throw_spin_group, "angular_speed_max", "角速度上限", 0.0, 24.0, _default_throw_spin_tuning["angular_speed_max"])
+	_add_throw_spin_slider(throw_spin_group, "torque_min", "扭矩下限", 0.0, 16.0, _default_throw_spin_tuning["torque_min"])
+	_add_throw_spin_slider(throw_spin_group, "torque_max", "扭矩上限", 0.0, 16.0, _default_throw_spin_tuning["torque_max"])
+
+	var idle_group := _add_tuning_group(layout, "IdleDriftTuningGroup", "漂浮参数")
+	_add_idle_drift_slider(idle_group, "min_seconds", "最短漂浮时间", 0.2, 6.0, _default_idle_drift_tuning["min_seconds"])
+	_add_idle_drift_slider(idle_group, "max_seconds", "最长漂浮时间", 0.2, 8.0, _default_idle_drift_tuning["max_seconds"])
+	_add_idle_drift_slider(idle_group, "max_distance", "最远漂浮距离", 0.0, 1.2, _default_idle_drift_tuning["max_distance"])
+	_add_idle_drift_slider(idle_group, "speed", "漂浮速度", 0.0, 0.8, _default_idle_drift_tuning["speed"])
+
+	var exit_return_group := _add_tuning_group(layout, "ExitReturnTuningGroup", "回归入口点")
+	_add_exit_return_slider(exit_return_group, "screen_x", "画面X", 0.0, 1.0, _default_exit_return_tuning["screen_x"])
+	_add_exit_return_slider(exit_return_group, "screen_y", "画面Y", 0.0, 1.0, _default_exit_return_tuning["screen_y"])
+	_add_exit_return_slider(exit_return_group, "spawn_y", "入口高度", 0.0, 30.0, _default_exit_return_tuning["spawn_y"])
+
+	var camera_group := _add_tuning_group(layout, "CameraTuningGroup", "镜头参数")
+	_add_camera_slider(camera_group, "fov", "视野", 25.0, 60.0, _default_camera_tuning["fov"])
+	_add_camera_slider(camera_group, "position_y", "相机高度", 4.0, 30.0, _default_camera_tuning["position_y"])
+	_add_camera_slider(camera_group, "position_z", "相机前后", -1.0, 9.0, _default_camera_tuning["position_z"])
+	_add_camera_slider(camera_group, "look_at_y", "看向高度", -1.0, 3.0, _default_camera_tuning["look_at_y"])
+	_add_camera_slider(camera_group, "look_at_z", "看向前后", -3.0, 3.0, _default_camera_tuning["look_at_z"])
+	_add_camera_slider(camera_group, "dice_initial_height", "骰子初始高度", 0.8, 10.0, _default_camera_tuning["dice_initial_height"])
+	_add_camera_slider(camera_group, "key_light_pitch", "光照俯仰", -90.0, 0.0, _default_camera_tuning["key_light_pitch"])
+	_add_camera_slider(camera_group, "key_light_yaw", "光照方向", -180.0, 180.0, _default_camera_tuning["key_light_yaw"])
 
 
-	var camera_title := _make_label("镜头参数", 18, Color(0.88, 1.00, 0.94))
-	camera_title.name = "CameraTuningTitle"
-	layout.add_child(camera_title)
-	_add_camera_slider(layout, "fov", "视野", 25.0, 60.0, _default_camera_tuning["fov"])
-	_add_camera_slider(layout, "position_y", "相机高度", 4.0, 30.0, _default_camera_tuning["position_y"])
-	_add_camera_slider(layout, "position_z", "相机前后", -1.0, 9.0, _default_camera_tuning["position_z"])
-	_add_camera_slider(layout, "look_at_y", "看向高度", -1.0, 3.0, _default_camera_tuning["look_at_y"])
-	_add_camera_slider(layout, "look_at_z", "看向前后", -3.0, 3.0, _default_camera_tuning["look_at_z"])
-	_add_camera_slider(layout, "dice_initial_height", "骰子初始高度", 0.8, 10.0, _default_camera_tuning["dice_initial_height"])
-	_add_camera_slider(layout, "key_light_pitch", "光照俯仰", -90.0, 0.0, _default_camera_tuning["key_light_pitch"])
-	_add_camera_slider(layout, "key_light_yaw", "光照方向", -180.0, 180.0, _default_camera_tuning["key_light_yaw"])
+func _add_tuning_group(parent: Control, group_name: String, title_text: String) -> VBoxContainer:
+	var group := VBoxContainer.new()
+	group.name = group_name
+	group.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	group.add_theme_constant_override("separation", 6)
+	parent.add_child(group)
+
+	var title := _make_label(title_text, 18, Color(0.88, 1.00, 0.94))
+	title.name = "%sTitle" % group_name
+	group.add_child(title)
+	return group
 
 
-func _add_tuning_slider(parent: Control, key: String, label_text: String, min_value: float, max_value: float, default_value: float) -> void:
+func _add_idle_drift_slider(parent: Control, key: String, label_text: String, min_value: float, max_value: float, default_value: float) -> void:
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 2)
 	parent.add_child(box)
@@ -300,17 +506,75 @@ func _add_tuning_slider(parent: Control, key: String, label_text: String, min_va
 	row.add_theme_constant_override("separation", 8)
 	box.add_child(row)
 	var label := _make_label(label_text, 13, Color(0.86, 0.92, 0.90))
-	label.name = "%sLabel" % key.to_pascal_case()
+	label.name = "IdleDrift%sLabel" % key.to_pascal_case()
 	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(label)
-	var value_label := _make_label("%.1f" % default_value, 13, Color(1.00, 0.94, 0.58))
-	value_label.name = "%sValueLabel" % key.to_pascal_case()
-	value_label.custom_minimum_size = Vector2(44, 0)
+	var value_label := _make_label("%.2f" % default_value, 13, Color(1.00, 0.94, 0.58))
+	value_label.name = "IdleDrift%sValueLabel" % key.to_pascal_case()
+	value_label.custom_minimum_size = Vector2(52, 0)
 	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	row.add_child(value_label)
 
 	var slider := HSlider.new()
-	slider.name = "%sSlider" % key.to_pascal_case()
+	slider.name = "IdleDrift%sSlider" % key.to_pascal_case()
+	slider.min_value = min_value
+	slider.max_value = max_value
+	slider.step = 0.01
+	slider.value = default_value
+	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	slider.value_changed.connect(func(value: float) -> void:
+		value_label.text = "%.2f" % value
+		_sync_idle_drift_seconds(key)
+		idle_drift_tuning_changed.emit(get_idle_drift_tuning())
+	)
+	box.add_child(slider)
+	idle_drift_sliders[key] = slider
+	idle_drift_value_labels[key] = value_label
+
+
+func _sync_idle_drift_seconds(changed_key: String) -> void:
+	var min_slider = idle_drift_sliders.get("min_seconds")
+	var max_slider = idle_drift_sliders.get("max_seconds")
+	if not (min_slider is HSlider and max_slider is HSlider):
+		return
+	var min_value := float(min_slider.value)
+	var max_value := float(max_slider.value)
+	if max_value >= min_value:
+		return
+	if changed_key == "max_seconds":
+		min_slider.set_value_no_signal(max_value)
+		_set_idle_drift_value_label("min_seconds", max_value)
+	else:
+		max_slider.set_value_no_signal(min_value)
+		_set_idle_drift_value_label("max_seconds", min_value)
+
+
+func _set_idle_drift_value_label(key: String, value: float) -> void:
+	var value_label = idle_drift_value_labels.get(key)
+	if value_label is Label:
+		value_label.text = "%.2f" % value
+
+
+func _add_throw_speed_slider(parent: Control, key: String, label_text: String, min_value: float, max_value: float, default_value: float) -> void:
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 2)
+	parent.add_child(box)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	box.add_child(row)
+	var label := _make_label(label_text, 13, Color(0.86, 0.92, 0.90))
+	label.name = "ThrowSpeed%sLabel" % key.to_pascal_case()
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(label)
+	var value_label := _make_label("%.1f" % default_value, 13, Color(1.00, 0.94, 0.58))
+	value_label.name = "ThrowSpeed%sValueLabel" % key.to_pascal_case()
+	value_label.custom_minimum_size = Vector2(52, 0)
+	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	row.add_child(value_label)
+
+	var slider := HSlider.new()
+	slider.name = "ThrowSpeed%sSlider" % key.to_pascal_case()
 	slider.min_value = min_value
 	slider.max_value = max_value
 	slider.step = 0.1
@@ -318,11 +582,132 @@ func _add_tuning_slider(parent: Control, key: String, label_text: String, min_va
 	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	slider.value_changed.connect(func(value: float) -> void:
 		value_label.text = "%.1f" % value
-		throw_tuning_changed.emit(get_throw_tuning())
+		_sync_throw_speed_ranges(key)
+		throw_speed_tuning_changed.emit(get_throw_speed_tuning())
 	)
 	box.add_child(slider)
-	tuning_sliders[key] = slider
-	tuning_value_labels[key] = value_label
+	throw_speed_sliders[key] = slider
+	throw_speed_value_labels[key] = value_label
+
+
+func _sync_throw_speed_ranges(changed_key: String) -> void:
+	var min_slider = throw_speed_sliders.get("linear_speed_min")
+	var max_slider = throw_speed_sliders.get("linear_speed_max")
+	if not (min_slider is HSlider and max_slider is HSlider):
+		return
+	var min_value := float(min_slider.value)
+	var max_value := float(max_slider.value)
+	if max_value >= min_value:
+		return
+	if changed_key == "linear_speed_max":
+		min_slider.set_value_no_signal(max_value)
+		_set_throw_speed_value_label("linear_speed_min", max_value)
+	elif changed_key == "linear_speed_min":
+		max_slider.set_value_no_signal(min_value)
+		_set_throw_speed_value_label("linear_speed_max", min_value)
+
+
+func _set_throw_speed_value_label(key: String, value: float) -> void:
+	var value_label = throw_speed_value_labels.get(key)
+	if value_label is Label:
+		value_label.text = "%.1f" % value
+
+
+func _add_throw_spin_slider(parent: Control, key: String, label_text: String, min_value: float, max_value: float, default_value: float) -> void:
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 2)
+	parent.add_child(box)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	box.add_child(row)
+	var label := _make_label(label_text, 13, Color(0.86, 0.92, 0.90))
+	label.name = "ThrowSpin%sLabel" % key.to_pascal_case()
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(label)
+	var value_label := _make_label("%.1f" % default_value, 13, Color(1.00, 0.94, 0.58))
+	value_label.name = "ThrowSpin%sValueLabel" % key.to_pascal_case()
+	value_label.custom_minimum_size = Vector2(52, 0)
+	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	row.add_child(value_label)
+
+	var slider := HSlider.new()
+	slider.name = "ThrowSpin%sSlider" % key.to_pascal_case()
+	slider.min_value = min_value
+	slider.max_value = max_value
+	slider.step = 0.1
+	slider.value = default_value
+	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	slider.value_changed.connect(func(value: float) -> void:
+		value_label.text = "%.1f" % value
+		_sync_throw_spin_ranges(key)
+		throw_spin_tuning_changed.emit(get_throw_spin_tuning())
+	)
+	box.add_child(slider)
+	throw_spin_sliders[key] = slider
+	throw_spin_value_labels[key] = value_label
+
+
+func _sync_throw_spin_ranges(changed_key: String) -> void:
+	_sync_throw_spin_pair("angular_speed_min", "angular_speed_max", changed_key)
+	_sync_throw_spin_pair("torque_min", "torque_max", changed_key)
+
+
+func _sync_throw_spin_pair(min_key: String, max_key: String, changed_key: String) -> void:
+	var min_slider = throw_spin_sliders.get(min_key)
+	var max_slider = throw_spin_sliders.get(max_key)
+	if not (min_slider is HSlider and max_slider is HSlider):
+		return
+	var min_value := float(min_slider.value)
+	var max_value := float(max_slider.value)
+	if max_value >= min_value:
+		return
+	if changed_key == max_key:
+		min_slider.set_value_no_signal(max_value)
+		_set_throw_spin_value_label(min_key, max_value)
+	elif changed_key == min_key:
+		max_slider.set_value_no_signal(min_value)
+		_set_throw_spin_value_label(max_key, min_value)
+
+
+func _set_throw_spin_value_label(key: String, value: float) -> void:
+	var value_label = throw_spin_value_labels.get(key)
+	if value_label is Label:
+		value_label.text = "%.1f" % value
+
+
+func _add_exit_return_slider(parent: Control, key: String, label_text: String, min_value: float, max_value: float, default_value: float) -> void:
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 2)
+	parent.add_child(box)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	box.add_child(row)
+	var label := _make_label(label_text, 13, Color(0.86, 0.92, 0.90))
+	label.name = "ExitReturn%sLabel" % key.to_pascal_case()
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(label)
+	var value_label := _make_label("%.2f" % default_value, 13, Color(1.00, 0.94, 0.58))
+	value_label.name = "ExitReturn%sValueLabel" % key.to_pascal_case()
+	value_label.custom_minimum_size = Vector2(52, 0)
+	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	row.add_child(value_label)
+
+	var slider := HSlider.new()
+	slider.name = "ExitReturn%sSlider" % key.to_pascal_case()
+	slider.min_value = min_value
+	slider.max_value = max_value
+	slider.step = 0.01
+	slider.value = default_value
+	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	slider.value_changed.connect(func(value: float) -> void:
+		value_label.text = "%.2f" % value
+		exit_return_tuning_changed.emit(get_exit_return_tuning())
+	)
+	box.add_child(slider)
+	exit_return_sliders[key] = slider
+	exit_return_value_labels[key] = value_label
 
 
 func _add_camera_slider(parent: Control, key: String, label_text: String, min_value: float, max_value: float, default_value: float) -> void:
@@ -465,6 +850,16 @@ func _physics_debug_text(snapshot: Dictionary) -> String:
 	if dice_rows.is_empty():
 		min_stable = 0
 	return "线速度 %.2f / 角速度 %.2f / 稳定帧 %d" % [max_linear, max_angular, min_stable]
+
+
+func _all_dice_exited(snapshot: Dictionary) -> bool:
+	var dice_rows: Array = snapshot.get("dice", [])
+	if dice_rows.is_empty():
+		return false
+	for row in dice_rows:
+		if not (row is Dictionary) or not bool(row.get("exited", false)):
+			return false
+	return true
 
 
 func _on_dice_count_slider_changed(value: float) -> void:

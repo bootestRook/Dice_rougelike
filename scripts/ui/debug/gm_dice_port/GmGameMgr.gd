@@ -65,6 +65,31 @@ func set_targets(values: Array) -> void:
 	_emit_state()
 
 
+func toggle_select(index: int) -> void:
+	if battle_mgr == null:
+		return
+	battle_mgr.toggle_select(index)
+	_emit_state()
+
+
+func set_selected_dice_indices(indices: Array) -> void:
+	if battle_mgr == null:
+		return
+	battle_mgr.set_selected_indices(indices)
+	_emit_state()
+
+
+func select_all_dice() -> void:
+	var indices: Array[int] = []
+	for index in range(dice_count):
+		indices.append(index)
+	set_selected_dice_indices(indices)
+
+
+func clear_selection() -> void:
+	set_selected_dice_indices([])
+
+
 func roll_current(use_targets := true) -> void:
 	if battle_mgr == null:
 		return
@@ -98,6 +123,12 @@ func get_snapshot() -> Dictionary:
 	battle_snapshot["pending_targets"] = pending_targets.duplicate()
 	battle_snapshot["definition"] = dice_definition.to_dictionary() if dice_definition != null else {}
 	return battle_snapshot
+
+
+func get_selected_dice_indices() -> Array[int]:
+	if battle_mgr == null:
+		return []
+	return battle_mgr.get_selected_indices()
 
 
 func _emit_state() -> void:
