@@ -375,10 +375,10 @@ func _build_top_icons() -> void:
 func _build_throw_dock() -> void:
 	var dock := PanelContainer.new()
 	dock.name = "ThrowDock"
-	dock.anchor_left = 0.345
-	dock.anchor_top = 0.785
-	dock.anchor_right = 0.650
-	dock.anchor_bottom = 0.935
+	dock.anchor_left = 0.135
+	dock.anchor_top = 0.125
+	dock.anchor_right = 0.440
+	dock.anchor_bottom = 0.275
 	dock.mouse_filter = Control.MOUSE_FILTER_STOP
 	dock.add_theme_stylebox_override("panel", _make_panel_style(Color(0.02, 0.16, 0.12, 0.94), Color(0.00, 0.96, 0.66, 0.90), 4, 5))
 	add_child(dock)

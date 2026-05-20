@@ -38,7 +38,7 @@ const DEFAULT_EXIT_RETURN_TUNING := {
 const DEFAULT_UNSELECTED_HOLD_TUNING := {
 	"screen_x": 0.50,
 	"screen_y": 0.84,
-	"max_width": 2.10,
+	"max_width": 8.00,
 	"duration": 0.36,
 }
 const READY_RETURN_DURATION := 0.58

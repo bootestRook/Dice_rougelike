@@ -68,7 +68,7 @@ var exit_return_tuning := {
 var unselected_hold_tuning := {
 	"screen_x": 0.50,
 	"screen_y": 0.84,
-	"max_width": 2.10,
+	"max_width": 8.00,
 	"duration": 0.36,
 }
 var auto_roll_all_pending := false
@@ -672,7 +672,7 @@ func _resolved_unselected_hold_tuning() -> Dictionary:
 	var config := {
 		"screen_x": clampf(float(unselected_hold_tuning.get("screen_x", 0.50)), 0.0, 1.0),
 		"screen_y": clampf(float(unselected_hold_tuning.get("screen_y", 0.84)), 0.0, 1.0),
-		"max_width": clampf(float(unselected_hold_tuning.get("max_width", 2.10)), 0.10, 8.0),
+		"max_width": clampf(float(unselected_hold_tuning.get("max_width", 8.00)), 0.10, 8.0),
 		"duration": clampf(float(unselected_hold_tuning.get("duration", 0.36)), 0.05, 2.0),
 	}
 	if dice_viewport != null and dice_viewport.has_method("screen_point_to_world_on_y"):

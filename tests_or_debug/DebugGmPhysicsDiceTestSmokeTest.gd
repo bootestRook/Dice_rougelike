@@ -59,6 +59,8 @@ func _init() -> void:
 		all_passed = _check("right dice box is removed", _find_node_by_name(screen, "RightDiceBox") == null) and all_passed
 		all_passed = _check("coin badge is removed", _find_label_by_text(screen, "金币") == null) and all_passed
 		all_passed = _check("codex badge is removed", _find_label_by_text(screen, "图鉴") == null) and all_passed
+		var throw_dock := _find_node_by_name(screen, "ThrowDock") as Control
+		all_passed = _check("throw dock is moved to upper play area", throw_dock != null and throw_dock.anchor_left <= 0.14 and throw_dock.anchor_top <= 0.13 and throw_dock.anchor_bottom <= 0.28) and all_passed
 		all_passed = _check("tuning panel exists", _find_node_by_name(screen, "TuningPanel") != null) and all_passed
 		all_passed = _check("tuning button exists", _find_node_by_name(screen, "TuningButton") != null) and all_passed
 		all_passed = _check("tuning scroll exists", _find_node_by_name(screen, "TuningScroll") != null) and all_passed
@@ -761,11 +763,9 @@ func _unselected_hold_targets_match_center(snapshot: Dictionary, indices: Array)
 	if not tuning.has("center_world_position") or not (tuning["center_world_position"] is Vector3):
 		return false
 	var expected_center: Vector3 = tuning["center_world_position"]
-	var max_width := float(tuning.get("max_width", 2.10))
 	var dice_rows: Array = snapshot.get("dice", [])
+	var targets: Array[Vector3] = []
 	var target_sum := Vector3.ZERO
-	var min_x := INF
-	var max_x := -INF
 	var count := 0
 	for raw_index in indices:
 		var index := int(raw_index)
@@ -773,16 +773,24 @@ func _unselected_hold_targets_match_center(snapshot: Dictionary, indices: Array)
 			return false
 		var row: Dictionary = dice_rows[index]
 		var target: Vector3 = row.get("unselected_hold_target_position", Vector3.ZERO)
+		targets.append(target)
 		target_sum += target
-		min_x = minf(min_x, target.x)
-		max_x = maxf(max_x, target.x)
 		count += 1
 	if count <= 0:
 		return false
 	var center := target_sum / float(count)
 	if center.distance_to(expected_center) > 0.04:
 		return false
-	return max_x - min_x <= max_width + 0.04
+	if targets.size() <= 1:
+		return true
+	targets.sort_custom(func(a: Vector3, b: Vector3) -> bool:
+		return a.x < b.x
+	)
+	var expected_spacing := 1.06
+	for index in range(1, targets.size()):
+		if absf((targets[index].x - targets[index - 1].x) - expected_spacing) > 0.04:
+			return false
+	return true
 
 
 func _indices_returning_to_ready(snapshot: Dictionary, indices: Array) -> bool:
