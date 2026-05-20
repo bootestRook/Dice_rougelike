@@ -298,9 +298,57 @@ func roll_map_movement(selected_dice_indices: Array = [0, 1]) -> Dictionary:
 	if map_nodes.is_empty():
 		_reset_demo_map()
 
+	var rolled_indices := _normalize_map_movement_dice_indices(selected_dice_indices)
+	var rolls := _roll_map_movement_dice(rolled_indices)
+	return _apply_map_movement_rolls(rolled_indices, rolls)
+
+
+func prepare_map_movement_roll(selected_dice_indices: Array = [0, 1]) -> Dictionary:
+	if current_state_id != &"map":
+		return {
+			"success": false,
+			"message": "当前不在地图阶段。",
+			"state": get_map_state(),
+		}
+	if map_nodes.is_empty():
+		_reset_demo_map()
+
+	var rolled_indices := _normalize_map_movement_dice_indices(selected_dice_indices)
+	var rolls := _roll_map_movement_dice(rolled_indices)
+	return {
+		"success": true,
+		"rolls": rolls.duplicate(),
+		"rolled_dice_indices": rolled_indices.duplicate(),
+		"steps": _sum_int_array(rolls),
+		"state": get_map_state(),
+	}
+
+
+func apply_prepared_map_movement_roll(selected_dice_indices: Array, prepared_rolls: Array) -> Dictionary:
+	if current_state_id != &"map":
+		return {
+			"success": false,
+			"message": "当前不在地图阶段。",
+			"state": get_map_state(),
+		}
+	if map_nodes.is_empty():
+		_reset_demo_map()
+
+	var rolled_indices := _normalize_map_movement_dice_indices(selected_dice_indices)
+	var rolls := _sanitize_prepared_map_movement_rolls(rolled_indices, prepared_rolls)
+	if rolls.is_empty():
+		return {
+			"success": false,
+			"message": "前进骰结果无效。",
+			"state": get_map_state(),
+		}
+	return _apply_map_movement_rolls(rolled_indices, rolls)
+
+
+func _apply_map_movement_rolls(rolled_indices: Array[int], rolls: Array[int]) -> Dictionary:
 	var previous_index := map_position_index
-	map_last_rolled_dice_indices = _normalize_map_movement_dice_indices(selected_dice_indices)
-	map_last_rolls = _roll_map_movement_dice(map_last_rolled_dice_indices)
+	map_last_rolled_dice_indices = rolled_indices.duplicate()
+	map_last_rolls = rolls.duplicate()
 	var steps := _sum_int_array(map_last_rolls)
 	var path := _movement_path_until_forced_stop(previous_index, steps)
 
@@ -458,6 +506,18 @@ func _roll_map_movement_dice(selected_dice_indices: Array[int]) -> Array[int]:
 		if die_index < 0 or die_index >= rolls.size():
 			continue
 		rolls[die_index] = map_rng.randi_range(1, 6)
+	return rolls
+
+
+func _sanitize_prepared_map_movement_rolls(selected_dice_indices: Array[int], raw_rolls: Array) -> Array[int]:
+	var rolls: Array[int] = [0, 0]
+	for die_index in selected_dice_indices:
+		if die_index < 0 or die_index >= rolls.size() or die_index >= raw_rolls.size():
+			return []
+		var pip := int(raw_rolls[die_index])
+		if pip < 1 or pip > 6:
+			return []
+		rolls[die_index] = pip
 	return rolls
 
 

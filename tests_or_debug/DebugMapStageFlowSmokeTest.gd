@@ -34,7 +34,7 @@ func _init() -> void:
 	all_passed = _check("map view builds 32 route nodes", _count_nodes_by_prefix(map_view, "MapNode_") == 32) and all_passed
 	all_passed = _check("map art config has all node textures", _has_all_node_textures(map_view)) and all_passed
 	all_passed = _check("map rest node uses generated texture", _rest_node_uses_generated_texture(map_view)) and all_passed
-	all_passed = _check("map node text labels are readable", _node_label_is_readable(map_view)) and all_passed
+	all_passed = _check("map 2D node text labels are readable", _node_label_is_readable(map_view)) and all_passed
 	all_passed = _check("map final node is boss", _node_type_at(flow, 31) == &"boss") and all_passed
 	all_passed = _check("map player marker is centered on current node", _player_marker_is_centered(map_view)) and all_passed
 	all_passed = _check("map movement step label exists", _find_node_by_name(map_view, "MovementStepLabel") != null) and all_passed
@@ -44,6 +44,9 @@ func _init() -> void:
 	all_passed = _check("map stage uses two movement dice views", _count_nodes_by_prefix(map_view, "MovementDice_") == 2) and all_passed
 	all_passed = _check("map stage has movement magic fx layer", _find_node_by_name(map_view, "MovementRollFxLayer") != null) and all_passed
 	all_passed = _check("map stage wires black magic fx scene", bool(map_view.call("automation_get_snapshot").get("has_movement_magic_fx", false))) and all_passed
+	all_passed = _check("map stage uses physics movement dice view", bool(map_view.call("automation_get_snapshot").get("has_movement_physics_dice", false))) and all_passed
+	all_passed = _check("map 3D camera is fixed", bool((map_view.call("automation_get_snapshot").get("movement_physics_dice", {}) as Dictionary).get("fixed_camera", false))) and all_passed
+	all_passed = _check("map physics dice start in shared 3D throw area", _map_physics_dice_start_at_two_positions(map_view)) and all_passed
 	all_passed = _check("roll button uses texture button", _find_texture_button(map_view, "RollMovementButton") != null) and all_passed
 	all_passed = _check("map danger label exists", _find_node_by_name(map_view, "DangerLabel") != null) and all_passed
 	var circle_action_label := _find_node_by_name(map_view, "CircleActionLabel") as Label
@@ -79,6 +82,7 @@ func _init() -> void:
 
 	map_view.queue_free()
 	flow.queue_free()
+	await process_frame
 	print("PASS: DebugMapStageFlowSmokeTest" if all_passed else "FAIL: DebugMapStageFlowSmokeTest")
 	print("--- DebugMapStageFlowSmokeTest: end ---")
 	quit(0 if all_passed else 1)
@@ -175,7 +179,7 @@ func _check_sidebar_base_score_waits_for_map_stop(flow: GameFlowController, map_
 	var before_roll_count := int(flow.get_map_state().get("roll_count", 0))
 	roll_button.pressed.emit()
 	var waited := 0.0
-	while int(flow.get_map_state().get("roll_count", 0)) == before_roll_count and waited < 2.0:
+	while int(flow.get_map_state().get("roll_count", 0)) == before_roll_count and waited < 5.0:
 		await create_timer(0.05).timeout
 		waited += 0.05
 
@@ -253,6 +257,7 @@ func _check_map_view_can_roll_one_selected_die(map_view: Node, flow: GameFlowCon
 	var first_die := _find_node_by_name(map_view, "MovementDice_1")
 	all_passed = _check("map view waits for dice reveal before movement roll resolves", int(flow.get_map_state().get("roll_count", 0)) == before_roll_count) and all_passed
 	all_passed = _check("map view reports movement roll pending before result", bool(pending_snapshot.get("is_movement_roll_pending", false))) and all_passed
+	all_passed = _check("map view reports physics dice rolling", bool((pending_snapshot.get("movement_physics_dice", {}) as Dictionary).get("rolling", false))) and all_passed
 	all_passed = _check("map view keeps movement dice visually enabled while rolling", first_die is BaseButton and not (first_die as BaseButton).disabled) and all_passed
 	await _wait_for_map_animation(map_view)
 	var state := flow.get_map_state()
@@ -261,6 +266,9 @@ func _check_map_view_can_roll_one_selected_die(map_view: Node, flow: GameFlowCon
 	var node_count := int(state.get("nodes", []).size())
 	all_passed = _check("map view one-die roll records one die", rolled_indices.size() == 1 and int(rolled_indices[0]) == 0) and all_passed
 	all_passed = _check("map view one-die roll leaves second die empty", last_rolls.size() == 2 and int(last_rolls[1]) == 0) and all_passed
+	var physics_snapshot := (map_view.call("automation_get_snapshot").get("movement_physics_dice", {}) as Dictionary)
+	var physics_values: Array = physics_snapshot.get("display_values", [])
+	all_passed = _check("map physics dice display rolled pip", physics_values.size() == 2 and int(physics_values[0]) == int(last_rolls[0])) and all_passed
 	all_passed = _check("map view one-die roll uses selected die as steps", last_rolls.size() == 2 and int(state.get("last_roll", 0)) == int(last_rolls[0])) and all_passed
 	all_passed = _check("map view one-die roll moves by selected die", last_rolls.size() == 2 and node_count > 0 and int(state.get("current_index", 0)) == int(last_rolls[0]) % node_count) and all_passed
 	all_passed = _check("map view one-die roll exposes danger action count", int(state.get("circle_action_count", 0)) == 1) and all_passed
@@ -346,6 +354,23 @@ func _player_marker_is_centered(map_view) -> bool:
 	var art = map_view.art_config
 	var expected: Vector2 = positions[0] - art.player_marker_size * 0.5 + art.player_marker_offset
 	return marker.position.distance_to(expected) < 0.5
+
+
+func _map_physics_dice_start_at_two_positions(map_view) -> bool:
+	var snapshot: Dictionary = map_view.call("automation_get_snapshot")
+	var physics_snapshot: Dictionary = snapshot.get("movement_physics_dice", {})
+	if not bool(physics_snapshot.get("has_physics_viewport", false)):
+		return false
+	var positions: Array = physics_snapshot.get("dice_positions", [])
+	var initial_positions: Array = physics_snapshot.get("initial_positions", [])
+	if positions.size() != 2 or initial_positions.size() != 2:
+		return false
+	for index in range(2):
+		var current := positions[index] as Vector3
+		var expected := initial_positions[index] as Vector3
+		if current.distance_to(expected) > 0.02:
+			return false
+	return true
 
 
 func _find_texture_button(root_node: Node, wrapper_name: String) -> TextureButton:

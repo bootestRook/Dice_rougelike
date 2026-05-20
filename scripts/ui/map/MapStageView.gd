@@ -6,6 +6,7 @@ signal interaction_lock_changed(locked: bool)
 
 const GameFlowController = preload("res://scripts/runtime/GameFlowController.gd")
 const MapStageArtConfig = preload("res://scripts/ui/map/resources/MapStageArtConfig.gd")
+const MapMovementDicePhysicsView = preload("res://scripts/ui/map/components/MapMovementDicePhysicsView.gd")
 const DieState = preload("res://scripts/core/dice/DieState.gd")
 const RolledFace = preload("res://scripts/core/dice/RolledFace.gd")
 const DieViewData = preload("res://scripts/ui/battle/view_models/DieViewData.gd")
@@ -39,6 +40,7 @@ var current_node_label: Label = null
 var next_node_label: Label = null
 var move_dice_label: Label = null
 var movement_dice_row: HBoxContainer = null
+var movement_dice_physics_view: MapMovementDicePhysicsView = null
 var roll_result_label: Label = null
 var node_type_label: Label = null
 var danger_label: Label = null
@@ -138,6 +140,8 @@ func automation_get_snapshot() -> Dictionary:
 		"movement_dice_count": int(map_state.get("movement_dice_count", 2)),
 		"node_count": _nodes().size(),
 		"has_movement_magic_fx": movement_magic_fx_scene != null,
+		"has_movement_physics_dice": movement_dice_physics_view != null,
+		"movement_physics_dice": movement_dice_physics_view.automation_get_snapshot() if movement_dice_physics_view != null else {},
 		"is_board_animating": is_board_animating,
 		"is_movement_roll_pending": is_movement_roll_pending,
 		"interaction_locked": _is_interaction_locked(),
@@ -201,15 +205,31 @@ func _build_view() -> void:
 	board_texture.visible = board_texture.texture != null
 	board_root.add_child(board_texture)
 
+	movement_dice_physics_view = MapMovementDicePhysicsView.new()
+	movement_dice_physics_view.name = "MapStagePerspective3DView"
+	movement_dice_physics_view.z_index = 30
+	movement_dice_physics_view.mouse_filter = Control.MOUSE_FILTER_PASS
+	board_root.add_child(movement_dice_physics_view)
+	movement_dice_physics_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	movement_dice_physics_view.offset_left = art_config.board_margin
+	movement_dice_physics_view.offset_top = art_config.board_margin
+	movement_dice_physics_view.offset_right = -art_config.board_margin
+	movement_dice_physics_view.offset_bottom = -art_config.board_margin
+	movement_dice_physics_view.die_pressed.connect(_on_movement_die_pressed)
+
 	path_layer = Control.new()
 	path_layer.name = "PathFloorLayer"
 	path_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	path_layer.visible = true
+	path_layer.z_index = 5
 	path_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	board_root.add_child(path_layer)
 
 	node_layer = Control.new()
 	node_layer.name = "MapNodeLayer"
 	node_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	node_layer.visible = true
+	node_layer.z_index = 10
 	node_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	board_root.add_child(node_layer)
 
@@ -219,6 +239,7 @@ func _build_view() -> void:
 	player_marker.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	player_marker.stretch_mode = TextureRect.STRETCH_SCALE
 	player_marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	player_marker.visible = false
 	player_marker.z_index = 20
 	board_root.add_child(player_marker)
 
@@ -245,6 +266,7 @@ func _build_view() -> void:
 func _build_center_panel() -> void:
 	center_root = Control.new()
 	center_root.name = "MapCenterRollArea"
+	center_root.z_index = 80
 	board_root.add_child(center_root)
 
 	var center_texture := TextureRect.new()
@@ -425,26 +447,16 @@ func _make_node_label() -> Label:
 
 
 func _ensure_movement_dice_views() -> void:
-	if movement_dice_row == null:
+	if movement_dice_row == null or movement_dice_physics_view == null:
 		return
 	while movement_dice.size() < 2:
 		movement_dice.append(DieState.create_normal_d6(StringName("map_move_d6_%d" % [movement_dice.size() + 1])))
-	while movement_dice_views.size() < 2:
-		var view: Control = null
-		if movement_dice_view_scene != null:
-			var instance := movement_dice_view_scene.instantiate()
-			if instance is Control:
-				view = instance as Control
-		if view == null:
-			view = Control.new()
-		view.name = "MovementDice_%d" % [movement_dice_views.size() + 1]
-		view.custom_minimum_size = Vector2(96.0, 108.0)
-		view.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		view.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		if view.has_signal("die_pressed") and not view.is_connected("die_pressed", Callable(self, "_on_movement_die_pressed")):
-			view.connect("die_pressed", Callable(self, "_on_movement_die_pressed"))
-		movement_dice_row.add_child(view)
-		movement_dice_views.append(view)
+
+	movement_dice_views.clear()
+	for index in range(2):
+		var button := movement_dice_physics_view.get_die_button(index)
+		if button != null:
+			movement_dice_views.append(button)
 
 
 func _render_movement_dice() -> void:
@@ -452,18 +464,8 @@ func _render_movement_dice() -> void:
 		return
 	_ensure_movement_dice_views()
 	var rolls := _movement_rolls_for_render()
-	for index in range(min(2, movement_dice_views.size())):
-		var die = movement_dice[index]
-		var rolled_face := _rolled_face_for_pip(die, index, int(rolls[index]))
-		var data := DieViewData.new()
-		data.setup_from_die(die, index, rolled_face, false, false, false)
-		data.selected = selected_movement_dice_indices.has(index)
-		data.rerollable = not is_marker_animating and not is_board_animating
-		data.disabled = is_board_animating
-		var view := movement_dice_views[index]
-		if view.has_method("render"):
-			view.call("render", data, battle_style_config, battle_icon_library, battle_dice_visual_library)
-		view.tooltip_text = "点击选择是否投掷；至少选择一颗普通六面骰"
+	if movement_dice_physics_view != null:
+		movement_dice_physics_view.set_display_state(rolls, selected_movement_dice_indices, is_board_animating)
 
 
 func _movement_rolls_for_render() -> Array[int]:
@@ -833,10 +835,17 @@ func _render_state() -> void:
 	_layout_center_panel()
 	_layout_route_nodes()
 	_render_node_states()
+	_sync_perspective_stage()
 	_render_center_text()
 	_render_movement_dice()
 	if not is_marker_animating:
 		_place_player_marker(_current_index())
+
+
+func _sync_perspective_stage() -> void:
+	if movement_dice_physics_view == null:
+		return
+	movement_dice_physics_view.set_map_visual_state(art_config, _nodes(), _current_index(), false)
 
 
 func _render_node_states() -> void:
@@ -886,16 +895,24 @@ func _on_roll_pressed() -> void:
 	is_movement_roll_pending = true
 	var selected_indices: Array[int] = selected_movement_dice_indices.duplicate()
 	_refresh_interaction_lock_state()
-	var effects := _spawn_movement_magic_effects(selected_indices)
-	var cover_wait := 0.52 if not effects.is_empty() else 0.18
-	await get_tree().create_timer(cover_wait, false).timeout
 
-	var result := game_flow_controller.roll_map_movement(selected_indices)
+	var prepared := game_flow_controller.prepare_map_movement_roll(selected_indices)
+	if not bool(prepared.get("success", false)):
+		is_movement_roll_pending = false
+		is_marker_animating = false
+		_refresh_interaction_lock_state()
+		_render_state()
+		return
+
+	var prepared_rolls: Array = prepared.get("rolls", [])
+	if movement_dice_physics_view != null:
+		await movement_dice_physics_view.play_roll(prepared_rolls, selected_indices)
+	else:
+		await get_tree().create_timer(0.35, false).timeout
+
+	var result := game_flow_controller.apply_prepared_map_movement_roll(selected_indices, prepared_rolls)
 	is_movement_roll_pending = false
 	if not bool(result.get("success", false)):
-		_begin_movement_magic_reveal_fade(effects, 0.24)
-		await get_tree().create_timer(0.28, false).timeout
-		_clear_movement_magic_effects(effects)
 		is_marker_animating = false
 		_refresh_interaction_lock_state()
 		_render_state()
@@ -906,10 +923,6 @@ func _on_roll_pressed() -> void:
 	if roll_result_label != null:
 		roll_result_label.text = _roll_result_text()
 	_render_movement_dice()
-	_begin_movement_magic_reveal_fade(effects, 0.62)
-	await get_tree().create_timer(0.70, false).timeout
-	_clear_movement_magic_effects(effects)
-	await _play_movement_dice_roll_feedback()
 	var refresh_path_index := int(result.get("refresh_path_index", -1))
 	await _animate_marker_path(path, refresh_path_index)
 	is_marker_animating = false
