@@ -1,20 +1,29 @@
-# 12_长期解锁发现记录
+# 战斗入场与操作按钮发现记录
 
-## 初始发现
-- 现有 12 模块只有 `scripts/rules/long_term/LongTermUnlockService.gd`，目前是购买后把 `unlock_id` 标记到 `run_state.long_term_unlocks` 的 stub。
-- 11 的商店通过 `ShopCatalog.make_long_term_unlock_offer()` 生成长期解锁槽，默认 `unlock_future_shop_slot`，`ShopService._purchase_long_term_unlock()` 调用 `LongTermUnlockService.apply_unlock()`。
-- `RunState` 已有 `coins`、`item_slot_capacity`、`dice_tool_capacity`、`shop_reroll_base_cost`、`current_shop_state`、`long_term_unlocks`、`shop_logs`。
-- `DiceToolService` 和商店已有参数相关逻辑：免费刷新、价格查询、道具槽位、骰具槽位等，可以把长期解锁做成对 RunState 参数的修改。
+## 2026-05-21 追加发现：结算高亮数组类型
+- `BattleScreen.move_selected_dice_to_resolution_by_trace()` 构造的 `visual_slot_indices` 是普通 `Array`，通过 `has_method()` 后直接调用 `BattleDiceStage3D.set_highlighted_die_indices()`。
+- `BattleDiceStage3D.set_highlighted_die_indices(indices: Array[int])` 要求 typed array，普通 `Array` 在运行时会被 Godot 拒绝，导致结算阶段报错。
+- 修复方向：对外 UI 方法接收普通 `Array`，内部转换为 `Array[int]` 后再写入状态。
 
-## 指令文件状态
-- `codex_12_long_term_unlocks_instruction_v1.md` 未在仓库、`.codex` 目录或递归文件名搜索中找到。
-- 用户消息明确了核心边界：不使用旧概念、不新增槽位/等级、只改全局规则参数/商店参数/槽位参数/经济参数/Boss 服务钩子、终倍率整数。
+## 2026-05-21 追加发现：重投时未选骰留场顺序
+- 整理后的回归槽位已经同步到 `GmBattleMgr`，但未选骰在重投期间进入留场区时仍按原始骰子索引排列。
+- 当整理顺序和原始索引顺序不一致时，未选骰从留场区回到整理后槽位会产生交叉路径，视觉上像骰子交换位置。
+- 修复方向：未选骰进入留场区前按 `_ready_slot_for_die()` 排序，使留场区顺序、回归目标顺序和整理后的显示顺序一致。
 
-## 设计方向
-- 新增 `LongTermUnlockDef` 与 `LongTermUnlockCatalog`，用正式 ID 和中文名称描述长期解锁项。
-- `LongTermUnlockService` 负责应用一次性解锁、重算参数、查询可购买项和中文日志。
-- 通过 `RunState` 提供 `apply_long_term_unlock_parameters()` / `get_long_term_unlock_bonus()` 一类钩子，避免 UI 或商店写规则。
+## 2026-05-21 追加发现：整理后回归目标
+- 整理按钮此前只更新 `BattleDiceStage3D.display_die_order` 并在空闲时摆正最终位置；`GmBattleMgr` 的回归动画仍用骰子原始索引计算 `ready_mgr.get_spawn_position(index, count)`。
+- 受影响的回归路径包括重投后准备位回归、结算退出后的“回归”入场、未选骰留场回归、跌落恢复。只在动画结束后摆正会造成中途飞向旧槽位或短暂错位。
+- 修复方向是让 `GmBattleMgr` 成为准备位目标的统一来源：先同步整理后的显示顺序，再由 `_ready_position_for_die(die_index)` 计算实际回归目标。
 
-## 目录草案
-- 10 个长期解锁：道具槽扩容、骰具槽扩容、刷新议价、商品陈列位、补充包陈列位、额外出手机会、额外重投机会、结算位扩容、金币储备、首领规则保险。
-- 全部为参数或服务钩子，不涉及骰面槽位、骰子等级、骰面等级、条件标签等级，也不改变终倍率类型。
+## 当前发现
+- 工作区已有未提交改动，涉及 `BattleScreen.tscn`、`BattleScreen.gd`、`BattleController.gd`、`GameFlowController.gd`、骰子输入测试和若干 Debug 脚本。
+- `BattleController` 在正式战斗里启用外部 3D 投骰结果，`start_next_hand()` 会先进入等待初始物理结果状态。
+- `BattleScreen._on_hand_started()` 遇到等待初始物理结果时直接调用 `_play_initial_3d_roll_for_hand()`，这条路径没有先播放 `RoundIntroBanner`。
+- `BattleScreen._play_battle_intro_magic()` 已经是“横幅 -> 入场表现”的串行结构，但当前外部 3D 投骰路径没有走到它。
+- `GmBattleMgr` 已有“回归”动画：`request_dice_return_from_exit()` / `_play_dice_exit_return_preview()`，会通过 `play_exit_return_from()` 从入口飞回准备位。
+- `BattleDiceStage3D` 中已有 `RerollButton` / `ScoreButton` 节点和信号绑定，但当前只是普通 Button 样式，需要做成参考图那种黑绿涂鸦横幅感，并保证按钮足够可见。
+- 已实现正式战斗入场顺序记录：`round_banner_finished` 早于 `entry_return_started`。
+- 已给重投/结算按钮设置大尺寸、高对比描边、深色底和亮色边框；信号仍是 `reroll_pressed` / `score_pressed`。
+
+## 待确认
+- 视觉效果已由 Debug 测试验证节点尺寸和样式属性；仍建议后续人工看一眼实际动效观感。

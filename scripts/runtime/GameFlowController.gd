@@ -595,10 +595,20 @@ func _refresh_map_ring() -> void:
 
 
 func _generate_map_types_for_refresh(refresh_index: int) -> Array[StringName]:
+	if refresh_index == 0:
+		return _generate_first_circle_map_types(refresh_index)
 	var bag := _build_map_node_bag(refresh_index)
 	var arranged := _arrange_map_node_bag(bag)
 	var result: Array[StringName] = [&"start"]
 	result.append_array(arranged)
+	result.append(&"boss")
+	return result
+
+
+func _generate_first_circle_map_types(refresh_index: int) -> Array[StringName]:
+	var result: Array[StringName] = [&"start"]
+	for _index in range(_map_middle_node_count(refresh_index)):
+		result.append(&"battle")
 	result.append(&"boss")
 	return result
 
@@ -610,6 +620,14 @@ func _build_map_node_bag(refresh_index: int) -> Array[StringName]:
 		for _index in range(int(counts[type_id])):
 			bag.append(type_id)
 	return bag
+
+
+func _map_middle_node_count(refresh_index: int) -> int:
+	var counts := _map_node_counts_for_refresh(refresh_index)
+	var total := 0
+	for type_id in counts.keys():
+		total += int(counts[type_id])
+	return total
 
 
 func _map_node_counts_for_refresh(_refresh_index: int) -> Dictionary:

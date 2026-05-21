@@ -32,6 +32,7 @@ func _init() -> void:
 	all_passed = _check("map view has backdrop texture resource", _texture_exists(map_view, "MapBackdropTexture")) and all_passed
 	all_passed = _check("map view has player marker resource", _texture_exists(map_view, "PlayerMarker")) and all_passed
 	all_passed = _check("map view builds 32 route nodes", _count_nodes_by_prefix(map_view, "MapNode_") == 32) and all_passed
+	all_passed = _check("map first circle shows battle nodes before boss", _first_circle_map_is_battle_only(flow.get_map_state().get("nodes", []))) and all_passed
 	all_passed = _check("map art config has all node textures", _has_all_node_textures(map_view)) and all_passed
 	all_passed = _check("map rest node uses generated texture", _rest_node_uses_generated_texture(map_view)) and all_passed
 	all_passed = _check("map 2D node text labels are readable", _node_label_is_readable(map_view)) and all_passed
@@ -117,16 +118,21 @@ func _check_main_start_enters_map() -> bool:
 	passed = _check("battle stage stays underneath map", battle_screen != null and battle_screen.visible) and passed
 	if battle_screen != null:
 		passed = _check("battle controller is deferred during map phase", battle_screen.controller != null and battle_screen.controller.battle_state == null) and passed
+		passed = _check("battle dice stay hidden before battle starts", _battle_stage_dice_count(battle_screen) == 0) and passed
 		var overlay_host := _find_node_by_name(battle_screen, "MapStageOverlayHost") as Control
 		var top_inventory := _find_node_by_name(battle_screen, "TopInventoryBar") as Control
 		passed = _check("map overlay is below top inventory", overlay_host != null and top_inventory != null and overlay_host.get_global_rect().position.y > top_inventory.get_global_rect().position.y) and passed
 		var battle_title := _find_node_by_name(battle_screen, "BattleTitle") as Label
 		var battle_value := _find_node_by_name(battle_screen, "BattleValue") as Label
-		var status_label := _find_node_by_name(battle_screen, "StatusLabel") as Label
 		var circle_action_label := _find_node_by_name(map_stage, "CircleActionLabel") as Label
 		flow.roll_map_movement([0])
 		await process_frame
-		passed = _check("underlying battle stage refreshes map action count", status_label != null and status_label.text == "行动 1次") and passed
+		passed = _check(
+			"map movement refreshes action count",
+			flow.get_run_state() != null
+				and flow.get_run_state().current_circle_action_count == 1
+				and int(flow.get_map_state().get("circle_action_count", 0)) == 1
+		) and passed
 		passed = _check("underlying battle sidebar uses base score slot", battle_title != null and battle_title.text == "基础分" and battle_value != null and battle_value.text == "300") and passed
 		passed = _check("underlying battle sidebar omits map action count and danger", battle_value != null and not battle_value.text.contains("次") and not battle_value.text.contains("%")) and passed
 		passed = _check("map overlay shows action count outside sidebar", circle_action_label != null and circle_action_label.text.contains("本圈行动：1 次")) and passed
@@ -344,6 +350,19 @@ func _node_type_at(flow: GameFlowController, index: int) -> StringName:
 	return StringName(str(nodes[index].get("node_type", "")))
 
 
+func _first_circle_map_is_battle_only(nodes: Array) -> bool:
+	if nodes.size() != 32:
+		return false
+	if StringName(str(nodes[0].get("node_type", ""))) != &"start":
+		return false
+	if StringName(str(nodes[nodes.size() - 1].get("node_type", ""))) != &"boss":
+		return false
+	for index in range(1, nodes.size() - 1):
+		if StringName(str(nodes[index].get("node_type", ""))) != &"battle":
+			return false
+	return true
+
+
 func _player_marker_is_centered(map_view) -> bool:
 	var marker := _find_node_by_name(map_view, "PlayerMarker") as Control
 	if marker == null:
@@ -378,6 +397,18 @@ func _find_texture_button(root_node: Node, wrapper_name: String) -> TextureButto
 	if wrapper == null:
 		return null
 	return wrapper.get_node_or_null("ButtonTexture") as TextureButton
+
+
+func _battle_stage_dice_count(battle_screen: Node) -> int:
+	if battle_screen == null:
+		return -1
+	var stage = battle_screen.get("dice_bench_area")
+	if stage == null:
+		return -1
+	var battle_mgr = stage.get("battle_mgr")
+	if battle_mgr == null:
+		return -1
+	return int(battle_mgr.get_snapshot().get("dice_count", -1))
 
 
 func _count_nodes_by_prefix(root_node: Node, prefix: String) -> int:

@@ -34,9 +34,7 @@ const RoundIntroBanner = preload("res://scripts/ui/battle/components/RoundIntroB
 @export var left_sidebar_scene: PackedScene = preload("res://scenes/battle/components/LeftBattleSidebar.tscn")
 @export var top_inventory_bar_scene: PackedScene = preload("res://scenes/battle/components/TopInventoryBar.tscn")
 @export var inventory_slot_view_scene: PackedScene = preload("res://scenes/battle/components/InventorySlotView.tscn")
-@export var segment_scoring_area_scene: PackedScene = preload("res://scenes/battle/components/SegmentScoringArea.tscn")
-@export var dice_bench_area_scene: PackedScene = preload("res://scenes/battle/components/DiceBenchArea.tscn")
-@export var dice_view_scene: PackedScene = preload("res://scenes/battle/components/DiceView.tscn")
+@export var battle_dice_stage_3d_scene: PackedScene = preload("res://scenes/battle/components/BattleDiceStage3D.tscn")
 @export var dice_info_popup_scene: PackedScene = preload("res://scenes/battle/components/DiceInfoPopup.tscn")
 @export var face_info_card_scene: PackedScene = preload("res://scenes/battle/components/FaceInfoCard.tscn")
 @export var combo_info_popup_scene: PackedScene = preload("res://scenes/battle/components/ComboInfoPopup.tscn")
@@ -103,6 +101,7 @@ var reward_install_active: bool = false
 var victory_reward_showcase_active: bool = false
 var victory_target_restore_pending: bool = false
 var dice_tool_face_copy_active: bool = false
+var battle_intro_sequence_events: Array[String] = []
 var pending_install_piece: ForgePieceDef = null
 var selected_install_die_index: int = -1
 var selected_install_face_index: int = -1
@@ -369,17 +368,29 @@ func _build_view() -> void:
 	battle_stage_content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	battle_main_stage_area.add_child(battle_stage_content)
 
-	scoring_area = _instantiate_control(segment_scoring_area_scene, PanelContainer.new())
-	scoring_area.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	battle_stage_content.add_child(scoring_area)
+	var formal_dice_stage := _instantiate_control(battle_dice_stage_3d_scene, PanelContainer.new())
+	formal_dice_stage.name = "FormalBattleDiceStage3D"
+	formal_dice_stage.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	battle_stage_content.add_child(formal_dice_stage)
+	scoring_area = formal_dice_stage
+	dice_bench_area = formal_dice_stage
 	if scoring_area.has_method("setup"):
 		scoring_area.setup(
 			style_config,
 			score_log_row_scene,
 			floating_score_text_scene,
-			dice_view_scene,
+			null,
 			icon_library,
 			dice_visual_library
+		)
+	if dice_bench_area.has_method("setup"):
+		dice_bench_area.setup(
+			style_config,
+			icon_library,
+			dice_visual_library,
+			null,
+			dice_info_popup_scene,
+			face_info_card_scene
 		)
 	if scoring_area.has_signal("reward_choice_pressed"):
 		scoring_area.reward_choice_pressed.connect(_on_reward_choice_pressed)
@@ -388,17 +399,6 @@ func _build_view() -> void:
 	if scoring_area.has_signal("reward_mark_link_requested"):
 		scoring_area.reward_mark_link_requested.connect(_on_mark_link_requested)
 
-	dice_bench_area = _instantiate_control(dice_bench_area_scene, PanelContainer.new())
-	battle_stage_content.add_child(dice_bench_area)
-	if dice_bench_area.has_method("setup"):
-		dice_bench_area.setup(
-			style_config,
-			icon_library,
-			dice_visual_library,
-			dice_view_scene,
-			dice_info_popup_scene,
-			face_info_card_scene
-		)
 	if dice_bench_area.has_signal("die_pressed"):
 		dice_bench_area.die_pressed.connect(_on_die_pressed)
 	if dice_bench_area.has_signal("die_hovered"):
@@ -452,6 +452,7 @@ func _apply_resolution_scale() -> void:
 func _create_controller() -> void:
 	controller = BattleController.new()
 	add_child(controller)
+	controller.set_external_roll_results_enabled(true)
 	controller.battle_started.connect(_on_battle_started)
 	controller.hand_started.connect(_on_hand_started)
 	controller.dice_changed.connect(_on_dice_changed)
@@ -475,6 +476,7 @@ func _on_battle_started() -> void:
 	battle_intro_pending = false
 	battle_intro_dice_revealed = false
 	is_battle_intro_playing = false
+	battle_intro_sequence_events.clear()
 	victory_target_restore_pending = _has_victory_target_feedback()
 	if not victory_target_restore_pending:
 		_clear_victory_target_feedback()
@@ -486,6 +488,13 @@ func _on_hand_started(_hand_index: int) -> void:
 	current_preview_result = null
 	victory_reward_showcase_active = false
 	status_text = str(TranslationServer.translate(&"AUTO.TEXT.629A9098C25D"))
+	if controller != null and controller.is_waiting_for_initial_roll_results():
+		battle_intro_pending = false
+		battle_intro_dice_revealed = false
+		status_text = "等待回合入场"
+		_refresh_hud()
+		call_deferred("_play_initial_3d_roll_for_hand")
+		return
 	_prepare_hand_intro_magic()
 	_refresh_hud()
 	if battle_intro_pending:
@@ -939,6 +948,8 @@ func automation_get_snapshot() -> Dictionary:
 		"reward_install_active": reward_install_active,
 		"victory_reward_showcase_active": victory_reward_showcase_active,
 		"status_text": status_text,
+		"is_battle_intro_playing": is_battle_intro_playing,
+		"battle_intro_sequence_events": battle_intro_sequence_events.duplicate(),
 	}
 	if controller == null or controller.battle_state == null:
 		return snapshot
@@ -1484,48 +1495,15 @@ func move_selected_dice_to_resolution_by_trace(trace: ResolutionTrace) -> void:
 		scoring_area.show_resolution_dice(dice_datas, true)
 	await get_tree().process_frame
 	_cache_resolution_return_rects(visual_slot_indices)
-
-	if dice_bench_area != null and dice_bench_area.has_method("set_hidden_die_indices"):
-		dice_bench_area.set_hidden_die_indices(trace.selected_slot_indices)
-
-	var clones: Array[Control] = []
+	if dice_bench_area != null and dice_bench_area.has_method("set_highlighted_die_indices"):
+		dice_bench_area.set_highlighted_die_indices(visual_slot_indices)
+	if scoring_area.has_method("set_resolution_dice_visible"):
+		scoring_area.set_resolution_dice_visible(true)
 	for index in range(visual_slot_indices.size()):
-		var die_index := visual_slot_indices[index]
-		var data: DieViewData = dice_datas[index] if index < dice_datas.size() else null
-		if data == null:
-			continue
-		var clone := _make_animation_dice_view()
-		animation_layer.add_child(clone)
-		if not clone.is_node_ready():
-			await clone.ready
-		if clone.has_method("render"):
-			clone.render(data, style_config, icon_library, dice_visual_library)
-		var start_rect := Rect2()
-		if dice_bench_area != null and dice_bench_area.has_method("get_die_view_global_rect"):
-			start_rect = dice_bench_area.get_die_view_global_rect(die_index)
-		clone.global_position = start_rect.position
-		clone.size = start_rect.size if start_rect.size != Vector2.ZERO else style_config.dice_display_size
-		clones.append(clone)
-
-	if clones.is_empty():
-		if scoring_area.has_method("set_resolution_dice_visible"):
-			scoring_area.set_resolution_dice_visible(true)
-		return
-
-	for index in range(clones.size()):
-		var clone := clones[index]
-		var target_pos: Vector2 = scoring_area.get_resolution_dice_global_position(index) if scoring_area.has_method("get_resolution_dice_global_position") else clone.global_position
-		var move_duration := 0.12 if resolution_fast_mode else 0.35
-		var tween := create_tween()
-		tween.tween_property(clone, "global_position", target_pos, move_duration).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-		await tween.finished
-		clone.queue_free()
 		if scoring_area.has_method("set_resolution_index_visible"):
 			scoring_area.set_resolution_index_visible(index, true)
-		if index < clones.size() - 1:
-			await _create_battle_timer(0.03 if resolution_fast_mode else 0.08).timeout
-	if not scoring_area.has_method("set_resolution_index_visible") and scoring_area.has_method("set_resolution_dice_visible"):
-		scoring_area.set_resolution_dice_visible(true)
+		if index < visual_slot_indices.size() - 1:
+			await _create_battle_timer(0.02 if resolution_fast_mode else 0.05).timeout
 
 
 func return_resolution_dice_to_bench_by_trace(trace: ResolutionTrace, simultaneous: bool = false) -> void:
@@ -1535,67 +1513,11 @@ func return_resolution_dice_to_bench_by_trace(trace: ResolutionTrace, simultaneo
 	battle_ui_state = BattleUiState.CLEANUP
 	_clear_resolution_highlights()
 	var visual_slot_indices := _visual_selected_slot_indices(trace)
-	var dice_datas := _resolution_die_view_data_for_slots(visual_slot_indices)
-	var clones: Array[Control] = []
 	for index in range(visual_slot_indices.size()):
-		var die_index := visual_slot_indices[index]
-		var data: DieViewData = dice_datas[index] if index < dice_datas.size() else null
-		var start_rect := _resolution_dice_global_rect(index)
-		if data == null or start_rect.size == Vector2.ZERO or animation_layer == null:
-			continue
-		var clone := _make_animation_dice_view()
-		clone.set_meta("die_index", die_index)
-		animation_layer.add_child(clone)
-		if not clone.is_node_ready():
-			await clone.ready
-		if clone.has_method("render"):
-			clone.render(data, style_config, icon_library, dice_visual_library)
-		clone.global_position = start_rect.position
-		clone.size = start_rect.size
-		clones.append(clone)
 		if scoring_area != null and scoring_area.has_method("set_resolution_index_visible"):
 			scoring_area.set_resolution_index_visible(index, false)
-
-	var remaining_hidden: Array[int] = []
-	remaining_hidden.append_array(trace.selected_slot_indices)
-	if clones.is_empty():
-		_clear_returning_resolution_state()
-		return
-
-	if simultaneous:
-		var tween := create_tween()
-		tween.set_parallel(true)
-		for clone in clones:
-			var die_index := int(clone.get_meta("die_index", -1))
-			var target_rect := _bench_die_global_rect(die_index)
-			var move_duration := 0.08 if resolution_fast_mode else 0.22
-			tween.tween_property(clone, "global_position", target_rect.position, move_duration).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
-			tween.tween_property(clone, "size", target_rect.size, move_duration).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
-		await tween.finished
-		for clone in clones:
-			if is_instance_valid(clone):
-				clone.queue_free()
-		_clear_returning_resolution_state()
-		await _create_battle_timer(0.025 if resolution_fast_mode else 0.08).timeout
-		return
-
-	for index in range(clones.size()):
-		var clone := clones[index]
-		var die_index := int(clone.get_meta("die_index", -1))
-		var target_rect := _bench_die_global_rect(die_index)
-		var move_duration := 0.08 if resolution_fast_mode else 0.22
-		var tween := create_tween()
-		tween.tween_property(clone, "global_position", target_rect.position, move_duration).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
-		tween.parallel().tween_property(clone, "size", target_rect.size, move_duration).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
-		await tween.finished
-		if is_instance_valid(clone):
-			clone.queue_free()
-		remaining_hidden.erase(die_index)
-		if dice_bench_area != null and dice_bench_area.has_method("set_hidden_die_indices"):
-			dice_bench_area.set_hidden_die_indices(remaining_hidden)
-		if index < clones.size() - 1:
-			await _create_battle_timer(0.02 if resolution_fast_mode else 0.045).timeout
-
+		if not simultaneous and index < visual_slot_indices.size() - 1:
+			await _create_battle_timer(0.01 if resolution_fast_mode else 0.035).timeout
 	_clear_returning_resolution_state()
 	await _create_battle_timer(0.025 if resolution_fast_mode else 0.08).timeout
 
@@ -1876,13 +1798,6 @@ func _resolution_die_view_data_for_slots(slot_indices: Array[int]) -> Array[DieV
 	return result
 
 
-func _make_animation_dice_view() -> Control:
-	var view := _instantiate_control(dice_view_scene, PanelContainer.new())
-	view.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	view.z_index = 320
-	return view
-
-
 func _resolution_dice_global_rect(index: int) -> Rect2:
 	var fallback_size := style_config.dice_display_size if style_config != null else Vector2(96.0, 96.0)
 	if scoring_area == null:
@@ -1994,6 +1909,16 @@ func _build_hud_state() -> BattleHudState:
 		state.preview_text = str(TranslationServer.translate(&"AUTO.TEXT.83C19741CC0F"))
 		return state
 
+	if controller.battle_state == null or (game_flow_controller != null and game_flow_controller.current_state_id == &"map"):
+		state.preview_text = ""
+		state.controls_locked = true
+		state.can_reroll = false
+		state.can_score = false
+		state.dice_results = []
+		state.selected_dice_indices = []
+		state.score_log = []
+		return state
+
 	state.target_score = controller.get_target_score()
 	state.current_score = controller.get_total_score()
 	state.rerolls_left = controller.get_rerolls_left()
@@ -2002,7 +1927,7 @@ func _build_hud_state() -> BattleHudState:
 	state.max_hands = controller.get_hands_per_battle()
 	state.max_selected_dice = controller.get_max_selected_dice()
 	state.phase_text = DisplayNames.phase_name(controller.get_phase_name())
-	state.controls_locked = is_battle_intro_playing
+	state.controls_locked = is_battle_intro_playing or is_reroll_playing or is_resolution_playing
 	state.can_reroll = controller.can_reroll() and not is_resolution_playing and not is_reroll_playing and not is_battle_intro_playing and not reward_phase_active
 	state.can_score = controller.can_score() and not is_resolution_playing and not is_reroll_playing and not is_battle_intro_playing and not reward_phase_active
 	state.dice_results = _build_die_view_data()
@@ -2439,6 +2364,24 @@ func _play_reroll_magic() -> void:
 	status_text = str(TranslationServer.translate(&"AUTO.TEXT.332A22260969"))
 	if dice_bench_area != null and dice_bench_area.has_method("hide_info"):
 		dice_bench_area.hide_info()
+	if controller != null and dice_bench_area != null and dice_bench_area.has_method("roll_selected_and_wait"):
+		var pending_indices := controller.begin_reroll_selected()
+		if pending_indices.is_empty():
+			is_reroll_playing = false
+			resolution_fast_mode = false
+			battle_ui_state = BattleUiState.IDLE
+			_refresh_hud()
+			return
+		_refresh_hud()
+		var physical_results: Dictionary = await dice_bench_area.call("roll_selected_and_wait", pending_indices)
+		if physical_results.is_empty() or not controller.commit_selected_reroll_results(physical_results):
+			controller.cancel_pending_reroll()
+			status_text = "骰子重投失败。"
+		is_reroll_playing = false
+		resolution_fast_mode = false
+		battle_ui_state = BattleUiState.IDLE
+		_refresh_hud()
+		return
 	var effects: Array[Control] = _spawn_reroll_magic_effects(selected_indices)
 	_refresh_hud()
 
@@ -2460,6 +2403,72 @@ func _play_reroll_magic() -> void:
 	resolution_fast_mode = false
 	battle_ui_state = BattleUiState.IDLE
 	_refresh_hud()
+
+
+func _play_initial_3d_roll_for_hand() -> void:
+	if controller == null or not controller.is_waiting_for_initial_roll_results():
+		return
+	if dice_bench_area == null:
+		controller.cancel_pending_initial_roll()
+		status_text = "骰子入场失败。"
+		_refresh_hud()
+		return
+
+	is_battle_intro_playing = true
+	battle_intro_pending = false
+	battle_intro_dice_revealed = false
+	battle_intro_die_indices = _all_dice_indices()
+	battle_ui_state = BattleUiState.ROLLING
+	status_text = "回合入场"
+	if dice_bench_area != null and dice_bench_area.has_method("set_hidden_die_indices"):
+		dice_bench_area.set_hidden_die_indices(battle_intro_die_indices)
+	_refresh_hud()
+	await get_tree().process_frame
+
+	var round_number := controller.get_current_hand_number() if controller != null else 1
+	_record_battle_intro_event("round_banner_started")
+	await _play_round_intro_banner(round_number)
+	_record_battle_intro_event("round_banner_finished")
+
+	battle_intro_dice_revealed = true
+	var physical_results: Dictionary = {}
+	if dice_bench_area.has_method("play_entry_return_and_wait"):
+		_record_battle_intro_event("entry_return_started")
+		physical_results = await dice_bench_area.call("play_entry_return_and_wait", battle_intro_die_indices)
+		_record_battle_intro_event("entry_return_finished")
+	elif dice_bench_area.has_method("roll_all_and_wait"):
+		_record_battle_intro_event("initial_roll_started")
+		physical_results = await dice_bench_area.call("roll_all_and_wait")
+		_record_battle_intro_event("initial_roll_finished")
+	else:
+		controller.cancel_pending_initial_roll()
+		status_text = "骰子入场失败。"
+		_finish_initial_battle_intro()
+		return
+
+	if physical_results.is_empty() or not controller.commit_initial_roll_results(physical_results):
+		controller.cancel_pending_initial_roll()
+		status_text = "骰子入场失败。"
+	else:
+		status_text = str(TranslationServer.translate(&"AUTO.TEXT.629A9098C25D"))
+	_finish_initial_battle_intro()
+
+
+func _finish_initial_battle_intro() -> void:
+	is_battle_intro_playing = false
+	battle_intro_pending = false
+	battle_intro_dice_revealed = true
+	battle_intro_die_indices.clear()
+	if dice_bench_area != null and dice_bench_area.has_method("clear_hidden_die_indices"):
+		dice_bench_area.clear_hidden_die_indices()
+	battle_ui_state = BattleUiState.IDLE
+	_refresh_hud()
+
+
+func _record_battle_intro_event(event_name: String) -> void:
+	battle_intro_sequence_events.append(event_name)
+	if battle_intro_sequence_events.size() > 24:
+		battle_intro_sequence_events.remove_at(0)
 
 
 func _play_victory_reward_showcase() -> void:

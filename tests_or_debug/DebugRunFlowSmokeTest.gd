@@ -18,7 +18,7 @@ func _init() -> void:
 	all_passed = _check("run_state exists after start_new_run", flow.get_run_state() != null) and all_passed
 	all_passed = _check("start_new_run enters map phase", flow.current_state_id == &"map") and all_passed
 	all_passed = _check("demo map has 32 nodes", flow.get_map_state().get("nodes", []).size() == 32) and all_passed
-	all_passed = _check("demo map follows node bag counts", _map_node_bag_is_valid(flow.get_map_state().get("nodes", []))) and all_passed
+	all_passed = _check("first circle map uses battle nodes before boss", _first_circle_map_is_battle_only(flow.get_map_state().get("nodes", []))) and all_passed
 	all_passed = _check("map state exposes circle base score", int(flow.get_map_state().get("circle_base_score", 0)) == flow.get_run_state().get_current_circle_base_score()) and all_passed
 	all_passed = _check("starting run has 6 dice", flow.get_run_state().dice.size() == 6) and all_passed
 	all_passed = _check("battle_index starts at 0", flow.get_run_state().battle_index == 0) and all_passed
@@ -174,6 +174,19 @@ func _map_node_bag_is_valid(nodes: Array) -> bool:
 	if StringName(str(nodes[nodes.size() - 1].get("node_type", ""))) != &"boss":
 		return false
 	return _map_spacing_is_valid(nodes)
+
+
+func _first_circle_map_is_battle_only(nodes: Array) -> bool:
+	if nodes.size() != 32:
+		return false
+	if StringName(str(nodes[0].get("node_type", ""))) != &"start":
+		return false
+	if StringName(str(nodes[nodes.size() - 1].get("node_type", ""))) != &"boss":
+		return false
+	for index in range(1, nodes.size() - 1):
+		if StringName(str(nodes[index].get("node_type", ""))) != &"battle":
+			return false
+	return true
 
 
 func _map_spacing_is_valid(nodes: Array) -> bool:

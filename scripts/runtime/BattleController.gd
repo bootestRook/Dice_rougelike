@@ -61,6 +61,11 @@ var pending_mark_floating_texts: Array[Dictionary] = []
 var pending_resolution_trace: ResolutionTrace = null
 var pending_resolution_result: ScoreResult = null
 var pending_resolution_context: ScoreContext = null
+var external_roll_results_enabled: bool = false
+var awaiting_initial_roll_results: bool = false
+var awaiting_reroll_results: bool = false
+var pending_reroll_selected_before: Array[RolledFace] = []
+var pending_reroll_die_indices: Array[int] = []
 
 
 func _init() -> void:
@@ -98,6 +103,7 @@ func start_battle(config: BattleConfig = null, run_state: RunState = null) -> vo
 	hand_state = null
 	pending_mark_logs.clear()
 	pending_mark_floating_texts.clear()
+	_clear_pending_roll_requests()
 	for text in battle_start_log_texts:
 		if text != "":
 			pending_mark_logs.append(BattleLogEntry.new(&"LOG.DICE_TOOL", {"text": text}, &"dice_tool"))
@@ -110,13 +116,16 @@ func start_battle(config: BattleConfig = null, run_state: RunState = null) -> vo
 	start_next_hand()
 
 
-func toggle_lock(index: int) -> void:
-	if not _can_change_dice_flags() or not _is_valid_roll_index(index):
-		return
+func set_external_roll_results_enabled(enabled: bool) -> void:
+	external_roll_results_enabled = enabled
 
-	hand_state.rolled_faces[index].locked = not hand_state.rolled_faces[index].locked
-	dice_changed.emit(get_current_rolls())
-	_emit_score_preview()
+
+func is_waiting_for_initial_roll_results() -> bool:
+	return awaiting_initial_roll_results
+
+
+func is_waiting_for_reroll_results() -> bool:
+	return awaiting_reroll_results
 
 
 func toggle_select(index: int) -> void:
@@ -141,15 +150,68 @@ func reroll() -> void:
 	if not can_reroll():
 		return
 
+	if external_roll_results_enabled:
+		return
+
+	var selected_indices := begin_reroll_selected()
+	if selected_indices.is_empty():
+		return
+	var face_results := _random_face_results_for_indices(selected_indices)
+	if not commit_selected_reroll_results(face_results):
+		cancel_pending_reroll()
+
+
+func begin_reroll_selected() -> Array[int]:
+	var selected_indices: Array[int] = []
+	if phase != BattlePhase.WAITING_ACTION or hand_state == null:
+		return selected_indices
+	if awaiting_reroll_results or awaiting_initial_roll_results:
+		return selected_indices
+	if not can_reroll():
+		return selected_indices
+
 	_trigger_purple_marks_before_reroll()
 	var selected_before_reroll := hand_state.selected_faces()
 	for text in dice_tool_service.apply_reroll_before_effects(run_state, selected_before_reroll, hand_state, battle_state):
 		pending_mark_logs.append(BattleLogEntry.new(&"LOG.DICE_TOOL", {"text": text}, &"dice_tool"))
 	_mark_selected_dice_rerolled()
-	hand_state.rolled_faces = roll_service.reroll_selected(dice, hand_state.rolled_faces)
+
+	for roll in selected_before_reroll:
+		if roll != null:
+			selected_indices.append(roll.die_index)
+
+	pending_reroll_selected_before = selected_before_reroll.duplicate()
+	pending_reroll_die_indices = selected_indices.duplicate()
+	awaiting_reroll_results = true
+	_set_phase(BattlePhase.INIT)
+	score_preview_changed.emit(null)
+	return selected_indices
+
+
+func commit_selected_reroll_results(face_results: Dictionary) -> bool:
+	if not awaiting_reroll_results or hand_state == null:
+		return false
+	if not _face_results_cover_indices(face_results, pending_reroll_die_indices):
+		return false
+
+	hand_state.rolled_faces = roll_service.reroll_selected_from_face_results(dice, hand_state.rolled_faces, face_results)
 	hand_state.rerolls_used += 1
-	for text in dice_tool_service.apply_reroll_after_effects(run_state, selected_before_reroll, battle_state):
+	for text in dice_tool_service.apply_reroll_after_effects(run_state, pending_reroll_selected_before, battle_state):
 		pending_mark_logs.append(BattleLogEntry.new(&"LOG.DICE_TOOL", {"text": text}, &"dice_tool"))
+	_clear_pending_reroll()
+	_set_phase(BattlePhase.WAITING_ACTION)
+	dice_changed.emit(get_current_rolls())
+	rerolls_changed.emit(_rerolls_left())
+	selection_changed.emit(_selected_count())
+	_emit_score_preview()
+	return true
+
+
+func cancel_pending_reroll() -> void:
+	if not awaiting_reroll_results:
+		return
+	_clear_pending_reroll()
+	_set_phase(BattlePhase.WAITING_ACTION)
 	dice_changed.emit(get_current_rolls())
 	rerolls_changed.emit(_rerolls_left())
 	selection_changed.emit(_selected_count())
@@ -241,12 +303,48 @@ func start_next_hand() -> void:
 
 	hand_state = HandState.new()
 	hand_state.hand_index = battle_state.hands_played
-	hand_state.rolled_faces = roll_service.roll_all(dice)
+	if external_roll_results_enabled:
+		hand_state.rolled_faces = roll_service.roll_all_from_face_results(dice, {})
+		awaiting_initial_roll_results = true
+	else:
+		hand_state.rolled_faces = roll_service.roll_all(dice)
 	battle_state.current_hand = hand_state
-	for text in dice_tool_service.apply_round_start_effects(run_state, battle_state, hand_state):
-		pending_mark_logs.append(BattleLogEntry.new(&"LOG.DICE_TOOL", {"text": text}, &"dice_tool"))
-	_set_phase(BattlePhase.WAITING_ACTION)
+	if external_roll_results_enabled:
+		_set_phase(BattlePhase.INIT)
+	else:
+		_apply_round_start_effects()
+		_set_phase(BattlePhase.WAITING_ACTION)
 	hand_started.emit(hand_state.hand_index)
+	dice_changed.emit(get_current_rolls())
+	rerolls_changed.emit(_rerolls_left())
+	selection_changed.emit(0)
+	score_preview_changed.emit(null)
+
+
+func commit_initial_roll_results(face_results: Dictionary) -> bool:
+	if not awaiting_initial_roll_results or battle_state == null or hand_state == null:
+		return false
+	var required_indices := _all_die_indices()
+	if not _face_results_cover_indices(face_results, required_indices):
+		return false
+
+	hand_state.rolled_faces = roll_service.roll_all_from_face_results(dice, face_results)
+	battle_state.current_hand = hand_state
+	awaiting_initial_roll_results = false
+	_apply_round_start_effects()
+	_set_phase(BattlePhase.WAITING_ACTION)
+	dice_changed.emit(get_current_rolls())
+	rerolls_changed.emit(_rerolls_left())
+	selection_changed.emit(0)
+	score_preview_changed.emit(null)
+	return true
+
+
+func cancel_pending_initial_roll() -> void:
+	if not awaiting_initial_roll_results:
+		return
+	awaiting_initial_roll_results = false
+	_set_phase(BattlePhase.INIT)
 	dice_changed.emit(get_current_rolls())
 	rerolls_changed.emit(_rerolls_left())
 	selection_changed.emit(0)
@@ -265,6 +363,8 @@ func can_reroll() -> bool:
 	return (
 		hand_state != null
 		and phase == BattlePhase.WAITING_ACTION
+		and not awaiting_initial_roll_results
+		and not awaiting_reroll_results
 		and hand_state.rerolls_used < battle_state.config.rerolls_per_hand
 		and _selected_count() >= 1
 	)
@@ -275,6 +375,8 @@ func can_score() -> bool:
 	return (
 		hand_state != null
 		and phase == BattlePhase.WAITING_ACTION
+		and not awaiting_initial_roll_results
+		and not awaiting_reroll_results
 		and selected_count >= 1
 		and selected_count <= get_max_selected_dice()
 	)
@@ -470,7 +572,7 @@ func _apply_combo_context(context: ScoreContext) -> void:
 
 
 func _can_change_dice_flags() -> bool:
-	return hand_state != null and phase == BattlePhase.WAITING_ACTION
+	return hand_state != null and phase == BattlePhase.WAITING_ACTION and not awaiting_initial_roll_results and not awaiting_reroll_results
 
 
 func _is_valid_roll_index(index: int) -> bool:
@@ -500,6 +602,50 @@ func _is_last_hand() -> bool:
 
 func _emit_score_preview() -> void:
 	score_preview_changed.emit(preview_selected_score())
+
+
+func _apply_round_start_effects() -> void:
+	for text in dice_tool_service.apply_round_start_effects(run_state, battle_state, hand_state):
+		pending_mark_logs.append(BattleLogEntry.new(&"LOG.DICE_TOOL", {"text": text}, &"dice_tool"))
+
+
+func _all_die_indices() -> Array[int]:
+	var indices: Array[int] = []
+	for die_index in range(dice.size()):
+		indices.append(die_index)
+	return indices
+
+
+func _random_face_results_for_indices(indices: Array[int]) -> Dictionary:
+	var results := {}
+	for die_index in indices:
+		if die_index < 0 or die_index >= dice.size():
+			continue
+		var roll := roll_service.roll_die(dice[die_index], die_index)
+		results[die_index] = {
+			"face_index": roll.face_index,
+			"pip": roll.rolled_pip,
+		}
+	return results
+
+
+func _face_results_cover_indices(face_results: Dictionary, indices: Array[int]) -> bool:
+	for die_index in indices:
+		if face_results.has(die_index) or face_results.has(str(die_index)):
+			continue
+		return false
+	return true
+
+
+func _clear_pending_roll_requests() -> void:
+	awaiting_initial_roll_results = false
+	_clear_pending_reroll()
+
+
+func _clear_pending_reroll() -> void:
+	awaiting_reroll_results = false
+	pending_reroll_selected_before.clear()
+	pending_reroll_die_indices.clear()
 
 
 func _fill_missing_wild_preview_pips(context: ScoreContext) -> void:

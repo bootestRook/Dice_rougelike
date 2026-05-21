@@ -23,19 +23,12 @@ func roll_all(dice: Array[DieState]) -> Array[RolledFace]:
 	return results
 
 
-func reroll_unlocked(dice: Array[DieState], current: Array[RolledFace]) -> Array[RolledFace]:
+func roll_all_from_face_results(dice: Array[DieState], face_results: Dictionary) -> Array[RolledFace]:
 	var results: Array[RolledFace] = []
-	var roll_count: int = min(dice.size(), current.size())
 
-	for die_index in range(roll_count):
-		var current_roll := current[die_index]
-
-		if current_roll.locked:
-			results.append(current_roll)
-		else:
-			var rerolled := roll_die(dice[die_index], die_index)
-			rerolled.was_rerolled = true
-			results.append(rerolled)
+	for die_index in range(dice.size()):
+		var face_index := _face_index_from_results(face_results, die_index, 0)
+		results.append(roll_die_at_face_index(dice[die_index], die_index, face_index))
 
 	return results
 
@@ -52,7 +45,31 @@ func reroll_selected(dice: Array[DieState], current: Array[RolledFace]) -> Array
 			rerolled.was_rerolled = true
 			results.append(rerolled)
 		else:
-			current_roll.locked = false
+			results.append(current_roll)
+
+	return results
+
+
+func reroll_selected_from_face_results(
+	dice: Array[DieState],
+	current: Array[RolledFace],
+	face_results: Dictionary
+) -> Array[RolledFace]:
+	var results: Array[RolledFace] = []
+	var roll_count: int = current.size()
+
+	for die_index in range(roll_count):
+		var current_roll := current[die_index]
+
+		if current_roll.selected:
+			var rerolled := roll_temp_face(current_roll) if current_roll.is_temporary else roll_die_at_face_index(
+				dice[die_index],
+				die_index,
+				_face_index_from_results(face_results, die_index, current_roll.face_index)
+			)
+			rerolled.was_rerolled = true
+			results.append(rerolled)
+		else:
 			results.append(current_roll)
 
 	return results
@@ -87,6 +104,28 @@ func roll_die(die: DieState, die_index: int, external_rng: RandomNumberGenerator
 	rolled_face.face_instance_id = RolledFace.make_face_instance_id(rolled_face.die_id, die_index, face_index)
 	rolled_face.die = die
 	rolled_face.face = die.faces[face_index].clone()
+	rolled_face.rolled_pip = rolled_face.face.pip
+	return rolled_face
+
+
+func roll_die_at_face_index(die: DieState, die_index: int, face_index: int) -> RolledFace:
+	var rolled_face := RolledFace.new()
+	rolled_face.die_index = die_index
+
+	if die == null:
+		return rolled_face
+	if not die.has_valid_shape():
+		push_warning("RollService.roll_die_at_face_index invalid die shape: %s" % ["; ".join(die.get_shape_errors())])
+		return rolled_face
+	if die.faces.is_empty():
+		return rolled_face
+
+	var resolved_face_index := clampi(face_index, 0, die.faces.size() - 1)
+	rolled_face.face_index = resolved_face_index
+	rolled_face.die_id = die.die_id if die.die_id != &"" else die.id
+	rolled_face.face_instance_id = RolledFace.make_face_instance_id(rolled_face.die_id, die_index, resolved_face_index)
+	rolled_face.die = die
+	rolled_face.face = die.faces[resolved_face_index].clone()
 	rolled_face.rolled_pip = rolled_face.face.pip
 	return rolled_face
 
@@ -133,3 +172,18 @@ func _get_rng(external_rng: RandomNumberGenerator) -> RandomNumberGenerator:
 		return external_rng
 
 	return rng
+
+
+func _face_index_from_results(face_results: Dictionary, die_index: int, fallback_face_index: int = 0) -> int:
+	if face_results.has(die_index):
+		return _face_index_from_result_value(face_results[die_index], fallback_face_index)
+	var die_key := str(die_index)
+	if face_results.has(die_key):
+		return _face_index_from_result_value(face_results[die_key], fallback_face_index)
+	return fallback_face_index
+
+
+func _face_index_from_result_value(value, fallback_face_index: int) -> int:
+	if value is Dictionary:
+		return int((value as Dictionary).get("face_index", fallback_face_index))
+	return int(value)

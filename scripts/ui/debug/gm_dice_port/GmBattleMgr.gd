@@ -45,6 +45,8 @@ const READY_RETURN_DURATION := 0.58
 const EXIT_RETURN_DURATION := 0.55
 const EXIT_RETURN_STEP_DELAY := 0.12
 
+const GmDiceInstanceScript = preload("res://scripts/ui/debug/gm_dice_port/GmDiceInstance.gd")
+
 
 @export var ready_mgr: GmReadyMgr = null
 @export var dice_container: Node3D = null
@@ -72,7 +74,11 @@ var last_values: Array[int] = []
 var last_targets: Array = []
 var last_rolled_dice_indices: Array[int] = []
 var selected_dice_indices: Array[int] = []
+var display_die_order: Array[int] = []
 var rolling := false
+var formal_battle_mode := false
+var emit_debug_score_signals := true
+var emit_debug_resolution_signals := true
 var idle_drift_tuning := DEFAULT_IDLE_DRIFT_TUNING.duplicate(true)
 var throw_speed_tuning := DEFAULT_THROW_SPEED_TUNING.duplicate(true)
 var throw_spin_tuning := DEFAULT_THROW_SPIN_TUNING.duplicate(true)
@@ -105,6 +111,53 @@ func setup(p_ready_mgr: GmReadyMgr, p_dice_container: Node3D) -> void:
 	ready_mgr = p_ready_mgr
 	dice_container = p_dice_container
 	_rng.randomize()
+
+
+func set_display_die_order(order: Array[int]) -> void:
+	display_die_order = _complete_display_order(order)
+
+
+func clear_display_die_order() -> void:
+	display_die_order.clear()
+
+
+func get_ready_slot_for_die(die_index: int) -> int:
+	return _ready_slot_for_die(die_index)
+
+
+func get_ready_position_for_die(die_index: int) -> Vector3:
+	return _ready_position_for_die(die_index)
+
+
+func apply_display_order_to_ready_positions() -> void:
+	if ready_mgr == null or using_dices.is_empty():
+		return
+	var count := using_dices.size()
+	var order := _resolved_display_die_order()
+	for visual_slot_index in range(order.size()):
+		var die_index := int(order[visual_slot_index])
+		if die_index < 0 or die_index >= count:
+			continue
+		var dice_instance := using_dices[die_index] as GmDiceInstance
+		if dice_instance == null or dice_instance.avatar == null:
+			continue
+		var avatar = dice_instance.avatar
+		if avatar.get("is_rolling") or avatar.get("is_returning_to_ready"):
+			continue
+		if avatar.get("is_exiting") or avatar.get("is_exited") or avatar.get("is_returning_from_exit"):
+			continue
+		if avatar.get("is_moving_to_unselected_hold") or avatar.get("is_returning_from_unselected_hold"):
+			continue
+		dice_instance.avatar.set_ready_hover(
+			ready_mgr.get_spawn_position(visual_slot_index, count),
+			GmReadyMgr.READY_ROW_YAW_DEGREES
+		)
+
+
+func set_formal_battle_mode(enabled: bool) -> void:
+	formal_battle_mode = enabled
+	emit_debug_score_signals = not enabled
+	emit_debug_resolution_signals = not enabled
 
 
 func set_idle_drift_tuning(config_values: Dictionary) -> void:
@@ -211,6 +264,32 @@ func create_dice_from_box(count: int, definition: GmDiceDefinition) -> void:
 	dice_roster_changed.emit(get_snapshot())
 
 
+func create_dice_from_definitions(definitions: Array) -> void:
+	clear()
+	if ready_mgr == null:
+		return
+	selected_dice_indices.clear()
+	for raw_definition in definitions:
+		var definition := raw_definition as GmDiceDefinition
+		if definition == null:
+			continue
+		var instance := GmDiceInstanceScript.from_definition(definition)
+		using_dices.append(instance)
+	for index in range(using_dices.size()):
+		var instance := using_dices[index] as GmDiceInstance
+		var avatar := ready_mgr.spawn_dice_avatar(instance, index, using_dices.size())
+		if avatar != null:
+			avatar.set_idle_drift_tuning(idle_drift_tuning)
+			avatar.set_throw_speed_tuning(throw_speed_tuning)
+			avatar.set_throw_spin_tuning(throw_spin_tuning)
+			avatar.roll_started.connect(_on_dice_roll_started)
+			avatar.roll_stopped.connect(_on_dice_roll_stopped)
+			avatar.selection_requested.connect(_on_dice_selection_requested)
+	_sync_selection_visuals()
+	compute_score(false)
+	dice_roster_changed.emit(get_snapshot())
+
+
 func clear() -> void:
 	rolling = false
 	_roll_elapsed = 0.0
@@ -233,6 +312,7 @@ func clear() -> void:
 	last_values.clear()
 	last_targets.clear()
 	last_rolled_dice_indices.clear()
+	display_die_order.clear()
 	_last_resolution_request.clear()
 	_last_dice_exit_request.clear()
 	bag_dices.clear()
@@ -276,6 +356,13 @@ func request_dice_exit_from_current_state() -> Dictionary:
 
 func request_dice_return_from_exit() -> bool:
 	if using_dices.is_empty() or rolling or _dice_exit_animating or _dice_exit_return_animating or not _dice_exit_completed:
+		return false
+	_play_dice_exit_return_preview()
+	return true
+
+
+func request_dice_entry_return() -> bool:
+	if using_dices.is_empty() or rolling or _dice_exit_animating or _dice_exit_return_animating:
 		return false
 	_play_dice_exit_return_preview()
 	return true
@@ -411,6 +498,7 @@ func get_snapshot() -> Dictionary:
 		"targets": last_targets.duplicate(),
 		"last_rolled_dice_indices": last_rolled_dice_indices.duplicate(),
 		"selected_dice_indices": selected_dice_indices.duplicate(),
+		"display_die_order": _resolved_display_die_order(),
 		"dice_positions": positions,
 		"dice": dice_rows,
 		"score": {
@@ -473,7 +561,7 @@ func _begin_ready_return_after_roll() -> void:
 			_pending_ready_returns += 1
 			dice_instance.avatar.ready_return_finished.connect(_on_dice_ready_return_finished, CONNECT_ONE_SHOT)
 			dice_instance.avatar.return_to_ready_hover(
-				ready_mgr.get_spawn_position(index, using_dices.size()),
+				_ready_position_for_die(index),
 				GmReadyMgr.READY_ROW_YAW_DEGREES,
 				ready_return_duration
 			)
@@ -492,9 +580,11 @@ func _finish_ready_return() -> void:
 	_pending_ready_returns = 0
 	_returning_to_ready = false
 	rolling = false
-	_request_resolution_after_ready_return()
-	var score_snapshot := compute_score(false)
-	_request_dice_exit_after_score(score_snapshot)
+	if emit_debug_resolution_signals:
+		_request_resolution_after_ready_return()
+	var score_snapshot := compute_score(not emit_debug_score_signals)
+	if emit_debug_resolution_signals:
+		_request_dice_exit_after_score(score_snapshot)
 	roll_finished.emit(get_snapshot())
 
 
@@ -671,7 +761,7 @@ func _play_dice_exit_return_preview() -> void:
 		var dice_instance := using_dices[index] as GmDiceInstance
 		if dice_instance == null or dice_instance.avatar == null:
 			continue
-		var target_position := ready_mgr.get_spawn_position(index, using_dices.size())
+		var target_position := _ready_position_for_die(index)
 		items.append({
 			"die_index": index,
 			"dice": dice_instance,
@@ -799,6 +889,15 @@ func _move_unselected_dice_to_hold(roll_indices: Array) -> void:
 		})
 	if items.is_empty():
 		return
+	items.sort_custom(func(a, b) -> bool:
+		var a_index := int((a as Dictionary).get("die_index", 0))
+		var b_index := int((b as Dictionary).get("die_index", 0))
+		var a_slot := _ready_slot_for_die(a_index)
+		var b_slot := _ready_slot_for_die(b_index)
+		if a_slot == b_slot:
+			return a_index < b_index
+		return a_slot < b_slot
+	)
 	var center_position := _unselected_hold_center_position()
 	var spacing := _unselected_hold_spacing(items.size())
 	var duration := float(unselected_hold_tuning.get("duration", DEFAULT_UNSELECTED_HOLD_TUNING["duration"]))
@@ -834,7 +933,7 @@ func _begin_unselected_hold_return(duration: float) -> void:
 		_pending_unselected_hold_returns += 1
 		dice_instance.avatar.unselected_hold_return_finished.connect(_on_unselected_hold_return_finished, CONNECT_ONE_SHOT)
 		dice_instance.avatar.return_unselected_hold_to_ready(
-			ready_mgr.get_spawn_position(index, using_dices.size()),
+			_ready_position_for_die(index),
 			GmReadyMgr.READY_ROW_YAW_DEGREES,
 			duration
 		)
@@ -876,7 +975,7 @@ func _recover_fallen_dice() -> void:
 		if not fallen:
 			continue
 		var requested = last_targets[index] if index < last_targets.size() else null
-		var stage_position := ready_mgr.get_spawn_position(index, using_dices.size()) + Vector3(0.0, 0.35, 0.0)
+		var stage_position := _ready_position_for_die(index) + Vector3(0.0, 0.35, 0.0)
 		_recover_count += 1
 		avatar.recover_to_stage(stage_position, requested)
 
@@ -900,6 +999,43 @@ func _normalize_targets(target_values: Array) -> Array:
 			var pip := int(value)
 			normalized.append(pip if pip >= 1 and pip <= 6 else null)
 	return normalized
+
+
+func _resolved_display_die_order() -> Array[int]:
+	if display_die_order.is_empty():
+		var natural_order: Array[int] = []
+		for index in range(using_dices.size()):
+			natural_order.append(index)
+		return natural_order
+	return _complete_display_order(display_die_order)
+
+
+func _complete_display_order(source: Array) -> Array[int]:
+	var order: Array[int] = []
+	var count := using_dices.size()
+	for raw_index in source:
+		var die_index := int(raw_index)
+		if die_index < 0 or die_index >= count or order.has(die_index):
+			continue
+		order.append(die_index)
+	for die_index in range(count):
+		if not order.has(die_index):
+			order.append(die_index)
+	return order
+
+
+func _ready_slot_for_die(die_index: int) -> int:
+	var order := _resolved_display_die_order()
+	var slot_index := order.find(die_index)
+	if slot_index >= 0:
+		return slot_index
+	return clampi(die_index, 0, maxi(0, using_dices.size() - 1))
+
+
+func _ready_position_for_die(die_index: int) -> Vector3:
+	if ready_mgr == null:
+		return Vector3.ZERO
+	return ready_mgr.get_spawn_position(_ready_slot_for_die(die_index), using_dices.size())
 
 
 func _random_exit_return_face_index(dice_instance: GmDiceInstance) -> int:

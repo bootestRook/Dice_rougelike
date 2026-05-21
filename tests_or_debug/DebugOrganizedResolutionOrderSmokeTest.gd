@@ -28,8 +28,8 @@ func _process(_delta: float) -> bool:
 
 	if step == 1:
 		wait_frames += 1
-		bench_area = _find_node_by_name(battle_screen, "DiceBenchArea")
-		scoring_area = _find_node_by_name(battle_screen, "SegmentScoringArea")
+		bench_area = _find_node_by_name(battle_screen, "FormalBattleDiceStage3D")
+		scoring_area = bench_area
 		controller = battle_screen.get("controller")
 		if (bench_area == null or scoring_area == null or controller == null) and wait_frames < 30:
 			return false
@@ -37,7 +37,13 @@ func _process(_delta: float) -> bool:
 			print("FAIL: battle UI missing")
 			quit(1)
 			return true
-		bench_area._on_organize_pressed()
+		if controller.has_method("is_waiting_for_initial_roll_results") and controller.is_waiting_for_initial_roll_results():
+			if wait_frames < 5000:
+				return false
+			print("FAIL: initial 3D roll timeout")
+			quit(1)
+			return true
+		bench_area.call("_on_organize_pressed")
 		step = 2
 		wait_frames = 0
 		return false
@@ -92,7 +98,7 @@ func _expected_visual_selected_order(selected_slots: Array[int]) -> Array[int]:
 		selected_lookup[int(slot_index)] = true
 
 	var result: Array[int] = []
-	for die_index in bench_area.get_display_die_order():
+	for die_index in bench_area.call("get_display_die_order"):
 		if selected_lookup.has(die_index):
 			result.append(die_index)
 			selected_lookup.erase(die_index)
@@ -105,12 +111,12 @@ func _expected_visual_selected_order(selected_slots: Array[int]) -> Array[int]:
 
 
 func _settlement_order() -> Array[int]:
+	if scoring_area == null:
+		return []
+	var indices: Array = scoring_area.get("resolution_die_indices")
 	var order: Array[int] = []
-	var slots := _find_node_by_name(scoring_area, "SettlementSlots")
-	if slots == null:
-		return order
-	for child in slots.get_children():
-		order.append(int(child.get_meta("die_index", -1)))
+	for value in indices:
+		order.append(int(value))
 	return order
 
 
@@ -125,13 +131,10 @@ func _pip_step_order(trace) -> Array[int]:
 
 
 func _all_settlement_slots_visible() -> bool:
-	var slots := _find_node_by_name(scoring_area, "SettlementSlots")
-	if slots == null:
+	if scoring_area == null:
 		return false
-	for child in slots.get_children():
-		if child is Control and (child as Control).modulate.a < 0.99:
-			return false
-	return slots.get_child_count() > 0
+	var indices: Array = scoring_area.get("resolution_die_indices")
+	return not indices.is_empty()
 
 
 func _same_int_order(a: Array[int], b: Array[int]) -> bool:
