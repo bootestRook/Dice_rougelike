@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dice Material Pipeline"
+  short_description: "Godot dice material workflow and checks"
+  default_prompt: "Use $dice-material-pipeline to create, extend, integrate, or validate Godot dice materials."
