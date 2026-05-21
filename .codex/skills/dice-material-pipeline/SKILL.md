@@ -57,6 +57,7 @@ If `godot` is unavailable, try `$env:GODOT_BIN` as required by the repo instruct
 - Keep material templates at `assets/materials/dice/{bronze_dice,gold_dice,crystal_dice}.tres`.
 - Keep `crystal_dice.gdshader` under `assets/shaders/dice`.
 - Keep texture names as `{material}_dice_{albedo,normal,orm,emission,height,flow_mask}.png`.
+- Generated material textures must be pure material maps. Do not bake dice pips, numbers, symbols, or fixed face-value marks into any texture channel.
 - Use ORM channel order: red = occlusion, green = roughness, blue = metallic.
 - Put preview shot images under `assets/scenes/preview/preview_shots`; avoid `screenshots/` because this repo ignores that directory name.
 - Headless Godot may use the dummy renderer, so do not depend on viewport capture for screenshot generation. Use the Python texture generator's preview outputs or run visual checks in the editor when needed.
