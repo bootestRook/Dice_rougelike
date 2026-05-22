@@ -29,6 +29,7 @@ func _check_rounded_body_mesh(mesh: ArrayMesh, label: String, require_shared_bou
 	var arrays := mesh.surface_get_arrays(0)
 	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 	var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
+	var uvs: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV]
 	var indices := PackedInt32Array()
 	if arrays[Mesh.ARRAY_INDEX] is PackedInt32Array:
 		indices = arrays[Mesh.ARRAY_INDEX]
@@ -36,6 +37,8 @@ func _check_rounded_body_mesh(mesh: ArrayMesh, label: String, require_shared_bou
 	ok = _check("%s has vertices" % label, vertices.size() > 0) and ok
 	ok = _check("%s has triangle indices" % label, indices.size() > 0 and indices.size() % 3 == 0) and ok
 	ok = _check("%s has normals for every vertex" % label, normals.size() == vertices.size()) and ok
+	ok = _check("%s has UVs for every vertex" % label, uvs.size() == vertices.size()) and ok
+	ok = _check("%s point 3 UV faces outward without horizontal mirroring" % label, _point_three_uv_faces_outward(vertices, normals, uvs)) and ok
 	ok = _check("%s has dense bevel geometry" % label, vertices.size() >= 900) and ok
 	ok = _check("%s top edge has continuous bevel normals" % label, _top_edge_normal_bucket_count(normals) >= 4) and ok
 	ok = _check("%s corners are rounded geometry" % label, _corner_normal_count(normals) >= 64) and ok
@@ -175,6 +178,31 @@ func _position_front_face_winding_error_count(vertices: PackedVector3Array, indi
 		if godot_front_normal.dot(expected) < 0.45:
 			count += 1
 	return count
+
+
+func _point_three_uv_faces_outward(vertices: PackedVector3Array, normals: PackedVector3Array, uvs: PackedVector2Array) -> bool:
+	if uvs.size() != vertices.size() or normals.size() != vertices.size():
+		return false
+	var positive_z_u := 0.0
+	var negative_z_u := 0.0
+	var positive_z_count := 0
+	var negative_z_count := 0
+	for i in range(vertices.size()):
+		if normals[i].dot(Vector3.RIGHT) < 0.99:
+			continue
+		if absf(vertices[i].y) > 0.28:
+			continue
+		if vertices[i].z > 0.20:
+			positive_z_u += uvs[i].x
+			positive_z_count += 1
+		elif vertices[i].z < -0.20:
+			negative_z_u += uvs[i].x
+			negative_z_count += 1
+	if positive_z_count <= 0 or negative_z_count <= 0:
+		return false
+	positive_z_u /= float(positive_z_count)
+	negative_z_u /= float(negative_z_count)
+	return negative_z_u > positive_z_u + 0.04
 
 
 func _dominant_position_normal(position: Vector3) -> Vector3:

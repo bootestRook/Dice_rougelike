@@ -255,7 +255,9 @@ static func _uv_for_point(position: Vector3, normal: Vector3, settings: Dictiona
 			local = Vector2(position.x + dice_half, position.z + dice_half)
 		2, 5:
 			local = Vector2(position.x + dice_half, position.y + dice_half)
-		3, 4:
+		3:
+			local = Vector2(dice_half - position.z, position.y + dice_half)
+		4:
 			local = Vector2(position.z + dice_half, position.y + dice_half)
 	local.x = clampf(local.x, 0.0, 1.0)
 	local.y = clampf(local.y, 0.0, 1.0)

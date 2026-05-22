@@ -364,7 +364,9 @@ func _uv_for_point(position: Vector3, normal: Vector3) -> Vector2:
 			local = Vector2(position.x + DICE_HALF, position.z + DICE_HALF)
 		2, 5:
 			local = Vector2(position.x + DICE_HALF, position.y + DICE_HALF)
-		3, 4:
+		3:
+			local = Vector2(DICE_HALF - position.z, position.y + DICE_HALF)
+		4:
 			local = Vector2(position.z + DICE_HALF, position.y + DICE_HALF)
 	local.x = clampf(local.x, 0.0, 1.0)
 	local.y = clampf(local.y, 0.0, 1.0)
