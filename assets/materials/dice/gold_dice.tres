@@ -1,0 +1,22 @@
+[gd_resource type="ORMMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/textures/dice/gold/gold_dice_albedo.png" id="1_whgqp"]
+[ext_resource type="Texture2D" path="res://assets/textures/dice/gold/gold_dice_emission.png" id="2_jap7v"]
+[ext_resource type="Texture2D" path="res://assets/textures/dice/gold/gold_dice_height.png" id="3_3qggq"]
+[ext_resource type="Texture2D" path="res://assets/textures/dice/gold/gold_dice_normal.png" id="4_sw3d2"]
+[ext_resource type="Texture2D" path="res://assets/textures/dice/gold/gold_dice_orm.png" id="5_1oujm"]
+
+[resource]
+resource_name = "gold_dice"
+albedo_color = Color(0.96, 0.68, 0.24, 1)
+albedo_texture = ExtResource("1_whgqp")
+orm_texture = ExtResource("5_1oujm")
+emission_enabled = true
+emission = Color(0.16, 0.1, 0.04, 1)
+emission_energy_multiplier = 0.09
+emission_texture = ExtResource("2_jap7v")
+normal_enabled = true
+normal_texture = ExtResource("4_sw3d2")
+heightmap_enabled = true
+heightmap_scale = 0.02
+heightmap_texture = ExtResource("3_3qggq")

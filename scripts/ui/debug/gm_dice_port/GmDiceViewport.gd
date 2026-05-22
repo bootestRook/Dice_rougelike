@@ -20,12 +20,64 @@ const DEFAULT_CAMERA_LOOK_AT := Vector3(0.0, 0.72, -0.04)
 const DEFAULT_READY_ROW_HEIGHT := 7.5
 const DEFAULT_KEY_LIGHT_ROTATION := Vector3(-63.0, 115.0, 0.0)
 const PROJECTED_DICE_PICK_RADIUS := 84.0
+const VISUAL_REPRO_STAGE_SCENE_PATH := "res://assets/models/stage/star_astrology_disc.tscn"
+const VISUAL_REPRO_ENVIRONMENT_PATH := "res://assets/environments/gm_dice_visual_repro_environment.tres"
+const MULTI_DIFFUSE_LIGHT_SPECS := [
+	{
+		"name": "WarmFrontDiffuseLight",
+		"position": Vector3(-5.8, 6.6, 5.4),
+		"color": Color(1.00, 0.68, 0.42),
+		"energy": 1.44,
+		"range": 15.0,
+	},
+	{
+		"name": "CoolBackDiffuseLight",
+		"position": Vector3(5.4, 6.2, -5.2),
+		"color": Color(0.48, 0.70, 1.00),
+		"energy": 1.34,
+		"range": 15.0,
+	},
+	{
+		"name": "GreenSideDiffuseLight",
+		"position": Vector3(-6.4, 5.4, -0.6),
+		"color": Color(0.40, 1.00, 0.72),
+		"energy": 1.08,
+		"range": 13.5,
+	},
+	{
+		"name": "VioletLowDiffuseLight",
+		"position": Vector3(4.8, 4.6, 3.8),
+		"color": Color(0.88, 0.56, 1.00),
+		"energy": 0.96,
+		"range": 12.5,
+	},
+]
+const METAL_REFLECTION_LIGHT_SPECS := [
+	{
+		"name": "WarmMetalReflectionLight",
+		"position": Vector3(-3.4, 4.8, 4.6),
+		"color": Color(1.00, 0.76, 0.46),
+		"energy": 0.72,
+		"range": 10.5,
+		"specular": 0.42,
+	},
+	{
+		"name": "CoolMetalReflectionLight",
+		"position": Vector3(3.8, 4.2, -4.4),
+		"color": Color(0.58, 0.72, 1.00),
+		"energy": 0.58,
+		"range": 10.0,
+		"specular": 0.34,
+	},
+]
 
 
 var sub_viewport: SubViewport = null
 var dice_world: Node3D = null
 var fixed_camera: Camera3D = null
 var key_light: DirectionalLight3D = null
+var multi_diffuse_lights: Array[OmniLight3D] = []
+var metal_reflection_lights: Array[OmniLight3D] = []
 var dice_box_anchors: Node3D = null
 var spawn_point: Marker3D = null
 var dice_container: Node3D = null
@@ -106,6 +158,8 @@ func get_camera_state() -> Dictionary:
 		"dice_initial_height": ready_row_height,
 		"key_light_pitch": key_light_rotation.x,
 		"key_light_yaw": key_light_rotation.y,
+		"multi_diffuse_lights": _get_multi_diffuse_light_state(),
+		"metal_reflection_lights": _get_metal_reflection_light_state(),
 		"visible_stage_size": Vector2(VISIBLE_MAT_WIDTH, VISIBLE_MAT_DEPTH),
 		"collision_stage_size": Vector2(COLLISION_WIDTH, COLLISION_DEPTH),
 	}
@@ -192,19 +246,15 @@ func screen_point_to_world_on_y(screen_x: float, screen_y: float, plane_y: float
 func _build_environment() -> void:
 	var environment := WorldEnvironment.new()
 	environment.name = "WorldEnvironment"
-	var env := Environment.new()
-	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color(0.12, 0.08, 0.20)
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.50, 0.48, 0.66)
-	env.ambient_light_energy = 0.82
+	var env := _make_visual_environment()
 	environment.environment = env
 	dice_world.add_child(environment)
 
 	key_light = DirectionalLight3D.new()
 	key_light.name = "KeyLight"
 	key_light.rotation_degrees = key_light_rotation
-	key_light.light_energy = 2.5
+	key_light.light_energy = 1.58
+	key_light.light_specular = 0.48
 	key_light.shadow_enabled = true
 	dice_world.add_child(key_light)
 
@@ -212,17 +262,22 @@ func _build_environment() -> void:
 	fill_light.name = "FillLight"
 	fill_light.position = Vector3(-2.6, 3.0, 2.8)
 	fill_light.light_color = Color(0.62, 0.86, 1.0)
-	fill_light.light_energy = 1.6
-	fill_light.omni_range = 7.0
+	fill_light.light_energy = 0.88
+	fill_light.light_specular = 0.28
+	fill_light.omni_range = 9.0
 	dice_world.add_child(fill_light)
 
 	var rim_light := OmniLight3D.new()
 	rim_light.name = "RimLight"
 	rim_light.position = Vector3(3.2, 2.2, -2.7)
 	rim_light.light_color = Color(0.00, 0.94, 0.72)
-	rim_light.light_energy = 1.35
-	rim_light.omni_range = 6.0
+	rim_light.light_energy = 1.28
+	rim_light.light_specular = 0.32
+	rim_light.omni_range = 8.0
 	dice_world.add_child(rim_light)
+
+	_build_multi_diffuse_lights()
+	_build_metal_reflection_lights()
 
 
 func _build_collision_stage() -> void:
@@ -255,14 +310,7 @@ func _build_collision_stage() -> void:
 	safety_net.collision_layer = 1
 	safety_net.collision_mask = 1
 
-	var mat_mesh := MeshInstance3D.new()
-	mat_mesh.name = "FixedThrowMat"
-	var mat_box := BoxMesh.new()
-	mat_box.size = Vector3(VISIBLE_MAT_WIDTH, 0.035, VISIBLE_MAT_DEPTH)
-	mat_mesh.mesh = mat_box
-	mat_mesh.position = Vector3(0.0, 0.002, 0.0)
-	mat_mesh.material_override = _make_material(Color(0.30, 0.29, 0.39, 1.0), 0.78, 0.0)
-	dice_world.add_child(mat_mesh)
+	_add_visual_throw_mat()
 
 	var bounds := Node3D.new()
 	bounds.name = "Bounds"
@@ -337,6 +385,70 @@ func _apply_camera_settings() -> void:
 	fixed_camera.look_at(camera_look_at, Vector3.UP)
 
 
+func _build_multi_diffuse_lights() -> void:
+	multi_diffuse_lights.clear()
+	for spec in MULTI_DIFFUSE_LIGHT_SPECS:
+		var light := OmniLight3D.new()
+		light.name = str(spec["name"])
+		light.position = spec["position"]
+		light.light_color = spec["color"]
+		light.light_energy = float(spec["energy"])
+		light.light_specular = 0.12
+		light.omni_range = float(spec["range"])
+		light.omni_attenuation = 0.75
+		light.shadow_enabled = false
+		dice_world.add_child(light)
+		multi_diffuse_lights.append(light)
+
+
+func _build_metal_reflection_lights() -> void:
+	metal_reflection_lights.clear()
+	for spec in METAL_REFLECTION_LIGHT_SPECS:
+		var light := OmniLight3D.new()
+		light.name = str(spec["name"])
+		light.position = spec["position"]
+		light.light_color = spec["color"]
+		light.light_energy = float(spec["energy"])
+		light.light_specular = float(spec["specular"])
+		light.omni_range = float(spec["range"])
+		light.omni_attenuation = 0.68
+		light.shadow_enabled = false
+		dice_world.add_child(light)
+		metal_reflection_lights.append(light)
+
+
+func _get_multi_diffuse_light_state() -> Array[Dictionary]:
+	var rows: Array[Dictionary] = []
+	for light in multi_diffuse_lights:
+		if light == null:
+			continue
+		rows.append({
+			"name": light.name,
+			"position": light.position,
+			"color": light.light_color,
+			"energy": light.light_energy,
+			"range": light.omni_range,
+			"specular": light.light_specular,
+		})
+	return rows
+
+
+func _get_metal_reflection_light_state() -> Array[Dictionary]:
+	var rows: Array[Dictionary] = []
+	for light in metal_reflection_lights:
+		if light == null:
+			continue
+		rows.append({
+			"name": light.name,
+			"position": light.position,
+			"color": light.light_color,
+			"energy": light.light_energy,
+			"range": light.omni_range,
+			"specular": light.light_specular,
+		})
+	return rows
+
+
 func _camera_pitch_degrees() -> float:
 	var direction := camera_look_at - camera_position
 	var flat_distance := Vector2(direction.x, direction.z).length()
@@ -401,6 +513,61 @@ func _add_static_box(parent: Node, node_name: String, position: Vector3, size: V
 	return body
 
 
+func _make_visual_environment() -> Environment:
+	var env: Environment = null
+	if ResourceLoader.exists(VISUAL_REPRO_ENVIRONMENT_PATH):
+		env = load(VISUAL_REPRO_ENVIRONMENT_PATH) as Environment
+	if env != null:
+		env = env.duplicate(true) as Environment
+	else:
+		env = Environment.new()
+		env.background_mode = Environment.BG_COLOR
+		env.background_color = Color(0.034, 0.060, 0.145)
+		env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+		env.ambient_light_color = Color(0.30, 0.38, 0.62)
+	env.background_color = Color(0.034, 0.060, 0.145)
+	env.ambient_light_color = Color(0.30, 0.38, 0.62)
+	env.ambient_light_energy = 0.42
+	env.ambient_light_sky_contribution = 0.16
+	_set_existing(env, ["tonemap_mode"], 3)
+	_set_existing(env, ["tonemap_exposure"], 1.05)
+	_set_existing(env, ["tonemap_white"], 1.55)
+	_set_existing(env, ["glow_enabled"], true)
+	_set_existing(env, ["glow_intensity"], 0.44)
+	_set_existing(env, ["glow_strength"], 0.78)
+	_set_existing(env, ["glow_bloom"], 0.10)
+	_set_existing(env, ["glow_hdr_threshold"], 0.78)
+	_set_existing(env, ["ssao_enabled"], true)
+	_set_existing(env, ["ssao_radius"], 1.35)
+	_set_existing(env, ["ssao_intensity"], 0.58)
+	return env
+
+
+func _add_visual_throw_mat() -> void:
+	if ResourceLoader.exists(VISUAL_REPRO_STAGE_SCENE_PATH):
+		var stage_scene := load(VISUAL_REPRO_STAGE_SCENE_PATH) as PackedScene
+		if stage_scene != null:
+			var stage := stage_scene.instantiate() as Node3D
+			if stage != null:
+				stage.name = "FixedThrowMat"
+				stage.position = Vector3(0.0, 0.002, 0.50)
+				stage.rotation_degrees = Vector3(-58.0, 0.0, 0.0)
+				stage.scale = Vector3.ONE * 1.32
+				dice_world.add_child(stage)
+				return
+	var material := _make_material(Color(0.025, 0.050, 0.110, 1.0), 0.38, 0.02)
+	material.emission_enabled = true
+	material.emission = Color(0.035, 0.095, 0.180)
+	material.emission_energy_multiplier = 0.10
+	_add_static_box(
+		dice_world,
+		"FixedThrowMat",
+		Vector3(0.0, 0.0, 0.0),
+		Vector3(VISIBLE_MAT_WIDTH, 0.045, VISIBLE_MAT_DEPTH),
+		material
+	)
+
+
 func _make_material(color: Color, roughness: float, metallic: float) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
 	material.albedo_color = color
@@ -409,3 +576,14 @@ func _make_material(color: Color, roughness: float, metallic: float) -> Standard
 	if color.a < 1.0:
 		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	return material
+
+
+func _set_existing(object: Object, names: Array, value) -> bool:
+	var properties := {}
+	for item in object.get_property_list():
+		properties[item["name"]] = true
+	for name in names:
+		if properties.has(name):
+			object.set(name, value)
+			return true
+	return false

@@ -12,6 +12,8 @@ signal unselected_hold_return_finished(dice)
 signal selection_requested(dice)
 
 
+const GmDiceMaterialResolver = preload("res://scripts/ui/debug/gm_dice_port/GmDiceMaterialResolver.gd")
+
 const FACE_ROTATIONS_DEG := [
 	Vector3(0.0, 0.0, 0.0),
 	Vector3(90.0, 0.0, 0.0),
@@ -37,6 +39,9 @@ const TORQUE_SCALE := 0.5
 const MAX_ANGULAR_SPEED := 1000.0
 const DIE_SIZE := 0.72
 const DIE_HALF := DIE_SIZE * 0.5
+const FACE_LABEL_SURFACE_OFFSET := 0.034
+const FACE_LABEL_FONT_SIZE := 70
+const FACE_LABEL_PIXEL_SIZE := 0.0058
 const SHADOW_Y := 0.028
 const SELECTION_FRAME_SIZE := DIE_SIZE * 1.18
 const SELECTION_FRAME_CORNER_LENGTH := DIE_SIZE * 0.28
@@ -65,6 +70,16 @@ const DEFAULT_IDLE_DRIFT_TUNING := {
 	"max_distance": 0.07,
 	"speed": 0.05,
 }
+const PIPELINE_DICE_MESH_PATH := "res://assets/models/dice/rounded_d6_mesh.tres"
+const REPRO_DICE_SHADER_PATH := "res://assets/shaders/dice/repro_glow_dice.gdshader"
+const BRONZE_DICE_MATERIAL_PATH := "res://assets/materials/dice/bronze_dice.tres"
+const GOLD_DICE_MATERIAL_PATH := "res://assets/materials/dice/gold_dice.tres"
+const CRYSTAL_DICE_MATERIAL_PATH := "res://assets/materials/dice/crystal_dice.tres"
+const REPRO_BLUE_DICE_MATERIAL_PATH := "res://assets/materials/dice/repro_blue_dice.tres"
+const REPRO_PURPLE_DICE_MATERIAL_PATH := "res://assets/materials/dice/repro_purple_dice.tres"
+const REPRO_CYAN_DICE_MATERIAL_PATH := "res://assets/materials/dice/repro_cyan_dice.tres"
+const REPRO_GOLD_DICE_MATERIAL_PATH := "res://assets/materials/dice/repro_gold_dice.tres"
+const REPRO_SILVERWHITE_DICE_MATERIAL_PATH := "res://assets/materials/dice/repro_silverwhite_dice.tres"
 
 
 @export var inner_dice: Node3D = null
@@ -89,11 +104,14 @@ var idle_drift_tuning := DEFAULT_IDLE_DRIFT_TUNING.duplicate(true)
 
 var _rng := RandomNumberGenerator.new()
 var _body_mesh: MeshInstance3D = null
+var _body_material: Material = null
 var _hover_shadow: MeshInstance3D = null
 var _shadow_material: StandardMaterial3D = null
 var _selection_frame: Node3D = null
 var _selection_material: StandardMaterial3D = null
 var _face_labels: Array[Label3D] = []
+var _base_body_color := Color(0.94, 0.96, 0.98)
+var _mark_color := Color(0.12, 0.14, 0.18)
 var _idle_anchor_position := Vector3.ZERO
 var _idle_drift_offset := 0.0
 var _idle_drift_direction := 1.0
@@ -148,6 +166,8 @@ func _physics_process(delta: float) -> void:
 
 
 func build_visuals(body_color: Color, mark_color: Color) -> void:
+	_base_body_color = body_color
+	_mark_color = mark_color
 	freeze = true
 	mass = 1.0
 	linear_damp = 0.085
@@ -173,22 +193,14 @@ func build_visuals(body_color: Color, mark_color: Color) -> void:
 	inner_dice.name = "InnerDice"
 	add_child(inner_dice)
 
-	var body_material := StandardMaterial3D.new()
-	body_material.albedo_color = body_color
-	body_material.roughness = 0.52
-	body_material.metallic = 0.02
-	body_material.emission_enabled = true
-	body_material.emission = body_color.darkened(0.35)
-	body_material.emission_energy_multiplier = 0.18
+	_body_material = _make_body_material(body_color, GmDiceDefinition.MATERIAL_STANDARD)
 
-	var mesh := BoxMesh.new()
-	mesh.size = Vector3.ONE * DIE_SIZE
 	_body_mesh = MeshInstance3D.new()
 	_body_mesh.name = "DiceMesh"
-	_body_mesh.mesh = mesh
-	_body_mesh.material_override = body_material
+	_body_mesh.material_override = _body_material
 	_body_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	inner_dice.add_child(_body_mesh)
+	_apply_body_mesh(GmDiceDefinition.MATERIAL_STANDARD)
 
 	var face_visuals := Node3D.new()
 	face_visuals.name = "FaceVisuals"
@@ -249,6 +261,7 @@ func init_dice(instance: GmDiceInstance, skip_init_app := false) -> void:
 	is_returning_from_unselected_hold = false
 	_restore_physics_collision()
 	set_selected(false)
+	_apply_config_visuals()
 	_update_face_labels()
 	change_inner_by_value(0.0)
 	show_number(not skip_init_app)
@@ -760,12 +773,36 @@ func show_number(show := true) -> void:
 	number_label.text = ""
 
 
+func refresh_from_config() -> void:
+	_apply_config_visuals()
+	_update_face_labels()
+	if config != null:
+		config.set_face_index(config.value)
+	if not is_rolling and not is_returning_to_ready and inner_dice != null:
+		apply_hover_presentation_rotation()
+	show_number(true)
+	_update_selection_frame()
+
+
 func get_debug_snapshot() -> Dictionary:
 	var visual_top_face_index := _resolve_visual_top_face_index()
 	var visual_top_text_alignment := _visual_top_text_alignment(visual_top_face_index)
 	return {
 		"face_index": config.value if config != null else -1,
 		"face_value": config.get_actual_face_one() if config != null else 0,
+		"material_id": str(config.material_id) if config != null else "",
+		"material_name": config.get_material_name() if config != null else "",
+		"body_material_resource_path": _body_mesh.material_override.resource_path if _body_mesh != null and _body_mesh.material_override != null else "",
+		"body_material_shader_path": _body_material_shader_path(),
+		"body_material_face_detail_strength": _body_material_shader_float("face_detail_strength"),
+		"body_material_edge_line_strength": _body_material_shader_float("edge_line_strength"),
+		"body_mesh_resource_path": _body_mesh.mesh.resource_path if _body_mesh != null and _body_mesh.mesh != null else "",
+		"face_pips": config.get_face_pips() if config != null else [],
+		"face_labels": config.get_face_labels() if config != null else [],
+		"face_label_count": _face_labels.size(),
+		"face_label_centered": _face_labels_are_centered(),
+		"face_label_double_sided": _face_labels_are_double_sided(),
+		"face_label_min_surface_offset": _face_label_min_surface_offset(),
 		"visual_top_face_index": visual_top_face_index,
 		"visual_top_face_value": _face_value_for_index(visual_top_face_index),
 		"visual_top_text_alignment": visual_top_text_alignment,
@@ -825,6 +862,60 @@ func get_debug_snapshot() -> Dictionary:
 		"throw_speed_tuning": throw_speed_tuning.duplicate(true),
 		"throw_spin_tuning": throw_spin_tuning.duplicate(true),
 	}
+
+
+func _body_shader_material() -> ShaderMaterial:
+	if _body_mesh == null:
+		return null
+	return _body_mesh.material_override as ShaderMaterial
+
+
+func _body_material_shader_path() -> String:
+	var material := _body_shader_material()
+	if material == null or material.shader == null:
+		return ""
+	return material.shader.resource_path
+
+
+func _body_material_shader_float(parameter_name: String) -> float:
+	var material := _body_shader_material()
+	if material == null:
+		return 0.0
+	var value = material.get_shader_parameter(parameter_name)
+	if value == null:
+		return 0.0
+	return float(value)
+
+
+func _face_labels_are_centered() -> bool:
+	for label in _face_labels:
+		if label == null:
+			return false
+		if label.horizontal_alignment != HORIZONTAL_ALIGNMENT_CENTER:
+			return false
+		if label.vertical_alignment != VERTICAL_ALIGNMENT_CENTER:
+			return false
+	return true
+
+
+func _face_labels_are_double_sided() -> bool:
+	for label in _face_labels:
+		if label == null or not label.double_sided:
+			return false
+	return true
+
+
+func _face_label_min_surface_offset() -> float:
+	if _face_labels.is_empty():
+		return 0.0
+	var min_offset := INF
+	for label in _face_labels:
+		if label == null:
+			return 0.0
+		var position := label.position
+		var dominant := maxf(absf(position.x), maxf(absf(position.y), absf(position.z)))
+		min_offset = minf(min_offset, dominant - DIE_HALF)
+	return min_offset
 
 
 func _prepare_roll_body() -> void:
@@ -1172,6 +1263,92 @@ func _update_selection_frame() -> void:
 	)
 
 
+func _apply_config_visuals() -> void:
+	var material_id := GmDiceDefinition.MATERIAL_STANDARD
+	if config != null:
+		material_id = GmDiceDefinition.normalize_material_id(config.material_id)
+	_body_material = _make_body_material(_base_body_color, material_id)
+	if _body_mesh != null:
+		_body_mesh.material_override = _body_material
+		_apply_body_mesh(material_id)
+	_apply_face_label_style(material_id)
+
+
+func _make_body_material(body_color: Color, material_id: StringName) -> Material:
+	return GmDiceMaterialResolver.make_body_material(body_color, material_id)
+
+
+func _apply_body_mesh(material_id: StringName) -> void:
+	if _body_mesh == null:
+		return
+	var pipeline_mesh := _load_pipeline_body_mesh(material_id)
+	if pipeline_mesh != null:
+		_body_mesh.mesh = pipeline_mesh
+		_body_mesh.scale = Vector3.ONE * DIE_SIZE
+		return
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3.ONE * DIE_SIZE
+	_body_mesh.mesh = mesh
+	_body_mesh.scale = Vector3.ONE
+
+
+func _load_pipeline_body_material(material_id: StringName) -> Material:
+	return GmDiceMaterialResolver.load_body_material(material_id)
+
+
+func _load_pipeline_body_mesh(material_id: StringName) -> Mesh:
+	return GmDiceMaterialResolver.load_body_mesh(material_id)
+
+
+func _pipeline_body_material_path(material_id: StringName) -> String:
+	return GmDiceMaterialResolver.material_resource_path(material_id)
+
+
+func _make_repro_body_material(body_color: Color, material_id: StringName) -> Material:
+	return GmDiceMaterialResolver.make_programmatic_body_material(body_color, material_id)
+
+
+func _apply_face_label_style(material_id: StringName) -> void:
+	var text_color := _face_label_color_for_material(material_id)
+	var outline_color := _face_label_outline_color_for_material(material_id)
+	for label in _face_labels:
+		if label == null:
+			continue
+		label.modulate = text_color
+		label.outline_size = 12
+		label.outline_modulate = outline_color
+
+
+func _face_label_color_for_material(material_id: StringName) -> Color:
+	match GmDiceDefinition.normalize_material_id(material_id):
+		GmDiceDefinition.MATERIAL_REPRO_GOLD, GmDiceDefinition.MATERIAL_GOLD:
+			return Color(1.00, 0.96, 0.74, 1.0)
+		GmDiceDefinition.MATERIAL_REPRO_PURPLE:
+			return Color(0.98, 0.88, 1.00, 1.0)
+		GmDiceDefinition.MATERIAL_REPRO_CYAN:
+			return Color(0.78, 1.00, 0.96, 1.0)
+		GmDiceDefinition.MATERIAL_REPRO_BLUE, GmDiceDefinition.MATERIAL_REPRO_SILVERWHITE, GmDiceDefinition.MATERIAL_CRYSTAL:
+			return Color(0.86, 0.95, 1.00, 1.0)
+		_:
+			return _mark_color
+
+
+func _face_label_outline_color_for_material(material_id: StringName) -> Color:
+	match GmDiceDefinition.normalize_material_id(material_id):
+		GmDiceDefinition.MATERIAL_REPRO_BLUE:
+			return Color(0.00, 0.05, 0.18, 0.84)
+		GmDiceDefinition.MATERIAL_REPRO_PURPLE:
+			return Color(0.08, 0.00, 0.16, 0.86)
+		GmDiceDefinition.MATERIAL_REPRO_CYAN:
+			return Color(0.00, 0.08, 0.10, 0.84)
+		GmDiceDefinition.MATERIAL_REPRO_GOLD, GmDiceDefinition.MATERIAL_GOLD:
+			return Color(0.16, 0.08, 0.00, 0.86)
+		GmDiceDefinition.MATERIAL_REPRO_SILVERWHITE, GmDiceDefinition.MATERIAL_CRYSTAL:
+			return Color(0.02, 0.05, 0.10, 0.82)
+		_:
+			return Color(0.03, 0.04, 0.08, 0.70)
+
+
 func _disable_physics_collision() -> void:
 	if not _unselected_hold_collision_disabled:
 		_stored_collision_layer = collision_layer
@@ -1216,13 +1393,14 @@ func _on_select_area_input_event(_camera: Node, event: InputEvent, _event_positi
 
 func _create_face_labels(parent: Node3D, mark_color: Color) -> void:
 	_face_labels.clear()
+	var face_offset := DIE_HALF + FACE_LABEL_SURFACE_OFFSET
 	var face_rows := [
-		{"name": "Face1", "position": Vector3(0.0, DIE_HALF + 0.012, 0.0), "rotation": Vector3(-PI * 0.5, 0.0, 0.0)},
-		{"name": "Face6", "position": Vector3(0.0, -DIE_HALF - 0.012, 0.0), "rotation": Vector3(PI * 0.5, 0.0, 0.0)},
-		{"name": "Face2", "position": Vector3(0.0, 0.0, -DIE_HALF - 0.012), "rotation": Vector3(0.0, PI, 0.0)},
-		{"name": "Face5", "position": Vector3(0.0, 0.0, DIE_HALF + 0.012), "rotation": Vector3(0.0, 0.0, 0.0)},
-		{"name": "Face3", "position": Vector3(DIE_HALF + 0.012, 0.0, 0.0), "rotation": Vector3(0.0, PI * 0.5, 0.0)},
-		{"name": "Face4", "position": Vector3(-DIE_HALF - 0.012, 0.0, 0.0), "rotation": Vector3(0.0, -PI * 0.5, 0.0)},
+		{"name": "Face1", "position": Vector3(0.0, face_offset, 0.0), "rotation": Vector3(-PI * 0.5, 0.0, 0.0)},
+		{"name": "Face6", "position": Vector3(0.0, -face_offset, 0.0), "rotation": Vector3(PI * 0.5, 0.0, 0.0)},
+		{"name": "Face2", "position": Vector3(0.0, 0.0, -face_offset), "rotation": Vector3(0.0, PI, 0.0)},
+		{"name": "Face5", "position": Vector3(0.0, 0.0, face_offset), "rotation": Vector3(0.0, 0.0, 0.0)},
+		{"name": "Face3", "position": Vector3(face_offset, 0.0, 0.0), "rotation": Vector3(0.0, PI * 0.5, 0.0)},
+		{"name": "Face4", "position": Vector3(-face_offset, 0.0, 0.0), "rotation": Vector3(0.0, -PI * 0.5, 0.0)},
 	]
 	for index in range(face_rows.size()):
 		var row: Dictionary = face_rows[index]
@@ -1231,8 +1409,15 @@ func _create_face_labels(parent: Node3D, mark_color: Color) -> void:
 		label.text = str(index + 1)
 		label.position = row["position"]
 		label.rotation = row["rotation"]
-		label.font_size = 72
-		label.pixel_size = 0.0065
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		label.double_sided = true
+		label.no_depth_test = false
+		label.shaded = false
+		label.font_size = FACE_LABEL_FONT_SIZE
+		label.pixel_size = FACE_LABEL_PIXEL_SIZE
+		label.outline_size = 10
+		label.outline_modulate = Color(0.03, 0.04, 0.08, 0.76)
 		label.modulate = mark_color
 		parent.add_child(label)
 		_face_labels.append(label)

@@ -1,0 +1,22 @@
+[gd_resource type="ORMMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/textures/stage/star_disc/star_disc_albedo.png" id="1_wqj4s"]
+[ext_resource type="Texture2D" path="res://assets/textures/stage/star_disc/star_disc_emission.png" id="2_utify"]
+[ext_resource type="Texture2D" path="res://assets/textures/stage/star_disc/star_disc_height.png" id="3_oh2b0"]
+[ext_resource type="Texture2D" path="res://assets/textures/stage/star_disc/star_disc_normal.png" id="4_3srjf"]
+[ext_resource type="Texture2D" path="res://assets/textures/stage/star_disc/star_disc_orm.png" id="5_pn22q"]
+
+[resource]
+resource_name = "star_disc_base"
+albedo_texture = ExtResource("1_wqj4s")
+orm_texture = ExtResource("5_pn22q")
+emission_enabled = true
+emission = Color(0.08, 0.14, 0.26, 1)
+emission_energy_multiplier = 0.32
+emission_texture = ExtResource("2_utify")
+normal_enabled = true
+normal_scale = 0.72
+normal_texture = ExtResource("4_3srjf")
+heightmap_enabled = true
+heightmap_scale = 0.035
+heightmap_texture = ExtResource("3_oh2b0")

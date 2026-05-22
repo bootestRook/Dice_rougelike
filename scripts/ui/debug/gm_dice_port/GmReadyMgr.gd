@@ -10,6 +10,14 @@ const READY_ROW_FALLBACK_POSITION := Vector3(0.0, 7.5, 0.08)
 const READY_ROW_YAW_DEGREES := 0.0
 const LAUNCH_ROW_SPACING_X := 0.42
 const LAUNCH_ROW_STAGGER_Z := 0.18
+const VISUAL_REPRO_MATERIAL_PALETTE := [
+	GmDiceDefinition.MATERIAL_REPRO_BLUE,
+	GmDiceDefinition.MATERIAL_REPRO_PURPLE,
+	GmDiceDefinition.MATERIAL_REPRO_CYAN,
+	GmDiceDefinition.MATERIAL_REPRO_PURPLE,
+	GmDiceDefinition.MATERIAL_REPRO_GOLD,
+	GmDiceDefinition.MATERIAL_REPRO_SILVERWHITE,
+]
 
 
 @export var box_trans: Node3D = null
@@ -34,8 +42,14 @@ func setup(p_box_trans: Node3D, p_box_dice_pos: Marker3D, p_dice_container: Node
 
 func create_initial_dices(count: int, definition: GmDiceDefinition) -> Array:
 	dice_cfgs.clear()
-	for _i in range(clampi(count, 1, 6)):
-		dice_cfgs.append(GmDiceInstanceScript.from_definition(definition))
+	var normalized_material_id := GmDiceDefinition.MATERIAL_STANDARD
+	if definition != null:
+		normalized_material_id = GmDiceDefinition.normalize_material_id(definition.material_id)
+	for index in range(clampi(count, 1, 6)):
+		var instance := GmDiceInstanceScript.from_definition(definition)
+		if normalized_material_id == GmDiceDefinition.MATERIAL_STANDARD:
+			instance.set_material_id(VISUAL_REPRO_MATERIAL_PALETTE[index % VISUAL_REPRO_MATERIAL_PALETTE.size()])
+		dice_cfgs.append(instance)
 	return dice_cfgs.duplicate()
 
 

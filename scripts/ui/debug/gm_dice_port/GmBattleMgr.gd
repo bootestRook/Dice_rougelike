@@ -243,6 +243,56 @@ func set_unselected_hold_tuning(config_values: Dictionary) -> void:
 		unselected_hold_tuning["center_world_position"] = config_values["center_world_position"]
 
 
+func replace_selected_dice_material_and_pips(material_id, face_pips: Array) -> Dictionary:
+	return replace_dice_material_and_pips(selected_dice_indices, material_id, face_pips)
+
+
+func replace_all_dice_material_and_pips(material_id, face_pips: Array) -> Dictionary:
+	var indices: Array[int] = []
+	for index in range(using_dices.size()):
+		indices.append(index)
+	return replace_dice_material_and_pips(indices, material_id, face_pips)
+
+
+func replace_dice_material_and_pips(indices: Array, material_id, face_pips: Array) -> Dictionary:
+	var normalized_material_id := GmDiceDefinition.normalize_material_id(StringName(str(material_id)))
+	var normalized_pips := _normalize_face_pips(face_pips)
+	var result := {
+		"success": false,
+		"changed_indices": [],
+		"material_id": str(normalized_material_id),
+		"face_pips": normalized_pips,
+		"reason": "",
+	}
+	if rolling or _dice_exit_animating or _dice_exit_return_animating or _dice_exit_completed:
+		result["reason"] = "当前不能改骰"
+		return result
+	if indices.is_empty():
+		result["reason"] = "请先选择骰子"
+		return result
+	var changed_indices: Array[int] = []
+	for raw_index in indices:
+		var index := int(raw_index)
+		if index < 0 or index >= using_dices.size() or changed_indices.has(index):
+			continue
+		var dice_instance := using_dices[index] as GmDiceInstance
+		if dice_instance == null:
+			continue
+		dice_instance.set_material_id(normalized_material_id)
+		dice_instance.replace_face_pips(normalized_pips)
+		if dice_instance.avatar != null and dice_instance.avatar.has_method("refresh_from_config"):
+			dice_instance.avatar.call("refresh_from_config")
+		changed_indices.append(index)
+	if changed_indices.is_empty():
+		result["reason"] = "没有可替换的骰子"
+		return result
+	result["success"] = true
+	result["changed_indices"] = changed_indices
+	compute_score(false)
+	dice_roster_changed.emit(get_snapshot())
+	return result
+
+
 func create_dice_from_box(count: int, definition: GmDiceDefinition) -> void:
 	clear()
 	if ready_mgr == null:
@@ -1036,6 +1086,16 @@ func _ready_position_for_die(die_index: int) -> Vector3:
 	if ready_mgr == null:
 		return Vector3.ZERO
 	return ready_mgr.get_spawn_position(_ready_slot_for_die(die_index), using_dices.size())
+
+
+func _normalize_face_pips(face_pips: Array) -> Array[int]:
+	var normalized: Array[int] = []
+	for index in range(6):
+		var pip := index + 1
+		if index < face_pips.size() and face_pips[index] != null:
+			pip = clampi(int(face_pips[index]), 1, 6)
+		normalized.append(pip)
+	return normalized
 
 
 func _random_exit_return_face_index(dice_instance: GmDiceInstance) -> int:

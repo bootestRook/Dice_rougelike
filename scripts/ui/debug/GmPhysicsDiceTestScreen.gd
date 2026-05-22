@@ -106,6 +106,7 @@ func _physics_process(_delta: float) -> void:
 
 func automation_get_snapshot() -> Dictionary:
 	var snapshot := game_mgr.get_snapshot() if game_mgr != null else {}
+	snapshot["editable_materials"] = GmDiceDefinitionScript.get_material_options()
 	snapshot["idle_drift_tuning"] = idle_drift_tuning.duplicate()
 	snapshot["throw_speed_tuning"] = throw_speed_tuning.duplicate()
 	snapshot["throw_spin_tuning"] = throw_spin_tuning.duplicate()
@@ -199,6 +200,28 @@ func automation_clear_selection() -> void:
 	_update_hud()
 
 
+func automation_replace_selected_dice(material_id, face_pips: Array) -> Dictionary:
+	if _is_selection_input_locked():
+		_update_hud()
+		return {"success": false, "reason": "当前不能改骰"}
+	if game_mgr == null:
+		return {"success": false, "reason": "游戏管理器未就绪"}
+	var result := game_mgr.replace_selected_dice_material_and_pips(material_id, face_pips)
+	_update_hud()
+	return result
+
+
+func automation_replace_all_dice(material_id, face_pips: Array) -> Dictionary:
+	if _is_selection_input_locked():
+		_update_hud()
+		return {"success": false, "reason": "当前不能改骰"}
+	if game_mgr == null:
+		return {"success": false, "reason": "游戏管理器未就绪"}
+	var result := game_mgr.replace_all_dice_material_and_pips(material_id, face_pips)
+	_update_hud()
+	return result
+
+
 func automation_click_dice(index: int) -> void:
 	if _is_selection_input_locked():
 		_update_hud()
@@ -284,6 +307,17 @@ func automation_clear() -> void:
 	_update_hud()
 
 
+func automation_toggle_dice_edit_panel() -> bool:
+	if hud == null or not hud.has_method("toggle_dice_edit_panel"):
+		return false
+	return bool(hud.call("toggle_dice_edit_panel"))
+
+
+func automation_apply_crystal_dice_preset() -> void:
+	if hud != null and hud.has_method("apply_crystal_dice_preset"):
+		hud.call("apply_crystal_dice_preset")
+
+
 func automation_request_dice_exit() -> void:
 	_request_dice_exit_with_current_state()
 
@@ -331,7 +365,7 @@ func _build_screen_backdrop() -> void:
 	var background := ColorRect.new()
 	background.name = "GmSceneBackdrop"
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	background.color = Color(0.12, 0.08, 0.20)
+	background.color = Color(0.022, 0.040, 0.120)
 	add_child(background)
 
 
@@ -374,6 +408,7 @@ func _build_hud() -> void:
 	hud.throw_spin_tuning_changed.connect(_on_hud_throw_spin_tuning_changed)
 	hud.exit_return_tuning_changed.connect(_on_hud_exit_return_tuning_changed)
 	hud.camera_tuning_changed.connect(_on_hud_camera_tuning_changed)
+	hud.dice_replace_requested.connect(_on_hud_dice_replace_requested)
 	idle_drift_tuning = hud.get_idle_drift_tuning()
 	throw_speed_tuning = hud.get_throw_speed_tuning()
 	throw_spin_tuning = hud.get_throw_spin_tuning()
@@ -472,6 +507,13 @@ func _on_hud_targets_changed(values: Array) -> void:
 	if game_mgr != null:
 		game_mgr.set_targets(values)
 	_update_hud()
+
+
+func _on_hud_dice_replace_requested(material_id: StringName, face_pips: Array, apply_to_all: bool) -> void:
+	if apply_to_all:
+		automation_replace_all_dice(material_id, face_pips)
+	else:
+		automation_replace_selected_dice(material_id, face_pips)
 
 
 func _on_hud_idle_drift_tuning_changed(config: Dictionary) -> void:

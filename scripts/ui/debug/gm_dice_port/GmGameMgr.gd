@@ -65,6 +65,22 @@ func set_targets(values: Array) -> void:
 	_emit_state()
 
 
+func replace_selected_dice_material_and_pips(material_id, face_pips: Array) -> Dictionary:
+	if battle_mgr == null:
+		return {"success": false, "reason": "战斗管理器未就绪"}
+	var result := battle_mgr.replace_selected_dice_material_and_pips(material_id, face_pips)
+	_emit_state()
+	return result
+
+
+func replace_all_dice_material_and_pips(material_id, face_pips: Array) -> Dictionary:
+	if battle_mgr == null:
+		return {"success": false, "reason": "战斗管理器未就绪"}
+	var result := battle_mgr.replace_all_dice_material_and_pips(material_id, face_pips)
+	_emit_state()
+	return result
+
+
 func toggle_select(index: int) -> void:
 	if battle_mgr == null:
 		return

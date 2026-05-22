@@ -10,7 +10,7 @@ signal back_requested
 signal snapshot_pushed(snapshot: Dictionary)
 
 
-const CONTRACT_VERSION := 12
+const CONTRACT_VERSION := 14
 const INTERFACE_SOURCE := "GM场景接口"
 const LEGACY_TARGET_PLAN_SOURCE := "GM复刻接口"
 
@@ -25,6 +25,8 @@ func get_contract() -> Dictionary:
 			"set_dice_count",
 			"set_targets",
 			"set_selected_dice_indices",
+			"replace_selected_dice",
+			"replace_all_dice",
 			"set_idle_drift_tuning",
 			"set_throw_speed_tuning",
 			"set_throw_spin_tuning",
@@ -50,6 +52,7 @@ func get_contract() -> Dictionary:
 			"selected_dice_indices",
 			"last_rolled_dice_indices",
 			"last_values",
+			"editable_materials",
 			"score",
 			"rolling",
 			"target_score",
@@ -65,6 +68,8 @@ func get_contract() -> Dictionary:
 			"dice_initial_height",
 			"key_light_pitch",
 			"key_light_yaw",
+			"multi_diffuse_lights",
+			"metal_reflection_lights",
 			"idle_drift_tuning",
 			"throw_speed_tuning",
 			"throw_spin_tuning",

@@ -1,0 +1,21 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://assets/shaders/dice/repro_glow_dice.gdshader" id="1_r1kax"]
+
+[resource]
+resource_name = "repro_cyan_dice"
+render_priority = 0
+shader = ExtResource("1_r1kax")
+shader_parameter/base_color = Color(0, 0.21, 0.24, 1)
+shader_parameter/edge_color = Color(0.62, 1, 0.96, 1)
+shader_parameter/emission_color = Color(0.05, 0.92, 0.92, 1)
+shader_parameter/metallic = 0.12
+shader_parameter/roughness = 0.16
+shader_parameter/emission_strength = 0.22
+shader_parameter/fresnel_strength = 1.42
+shader_parameter/fresnel_power = 2.75
+shader_parameter/surface_variation = 0.028
+shader_parameter/face_detail_strength = 1.05
+shader_parameter/edge_line_strength = 1.05
+shader_parameter/corner_glint_strength = 0.42
+shader_parameter/side_shadow_strength = 0.25

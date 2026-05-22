@@ -15,6 +15,7 @@ const REWARD_SCREEN_PATH := "res://scenes/reward/RewardScreen.tscn"
 const RUN_RESULT_SCREEN_PATH := "res://scenes/run/RunResultScreen.tscn"
 const SHOP_SCREEN_PATH := "res://scenes/shop/ShopScreen.tscn"
 const GM_PHYSICS_DICE_TEST_SCREEN_PATH := "res://scenes/debug/GmPhysicsDiceTestScreen.tscn"
+const GM_DICE_MATERIAL_INSPECTOR_SCREEN_PATH := "res://scenes/debug/GmDiceMaterialInspectorScreen.tscn"
 
 
 @export var menu_art_config: MainMenuArtConfig = DEFAULT_MENU_ART
@@ -67,6 +68,7 @@ func _build_view() -> void:
 	_add_logo(root, art)
 	_add_version_label(root, art)
 	_add_button_bar(root, art)
+	_add_gm_floating_entry(root, art)
 
 
 func _get_menu_art() -> MainMenuArtConfig:
@@ -228,6 +230,98 @@ func _add_button_bar(root: Control, art: MainMenuArtConfig) -> void:
 	))
 
 
+func _add_gm_floating_entry(root: Control, art: MainMenuArtConfig) -> void:
+	var host := Control.new()
+	host.name = "GmFloatingEntry"
+	host.anchor_left = 1.0
+	host.anchor_top = 0.0
+	host.anchor_right = 1.0
+	host.anchor_bottom = 0.0
+	host.offset_left = -230.0
+	host.offset_top = 26.0
+	host.offset_right = -28.0
+	host.offset_bottom = 210.0
+	host.z_index = 30
+	root.add_child(host)
+
+	var gm_button := Button.new()
+	gm_button.name = "GmFloatingButton"
+	gm_button.text = "GM"
+	gm_button.custom_minimum_size = Vector2(86, 46)
+	gm_button.anchor_left = 1.0
+	gm_button.anchor_top = 0.0
+	gm_button.anchor_right = 1.0
+	gm_button.anchor_bottom = 0.0
+	gm_button.offset_left = -86.0
+	gm_button.offset_top = 0.0
+	gm_button.offset_right = 0.0
+	gm_button.offset_bottom = 46.0
+	gm_button.focus_mode = Control.FOCUS_NONE
+	gm_button.add_theme_font_size_override("font_size", 24)
+	gm_button.add_theme_color_override("font_color", art.text_color)
+	gm_button.add_theme_stylebox_override("normal", _make_panel_style(Color(0.06, 0.18, 0.28, 0.96), Color(0.86, 0.94, 1.0, 0.86), 2, 6))
+	gm_button.add_theme_stylebox_override("hover", _make_panel_style(Color(0.08, 0.28, 0.40, 0.98), Color(1.0, 0.95, 0.70, 0.94), 2, 6))
+	gm_button.add_theme_stylebox_override("pressed", _make_panel_style(Color(0.03, 0.12, 0.22, 0.98), Color(0.80, 0.88, 1.0, 0.78), 2, 6))
+	host.add_child(gm_button)
+
+	var menu := PanelContainer.new()
+	menu.name = "GmFunctionMenu"
+	menu.visible = false
+	menu.anchor_left = 0.0
+	menu.anchor_top = 0.0
+	menu.anchor_right = 1.0
+	menu.anchor_bottom = 0.0
+	menu.offset_left = 0.0
+	menu.offset_top = 54.0
+	menu.offset_right = 0.0
+	menu.offset_bottom = 176.0
+	menu.mouse_filter = Control.MOUSE_FILTER_STOP
+	menu.add_theme_stylebox_override("panel", _make_panel_style(Color(0.025, 0.050, 0.095, 0.97), Color(0.72, 0.86, 1.0, 0.78), 2, 6))
+	host.add_child(menu)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 10)
+	margin.add_theme_constant_override("margin_top", 10)
+	margin.add_theme_constant_override("margin_right", 10)
+	margin.add_theme_constant_override("margin_bottom", 10)
+	menu.add_child(margin)
+
+	var actions := VBoxContainer.new()
+	actions.name = "GmFunctionList"
+	actions.add_theme_constant_override("separation", 8)
+	margin.add_child(actions)
+
+	var material_button := _make_gm_menu_button("骰子材质检查", "GmDiceMaterialInspectorButton")
+	material_button.pressed.connect(_on_gm_dice_material_inspector_pressed)
+	actions.add_child(material_button)
+
+	var physics_button := _make_gm_menu_button("GM物理投骰", "GmPhysicsDiceTestButton")
+	physics_button.pressed.connect(_on_gm_physics_dice_test_pressed)
+	actions.add_child(physics_button)
+
+	gm_button.pressed.connect(func() -> void:
+		menu.visible = not menu.visible
+	)
+
+
+func _make_gm_menu_button(text: String, node_name: String) -> Button:
+	var button := Button.new()
+	button.name = node_name
+	button.text = text
+	button.custom_minimum_size = Vector2(178, 42)
+	button.focus_mode = Control.FOCUS_NONE
+	button.clip_text = true
+	button.add_theme_font_size_override("font_size", 17)
+	button.add_theme_color_override("font_color", Color(1.0, 0.98, 0.90, 1.0))
+	button.add_theme_color_override("font_hover_color", Color(1.0, 0.98, 0.90, 1.0))
+	button.add_theme_color_override("font_pressed_color", Color(1.0, 0.98, 0.90, 1.0))
+	button.add_theme_stylebox_override("normal", _make_panel_style(Color(0.10, 0.24, 0.35, 0.96), Color(0.62, 0.78, 0.96, 0.64), 1, 5))
+	button.add_theme_stylebox_override("hover", _make_panel_style(Color(0.14, 0.34, 0.48, 0.98), Color(0.88, 0.94, 1.0, 0.82), 1, 5))
+	button.add_theme_stylebox_override("pressed", _make_panel_style(Color(0.06, 0.18, 0.28, 0.98), Color(0.70, 0.84, 1.0, 0.76), 1, 5))
+	button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	return button
+
+
 func _make_title_label(art: MainMenuArtConfig, color: Color, offset: Vector2, font_size: int) -> Label:
 	var label := Label.new()
 	label.text = art.title_text
@@ -365,6 +459,15 @@ func _on_gm_physics_dice_test_pressed() -> void:
 	current_view_id = &"gm_physics_dice_test"
 	_clear_screen()
 	var screen = load(GM_PHYSICS_DICE_TEST_SCREEN_PATH).instantiate()
+	if screen.has_method("setup"):
+		screen.call("setup", Callable(self, "_show_main_menu"))
+	add_child(screen)
+
+
+func _on_gm_dice_material_inspector_pressed() -> void:
+	current_view_id = &"gm_dice_material_inspector"
+	_clear_screen()
+	var screen = load(GM_DICE_MATERIAL_INSPECTOR_SCREEN_PATH).instantiate()
 	if screen.has_method("setup"):
 		screen.call("setup", Callable(self, "_show_main_menu"))
 	add_child(screen)
@@ -671,7 +774,19 @@ func automation_get_snapshot() -> Dictionary:
 		snapshot["battle"] = battle_screen.call("automation_get_snapshot")
 	if map_stage_view != null and is_instance_valid(map_stage_view) and map_stage_view.has_method("automation_get_snapshot"):
 		snapshot["map"] = map_stage_view.call("automation_get_snapshot")
+	var gm_material_screen := _find_gm_material_inspector_screen(self)
+	if gm_material_screen != null and gm_material_screen.has_method("automation_get_snapshot"):
+		snapshot["gm_material_inspector"] = gm_material_screen.call("automation_get_snapshot")
+	if current_view_id == &"main":
+		snapshot["gm_main_menu"] = _automation_gm_main_menu_snapshot()
 	return snapshot
+
+
+func automation_open_gm_material_inspector() -> Dictionary:
+	if current_view_id != &"main":
+		return _automation_error("当前不在主菜单。")
+	_on_gm_dice_material_inspector_pressed()
+	return _automation_ok("已打开骰子材质检查。")
 
 
 func automation_start_run() -> Dictionary:
@@ -782,6 +897,39 @@ func _automation_piece_snapshot(piece) -> Dictionary:
 		"description": piece.get_description(),
 		"tags": piece.get_tags_display_text(),
 	}
+
+
+func _automation_gm_main_menu_snapshot() -> Dictionary:
+	var button := _find_node_by_name(self, "GmFloatingButton") as Button
+	var menu := _find_node_by_name(self, "GmFunctionMenu") as Control
+	var material_button := _find_node_by_name(self, "GmDiceMaterialInspectorButton") as Button
+	return {
+		"button_exists": button != null,
+		"menu_exists": menu != null,
+		"menu_visible": menu.visible if menu != null else false,
+		"material_action_exists": material_button != null,
+		"material_action_text": material_button.text if material_button != null else "",
+	}
+
+
+func _find_gm_material_inspector_screen(root_node: Node) -> Control:
+	if root_node is Control and root_node.has_method("automation_open_material") and root_node.has_method("automation_get_snapshot"):
+		return root_node as Control
+	for child in root_node.get_children():
+		var nested := _find_gm_material_inspector_screen(child)
+		if nested != null:
+			return nested
+	return null
+
+
+func _find_node_by_name(root_node: Node, node_name: String) -> Node:
+	if root_node.name == node_name:
+		return root_node
+	for child in root_node.get_children():
+		var found := _find_node_by_name(child, node_name)
+		if found != null:
+			return found
+	return null
 
 
 func _automation_ok(message: String = "") -> Dictionary:

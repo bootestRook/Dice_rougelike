@@ -1,0 +1,26 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://assets/shaders/dice/crystal_dice.gdshader" id="1_52u2w"]
+[ext_resource type="Texture2D" path="res://assets/textures/dice/crystal/crystal_dice_albedo.png" id="2_h5jrb"]
+[ext_resource type="Texture2D" path="res://assets/textures/dice/crystal/crystal_dice_emission.png" id="3_qh8rh"]
+[ext_resource type="Texture2D" path="res://assets/textures/dice/crystal/crystal_dice_flow_mask.png" id="4_bbvm2"]
+[ext_resource type="Texture2D" path="res://assets/textures/dice/crystal/crystal_dice_height.png" id="5_0gxkp"]
+[ext_resource type="Texture2D" path="res://assets/textures/dice/crystal/crystal_dice_normal.png" id="6_qbve8"]
+[ext_resource type="Texture2D" path="res://assets/textures/dice/crystal/crystal_dice_orm.png" id="7_6iryb"]
+
+[resource]
+resource_name = "crystal_dice"
+render_priority = 0
+shader = ExtResource("1_52u2w")
+shader_parameter/albedo_texture = ExtResource("2_h5jrb")
+shader_parameter/normal_texture = ExtResource("6_qbve8")
+shader_parameter/orm_texture = ExtResource("7_6iryb")
+shader_parameter/emission_texture = ExtResource("3_qh8rh")
+shader_parameter/flow_mask_texture = ExtResource("4_bbvm2")
+shader_parameter/height_texture = ExtResource("5_0gxkp")
+shader_parameter/alpha_base = 0.42
+shader_parameter/emission_power = 1.15
+shader_parameter/fresnel_power = 3.2
+shader_parameter/flow_speed = 0.18
+shader_parameter/glow_color = Color(0.3, 0.95, 1, 1)
+shader_parameter/tint_color = Color(0.45, 0.88, 1, 1)

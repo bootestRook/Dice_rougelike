@@ -17,6 +17,10 @@ static func make(p_value: int, p_label: String = "", p_face_type: StringName = &
 	return face
 
 
+func clone() -> GmDiceFaceDefinition:
+	return make(value, label, face_type, effect_expr)
+
+
 func to_dictionary() -> Dictionary:
 	return {
 		"value": value,

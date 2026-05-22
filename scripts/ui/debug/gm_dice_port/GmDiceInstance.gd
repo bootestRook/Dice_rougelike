@@ -3,10 +3,12 @@ class_name GmDiceInstance
 
 
 const GmDiceDefinitionScript = preload("res://scripts/ui/debug/gm_dice_port/GmDiceDefinition.gd")
+const GmDiceFaceDefinitionScript = preload("res://scripts/ui/debug/gm_dice_port/GmDiceFaceDefinition.gd")
 
 
 var definition: GmDiceDefinition = null
 var run_faces: Array = []
+var material_id: StringName = GmDiceDefinitionScript.MATERIAL_STANDARD
 var value: int = 0
 var avatar: Node = null
 var can_roll: bool = true
@@ -17,10 +19,61 @@ var enchanted: Array = []
 
 static func from_definition(p_definition: GmDiceDefinition) -> GmDiceInstance:
 	var instance := GmDiceInstance.new()
-	instance.definition = p_definition
 	if p_definition != null:
-		instance.run_faces = p_definition.faces.duplicate(true)
+		instance.definition = p_definition.clone()
+		instance.material_id = GmDiceDefinitionScript.normalize_material_id(p_definition.material_id)
+		for face in p_definition.faces:
+			if face != null and face.has_method("clone"):
+				instance.run_faces.append(face.clone())
 	return instance
+
+
+func set_material_id(new_material_id: StringName) -> void:
+	material_id = GmDiceDefinitionScript.normalize_material_id(new_material_id)
+	if definition != null:
+		definition.material_id = material_id
+
+
+func get_material_name() -> String:
+	return GmDiceDefinitionScript.material_name(material_id)
+
+
+func replace_face_pips(face_pips: Array) -> void:
+	while run_faces.size() > 6:
+		run_faces.remove_at(run_faces.size() - 1)
+	for index in range(6):
+		var pip := index + 1
+		if index < face_pips.size() and face_pips[index] != null:
+			pip = clampi(int(face_pips[index]), 1, 6)
+		if index >= run_faces.size():
+			run_faces.append(GmDiceFaceDefinitionScript.make(pip, str(pip)))
+			continue
+		if run_faces[index] == null:
+			run_faces[index] = GmDiceFaceDefinitionScript.make(pip, str(pip))
+			continue
+		var face := run_faces[index] as GmDiceFaceDefinition
+		face.value = pip
+		face.label = str(pip)
+	if definition != null:
+		definition.faces.clear()
+		for face in run_faces:
+			if face != null and face.has_method("clone"):
+				definition.faces.append(face.clone())
+	set_face_index(value)
+
+
+func get_face_pips() -> Array[int]:
+	var pips: Array[int] = []
+	for face in run_faces:
+		pips.append(int(face.value) if face != null else 0)
+	return pips
+
+
+func get_face_labels() -> Array[String]:
+	var labels: Array[String] = []
+	for face in run_faces:
+		labels.append(str(face.label) if face != null else "")
+	return labels
 
 
 func set_face_index(face_index: int) -> void:
@@ -82,6 +135,10 @@ func to_dictionary() -> Dictionary:
 	return {
 		"definition_id": str(definition.id) if definition != null else "",
 		"definition_name": definition.display_name if definition != null else "",
+		"material_id": str(material_id),
+		"material_name": get_material_name(),
+		"face_pips": get_face_pips(),
+		"face_labels": get_face_labels(),
 		"value": value,
 		"face_value": get_actual_face_one(),
 		"face_label": get_actual_face_label(),

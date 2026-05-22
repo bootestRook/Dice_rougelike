@@ -2,6 +2,9 @@ extends Control
 class_name GmDiceHud
 
 
+const GmDiceDefinitionScript = preload("res://scripts/ui/debug/gm_dice_port/GmDiceDefinition.gd")
+
+
 signal roll_requested(use_targets: bool)
 signal clear_requested
 signal back_requested
@@ -9,6 +12,7 @@ signal dice_exit_requested
 signal dice_return_requested
 signal dice_count_changed(count: int)
 signal targets_changed(values: Array)
+signal dice_replace_requested(material_id: StringName, face_pips: Array, apply_to_all: bool)
 signal idle_drift_tuning_changed(config: Dictionary)
 signal throw_speed_tuning_changed(config: Dictionary)
 signal throw_spin_tuning_changed(config: Dictionary)
@@ -29,6 +33,13 @@ var back_button: Button = null
 var random_target_button: Button = null
 var clear_target_button: Button = null
 var tuning_button: Button = null
+var dice_edit_button: Button = null
+var dice_edit_panel: PanelContainer = null
+var dice_edit_drag_handle: Label = null
+var dice_material_option: OptionButton = null
+var dice_edit_summary_label: Label = null
+var apply_selected_dice_edit_button: Button = null
+var apply_all_dice_edit_button: Button = null
 var tuning_panel: PanelContainer = null
 var target_grid: GridContainer = null
 var result_list: VBoxContainer = null
@@ -49,6 +60,8 @@ var exit_return_sliders := {}
 var exit_return_value_labels := {}
 var camera_sliders := {}
 var camera_value_labels := {}
+var face_pip_options: Array[OptionButton] = []
+var _dice_edit_dragging := false
 
 var _current_values: Array = []
 var _default_camera_tuning := {
@@ -90,12 +103,15 @@ func _ready() -> void:
 
 
 func build() -> void:
+	if get_child_count() > 0:
+		return
 	name = "GmDiceHud"
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_build_stage_frame()
 	_build_top_icons()
 	_build_throw_dock()
+	_build_dice_edit_panel()
 	_build_tuning_panel()
 	_build_hidden_dev_controls()
 
@@ -305,6 +321,7 @@ func update_state(snapshot: Dictionary) -> void:
 	var dice_exit_completed := bool(snapshot.get("dice_exit_completed", false))
 	var dice_exit_return_animating := bool(snapshot.get("dice_exit_return_animating", false))
 	var dice_ready_to_return := dice_exit_completed or _all_dice_exited(snapshot)
+	var edit_locked := rolling or dice_exit_animating or dice_exit_return_animating or dice_ready_to_return
 	_render_results(_current_values, face_indices)
 	if drop_button != null:
 		drop_button.disabled = rolling or dice_exit_animating or dice_exit_return_animating or dice_ready_to_return or selected_indices.is_empty()
@@ -317,6 +334,7 @@ func update_state(snapshot: Dictionary) -> void:
 		status_label.text = "投掷中" if rolling else ("已选 %d 颗骰子" % selected_indices.size() if not selected_indices.is_empty() else "请选择骰子")
 	if debug_label != null:
 		debug_label.text = _physics_debug_text(snapshot)
+	_update_dice_edit_state(edit_locked, active_dice, selected_indices)
 
 
 func set_status(text: String) -> void:
@@ -324,26 +342,40 @@ func set_status(text: String) -> void:
 		status_label.text = text
 
 
+func toggle_dice_edit_panel() -> bool:
+	if dice_edit_panel == null:
+		return false
+	dice_edit_panel.visible = not dice_edit_panel.visible
+	return dice_edit_panel.visible
+
+
+func apply_crystal_dice_preset() -> void:
+	_set_edit_material_id(GmDiceDefinitionScript.MATERIAL_CRYSTAL)
+	_set_edit_face_pips([1, 2, 3, 4, 5, 6])
+
+
 func _build_stage_frame() -> void:
 	var frame := Panel.new()
 	frame.name = "StageFrame"
 	frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	frame.visible = false
+	frame.visible = true
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	frame.add_theme_stylebox_override("panel", _make_panel_style(Color(0.006, 0.014, 0.040, 0.08), Color(0.78, 0.52, 0.28, 0.70), 2, 4))
 	add_child(frame)
 
 	var inner_vignette := Panel.new()
 	inner_vignette.name = "StagePurpleVignette"
 	inner_vignette.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	inner_vignette.visible = false
+	inner_vignette.visible = true
 	inner_vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	inner_vignette.add_theme_stylebox_override("panel", _make_panel_style(Color(0.005, 0.009, 0.028, 0.05), Color(0.26, 0.37, 0.58, 0.28), 1, 0))
 	add_child(inner_vignette)
 
 
 func _build_top_icons() -> void:
 	var row := HBoxContainer.new()
 	row.name = "TopIconBar"
-	row.anchor_left = 0.650
+	row.anchor_left = 0.570
 	row.anchor_top = 0.030
 	row.anchor_right = 0.985
 	row.anchor_bottom = 0.105
@@ -364,6 +396,9 @@ func _build_top_icons() -> void:
 			tuning_panel.visible = not tuning_panel.visible
 	)
 	row.add_child(tuning_button)
+	dice_edit_button = _make_icon_button("改骰", "DiceEditButton")
+	dice_edit_button.pressed.connect(toggle_dice_edit_panel)
+	row.add_child(dice_edit_button)
 	reset_button = _make_icon_button("清场", "ResetButton")
 	reset_button.pressed.connect(func() -> void: clear_requested.emit())
 	row.add_child(reset_button)
@@ -380,7 +415,7 @@ func _build_throw_dock() -> void:
 	dock.anchor_right = 0.440
 	dock.anchor_bottom = 0.275
 	dock.mouse_filter = Control.MOUSE_FILTER_STOP
-	dock.add_theme_stylebox_override("panel", _make_panel_style(Color(0.02, 0.16, 0.12, 0.94), Color(0.00, 0.96, 0.66, 0.90), 4, 5))
+	dock.add_theme_stylebox_override("panel", _make_panel_style(Color(0.025, 0.045, 0.095, 0.92), Color(0.78, 0.50, 0.26, 0.88), 3, 5))
 	add_child(dock)
 
 	var margin := _make_margin(18, 8, 18, 10)
@@ -403,7 +438,7 @@ func _build_throw_dock() -> void:
 	var count_chip := PanelContainer.new()
 	count_chip.name = "ThrowCountChip"
 	count_chip.custom_minimum_size = Vector2(62, 54)
-	count_chip.add_theme_stylebox_override("panel", _make_panel_style(Color(0.10, 0.58, 0.45, 0.95), Color(0.64, 1.00, 0.84, 0.92), 2, 4))
+	count_chip.add_theme_stylebox_override("panel", _make_panel_style(Color(0.13, 0.20, 0.34, 0.96), Color(0.86, 0.68, 0.36, 0.92), 2, 4))
 	row.add_child(count_chip)
 	var count_margin := _make_margin(6, 3, 6, 4)
 	count_chip.add_child(count_margin)
@@ -427,6 +462,85 @@ func _build_throw_dock() -> void:
 	add_child(random_drop_button)
 
 
+func _build_dice_edit_panel() -> void:
+	dice_edit_panel = PanelContainer.new()
+	dice_edit_panel.name = "DiceEditPanel"
+	dice_edit_panel.anchor_left = 0.135
+	dice_edit_panel.anchor_top = 0.295
+	dice_edit_panel.anchor_right = 0.440
+	dice_edit_panel.anchor_bottom = 0.655
+	dice_edit_panel.visible = false
+	dice_edit_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	dice_edit_panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.018, 0.030, 0.066, 0.95), Color(0.74, 0.50, 0.28, 0.86), 3, 5))
+	add_child(dice_edit_panel)
+
+	var margin := _make_margin(12, 10, 12, 12)
+	dice_edit_panel.add_child(margin)
+	var layout := VBoxContainer.new()
+	layout.name = "DiceEditLayout"
+	layout.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	layout.add_theme_constant_override("separation", 7)
+	margin.add_child(layout)
+
+	dice_edit_drag_handle = _make_label("改骰", 19, Color(0.90, 1.00, 0.96))
+	dice_edit_drag_handle.name = "DiceEditTitle"
+	dice_edit_drag_handle.mouse_filter = Control.MOUSE_FILTER_STOP
+	dice_edit_drag_handle.mouse_default_cursor_shape = Control.CURSOR_MOVE
+	dice_edit_drag_handle.gui_input.connect(_on_dice_edit_drag_handle_gui_input)
+	layout.add_child(dice_edit_drag_handle)
+
+	dice_edit_summary_label = _make_label("请选择骰子，或直接全部替换", 13, Color(0.78, 0.88, 0.86))
+	dice_edit_summary_label.name = "DiceEditSummaryLabel"
+	layout.add_child(dice_edit_summary_label)
+
+	var material_row := HBoxContainer.new()
+	material_row.name = "DiceMaterialRow"
+	material_row.add_theme_constant_override("separation", 8)
+	layout.add_child(material_row)
+	var material_label := _make_label("骰胚", 14, Color(0.86, 0.94, 0.90))
+	material_label.custom_minimum_size = Vector2(52, 0)
+	material_row.add_child(material_label)
+	dice_material_option = OptionButton.new()
+	dice_material_option.name = "DiceMaterialOption"
+	dice_material_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_populate_material_options()
+	material_row.add_child(dice_material_option)
+
+	var faces_grid := GridContainer.new()
+	faces_grid.name = "DiceFacePipGrid"
+	faces_grid.columns = 4
+	faces_grid.add_theme_constant_override("h_separation", 8)
+	faces_grid.add_theme_constant_override("v_separation", 5)
+	layout.add_child(faces_grid)
+	face_pip_options.clear()
+	for index in range(6):
+		var face_label := _make_label("面%d" % [index + 1], 13, Color(0.86, 0.94, 0.90))
+		faces_grid.add_child(face_label)
+		var option := OptionButton.new()
+		option.name = "EditFace%dOption" % [index + 1]
+		option.custom_minimum_size = Vector2(66, 30)
+		for pip in range(1, 7):
+			option.add_item("%d点" % pip, pip)
+		option.select(index)
+		faces_grid.add_child(option)
+		face_pip_options.append(option)
+
+	var button_row := HBoxContainer.new()
+	button_row.name = "DiceEditButtonRow"
+	button_row.add_theme_constant_override("separation", 8)
+	layout.add_child(button_row)
+	apply_selected_dice_edit_button = _make_button("替换所选", "ApplySelectedDiceEditButton", Vector2(92, 38), 15)
+	apply_selected_dice_edit_button.pressed.connect(func() -> void:
+		dice_replace_requested.emit(_get_edit_material_id(), _get_edit_face_pips(), false)
+	)
+	button_row.add_child(apply_selected_dice_edit_button)
+	apply_all_dice_edit_button = _make_button("全部替换", "ApplyAllDiceEditButton", Vector2(92, 38), 15)
+	apply_all_dice_edit_button.pressed.connect(func() -> void:
+		dice_replace_requested.emit(_get_edit_material_id(), _get_edit_face_pips(), true)
+	)
+	button_row.add_child(apply_all_dice_edit_button)
+
+
 func _build_tuning_panel() -> void:
 	tuning_panel = PanelContainer.new()
 	tuning_panel.name = "TuningPanel"
@@ -436,7 +550,7 @@ func _build_tuning_panel() -> void:
 	tuning_panel.anchor_bottom = 0.940
 	tuning_panel.visible = false
 	tuning_panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	tuning_panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.035, 0.040, 0.052, 0.94), Color(0.00, 0.88, 0.66, 0.82), 3, 5))
+	tuning_panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.018, 0.026, 0.058, 0.94), Color(0.74, 0.50, 0.28, 0.82), 3, 5))
 	add_child(tuning_panel)
 
 	var margin := _make_margin(12, 10, 12, 12)
@@ -817,6 +931,101 @@ func _rebuild_target_controls(count: int) -> void:
 		_apply_targets(old_values)
 
 
+func _populate_material_options() -> void:
+	if dice_material_option == null:
+		return
+	dice_material_option.clear()
+	var options := GmDiceDefinitionScript.get_material_options()
+	for index in range(options.size()):
+		var option: Dictionary = options[index]
+		dice_material_option.add_item(str(option.get("name", "")), index)
+		dice_material_option.set_item_metadata(index, option.get("id", GmDiceDefinitionScript.MATERIAL_STANDARD))
+	_set_edit_material_id(GmDiceDefinitionScript.MATERIAL_STANDARD)
+
+
+func _get_edit_material_id() -> StringName:
+	if dice_material_option == null or dice_material_option.get_item_count() <= 0:
+		return GmDiceDefinitionScript.MATERIAL_STANDARD
+	var selected_index := dice_material_option.selected
+	if selected_index < 0:
+		selected_index = 0
+	return GmDiceDefinitionScript.normalize_material_id(StringName(str(dice_material_option.get_item_metadata(selected_index))))
+
+
+func _set_edit_material_id(material_id: StringName) -> void:
+	if dice_material_option == null:
+		return
+	var normalized_id := GmDiceDefinitionScript.normalize_material_id(material_id)
+	for index in range(dice_material_option.get_item_count()):
+		if GmDiceDefinitionScript.normalize_material_id(StringName(str(dice_material_option.get_item_metadata(index)))) == normalized_id:
+			dice_material_option.select(index)
+			return
+
+
+func _get_edit_face_pips() -> Array:
+	var pips: Array = []
+	for option in face_pip_options:
+		var selected_id := option.get_selected_id()
+		pips.append(clampi(selected_id, 1, 6))
+	return pips
+
+
+func _set_edit_face_pips(face_pips: Array) -> void:
+	for index in range(face_pip_options.size()):
+		var option := face_pip_options[index]
+		var pip := index + 1
+		if index < face_pips.size() and face_pips[index] != null:
+			pip = clampi(int(face_pips[index]), 1, 6)
+		option.select(pip - 1)
+
+
+func _on_dice_edit_drag_handle_gui_input(event: InputEvent) -> void:
+	if dice_edit_panel == null:
+		return
+	if event is InputEventMouseButton:
+		var mouse_event := event as InputEventMouseButton
+		if mouse_event.button_index != MOUSE_BUTTON_LEFT:
+			return
+		_dice_edit_dragging = mouse_event.pressed
+		if _dice_edit_dragging:
+			dice_edit_panel.move_to_front()
+		accept_event()
+	elif event is InputEventMouseMotion and _dice_edit_dragging:
+		var motion_event := event as InputEventMouseMotion
+		_move_dice_edit_panel_by_delta(motion_event.relative)
+		accept_event()
+
+
+func _move_dice_edit_panel_by_delta(delta: Vector2) -> void:
+	if dice_edit_panel == null:
+		return
+	var viewport_size := get_viewport_rect().size
+	var panel_size := dice_edit_panel.size
+	var next_position := dice_edit_panel.global_position + delta
+	next_position.x = clampf(next_position.x, 0.0, maxf(0.0, viewport_size.x - panel_size.x))
+	next_position.y = clampf(next_position.y, 0.0, maxf(0.0, viewport_size.y - panel_size.y))
+	dice_edit_panel.global_position = next_position
+
+
+func _update_dice_edit_state(edit_locked: bool, active_dice: int, selected_indices: Array) -> void:
+	if dice_edit_button != null:
+		dice_edit_button.disabled = active_dice <= 0
+	if apply_selected_dice_edit_button != null:
+		apply_selected_dice_edit_button.disabled = edit_locked or selected_indices.is_empty()
+	if apply_all_dice_edit_button != null:
+		apply_all_dice_edit_button.disabled = edit_locked or active_dice <= 0
+	if dice_edit_summary_label == null:
+		return
+	if edit_locked:
+		dice_edit_summary_label.text = "投掷或退场动画中不能改骰"
+	elif selected_indices.is_empty():
+		dice_edit_summary_label.text = "未选择骰子；可使用全部替换"
+	elif selected_indices.size() == 1:
+		dice_edit_summary_label.text = "将替换骰子%d" % [int(selected_indices[0]) + 1]
+	else:
+		dice_edit_summary_label.text = "将替换 %d 颗所选骰子" % [selected_indices.size()]
+
+
 func _apply_targets(values: Array) -> void:
 	for index in range(target_controls.size()):
 		var option := target_controls[index]
@@ -938,10 +1147,10 @@ func _make_button(text: String, node_name: String, min_size: Vector2, font_size:
 	button.clip_text = true
 	button.focus_mode = Control.FOCUS_NONE
 	button.add_theme_font_size_override("font_size", font_size)
-	button.add_theme_stylebox_override("normal", _make_panel_style(Color(0.06, 0.24, 0.18, 0.96), Color(0.00, 0.88, 0.62, 0.92), 3, 5))
-	button.add_theme_stylebox_override("hover", _make_panel_style(Color(0.10, 0.34, 0.25, 0.98), Color(0.30, 1.00, 0.78, 0.98), 3, 5))
-	button.add_theme_stylebox_override("pressed", _make_panel_style(Color(0.18, 0.13, 0.30, 0.98), Color(0.95, 0.86, 1.00, 0.98), 3, 5))
-	button.add_theme_color_override("font_color", Color(0.94, 1.00, 0.95))
+	button.add_theme_stylebox_override("normal", _make_panel_style(Color(0.030, 0.052, 0.105, 0.96), Color(0.72, 0.46, 0.24, 0.88), 2, 4))
+	button.add_theme_stylebox_override("hover", _make_panel_style(Color(0.055, 0.084, 0.160, 0.98), Color(0.92, 0.70, 0.36, 0.98), 2, 4))
+	button.add_theme_stylebox_override("pressed", _make_panel_style(Color(0.16, 0.060, 0.075, 0.98), Color(1.00, 0.66, 0.38, 0.98), 2, 4))
+	button.add_theme_color_override("font_color", Color(0.98, 0.94, 0.84))
 	return button
 
 
