@@ -10,6 +10,15 @@ class_name MapStageArtConfig
 @export var map_stage_skin_texture: Texture2D
 @export var battle_stage_skin_texture: Texture2D
 
+@export_group("3D Tabletop")
+@export var use_3d_tabletop: bool = true
+@export var tabletop_board_texture: Texture2D
+@export var tabletop_overlay_texture: Texture2D
+@export var tabletop_board_tint: Color = Color.WHITE
+@export var tabletop_overlay_tint: Color = Color(1.0, 1.0, 1.0, 0.42)
+@export var tabletop_table_size: Vector2 = Vector2(16.8, 11.0)
+@export var tabletop_route_inset: Vector2 = Vector2(0.78, 0.72)
+
 @export_group("节点")
 @export var start_node_texture: Texture2D
 @export var battle_node_texture: Texture2D

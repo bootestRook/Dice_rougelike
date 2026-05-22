@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="MapStageArtConfig" load_steps=19 format=3]
+[gd_resource type="Resource" script_class="MapStageArtConfig" load_steps=20 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/map/resources/MapStageArtConfig.gd" id="1_config"]
 [ext_resource type="Texture2D" path="res://assets/ui/map/map.png" id="2_map"]
@@ -18,6 +18,7 @@
 [ext_resource type="Texture2D" path="res://assets/ui/map/map_button_hover_placeholder.png" id="13_button_hover"]
 [ext_resource type="Texture2D" path="res://assets/ui/map/map_button_pressed_placeholder.png" id="14_button_pressed"]
 [ext_resource type="Texture2D" path="res://assets/ui/map/map_dice_panel_placeholder.png" id="15_dice_panel"]
+[ext_resource type="Texture2D" path="res://assets/ui/map/map_tabletop_neon_comic.png" id="16_tabletop"]
 
 [resource]
 script = ExtResource("1_config")
@@ -27,6 +28,8 @@ path_floor_texture = ExtResource("3_path")
 center_panel_texture = ExtResource("15_dice_panel")
 map_stage_skin_texture = ExtResource("2_map")
 battle_stage_skin_texture = ExtResource("2_map")
+use_3d_tabletop = true
+tabletop_board_texture = ExtResource("16_tabletop")
 start_node_texture = ExtResource("4_start")
 battle_node_texture = ExtResource("5_battle")
 elite_node_texture = ExtResource("5_elite")

@@ -144,6 +144,94 @@ func configure_key_light(new_pitch: float, new_yaw: float) -> void:
 		key_light.rotation_degrees = key_light_rotation
 
 
+func set_throw_surface_texture(texture: Texture2D, tint: Color = Color.WHITE, visible_when_empty: bool = true) -> void:
+	var throw_mat := _fixed_throw_mat()
+	if throw_mat == null:
+		return
+	if texture == null:
+		_restore_default_throw_surface_mesh(throw_mat)
+		throw_mat.visible = visible_when_empty
+		throw_mat.material_override = _make_material(Color(0.30, 0.29, 0.39, 1.0), 0.78, 0.0)
+		return
+	_apply_texture_throw_surface_mesh(throw_mat, texture)
+	var material := StandardMaterial3D.new()
+	material.albedo_texture = texture
+	material.albedo_color = tint
+	material.roughness = 0.72
+	material.metallic = 0.0
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	throw_mat.material_override = material
+	throw_mat.visible = true
+
+
+func get_throw_surface_texture_path() -> String:
+	var throw_mat := _fixed_throw_mat()
+	if throw_mat == null:
+		return ""
+	var material := throw_mat.material_override as StandardMaterial3D
+	if material == null or material.albedo_texture == null:
+		return ""
+	return material.albedo_texture.resource_path
+
+
+func get_throw_surface_normalized_rect(fit_collision_area: bool = true) -> Rect2:
+	if fixed_camera == null or sub_viewport == null:
+		return Rect2(0.0, 0.0, 1.0, 1.0)
+	var width := COLLISION_WIDTH if fit_collision_area else VISIBLE_MAT_WIDTH
+	var depth := COLLISION_DEPTH if fit_collision_area else VISIBLE_MAT_DEPTH
+	var corners := [
+		Vector3(-width * 0.5, 0.0, -depth * 0.5),
+		Vector3(width * 0.5, 0.0, -depth * 0.5),
+		Vector3(width * 0.5, 0.0, depth * 0.5),
+		Vector3(-width * 0.5, 0.0, depth * 0.5),
+	]
+	var min_point := Vector2(INF, INF)
+	var max_point := Vector2(-INF, -INF)
+	for corner in corners:
+		var projected := fixed_camera.unproject_position(corner)
+		min_point.x = minf(min_point.x, projected.x)
+		min_point.y = minf(min_point.y, projected.y)
+		max_point.x = maxf(max_point.x, projected.x)
+		max_point.y = maxf(max_point.y, projected.y)
+	var viewport_size := Vector2(sub_viewport.size)
+	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
+		return Rect2(0.0, 0.0, 1.0, 1.0)
+	var normalized_position := Vector2(
+		clampf(min_point.x / viewport_size.x, 0.0, 1.0),
+		clampf(min_point.y / viewport_size.y, 0.0, 1.0)
+	)
+	var normalized_end := Vector2(
+		clampf(max_point.x / viewport_size.x, 0.0, 1.0),
+		clampf(max_point.y / viewport_size.y, 0.0, 1.0)
+	)
+	return Rect2(normalized_position, normalized_end - normalized_position)
+
+
+func _fixed_throw_mat() -> MeshInstance3D:
+	if dice_world == null:
+		return null
+	return dice_world.get_node_or_null("FixedThrowMat") as MeshInstance3D
+
+
+func _apply_texture_throw_surface_mesh(throw_mat: MeshInstance3D, texture: Texture2D) -> void:
+	var texture_size := texture.get_size()
+	var aspect := 16.0 / 9.0
+	if texture_size.x > 0.0 and texture_size.y > 0.0:
+		aspect = texture_size.x / texture_size.y
+	var plane := PlaneMesh.new()
+	plane.size = Vector2(VISIBLE_MAT_WIDTH, VISIBLE_MAT_WIDTH / aspect)
+	throw_mat.mesh = plane
+	throw_mat.position = Vector3(0.0, 0.006, 0.0)
+
+
+func _restore_default_throw_surface_mesh(throw_mat: MeshInstance3D) -> void:
+	var mat_box := BoxMesh.new()
+	mat_box.size = Vector3(VISIBLE_MAT_WIDTH, 0.035, VISIBLE_MAT_DEPTH)
+	throw_mat.mesh = mat_box
+	throw_mat.position = Vector3(0.0, 0.002, 0.0)
+
+
 func get_camera_state() -> Dictionary:
 	return {
 		"display_mode": "fixed_2_5d_subviewport",
@@ -162,6 +250,7 @@ func get_camera_state() -> Dictionary:
 		"metal_reflection_lights": _get_metal_reflection_light_state(),
 		"visible_stage_size": Vector2(VISIBLE_MAT_WIDTH, VISIBLE_MAT_DEPTH),
 		"collision_stage_size": Vector2(COLLISION_WIDTH, COLLISION_DEPTH),
+		"throw_surface_texture_path": get_throw_surface_texture_path(),
 	}
 
 

@@ -14,6 +14,13 @@ const BattleUiStyleConfig = preload("res://scripts/ui/battle/resources/BattleUiS
 const BattleIconLibrary = preload("res://scripts/ui/battle/resources/BattleIconLibrary.gd")
 const DiceVisualLibrary = preload("res://scripts/ui/battle/resources/DiceVisualLibrary.gd")
 const DEFAULT_ART_CONFIG = preload("res://scenes/map/resources/MapStageArtConfig.tres")
+const MAX_MOVEMENT_DICE_SELECTION := 2
+const DESIGN_SIZE := Vector2(1920.0, 1080.0)
+const TABLETOP_BACKGROUND_DESIGN_RECT := Rect2(Vector2(436.0, 188.0), Vector2(1488.0, 897.0))
+const TABLETOP_CONTENT_DESIGN_RECT := Rect2(Vector2(460.0, 256.0), Vector2(1440.0, 810.0))
+const CIRCLE_ACTION_BADGE_DESIGN_Y := 453.0
+const ROLL_BUTTON_DESIGN_Y := 767.0
+const ENTER_BATTLE_BUTTON_DESIGN_Y := 767.0
 
 
 @export var art_config: MapStageArtConfig = DEFAULT_ART_CONFIG
@@ -29,6 +36,7 @@ var map_state: Dictionary = {}
 var board_root: Control = null
 var backdrop_texture: TextureRect = null
 var board_texture: TextureRect = null
+var tabletop_background_texture: TextureRect = null
 var path_layer: Control = null
 var node_layer: Control = null
 var map_fx_layer: Control = null
@@ -53,15 +61,23 @@ var movement_step_label: Label = null
 var node_views: Array[Control] = []
 var movement_dice_views: Array[Control] = []
 var movement_dice: Array = []
-var selected_movement_dice_indices: Array[int] = [0, 1]
+var selected_movement_dice_indices: Array[int] = [0]
 var is_marker_animating: bool = false
 var is_board_animating: bool = false
+var is_board_lowering: bool = false
 var is_movement_roll_pending: bool = false
+var is_movement_dice_stage_revealed: bool = false
 var last_emitted_interaction_locked: bool = false
+
+
+func _init() -> void:
+	visible = false
+	modulate.a = 0.0
 
 
 func setup(new_game_flow_controller: GameFlowController, initial_map_state: Dictionary = {}) -> void:
 	game_flow_controller = new_game_flow_controller
+	_reset_default_movement_dice_selection()
 	if not initial_map_state.is_empty():
 		map_state = initial_map_state.duplicate(true)
 	_connect_flow_signals()
@@ -79,10 +95,54 @@ func _ready() -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_RESIZED:
+		_layout_tabletop_background_and_content()
 		_layout_route_nodes()
 		_layout_center_panel()
 		if not is_marker_animating:
 			_place_player_marker(_current_index())
+
+
+func _gui_input(event: InputEvent) -> void:
+	if not event is InputEventMouseButton:
+		return
+	var mouse_event := event as InputEventMouseButton
+	if mouse_event.button_index != MOUSE_BUTTON_LEFT or not mouse_event.pressed:
+		return
+	var global_click_position := get_global_transform_with_canvas() * mouse_event.position
+	var movement_die_index := _movement_die_index_at_global_position(global_click_position)
+	if movement_die_index >= 0:
+		_on_movement_die_pressed(movement_die_index)
+		accept_event()
+		return
+	if _action_button_accepts_click(roll_button_wrapper, roll_button, global_click_position):
+		_on_roll_pressed()
+		accept_event()
+		return
+	if _action_button_accepts_click(enter_battle_button_wrapper, enter_battle_button, global_click_position):
+		_on_enter_battle_pressed()
+		accept_event()
+
+
+func _movement_die_index_at_global_position(global_click_position: Vector2) -> int:
+	if not _movement_controls_visible():
+		return -1
+	for index in range(movement_dice_views.size()):
+		var view := movement_dice_views[index] as Control
+		if view == null or not view.visible:
+			continue
+		if view is BaseButton and (view as BaseButton).disabled:
+			continue
+		if view.get_global_rect().has_point(global_click_position):
+			return index
+	return -1
+
+
+func _action_button_accepts_click(wrapper: Control, button: BaseButton, global_click_position: Vector2) -> bool:
+	return wrapper != null \
+		and button != null \
+		and wrapper.visible \
+		and not button.disabled \
+		and wrapper.get_global_rect().has_point(global_click_position)
 
 
 func play_raise() -> void:
@@ -91,6 +151,9 @@ func play_raise() -> void:
 	visible = true
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	is_board_animating = true
+	is_board_lowering = false
+	is_movement_dice_stage_revealed = false
+	_sync_movement_dice_stage_visibility()
 	_refresh_interaction_lock_state()
 	board_root.position = _lowered_board_position()
 	modulate.a = 0.0
@@ -102,6 +165,9 @@ func play_raise() -> void:
 	board_root.position = Vector2.ZERO
 	modulate.a = 1.0
 	is_board_animating = false
+	is_board_lowering = false
+	is_movement_dice_stage_revealed = true
+	_sync_movement_dice_stage_visibility()
 	_refresh_interaction_lock_state()
 
 
@@ -111,15 +177,22 @@ func play_lower() -> void:
 	visible = true
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	is_board_animating = true
+	is_board_lowering = true
+	is_movement_dice_stage_revealed = true
+	board_root.position = Vector2.ZERO
+	modulate.a = 1.0
+	_sync_movement_dice_stage_visibility()
 	_refresh_interaction_lock_state()
 	var tween := create_tween()
-	tween.set_parallel(true)
 	tween.tween_property(board_root, "position", _lowered_board_position(), art_config.board_lower_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-	tween.tween_property(self, "modulate:a", 0.0, art_config.board_lower_duration * 0.85).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	await tween.finished
 	visible = false
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	modulate.a = 0.0
 	is_board_animating = false
+	is_board_lowering = false
+	is_movement_dice_stage_revealed = false
+	_sync_movement_dice_stage_visibility()
 	_refresh_interaction_lock_state()
 
 
@@ -138,17 +211,31 @@ func automation_get_snapshot() -> Dictionary:
 		"danger_bonus_percent": int(map_state.get("danger_bonus_percent", 0)),
 		"current_node_target_score": int(map_state.get("current_node_target_score", 0)),
 		"movement_dice_count": int(map_state.get("movement_dice_count", 2)),
+		"movement_dice_ids": _movement_dice_ids(),
+		"movement_die_face_counts": _movement_die_face_counts(),
 		"node_count": _nodes().size(),
 		"has_movement_magic_fx": movement_magic_fx_scene != null,
 		"has_movement_physics_dice": movement_dice_physics_view != null,
 		"movement_physics_dice": movement_dice_physics_view.automation_get_snapshot() if movement_dice_physics_view != null else {},
+		"movement_physics_dice_visible": movement_dice_physics_view.visible if movement_dice_physics_view != null else false,
+		"tabletop_background_visible": tabletop_background_texture != null and tabletop_background_texture.visible,
+		"tabletop_background_texture_path": _texture_path(tabletop_background_texture.texture if tabletop_background_texture != null else null),
+		"tabletop_background_rect": tabletop_background_texture.get_rect() if tabletop_background_texture != null else Rect2(),
+		"map_content_rect": _map_content_rect(),
+		"movement_dice_stage_revealed": is_movement_dice_stage_revealed,
 		"is_board_animating": is_board_animating,
+		"is_board_lowering": is_board_lowering,
 		"is_movement_roll_pending": is_movement_roll_pending,
 		"interaction_locked": _is_interaction_locked(),
 		"board_raise_duration": art_config.board_raise_duration if art_config != null else 0.0,
 		"board_lower_duration": art_config.board_lower_duration if art_config != null else 0.0,
 		"roll_button_disabled": roll_button.disabled if roll_button != null else false,
+		"roll_button_visible": roll_button_wrapper != null and roll_button_wrapper.visible,
+		"roll_button_rect": roll_button_wrapper.get_global_rect() if roll_button_wrapper != null else Rect2(),
+		"roll_button_texture_rect": roll_button.get_global_rect() if roll_button != null else Rect2(),
+		"enter_battle_button_visible": enter_battle_button_wrapper != null and enter_battle_button_wrapper.visible,
 		"enter_battle_button_disabled": enter_battle_button.disabled if enter_battle_button != null else false,
+		"circle_action_badge_visible": circle_action_badge != null and circle_action_badge.visible,
 		"marker_step_duration": art_config.marker_step_duration if art_config != null else 0.0,
 		"movement_step_label_visible": movement_step_label.visible if movement_step_label != null else false,
 		"circle_action_label_text": circle_action_label.text if circle_action_label != null else "",
@@ -169,11 +256,14 @@ func _connect_flow_signals() -> void:
 
 
 func _build_view() -> void:
+	clip_contents = true
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	board_root = Control.new()
 	board_root.name = "MapBoardRoot"
+	board_root.clip_contents = true
+	board_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	board_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(board_root)
 
@@ -202,25 +292,33 @@ func _build_view() -> void:
 	board_texture.offset_top = art_config.board_margin
 	board_texture.offset_right = -art_config.board_margin
 	board_texture.offset_bottom = -art_config.board_margin
-	board_texture.visible = board_texture.texture != null
+	board_texture.visible = board_texture.texture != null and not _use_3d_tabletop()
 	board_root.add_child(board_texture)
+
+	tabletop_background_texture = TextureRect.new()
+	tabletop_background_texture.name = "MapStageTabletopBackgroundTexture"
+	tabletop_background_texture.texture = _tabletop_board_texture()
+	tabletop_background_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tabletop_background_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	tabletop_background_texture.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tabletop_background_texture.visible = tabletop_background_texture.texture != null and _use_3d_tabletop()
+	board_root.add_child(tabletop_background_texture)
 
 	movement_dice_physics_view = MapMovementDicePhysicsView.new()
 	movement_dice_physics_view.name = "MapStagePerspective3DView"
 	movement_dice_physics_view.z_index = 30
 	movement_dice_physics_view.mouse_filter = Control.MOUSE_FILTER_PASS
+	movement_dice_physics_view.visible = false
 	board_root.add_child(movement_dice_physics_view)
-	movement_dice_physics_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	movement_dice_physics_view.offset_left = art_config.board_margin
-	movement_dice_physics_view.offset_top = art_config.board_margin
-	movement_dice_physics_view.offset_right = -art_config.board_margin
-	movement_dice_physics_view.offset_bottom = -art_config.board_margin
+	movement_dice_physics_view.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	if movement_dice_physics_view.has_method("set_external_tabletop_background_enabled"):
+		movement_dice_physics_view.call("set_external_tabletop_background_enabled", true)
 	movement_dice_physics_view.die_pressed.connect(_on_movement_die_pressed)
 
 	path_layer = Control.new()
 	path_layer.name = "PathFloorLayer"
 	path_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	path_layer.visible = true
+	path_layer.visible = not _use_3d_tabletop()
 	path_layer.z_index = 5
 	path_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	board_root.add_child(path_layer)
@@ -228,7 +326,7 @@ func _build_view() -> void:
 	node_layer = Control.new()
 	node_layer.name = "MapNodeLayer"
 	node_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	node_layer.visible = true
+	node_layer.visible = not _use_3d_tabletop()
 	node_layer.z_index = 10
 	node_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	board_root.add_child(node_layer)
@@ -267,6 +365,7 @@ func _build_center_panel() -> void:
 	center_root = Control.new()
 	center_root.name = "MapCenterRollArea"
 	center_root.z_index = 80
+	center_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	board_root.add_child(center_root)
 
 	var center_texture := TextureRect.new()
@@ -281,6 +380,7 @@ func _build_center_panel() -> void:
 
 	var margin := MarginContainer.new()
 	margin.name = "CenterContentMargin"
+	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	margin.add_theme_constant_override("margin_left", 34)
 	margin.add_theme_constant_override("margin_top", 24)
 	margin.add_theme_constant_override("margin_right", 34)
@@ -290,6 +390,7 @@ func _build_center_panel() -> void:
 
 	var content := VBoxContainer.new()
 	content.name = "CenterContent"
+	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	content.alignment = BoxContainer.ALIGNMENT_CENTER
 	content.add_theme_constant_override("separation", 10)
 	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -314,6 +415,7 @@ func _build_center_panel() -> void:
 
 	movement_dice_row = HBoxContainer.new()
 	movement_dice_row.name = "MovementDiceRow"
+	movement_dice_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	movement_dice_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	movement_dice_row.add_theme_constant_override("separation", 16)
 	movement_dice_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -334,15 +436,18 @@ func _build_center_panel() -> void:
 
 	roll_button_wrapper = _make_texture_button("投掷前进骰子")
 	roll_button_wrapper.name = "RollMovementButton"
+	roll_button_wrapper.z_index = 92
 	roll_button = roll_button_wrapper.get_node("ButtonTexture") as TextureButton
 	roll_button.pressed.connect(_on_roll_pressed)
-	content.add_child(roll_button_wrapper)
+	board_root.add_child(roll_button_wrapper)
 
 	enter_battle_button_wrapper = _make_texture_button("进入战斗")
 	enter_battle_button_wrapper.name = "EnterBattleButton"
+	enter_battle_button_wrapper.z_index = 92
+	enter_battle_button_wrapper.visible = false
 	enter_battle_button = enter_battle_button_wrapper.get_node("ButtonTexture") as TextureButton
 	enter_battle_button.pressed.connect(_on_enter_battle_pressed)
-	content.add_child(enter_battle_button_wrapper)
+	board_root.add_child(enter_battle_button_wrapper)
 
 	_layout_center_panel()
 
@@ -405,6 +510,7 @@ func _make_texture_button(text: String) -> Control:
 	wrapper.custom_minimum_size = Vector2(310.0, 72.0)
 	wrapper.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	wrapper.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	wrapper.mouse_filter = Control.MOUSE_FILTER_PASS
 
 	var button := TextureButton.new()
 	button.name = "ButtonTexture"
@@ -415,6 +521,7 @@ func _make_texture_button(text: String) -> Control:
 	button.ignore_texture_size = true
 	button.stretch_mode = TextureButton.STRETCH_SCALE
 	button.focus_mode = Control.FOCUS_NONE
+	button.mouse_filter = Control.MOUSE_FILTER_STOP
 	button.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	wrapper.add_child(button)
 
@@ -422,7 +529,30 @@ func _make_texture_button(text: String) -> Control:
 	label.name = "ButtonLabel"
 	label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	wrapper.add_child(label)
+
+	var hit_area := Button.new()
+	hit_area.name = "ButtonHitArea"
+	hit_area.text = ""
+	hit_area.flat = true
+	hit_area.focus_mode = Control.FOCUS_NONE
+	hit_area.mouse_filter = Control.MOUSE_FILTER_STOP
+	hit_area.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_apply_empty_button_style(hit_area)
+	hit_area.pressed.connect(func() -> void:
+		if button.disabled or not wrapper.visible:
+			return
+		button.pressed.emit()
+	)
+	wrapper.add_child(hit_area)
 	return wrapper
+
+
+func _apply_empty_button_style(button: Button) -> void:
+	if button == null:
+		return
+	var empty := StyleBoxEmpty.new()
+	for state in ["normal", "hover", "pressed", "disabled", "focus"]:
+		button.add_theme_stylebox_override(state, empty)
 
 
 func _make_node_label_style() -> StyleBoxFlat:
@@ -449,8 +579,7 @@ func _make_node_label() -> Label:
 func _ensure_movement_dice_views() -> void:
 	if movement_dice_row == null or movement_dice_physics_view == null:
 		return
-	while movement_dice.size() < 2:
-		movement_dice.append(DieState.create_normal_d6(StringName("map_move_d6_%d" % [movement_dice.size() + 1])))
+	_sync_movement_dice_from_flow()
 
 	movement_dice_views.clear()
 	for index in range(2):
@@ -459,13 +588,43 @@ func _ensure_movement_dice_views() -> void:
 			movement_dice_views.append(button)
 
 
+func _sync_movement_dice_from_flow() -> void:
+	movement_dice.clear()
+	if game_flow_controller != null and game_flow_controller.has_method("get_map_movement_dice"):
+		for die_value in game_flow_controller.call("get_map_movement_dice"):
+			var die := die_value as DieState
+			if die != null and movement_dice.size() < 2:
+				movement_dice.append(die)
+	while movement_dice.size() < 2:
+		movement_dice.append(DieState.create_normal_d6(StringName("fallback_map_d6_%d" % [movement_dice.size() + 1])))
+	if movement_dice_physics_view != null and movement_dice_physics_view.has_method("set_formal_dice"):
+		movement_dice_physics_view.call("set_formal_dice", movement_dice, battle_dice_visual_library)
+
+
 func _render_movement_dice() -> void:
 	if movement_dice_row == null:
 		return
 	_ensure_movement_dice_views()
 	var rolls := _movement_rolls_for_render()
 	if movement_dice_physics_view != null:
-		movement_dice_physics_view.set_display_state(rolls, selected_movement_dice_indices, is_board_animating)
+		movement_dice_physics_view.set_display_state(rolls, selected_movement_dice_indices, is_board_animating, map_state.get("last_roll_face_indices", []))
+	_sync_movement_dice_stage_visibility()
+
+
+func _sync_movement_dice_stage_visibility() -> void:
+	var controls_visible := _movement_controls_visible()
+	if movement_dice_physics_view != null:
+		movement_dice_physics_view.visible = controls_visible
+	if circle_action_badge != null:
+		circle_action_badge.visible = controls_visible
+	if roll_button_wrapper != null:
+		roll_button_wrapper.visible = controls_visible and not bool(map_state.get("pending_battle", false))
+	if enter_battle_button_wrapper != null:
+		enter_battle_button_wrapper.visible = controls_visible and bool(map_state.get("pending_battle", false))
+
+
+func _movement_controls_visible() -> bool:
+	return visible and is_movement_dice_stage_revealed and (not is_board_animating or is_board_lowering)
 
 
 func _movement_rolls_for_render() -> Array[int]:
@@ -477,6 +636,27 @@ func _movement_rolls_for_render() -> Array[int]:
 			result.append(clampi(pip, 1, 6) if pip > 0 else 1)
 		else:
 			result.append(1)
+	return result
+
+
+func _movement_dice_ids() -> Array[String]:
+	var result: Array[String] = []
+	for die_value in movement_dice:
+		var die := die_value as DieState
+		if die == null:
+			continue
+		var die_id := die.die_id if die.die_id != &"" else die.id
+		result.append(str(die_id))
+	return result
+
+
+func _movement_die_face_counts() -> Array[int]:
+	var result: Array[int] = []
+	for die_value in movement_dice:
+		var die := die_value as DieState
+		if die == null:
+			continue
+		result.append(int(die.face_count))
 	return result
 
 
@@ -537,10 +717,18 @@ func _on_movement_die_pressed(index: int) -> void:
 			return
 		selected_movement_dice_indices.erase(index)
 	else:
+		if selected_movement_dice_indices.size() >= MAX_MOVEMENT_DICE_SELECTION:
+			return
 		selected_movement_dice_indices.append(index)
 		selected_movement_dice_indices.sort()
 	_render_center_text()
 	_render_movement_dice()
+	_layout_roll_button()
+	_layout_enter_battle_button()
+
+
+func _reset_default_movement_dice_selection() -> void:
+	selected_movement_dice_indices = [0]
 
 
 func _refresh_interaction_lock_state() -> void:
@@ -562,9 +750,17 @@ func _emit_interaction_lock_if_changed() -> void:
 
 
 func _rolled_face_for_pip(die, die_index: int, pip: int) -> RolledFace:
-	var face_index := clampi(pip, 1, 6) - 1
+	var source_die := die as DieState
+	if source_die == null or source_die.faces.is_empty():
+		return RolledFace.new()
+	var face_index := 0
+	for candidate_index in range(source_die.faces.size()):
+		var face = source_die.faces[candidate_index]
+		if face != null and int(face.pip) == pip:
+			face_index = candidate_index
+			break
 	var rolled_face := RolledFace.new()
-	rolled_face.set_roll(die_index, face_index, die.faces[face_index], die)
+	rolled_face.set_roll(die_index, face_index, source_die.faces[face_index], source_die)
 	return rolled_face
 
 
@@ -664,20 +860,62 @@ func _clear_movement_magic_effects(effects: Array[Control]) -> void:
 func _layout_center_panel() -> void:
 	if center_root == null:
 		return
-	var board_size := _board_size()
+	var content_rect := _map_content_rect()
+	var board_size := content_rect.size
 	var panel_size := Vector2(
 		minf(maxf(art_config.center_area_minimum_size.x, board_size.x * 0.38), maxf(320.0, board_size.x - art_config.route_margin * 3.0)),
 		minf(maxf(art_config.center_area_minimum_size.y, board_size.y * 0.36), maxf(220.0, board_size.y - art_config.route_margin * 3.0))
 	)
 	center_root.size = panel_size
-	center_root.position = (board_size - panel_size) * 0.5
+	center_root.position = content_rect.position + (board_size - panel_size) * 0.5
 	_layout_circle_action_badge(panel_size)
+	_layout_roll_button()
+	_layout_enter_battle_button()
+
+
+func _layout_roll_button() -> void:
+	if center_root == null or roll_button_wrapper == null:
+		return
+	_layout_action_button_below_movement_dice(roll_button_wrapper, ROLL_BUTTON_DESIGN_Y, 58.0)
+
+
+func _layout_enter_battle_button() -> void:
+	if center_root == null or enter_battle_button_wrapper == null:
+		return
+	_layout_action_button_below_movement_dice(enter_battle_button_wrapper, ENTER_BATTLE_BUTTON_DESIGN_Y, 44.0)
+
+
+func _layout_action_button_below_movement_dice(button_wrapper: Control, design_y: float, dice_gap: float) -> void:
+	if board_root == null or center_root == null or button_wrapper == null:
+		return
+	var button_size := button_wrapper.custom_minimum_size
+	if button_size == Vector2.ZERO:
+		button_size = Vector2(310.0, 72.0)
+	button_wrapper.size = button_size
+
+	var target_y := design_y * _design_scale().y
+	var dice_bottom := -INF
+	for view in movement_dice_views:
+		var control := view as Control
+		if control != null and control.is_inside_tree():
+			dice_bottom = maxf(dice_bottom, control.get_global_rect().end.y)
+	if dice_bottom > -INF and board_root.is_inside_tree():
+		var local_target := board_root.get_global_transform_with_canvas().affine_inverse() * Vector2(0.0, dice_bottom + dice_gap)
+		target_y = maxf(target_y, local_target.y)
+
+	var content_rect := _map_content_rect()
+	var max_y := maxf(0.0, content_rect.end.y - button_size.y - 36.0)
+	button_wrapper.position = Vector2(
+		center_root.position.x + (center_root.size.x - button_size.x) * 0.5,
+		minf(target_y, max_y)
+	)
 
 
 func _layout_circle_action_badge(panel_size: Vector2 = Vector2.ZERO) -> void:
 	if circle_action_badge == null:
 		return
-	var board_size := _board_size()
+	var content_rect := _map_content_rect()
+	var board_size := content_rect.size
 	var reference_size := panel_size
 	if reference_size == Vector2.ZERO and center_root != null:
 		reference_size = center_root.size
@@ -685,9 +923,8 @@ func _layout_circle_action_badge(panel_size: Vector2 = Vector2.ZERO) -> void:
 		reference_size = Vector2(520.0, 260.0)
 	var badge_size := Vector2(minf(maxf(380.0, reference_size.x * 0.92), 560.0), 44.0)
 	circle_action_badge.size = badge_size
-	var x := (board_size.x - badge_size.x) * 0.5
-	var center_top := center_root.position.y if center_root != null else (board_size.y - reference_size.y) * 0.5
-	var y := maxf(12.0, center_top - badge_size.y - 12.0)
+	var x := content_rect.position.x + (board_size.x - badge_size.x) * 0.5
+	var y := CIRCLE_ACTION_BADGE_DESIGN_Y * _design_scale().y
 	circle_action_badge.position = Vector2(x, y)
 
 
@@ -735,6 +972,7 @@ func _layout_route_nodes() -> void:
 	_render_node_states()
 	if not is_marker_animating:
 		_place_player_marker(_current_index())
+	_sync_2d_map_visual_visibility()
 
 
 func _ensure_node_views(count: int) -> void:
@@ -832,10 +1070,12 @@ func _line_positions(start: Vector2, end: Vector2, count: int) -> Array[Vector2]
 func _render_state() -> void:
 	if board_root == null:
 		return
+	_layout_tabletop_background_and_content()
 	_layout_center_panel()
 	_layout_route_nodes()
 	_render_node_states()
 	_sync_perspective_stage()
+	_sync_2d_map_visual_visibility()
 	_render_center_text()
 	_render_movement_dice()
 	if not is_marker_animating:
@@ -845,7 +1085,43 @@ func _render_state() -> void:
 func _sync_perspective_stage() -> void:
 	if movement_dice_physics_view == null:
 		return
-	movement_dice_physics_view.set_map_visual_state(art_config, _nodes(), _current_index(), false)
+	movement_dice_physics_view.set_map_visual_state(art_config, _nodes(), _current_index(), _use_3d_tabletop())
+
+
+func _sync_2d_map_visual_visibility() -> void:
+	var show_2d_map := not _use_3d_tabletop()
+	if board_texture != null:
+		board_texture.visible = board_texture.texture != null and show_2d_map
+	if tabletop_background_texture != null:
+		tabletop_background_texture.texture = _tabletop_board_texture()
+		tabletop_background_texture.visible = tabletop_background_texture.texture != null and _use_3d_tabletop()
+	if path_layer != null:
+		path_layer.visible = show_2d_map
+	if node_layer != null:
+		node_layer.visible = show_2d_map
+	if player_marker != null:
+		player_marker.visible = show_2d_map and not _nodes().is_empty()
+
+
+func _use_3d_tabletop() -> bool:
+	if art_config == null:
+		return false
+	return bool(art_config.get("use_3d_tabletop"))
+
+
+func _tabletop_board_texture() -> Texture2D:
+	if art_config == null:
+		return null
+	var texture := art_config.get("tabletop_board_texture") as Texture2D
+	if texture != null:
+		return texture
+	return art_config.get("map_stage_skin_texture") as Texture2D
+
+
+func _texture_path(texture: Texture2D) -> String:
+	if texture == null:
+		return ""
+	return texture.resource_path
 
 
 func _render_node_states() -> void:
@@ -860,26 +1136,32 @@ func _render_node_states() -> void:
 
 
 func _render_center_text() -> void:
+	_sync_movement_dice_from_flow()
 	var current_node := _current_node()
 	var current_type := StringName(str(current_node.get("node_type", "start")))
 	if circle_action_label != null:
 		circle_action_label.text = _circle_action_badge_text()
 	current_node_label.text = "当前位置：%s" % [_node_label(current_node)]
 	next_node_label.text = "即将前往：%s" % [_next_hint_text()]
-	move_dice_label.text = "前进骰：已选择 %d 颗普通六面骰" % [selected_movement_dice_indices.size()]
+	move_dice_label.text = "前进骰：已选择 %d / %d 颗正式战斗骰" % [selected_movement_dice_indices.size(), movement_dice.size()]
 	roll_result_label.text = _roll_result_text()
 	node_type_label.text = "节点类型：%s" % [_node_type_name(current_type)]
 	danger_label.text = _danger_text(current_type)
 
 	var pending_battle := bool(map_state.get("pending_battle", false))
-	roll_button_wrapper.visible = not pending_battle
-	enter_battle_button_wrapper.visible = pending_battle
+	var controls_visible := _movement_controls_visible()
+	roll_button_wrapper.visible = controls_visible and not pending_battle
+	enter_battle_button_wrapper.visible = controls_visible and pending_battle
+	if circle_action_badge != null:
+		circle_action_badge.visible = controls_visible
 	if roll_button != null:
 		roll_button.disabled = pending_battle or is_marker_animating or is_board_animating
 	if enter_battle_button != null:
 		enter_battle_button.disabled = not pending_battle or is_marker_animating or is_board_animating
 	_set_texture_button_label(enter_battle_button_wrapper, "进入首领战" if current_type == &"boss" else "进入战斗")
 	_render_movement_dice()
+	_layout_roll_button()
+	_layout_enter_battle_button()
 
 
 func _on_map_state_changed(new_map_state: Dictionary) -> void:
@@ -896,21 +1178,25 @@ func _on_roll_pressed() -> void:
 	var selected_indices: Array[int] = selected_movement_dice_indices.duplicate()
 	_refresh_interaction_lock_state()
 
-	var prepared := game_flow_controller.prepare_map_movement_roll(selected_indices)
-	if not bool(prepared.get("success", false)):
-		is_movement_roll_pending = false
-		is_marker_animating = false
-		_refresh_interaction_lock_state()
-		_render_state()
-		return
-
-	var prepared_rolls: Array = prepared.get("rolls", [])
+	var prepared_rolls: Array = []
+	var prepared_face_indices: Array = []
 	if movement_dice_physics_view != null:
-		await movement_dice_physics_view.play_roll(prepared_rolls, selected_indices)
+		prepared_rolls = await movement_dice_physics_view.play_roll([], selected_indices)
+		var physics_snapshot: Dictionary = movement_dice_physics_view.automation_get_snapshot()
+		prepared_face_indices = physics_snapshot.get("last_face_indices", [])
 	else:
+		var prepared := game_flow_controller.prepare_map_movement_roll(selected_indices)
+		if not bool(prepared.get("success", false)):
+			is_movement_roll_pending = false
+			is_marker_animating = false
+			_refresh_interaction_lock_state()
+			_render_state()
+			return
+		prepared_rolls = prepared.get("rolls", [])
+		prepared_face_indices = prepared.get("face_indices", [])
 		await get_tree().create_timer(0.35, false).timeout
 
-	var result := game_flow_controller.apply_prepared_map_movement_roll(selected_indices, prepared_rolls)
+	var result := game_flow_controller.apply_prepared_map_movement_roll(selected_indices, prepared_rolls, prepared_face_indices)
 	is_movement_roll_pending = false
 	if not bool(result.get("success", false)):
 		is_marker_animating = false
@@ -958,6 +1244,8 @@ func _animate_marker_path(path: Array, refresh_path_index: int = -1) -> void:
 		var tween := create_tween()
 		tween.set_parallel(true)
 		tween.tween_property(player_marker, "position", target_position, art_config.marker_step_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		if _use_3d_tabletop() and movement_dice_physics_view != null:
+			movement_dice_physics_view.animate_marker_to_index(index, art_config.marker_step_duration)
 		if movement_step_label != null:
 			tween.tween_property(movement_step_label, "position", _movement_step_label_position_for_marker_position(target_position), art_config.marker_step_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 		await tween.finished
@@ -976,7 +1264,7 @@ func _pause_and_refresh_map_ring() -> void:
 func _place_player_marker(index: int) -> void:
 	if player_marker == null:
 		return
-	player_marker.visible = not _nodes().is_empty()
+	player_marker.visible = not _use_3d_tabletop() and not _nodes().is_empty()
 	player_marker.size = art_config.player_marker_size
 	player_marker.position = _marker_position_for_index(index)
 	if not is_marker_animating:
@@ -1011,16 +1299,71 @@ func _movement_step_label_position_for_marker_position(marker_position: Vector2)
 	return marker_position + art_config.player_marker_size * 0.5 - label_size * 0.5 + art_config.movement_step_label_offset
 
 
+func _layout_tabletop_background_and_content() -> void:
+	var background_rect := _tabletop_background_rect()
+	if tabletop_background_texture != null:
+		_apply_control_rect(tabletop_background_texture, background_rect)
+	var content_rect := _map_content_rect()
+	if movement_dice_physics_view != null:
+		_apply_control_rect(movement_dice_physics_view, content_rect)
+
+
+func _apply_control_rect(control: Control, rect: Rect2) -> void:
+	if control == null:
+		return
+	control.anchor_left = 0.0
+	control.anchor_top = 0.0
+	control.anchor_right = 0.0
+	control.anchor_bottom = 0.0
+	control.offset_left = rect.position.x
+	control.offset_top = rect.position.y
+	control.offset_right = rect.position.x + rect.size.x
+	control.offset_bottom = rect.position.y + rect.size.y
+
+
+func _tabletop_background_rect() -> Rect2:
+	var scale := _design_scale()
+	return Rect2(
+		Vector2(TABLETOP_BACKGROUND_DESIGN_RECT.position.x * scale.x, TABLETOP_BACKGROUND_DESIGN_RECT.position.y * scale.y),
+		Vector2(TABLETOP_BACKGROUND_DESIGN_RECT.size.x * scale.x, TABLETOP_BACKGROUND_DESIGN_RECT.size.y * scale.y)
+	)
+
+
+func _map_content_rect() -> Rect2:
+	if not _use_3d_tabletop():
+		return Rect2(Vector2.ZERO, _overlay_size())
+	var scale := _design_scale()
+	return Rect2(
+		Vector2(TABLETOP_CONTENT_DESIGN_RECT.position.x * scale.x, TABLETOP_CONTENT_DESIGN_RECT.position.y * scale.y),
+		Vector2(TABLETOP_CONTENT_DESIGN_RECT.size.x * scale.x, TABLETOP_CONTENT_DESIGN_RECT.size.y * scale.y)
+	)
+
+
+func _design_scale() -> Vector2:
+	var overlay_size := _overlay_size()
+	return Vector2(
+		overlay_size.x / DESIGN_SIZE.x,
+		overlay_size.y / DESIGN_SIZE.y
+	)
+
+
 func _lowered_board_position() -> Vector2:
-	var distance := maxf(_board_size().y, 1.0) * maxf(0.1, art_config.board_slide_distance_ratio)
+	var distance := maxf(_overlay_size().y, 1.0) * maxf(0.1, art_config.board_slide_distance_ratio)
 	return Vector2(0.0, distance)
 
 
 func _board_size() -> Vector2:
-	if board_root != null and board_root.size.x > 0.0 and board_root.size.y > 0.0:
+	return _map_content_rect().size
+
+
+func _overlay_size() -> Vector2:
+	if board_root != null and board_root.size.x >= 320.0 and board_root.size.y >= 220.0:
 		return board_root.size
-	if size.x > 0.0 and size.y > 0.0:
+	if size.x >= 320.0 and size.y >= 220.0:
 		return size
+	var viewport_size := get_viewport_rect().size
+	if viewport_size.x >= 320.0 and viewport_size.y >= 220.0:
+		return viewport_size
 	return Vector2(1920.0, 1080.0)
 
 

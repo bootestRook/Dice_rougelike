@@ -1,5 +1,13 @@
 # 战斗入场与操作按钮进度记录
 
+## 2026-05-21 追加：地图前进骰改为正式战斗骰
+- `GameFlowController.gd`：地图移动骰固定取 `RunState.dice` 前两颗，使用 `RollService` 投掷，保留两格结果槽并新增 `last_roll_face_indices` / `movement_die_face_counts`。
+- `MapStageView.gd`：地图 UI 同步两颗正式骰，按钮文案改为“正式战斗骰”，预投掷结果带 face index 回写流程层。
+- `MapMovementDicePhysicsView.gd`：物理表现层接收正式骰引用，快照暴露正式骰 id / 面数，并按正式骰胚颜色刷新骰体材质。
+- `DebugRunFlowSmokeTest.gd`：新增前两颗正式骰自定义点数分布决定地图步数的断言。
+- `DebugMapStageFlowSmokeTest.gd`：新增地图 UI 绑定 `normal_d6_1` / `normal_d6_2` 和 face index 的断言。
+- 验证通过：`DebugRunFlowSmokeTest.gd`、`DebugMapStageFlowSmokeTest.gd`、`DebugBattleSmokeTest.gd`、`DebugDiceModelRefactorSmokeTest.gd`、`DebugChineseDisplaySmokeTest.gd`、主场景 headless、`git diff --check`。
+
 ## 2026-05-21 追加：结算高亮 typed array 报错
 - 修复结算时报错：`Invalid type in function 'set_highlighted_die_indices' in base 'PanelContainer (BattleDiceStage3D)'`。
 - 原因是外部调用传入普通 `Array`，而 `BattleDiceStage3D.set_highlighted_die_indices()` 声明为 `Array[int]`，Godot 运行时会拒绝不同元素类型的数组。
@@ -44,3 +52,9 @@
 - 新增 `BattleDiceStage3D.get_visual_die_order_left_to_right()` 供 Debug 验证实际左到右顺序。
 - 更新 `DebugDiceBenchOrganizeSmokeTest.gd`：检查整理后 3D 位置按显示顺序重排，且重投后仍保持整理位置顺序。
 - 追加验证通过：`DebugDiceBenchOrganizeSmokeTest.gd`、`DebugBattleDiceInputSmokeTest.gd`、`DebugMapStageFlowSmokeTest.gd`、主场景 headless、`git diff --check`。
+## 2026-05-21 追加：地图前进骰改为 GM 场景骰子
+- `MapMovementDicePhysicsView.gd`：内部改为创建 `GmDiceViewport`、`GmReadyMgr`、`GmBattleMgr`，用正式战斗 GM 骰子显示、选择、投掷和回位；旧自写 D6 物理网格不再作为地图主投掷表现。
+- `MapStageView.gd`：地图投掷现在等待 GM 物理骰实际结果，读取 `last_values` / `last_face_indices` 后再提交地图移动；fallback 分支仍可用流程层预投结果。
+- `GmBattleMgr.gd` / `GmDiceInstance.gd`：target 兼容 `{face_index: ...}`，为精确正式骰面请求留接口，同时保留原 pip target。
+- `DebugMapStageFlowSmokeTest.gd`：新增地图骰使用 GM scene view 的断言，并把地图动画等待窗口调大到覆盖 GM 物理骰和回位耗时。
+- 追加验证通过：`DebugMapStageFlowSmokeTest.gd`、`DebugMapBackgroundTextureVisibilitySmokeTest.gd`、`DebugRunFlowSmokeTest.gd`、`DebugGmPhysicsDiceTargetSmokeTest.gd`、`DebugGmPhysicsDiceTestSmokeTest.gd`、`DebugBattleDiceInputSmokeTest.gd`、`DebugMapNonCombatVisualStateSmokeTest.gd`、`DebugBattleSmokeTest.gd`、`DebugDiceModelRefactorSmokeTest.gd`、`DebugChineseDisplaySmokeTest.gd`、主场景 headless、`git diff --check`。Godot 退出时仍有既有 CanvasItem/ObjectDB 泄漏警告，相关命令退出码为 0。

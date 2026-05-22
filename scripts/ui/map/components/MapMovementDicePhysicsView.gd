@@ -6,6 +6,14 @@ signal die_pressed(index: int)
 
 
 const PhysicsDiceThrowService = preload("res://scripts/rules/physics_dice/PhysicsDiceThrowService.gd")
+const DieState = preload("res://scripts/core/dice/DieState.gd")
+const DiceVisualLibrary = preload("res://scripts/ui/battle/resources/DiceVisualLibrary.gd")
+const GmDiceDefinitionScript = preload("res://scripts/ui/debug/gm_dice_port/GmDiceDefinition.gd")
+const GmDiceFaceDefinitionScript = preload("res://scripts/ui/debug/gm_dice_port/GmDiceFaceDefinition.gd")
+const GmDiceViewportScript = preload("res://scripts/ui/debug/gm_dice_port/GmDiceViewport.gd")
+const GmReadyMgrScript = preload("res://scripts/ui/debug/gm_dice_port/GmReadyMgr.gd")
+const GmBattleMgrScript = preload("res://scripts/ui/debug/gm_dice_port/GmBattleMgr.gd")
+const MapStageTabletop3D = preload("res://scripts/ui/map/components/MapStageTabletop3D.gd")
 
 const TABLE_WIDTH := 12.8
 const TABLE_DEPTH := 9.2
@@ -25,6 +33,13 @@ const DEFAULT_CAMERA_FOV := 43.25
 const DEFAULT_CAMERA_POSITION := Vector3(0.0, 12.0, 4.8)
 const DEFAULT_CAMERA_TARGET := Vector3(0.0, -1.0, 1.45)
 const DEFAULT_VIEW_OFFSET := Vector2.ZERO
+const GM_CAMERA_FOV := 38.0
+const GM_CAMERA_POSITION := Vector3(0.0, 18.5, 1.0)
+const GM_CAMERA_TARGET := Vector3(0.0, 0.72, -0.04)
+const GM_READY_ROW_HEIGHT := 7.5
+const GM_KEY_LIGHT_PITCH := -63.0
+const GM_KEY_LIGHT_YAW := 115.0
+const ROLL_WAIT_TIMEOUT_SECONDS := 8.0
 
 const FACE_DEFINITIONS := [
 	{"value": 1, "normal": Vector3.UP, "u": Vector3.RIGHT, "v": Vector3.FORWARD},
@@ -39,6 +54,8 @@ const FACE_DEFINITIONS := [
 var rng := RandomNumberGenerator.new()
 var throw_service: PhysicsDiceThrowService = PhysicsDiceThrowService.new()
 var art_config: Resource = null
+var tabletop_backing_texture: TextureRect = null
+var external_tabletop_background_enabled: bool = false
 var viewport_container: SubViewportContainer = null
 var viewport: SubViewport = null
 var scene_root: Node3D = null
@@ -56,13 +73,23 @@ var rounded_die_mesh: Mesh = null
 var pip_mesh: Mesh = null
 var die_body_material: StandardMaterial3D = null
 var pip_material: StandardMaterial3D = null
+var formal_dice: Array = []
+var formal_dice_signature := ""
+var dice_visual_library: DiceVisualLibrary = null
+var gm_viewport: GmDiceViewport = null
+var gm_ready_mgr: GmReadyMgr = null
+var gm_battle_mgr: GmBattleMgr = null
+var map_tabletop_3d: MapStageTabletop3D = null
+var gm_roster_signature := ""
 var selection_buttons: Array[Button] = []
 var dice: Array = []
-var selected_indices: Array[int] = [0, 1]
+var selected_indices: Array[int] = [0]
 var rolled_indices: Array[int] = []
 var display_values: Array[int] = [1, 1]
+var display_face_indices: Array[int] = [0, 0]
 var target_values: Array[int] = [0, 0]
 var last_values: Array[int] = [0, 0]
+var last_face_indices: Array[int] = [-1, -1]
 var recorded_trajectories: Array = []
 var rolling := false
 var recorded_playback := false
@@ -75,9 +102,9 @@ var interactions_disabled := false
 var map_nodes: Array = []
 var current_map_index := 0
 var map_visuals_enabled := false
-var camera_fov := DEFAULT_CAMERA_FOV
-var camera_position := DEFAULT_CAMERA_POSITION
-var camera_target := DEFAULT_CAMERA_TARGET
+var camera_fov := GM_CAMERA_FOV
+var camera_position := GM_CAMERA_POSITION
+var camera_target := GM_CAMERA_TARGET
 var view_offset := DEFAULT_VIEW_OFFSET
 var pov_tuner_panel: PanelContainer = null
 var pov_tuner_summary_label: Label = null
@@ -92,9 +119,10 @@ func _ready() -> void:
 	custom_minimum_size = Vector2(960.0, 540.0)
 	mouse_filter = Control.MOUSE_FILTER_PASS
 	rng.randomize()
-	_build_view()
-	_refresh_map_visuals()
-	_set_idle_dice(display_values)
+	_build_gm_view()
+	_sync_gm_roster(true)
+	_sync_gm_faces_from_display_values()
+	_sync_gm_selection()
 	_update_selection_buttons()
 	set_physics_process(false)
 
@@ -107,6 +135,7 @@ func _notification(what: int) -> void:
 
 func set_selected_indices(indices: Array[int]) -> void:
 	selected_indices = _normalize_indices(indices)
+	_sync_gm_selection()
 	_update_selection_buttons()
 
 
@@ -115,12 +144,30 @@ func set_interaction_disabled(disabled: bool) -> void:
 	_update_selection_buttons()
 
 
+func set_formal_dice(new_dice: Array, new_visual_library: DiceVisualLibrary = null) -> void:
+	var next_signature := _formal_dice_signature(new_dice)
+	if next_signature == formal_dice_signature and new_visual_library == dice_visual_library:
+		return
+	formal_dice_signature = next_signature
+	formal_dice.clear()
+	for die_value in new_dice:
+		var die := die_value as DieState
+		if die != null and formal_dice.size() < 2:
+			formal_dice.append(die)
+	dice_visual_library = new_visual_library
+	if is_node_ready() and not rolling:
+		_sync_gm_roster(true)
+		_sync_gm_faces_from_display_values()
+		_sync_gm_selection()
+
+
 func set_map_visual_state(new_art_config: Resource, nodes: Array, current_index: int, show_map_visuals: bool = false) -> void:
 	art_config = new_art_config
 	map_nodes = nodes.duplicate(true)
 	current_map_index = current_index
 	map_visuals_enabled = show_map_visuals
 	if is_node_ready():
+		_refresh_tabletop_3d()
 		_refresh_board_material()
 		_refresh_map_visuals()
 		_sync_map_visual_visibility()
@@ -128,6 +175,9 @@ func set_map_visual_state(new_art_config: Resource, nodes: Array, current_index:
 
 func animate_marker_to_index(index: int, duration: float) -> void:
 	current_map_index = index
+	if map_tabletop_3d != null:
+		await map_tabletop_3d.animate_marker_to_index(index, duration)
+		return
 	if not map_visuals_enabled or player_marker_sprite == null:
 		return
 	var target_position := _route_world_position(index, max(1, map_nodes.size())) + Vector3(0.0, 0.18, 0.0)
@@ -136,29 +186,40 @@ func animate_marker_to_index(index: int, duration: float) -> void:
 	await tween.finished
 
 
-func set_display_state(rolls: Array, new_selected_indices: Array[int], disabled: bool) -> void:
+func set_display_state(rolls: Array, new_selected_indices: Array[int], disabled: bool, face_indices: Array = []) -> void:
 	set_selected_indices(new_selected_indices)
 	set_interaction_disabled(disabled)
 	if rolling:
 		return
 
 	var next_values := display_values.duplicate()
+	var next_face_indices := display_face_indices.duplicate()
 	for index in range(2):
 		if index < rolls.size() and int(rolls[index]) > 0:
-			next_values[index] = clampi(int(rolls[index]), 1, 6)
+			next_values[index] = _clamp_pip_for_die(index, int(rolls[index]))
+			if index < face_indices.size() and int(face_indices[index]) >= 0:
+				next_face_indices[index] = int(face_indices[index])
+			else:
+				next_face_indices[index] = _first_face_index_for_display_pip(index, next_values[index])
 
-	if not _has_valid_dice() or next_values != display_values:
-		_set_idle_dice(next_values)
+	display_values = next_values
+	display_face_indices = next_face_indices
+	_sync_gm_roster(false)
+	_sync_gm_faces_from_display_values()
 
 
-func play_roll(rolls: Array, new_selected_indices: Array[int]) -> Array[int]:
+func play_roll(rolls: Array, new_selected_indices: Array[int], target_face_indices: Array = []) -> Array[int]:
 	var normalized_indices := _normalize_indices(new_selected_indices)
 	if normalized_indices.is_empty():
 		normalized_indices.append(0)
 	set_selected_indices(normalized_indices)
-	_start_roll(rolls, normalized_indices)
-	while rolling and is_inside_tree():
+	_start_gm_roll(rolls, normalized_indices, target_face_indices)
+	var elapsed := 0.0
+	while rolling and is_inside_tree() and elapsed < ROLL_WAIT_TIMEOUT_SECONDS:
 		await get_tree().physics_frame
+		elapsed += 1.0 / maxf(1.0, Engine.physics_ticks_per_second)
+	if rolling:
+		_finish_gm_roll_from_snapshot(gm_battle_mgr.get_snapshot() if gm_battle_mgr != null else {})
 	return last_values.duplicate()
 
 
@@ -169,30 +230,48 @@ func get_die_button(index: int) -> Button:
 
 
 func automation_get_snapshot() -> Dictionary:
+	var gm_snapshot := gm_battle_mgr.get_snapshot() if gm_battle_mgr != null else {}
 	return {
 		"active_dice": _active_dice_count(),
 		"display_values": display_values.duplicate(),
+		"display_face_indices": display_face_indices.duplicate(),
 		"last_values": last_values.duplicate(),
+		"last_face_indices": last_face_indices.duplicate(),
 		"rolling": rolling,
 		"recorded_playback": recorded_playback,
 		"recorded_duration": recorded_duration,
 		"selected_indices": selected_indices.duplicate(),
 		"rolled_indices": rolled_indices.duplicate(),
 		"dice_positions": _dice_positions_snapshot(),
-		"initial_positions": [_idle_position_for_die(0), _idle_position_for_die(1)],
-		"has_physics_viewport": viewport != null,
+		"initial_positions": [_gm_ready_position_for_die(0), _gm_ready_position_for_die(1)],
+		"has_physics_viewport": gm_viewport != null and gm_viewport.sub_viewport != null,
+		"uses_gm_dice_view": gm_viewport != null and gm_battle_mgr != null,
+		"gm_transparent_bg": gm_viewport != null and gm_viewport.sub_viewport != null and gm_viewport.sub_viewport.transparent_bg,
+		"gm_background_mode": _gm_environment_background_mode(),
+		"gm_throw_mat_visible": _gm_throw_mat_visible(),
+		"gm_throw_surface_texture_path": _gm_throw_surface_texture_path(),
+		"tabletop_backing_visible": tabletop_backing_texture != null and tabletop_backing_texture.visible,
+		"tabletop_backing_texture_path": _texture_path(tabletop_backing_texture.texture if tabletop_backing_texture != null else null),
+		"tabletop_backing_rect": tabletop_backing_texture.get_rect() if tabletop_backing_texture != null else Rect2(),
+		"external_tabletop_background_enabled": external_tabletop_background_enabled,
+		"gm_snapshot": gm_snapshot,
 		"button_count": selection_buttons.size(),
+		"formal_dice_count": formal_dice.size(),
+		"formal_die_ids": _formal_die_ids_snapshot(),
+		"formal_die_face_counts": _formal_die_face_counts_snapshot(),
 		"map_node_count": map_nodes.size(),
 		"visible_node_count": _visible_node_count(),
-		"has_board_texture": _board_texture() != null,
-		"board_visible": board_mesh_instance != null and board_mesh_instance.visible,
+		"has_board_texture": _map_board_texture() != null,
+		"board_visible": _map_board_visible(),
 		"map_visuals_enabled": map_visuals_enabled,
+		"has_3d_tabletop": map_tabletop_3d != null,
+		"tabletop_3d": map_tabletop_3d.automation_get_snapshot() if map_tabletop_3d != null else {},
 		"fixed_camera": true,
 		"has_pov_tuner": pov_tuner_panel != null,
 		"pov_tuner_visible": pov_tuner_panel != null and pov_tuner_panel.visible,
 		"pov_tuner_text": _format_pov_parameters(),
-		"camera_fov": camera.fov if camera != null else camera_fov,
-		"camera_position": camera.global_position if camera != null else Vector3.ZERO,
+		"camera_fov": gm_viewport.camera_fov if gm_viewport != null else (camera.fov if camera != null else camera_fov),
+		"camera_position": gm_viewport.camera_position if gm_viewport != null else (camera.global_position if camera != null else Vector3.ZERO),
 		"camera_rotation": camera.global_rotation if camera != null else Vector3.ZERO,
 		"camera_target": camera_target,
 		"view_offset": view_offset,
@@ -200,14 +279,336 @@ func automation_get_snapshot() -> Dictionary:
 	}
 
 
+func set_external_tabletop_background_enabled(enabled: bool) -> void:
+	external_tabletop_background_enabled = enabled
+	_refresh_tabletop_backing_texture()
+
+
 func automation_set_camera_pov(new_fov: float, new_position: Vector3, new_target: Vector3, new_view_offset: Vector2 = DEFAULT_VIEW_OFFSET) -> void:
 	camera_fov = clampf(new_fov, 25.0, 85.0)
 	camera_position = new_position
 	camera_target = new_target
 	view_offset = new_view_offset
+	_update_gm_camera()
 	_update_camera()
 	_apply_viewport_offset()
 	_sync_pov_tuner_values()
+
+
+func _build_gm_view() -> void:
+	clip_contents = true
+
+	tabletop_backing_texture = TextureRect.new()
+	tabletop_backing_texture.name = "MapGeneratedTabletopTexture"
+	tabletop_backing_texture.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tabletop_backing_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tabletop_backing_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	tabletop_backing_texture.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(tabletop_backing_texture)
+
+	gm_viewport = GmDiceViewportScript.new() as GmDiceViewport
+	gm_viewport.name = "MapGmDiceViewport"
+	gm_viewport.mouse_filter = Control.MOUSE_FILTER_STOP
+	gm_viewport.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(gm_viewport)
+	viewport_container = gm_viewport
+	gm_viewport.build()
+	viewport = gm_viewport.sub_viewport
+	camera = gm_viewport.fixed_camera
+	gm_viewport.configure_camera(camera_fov, camera_position, camera_target)
+	gm_viewport.configure_ready_row_height(GM_READY_ROW_HEIGHT)
+	gm_viewport.configure_key_light(GM_KEY_LIGHT_PITCH, GM_KEY_LIGHT_YAW)
+	gm_viewport.dice_clicked.connect(_on_gm_dice_clicked)
+	_configure_gm_view_for_map_overlay()
+	_create_map_tabletop_3d()
+
+	gm_ready_mgr = GmReadyMgrScript.new() as GmReadyMgr
+	gm_ready_mgr.name = "MapGmReadyMgr"
+	add_child(gm_ready_mgr)
+	gm_ready_mgr.setup(gm_viewport.dice_box_anchors, gm_viewport.spawn_point, gm_viewport.dice_container)
+	gm_ready_mgr.fly_dice_pos = gm_viewport.dice_box_anchors.get_node("FlyPoint") as Marker3D
+	gm_ready_mgr.show_dice_pos = gm_viewport.dice_box_anchors.get_node("ShowPoint") as Marker3D
+	gm_ready_mgr.shop_dice_pos = gm_viewport.dice_box_anchors.get_node("ShopDicePoint") as Marker3D
+	gm_ready_mgr.shop_boss_pos = gm_viewport.dice_box_anchors.get_node("BossDicePoint") as Marker3D
+	gm_ready_mgr.dice_call_pos = gm_viewport.dice_box_anchors.get_node("DiceCallPoint") as Marker3D
+
+	gm_battle_mgr = GmBattleMgrScript.new() as GmBattleMgr
+	gm_battle_mgr.name = "MapGmBattleMgr"
+	add_child(gm_battle_mgr)
+	gm_battle_mgr.setup(gm_ready_mgr, gm_viewport.dice_container)
+	if gm_battle_mgr.has_method("set_formal_battle_mode"):
+		gm_battle_mgr.set_formal_battle_mode(true)
+	gm_battle_mgr.set_idle_drift_tuning({
+		"min_seconds": 1.15,
+		"max_seconds": 2.35,
+		"max_distance": 0.0,
+		"speed": 0.0,
+	})
+	gm_battle_mgr.set_unselected_hold_tuning(_gm_unselected_hold_tuning())
+	gm_battle_mgr.roll_finished.connect(_on_gm_roll_finished)
+
+	_create_selection_buttons()
+	_create_pov_tuner_panel()
+	_apply_viewport_offset()
+	_resize_viewport()
+	_layout_selection_buttons()
+
+
+func _configure_gm_view_for_map_overlay() -> void:
+	if gm_viewport == null or gm_viewport.sub_viewport == null:
+		return
+	gm_viewport.sub_viewport.transparent_bg = true
+	gm_viewport.sub_viewport.render_target_clear_mode = SubViewport.CLEAR_MODE_ALWAYS
+	var environment := gm_viewport.sub_viewport.get_node_or_null("DiceWorld/WorldEnvironment") as WorldEnvironment
+	if environment != null and environment.environment != null:
+		environment.environment.background_mode = Environment.BG_COLOR
+		environment.environment.background_color = Color(0.0, 0.0, 0.0, 0.0)
+	_apply_map_texture_to_gm_throw_surface()
+
+
+func _create_map_tabletop_3d() -> void:
+	if gm_viewport == null or gm_viewport.dice_world == null or map_tabletop_3d != null:
+		return
+	map_tabletop_3d = MapStageTabletop3D.new() as MapStageTabletop3D
+	gm_viewport.dice_world.add_child(map_tabletop_3d)
+	_refresh_tabletop_3d()
+
+
+func _refresh_tabletop_3d() -> void:
+	_apply_map_texture_to_gm_throw_surface()
+	_refresh_tabletop_backing_texture()
+	if map_tabletop_3d == null:
+		return
+	map_tabletop_3d.set_art_config(art_config)
+	map_tabletop_3d.set_map_state(map_nodes, current_map_index)
+	map_tabletop_3d.set_tabletop_enabled(map_visuals_enabled)
+	_hide_tabletop_3d_board_surface()
+
+
+func _apply_map_texture_to_gm_throw_surface() -> void:
+	if gm_viewport == null or not gm_viewport.has_method("set_throw_surface_texture"):
+		return
+	gm_viewport.call("set_throw_surface_texture", null, Color.WHITE, false)
+
+
+func _refresh_tabletop_backing_texture() -> void:
+	if tabletop_backing_texture == null:
+		return
+	tabletop_backing_texture.texture = _tabletop_board_texture()
+	tabletop_backing_texture.visible = tabletop_backing_texture.texture != null and not external_tabletop_background_enabled
+	_layout_tabletop_backing_texture()
+
+
+func _layout_tabletop_backing_texture() -> void:
+	if tabletop_backing_texture == null:
+		return
+	tabletop_backing_texture.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	tabletop_backing_texture.offset_left = 0.0
+	tabletop_backing_texture.offset_top = 0.0
+	tabletop_backing_texture.offset_right = 0.0
+	tabletop_backing_texture.offset_bottom = 0.0
+
+
+func _hide_tabletop_3d_board_surface() -> void:
+	if map_tabletop_3d == null:
+		return
+	if map_tabletop_3d.has_method("set_board_mesh_enabled"):
+		map_tabletop_3d.call("set_board_mesh_enabled", false)
+	if map_tabletop_3d.board_mesh != null:
+		map_tabletop_3d.board_mesh.visible = false
+	if map_tabletop_3d.overlay_mesh != null:
+		map_tabletop_3d.overlay_mesh.visible = false
+
+
+func _sync_gm_roster(force: bool = false) -> void:
+	if gm_battle_mgr == null:
+		return
+	var source_dice := _gm_source_dice()
+	var next_signature := _formal_dice_signature(source_dice)
+	if not force and next_signature == gm_roster_signature:
+		return
+	gm_roster_signature = next_signature
+	var definitions: Array = []
+	for index in range(source_dice.size()):
+		definitions.append(_definition_from_die(source_dice[index] as DieState, index))
+	gm_battle_mgr.create_dice_from_definitions(definitions)
+	_sync_gm_faces_from_display_values()
+	_sync_gm_selection()
+	_layout_selection_buttons()
+
+
+func _gm_source_dice() -> Array:
+	var result: Array = []
+	for die_value in formal_dice:
+		var die := die_value as DieState
+		if die != null and result.size() < 2:
+			result.append(die)
+	while result.size() < 2:
+		result.append(DieState.create_normal_d6(StringName("fallback_map_d6_%d" % [result.size() + 1])))
+	return result
+
+
+func _definition_from_die(die: DieState, index: int) -> GmDiceDefinition:
+	var definition := GmDiceDefinitionScript.new() as GmDiceDefinition
+	var die_id := StringName("map_d6_%d" % [index + 1])
+	if die != null:
+		die_id = die.die_id if die.die_id != &"" else die.id
+	definition.id = die_id
+	definition.display_name = "地图前进骰 %d" % [index + 1]
+	definition.description = "地图阶段复用正式战斗 GM 骰子"
+	definition.faces.clear()
+	if die != null:
+		for face in die.faces:
+			var pip := int(face.pip) if face != null else 1
+			definition.faces.append(GmDiceFaceDefinitionScript.make(pip, str(pip)))
+	if definition.faces.is_empty():
+		for value in range(1, 7):
+			definition.faces.append(GmDiceFaceDefinitionScript.make(value, str(value)))
+	return definition
+
+
+func _sync_gm_faces_from_display_values() -> void:
+	if gm_battle_mgr == null or bool(gm_battle_mgr.get_snapshot().get("rolling", false)):
+		return
+	for index in range(2):
+		if index < 0 or index >= gm_battle_mgr.using_dices.size():
+			continue
+		var instance = gm_battle_mgr.using_dices[index]
+		if instance == null:
+			continue
+		var face_index := display_face_indices[index] if index < display_face_indices.size() else -1
+		if not _die_face_index_matches_display_pip(index, face_index, display_values[index]):
+			face_index = _first_face_index_for_display_pip(index, display_values[index])
+		face_index = clampi(face_index, 0, max(0, instance.run_faces.size() - 1))
+		instance.set_face_index(face_index)
+		display_face_indices[index] = face_index
+		display_values[index] = int(instance.get_actual_face_one())
+		var avatar = instance.avatar
+		if avatar != null:
+			avatar.change_inner_by_value(0.0)
+			avatar.apply_hover_presentation_rotation()
+			avatar.show_number(true)
+
+
+func _sync_gm_selection() -> void:
+	if gm_battle_mgr == null:
+		return
+	gm_battle_mgr.selected_dice_indices = selected_indices.duplicate()
+	if gm_battle_mgr.has_method("_sync_selection_visuals"):
+		gm_battle_mgr.call("_sync_selection_visuals")
+
+
+func _start_gm_roll(rolls: Array, indices: Array[int], target_face_indices: Array = []) -> void:
+	if gm_battle_mgr == null:
+		_start_roll(rolls, indices)
+		return
+	_sync_gm_roster(false)
+	rolling = true
+	rolled_indices = indices.duplicate()
+	target_values = [0, 0]
+	last_values = [0, 0]
+	last_face_indices = [-1, -1]
+	recorded_playback = false
+	recorded_elapsed = 0.0
+	recorded_duration = 0.0
+	recorded_trajectories.clear()
+
+	for index in rolled_indices:
+		if index >= 0 and index < target_values.size() and index < rolls.size() and int(rolls[index]) > 0:
+			target_values[index] = _clamp_pip_for_die(index, int(rolls[index]))
+
+	gm_battle_mgr.selected_dice_indices = rolled_indices.duplicate()
+	if gm_battle_mgr.has_method("_sync_selection_visuals"):
+		gm_battle_mgr.call("_sync_selection_visuals")
+	gm_battle_mgr.roll_using_dices(_gm_target_requests(rolls, target_face_indices, rolled_indices))
+	if not bool(gm_battle_mgr.get_snapshot().get("rolling", false)):
+		_finish_gm_roll_from_snapshot(gm_battle_mgr.get_snapshot())
+
+
+func _gm_target_requests(rolls: Array, target_face_indices: Array, indices: Array[int]) -> Array:
+	if rolls.is_empty() and target_face_indices.is_empty():
+		return []
+	var targets: Array = [null, null]
+	for index in indices:
+		if index < 0 or index >= targets.size():
+			continue
+		if index < target_face_indices.size() and int(target_face_indices[index]) >= 0:
+			targets[index] = {"face_index": int(target_face_indices[index])}
+		elif index < rolls.size() and int(rolls[index]) > 0:
+			targets[index] = _clamp_pip_for_die(index, int(rolls[index]))
+	return targets
+
+
+func _on_gm_roll_finished(snapshot: Dictionary) -> void:
+	_finish_gm_roll_from_snapshot(snapshot)
+
+
+func _finish_gm_roll_from_snapshot(snapshot: Dictionary) -> void:
+	var dice_rows: Array = snapshot.get("dice", [])
+	var snapshot_face_indices: Array = snapshot.get("last_face_indices", [])
+	var next_last_values: Array[int] = [0, 0]
+	var next_last_face_indices: Array[int] = [-1, -1]
+	for index in range(2):
+		if not rolled_indices.has(index):
+			continue
+		var face_index := -1
+		var pip := 0
+		if index < dice_rows.size() and dice_rows[index] is Dictionary:
+			var row: Dictionary = dice_rows[index]
+			face_index = int(row.get("settled_face_index", row.get("face_index", -1)))
+			pip = int(row.get("settled_face_value", row.get("face_value", 0)))
+		if face_index < 0 and index < snapshot_face_indices.size():
+			face_index = int(snapshot_face_indices[index])
+		if target_values[index] > 0:
+			pip = target_values[index]
+			if face_index < 0 or not _die_face_index_matches_display_pip(index, face_index, pip):
+				face_index = _first_face_index_for_display_pip(index, pip)
+		if pip <= 0:
+			pip = _pip_for_face_index(index, face_index)
+		next_last_values[index] = _clamp_pip_for_die(index, pip)
+		next_last_face_indices[index] = face_index
+		display_values[index] = next_last_values[index]
+		display_face_indices[index] = face_index if face_index >= 0 else _first_face_index_for_display_pip(index, display_values[index])
+	last_values = next_last_values
+	last_face_indices = next_last_face_indices
+	rolling = false
+	recorded_playback = false
+	_sync_gm_faces_from_display_values()
+	_sync_gm_selection()
+	_update_selection_buttons()
+
+
+func _on_gm_dice_clicked(dice_node: Node) -> void:
+	var index := _gm_avatar_index(dice_node)
+	if index >= 0:
+		die_pressed.emit(index)
+
+
+func _gm_avatar_index(avatar: Node) -> int:
+	if gm_battle_mgr == null:
+		return -1
+	for index in range(gm_battle_mgr.using_dices.size()):
+		var instance = gm_battle_mgr.using_dices[index]
+		if instance != null and instance.avatar == avatar:
+			return index
+	return -1
+
+
+func _update_gm_camera() -> void:
+	if gm_viewport == null:
+		return
+	gm_viewport.configure_camera(camera_fov, camera_position, camera_target)
+	camera = gm_viewport.fixed_camera
+	_layout_tabletop_backing_texture()
+
+
+func _gm_unselected_hold_tuning() -> Dictionary:
+	return {
+		"screen_x": 0.50,
+		"screen_y": 0.84,
+		"max_width": 8.00,
+		"duration": 0.36,
+	}
 
 
 func _build_view() -> void:
@@ -298,16 +699,22 @@ func _build_view() -> void:
 
 
 func _resize_viewport() -> void:
+	if gm_viewport != null:
+		_apply_viewport_offset()
+		_layout_selection_buttons()
+		_layout_tabletop_backing_texture()
+		return
 	if viewport == null:
 		return
-	var target_size := Vector2i(maxi(1, int(size.x)), maxi(1, int(size.y)))
-	viewport.size = target_size
+	var fallback_target_size := Vector2i(maxi(1, int(size.x)), maxi(1, int(size.y)))
+	viewport.size = fallback_target_size
 	_apply_viewport_offset()
 
 
 func _apply_viewport_offset() -> void:
 	if viewport_container == null:
 		return
+	viewport_container.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	viewport_container.offset_left = view_offset.x
 	viewport_container.offset_top = view_offset.y
 	viewport_container.offset_right = view_offset.x
@@ -425,14 +832,46 @@ func _create_map_node_scene() -> void:
 func _refresh_board_material() -> void:
 	if board_mesh_instance == null:
 		return
-	var material := _make_standard_material(Color(0.92, 0.75, 0.44), 0.68, 0.0)
-	material.albedo_texture = _board_texture()
-	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	var material := _make_map_board_material()
 	board_mesh_instance.material_override = material
 	_sync_map_visual_visibility()
 
 
+func _make_map_board_material() -> StandardMaterial3D:
+	var material := _make_standard_material(Color(1.0, 1.0, 1.0, 1.0), 0.68, 0.0)
+	material.albedo_texture = _board_texture()
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	return material
+
+
+func _gm_throw_mat() -> MeshInstance3D:
+	if gm_viewport == null or gm_viewport.sub_viewport == null:
+		return null
+	return gm_viewport.sub_viewport.get_node_or_null("DiceWorld/FixedThrowMat") as MeshInstance3D
+
+
+func _gm_throw_mat_visible() -> bool:
+	var throw_mat := _gm_throw_mat()
+	return throw_mat != null and throw_mat.visible
+
+
+func _gm_throw_surface_texture_path() -> String:
+	if gm_viewport == null or not gm_viewport.has_method("get_throw_surface_texture_path"):
+		return ""
+	return str(gm_viewport.call("get_throw_surface_texture_path"))
+
+
+func _gm_environment_background_mode() -> int:
+	if gm_viewport == null or gm_viewport.sub_viewport == null:
+		return -1
+	var environment := gm_viewport.sub_viewport.get_node_or_null("DiceWorld/WorldEnvironment") as WorldEnvironment
+	if environment == null or environment.environment == null:
+		return -1
+	return int(environment.environment.background_mode)
+
+
 func _refresh_map_visuals() -> void:
+	_refresh_tabletop_3d()
 	if map_node_root == null:
 		return
 	if not map_visuals_enabled:
@@ -470,6 +909,9 @@ func _refresh_map_visuals() -> void:
 
 
 func _sync_map_visual_visibility() -> void:
+	if map_tabletop_3d != null:
+		map_tabletop_3d.set_tabletop_enabled(map_visuals_enabled)
+		_hide_tabletop_3d_board_surface()
 	if board_mesh_instance != null:
 		board_mesh_instance.visible = map_visuals_enabled
 	if map_node_root != null:
@@ -480,7 +922,7 @@ func _sync_map_visual_visibility() -> void:
 		if visual_node != null and is_instance_valid(visual_node):
 			visual_node.visible = map_visuals_enabled
 	if pov_tuner_panel != null:
-		pov_tuner_panel.visible = map_visuals_enabled
+		pov_tuner_panel.visible = false
 
 
 func _ensure_node_visuals(count: int) -> void:
@@ -579,12 +1021,25 @@ func _create_selection_buttons() -> void:
 		button.focus_mode = Control.FOCUS_NONE
 		button.mouse_filter = Control.MOUSE_FILTER_STOP
 		button.z_index = 420
+		_apply_invisible_selection_button_style(button)
 		button.tooltip_text = "点击选择是否投掷；至少选择一颗普通六面骰"
 		button.pressed.connect(func() -> void:
 			die_pressed.emit(index)
 		)
 		add_child(button)
 		selection_buttons.append(button)
+
+
+func _apply_invisible_selection_button_style(button: Button) -> void:
+	if button == null:
+		return
+	button.flat = true
+	for state in ["normal", "hover", "pressed", "disabled", "focus"]:
+		button.add_theme_stylebox_override(state, StyleBoxEmpty.new())
+	button.add_theme_color_override("font_color", Color.TRANSPARENT)
+	button.add_theme_color_override("font_hover_color", Color.TRANSPARENT)
+	button.add_theme_color_override("font_pressed_color", Color.TRANSPARENT)
+	button.add_theme_color_override("font_disabled_color", Color.TRANSPARENT)
 
 
 func _create_pov_tuner_panel() -> void:
@@ -844,7 +1299,8 @@ func _layout_selection_buttons() -> void:
 	for index in range(selection_buttons.size()):
 		var button := selection_buttons[index]
 		button.size = button_size
-		var center := _project_world_to_control(_idle_position_for_die(index) + Vector3(0.0, 0.28, 0.0), Vector2(max_width, max_height))
+		var world_position := _gm_ready_position_for_die(index) if gm_viewport != null else _idle_position_for_die(index)
+		var center := _project_world_to_control(world_position + Vector3(0.0, 0.28, 0.0), Vector2(max_width, max_height))
 		button.position = center - button_size * 0.5
 
 
@@ -1023,18 +1479,18 @@ func _create_die_body(index: int) -> RigidBody3D:
 	box.size = Vector3(DIE_SIZE, DIE_SIZE, DIE_SIZE)
 	shape.shape = box
 	body.add_child(shape)
-	body.add_child(_create_die_visual())
+	body.add_child(_create_die_visual(index))
 	return body
 
 
-func _create_die_visual() -> Node3D:
+func _create_die_visual(die_index: int = -1) -> Node3D:
 	var group := Node3D.new()
 	group.name = "DieVisual"
 
 	var cube := MeshInstance3D.new()
 	cube.name = "RoundedDieBody"
 	cube.mesh = rounded_die_mesh
-	cube.material_override = die_body_material
+	cube.material_override = _die_body_material_for_index(die_index)
 	group.add_child(cube)
 
 	for face in FACE_DEFINITIONS:
@@ -1070,6 +1526,8 @@ func _project_world_to_control(world_position: Vector3, fallback_size: Vector2) 
 	if camera == null:
 		return fallback_size * 0.5
 	var projected := camera.unproject_position(world_position)
+	if gm_viewport != null:
+		return gm_viewport.viewport_to_container_position(projected) + view_offset
 	return Vector2(projected.x, projected.y) + view_offset
 
 
@@ -1146,6 +1604,8 @@ func _has_valid_dice() -> bool:
 
 
 func _active_dice_count() -> int:
+	if gm_battle_mgr != null:
+		return int(gm_battle_mgr.get_snapshot().get("active_dice", 0))
 	var count := 0
 	for body_value in dice:
 		var body := body_value as RigidBody3D
@@ -1331,6 +1791,15 @@ func _make_die_material(color: Color) -> StandardMaterial3D:
 	return material
 
 
+func _die_body_material_for_index(die_index: int) -> StandardMaterial3D:
+	var color := Color(0.965, 0.953, 0.914)
+	if die_index >= 0 and die_index < formal_dice.size() and dice_visual_library != null:
+		var die := formal_dice[die_index] as DieState
+		if die != null:
+			color = dice_visual_library.get_body_color(DieState.normalize_body_id(die.body_id))
+	return _make_die_material(color)
+
+
 func _make_standard_material(color: Color, roughness: float, metallic: float) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
 	material.albedo_color = color
@@ -1357,10 +1826,12 @@ func _roll_value_at(values: Array, index: int) -> int:
 	if index < 0 or index >= values.size():
 		return 1
 	var value := int(values[index])
-	return clampi(value, 1, 6) if value > 0 else 1
+	return _clamp_pip_for_die(index, value) if value > 0 else 1
 
 
 func _dice_positions_snapshot() -> Array:
+	if gm_battle_mgr != null:
+		return gm_battle_mgr.get_snapshot().get("dice_positions", [])
 	var positions: Array = []
 	for body_value in dice:
 		var body := body_value as RigidBody3D
@@ -1369,7 +1840,68 @@ func _dice_positions_snapshot() -> Array:
 	return positions
 
 
+func _gm_ready_position_for_die(index: int) -> Vector3:
+	if gm_battle_mgr != null and gm_battle_mgr.has_method("get_ready_position_for_die"):
+		return gm_battle_mgr.call("get_ready_position_for_die", index)
+	if gm_ready_mgr != null:
+		return gm_ready_mgr.get_spawn_position(index, 2)
+	return _idle_position_for_die(index)
+
+
+func _clamp_pip_for_die(die_index: int, pip: int) -> int:
+	var die := _formal_die_at(die_index)
+	if die != null:
+		var fallback := int(die.faces[0].pip) if not die.faces.is_empty() and die.faces[0] != null else 1
+		for face in die.faces:
+			if face != null and int(face.pip) == pip:
+				return pip
+		return fallback
+	return clampi(pip, 1, 6)
+
+
+func _first_face_index_for_display_pip(die_index: int, pip: int) -> int:
+	var die := _formal_die_at(die_index)
+	if die != null:
+		for index in range(die.faces.size()):
+			var face = die.faces[index]
+			if face != null and int(face.pip) == pip:
+				return index
+	return clampi(pip - 1, 0, 5)
+
+
+func _die_face_index_matches_display_pip(die_index: int, face_index: int, pip: int) -> bool:
+	if face_index < 0:
+		return false
+	var die := _formal_die_at(die_index)
+	if die == null:
+		return face_index >= 0 and face_index < 6
+	if face_index < 0 or face_index >= die.faces.size():
+		return false
+	var face = die.faces[face_index]
+	return face != null and int(face.pip) == pip
+
+
+func _pip_for_face_index(die_index: int, face_index: int) -> int:
+	var die := _formal_die_at(die_index)
+	if die != null and face_index >= 0 and face_index < die.faces.size():
+		var face = die.faces[face_index]
+		if face != null:
+			return int(face.pip)
+	if face_index >= 0 and face_index < 6:
+		return face_index + 1
+	return 1
+
+
+func _formal_die_at(index: int) -> DieState:
+	if index >= 0 and index < formal_dice.size():
+		return formal_dice[index] as DieState
+	return null
+
+
 func _visible_node_count() -> int:
+	if map_tabletop_3d != null:
+		var snapshot := map_tabletop_3d.automation_get_snapshot()
+		return int(snapshot.get("visible_node_count", 0))
 	if not map_visuals_enabled or map_node_root == null or not map_node_root.visible:
 		return 0
 	var count := 0
@@ -1379,10 +1911,81 @@ func _visible_node_count() -> int:
 	return count
 
 
+func _map_board_visible() -> bool:
+	if tabletop_backing_texture != null and tabletop_backing_texture.visible:
+		return true
+	if gm_viewport != null and _tabletop_board_texture() != null:
+		return _gm_throw_mat_visible()
+	return board_mesh_instance != null and board_mesh_instance.visible
+
+
+func _map_board_texture() -> Texture2D:
+	if map_tabletop_3d != null:
+		var texture := _tabletop_board_texture()
+		if texture != null:
+			return texture
+	return _board_texture()
+
+
+func _formal_die_ids_snapshot() -> Array[String]:
+	var result: Array[String] = []
+	for die_value in formal_dice:
+		var die := die_value as DieState
+		if die == null:
+			continue
+		var die_id = die.die_id if die.die_id != &"" else die.id
+		result.append(str(die_id))
+	return result
+
+
+func _formal_die_face_counts_snapshot() -> Array[int]:
+	var result: Array[int] = []
+	for die_value in formal_dice:
+		var die := die_value as DieState
+		result.append(int(die.face_count) if die != null else 0)
+	return result
+
+
+func _formal_dice_signature(source_dice: Array) -> String:
+	var rows := PackedStringArray()
+	for die_value in source_dice:
+		var die := die_value as DieState
+		if die == null:
+			continue
+		var face_parts := PackedStringArray()
+		for face in die.faces:
+			face_parts.append(str(int(face.pip)) if face != null else "0")
+		var die_id = die.die_id if die.die_id != &"" else die.id
+		rows.append("%s:%s:%d:%s" % [
+			str(die_id),
+			str(DieState.normalize_body_id(die.body_id)),
+			int(die.face_count),
+			",".join(face_parts),
+		])
+		if rows.size() >= 2:
+			break
+	return "|".join(rows)
+
+
 func _board_texture() -> Texture2D:
 	if art_config != null:
 		return art_config.get("board_texture") as Texture2D
 	return null
+
+
+func _tabletop_board_texture() -> Texture2D:
+	if art_config == null:
+		return null
+	var texture := art_config.get("tabletop_board_texture") as Texture2D
+	if texture != null:
+		return texture
+	return art_config.get("map_stage_skin_texture") as Texture2D
+
+
+func _texture_path(texture: Texture2D) -> String:
+	if texture == null:
+		return ""
+	return texture.resource_path
 
 
 func _player_marker_texture() -> Texture2D:

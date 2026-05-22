@@ -39,5 +39,7 @@ var preview_text: String = ""
 var status_text: String = ""
 var phase_text: String = ""
 var controls_locked: bool = false
+var info_button_locked: bool = false
+var options_button_locked: bool = false
 var can_reroll: bool = false
 var can_score: bool = false

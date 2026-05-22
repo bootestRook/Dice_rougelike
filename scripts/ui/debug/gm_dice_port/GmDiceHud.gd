@@ -18,6 +18,8 @@ signal throw_speed_tuning_changed(config: Dictionary)
 signal throw_spin_tuning_changed(config: Dictionary)
 signal exit_return_tuning_changed(config: Dictionary)
 signal camera_tuning_changed(config: Dictionary)
+signal projected_ui_board_visibility_changed(enabled: bool)
+signal projected_ui_board_flat_mode_changed(enabled: bool)
 
 
 var dice_count_slider: HSlider = null
@@ -41,6 +43,8 @@ var dice_edit_summary_label: Label = null
 var apply_selected_dice_edit_button: Button = null
 var apply_all_dice_edit_button: Button = null
 var tuning_panel: PanelContainer = null
+var projected_ui_board_visible_check: CheckBox = null
+var projected_ui_board_flat_check: CheckBox = null
 var target_grid: GridContainer = null
 var result_list: VBoxContainer = null
 var status_label: Label = null
@@ -110,6 +114,7 @@ func build() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_build_stage_frame()
 	_build_top_icons()
+	_build_projected_ui_board_controls()
 	_build_throw_dock()
 	_build_dice_edit_panel()
 	_build_tuning_panel()
@@ -311,6 +316,13 @@ func set_camera_tuning(config: Dictionary) -> void:
 			value_label.text = "%.2f" % value
 
 
+func set_projected_ui_board_controls(visible_enabled: bool, flat_enabled: bool) -> void:
+	if projected_ui_board_visible_check != null:
+		projected_ui_board_visible_check.set_pressed_no_signal(visible_enabled)
+	if projected_ui_board_flat_check != null:
+		projected_ui_board_flat_check.set_pressed_no_signal(flat_enabled)
+
+
 func update_state(snapshot: Dictionary) -> void:
 	_current_values = snapshot.get("last_values", [])
 	var face_indices: Array = snapshot.get("last_face_indices", [])
@@ -358,7 +370,7 @@ func _build_stage_frame() -> void:
 	var frame := Panel.new()
 	frame.name = "StageFrame"
 	frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	frame.visible = true
+	frame.visible = false
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	frame.add_theme_stylebox_override("panel", _make_panel_style(Color(0.006, 0.014, 0.040, 0.08), Color(0.78, 0.52, 0.28, 0.70), 2, 4))
 	add_child(frame)
@@ -366,7 +378,7 @@ func _build_stage_frame() -> void:
 	var inner_vignette := Panel.new()
 	inner_vignette.name = "StagePurpleVignette"
 	inner_vignette.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	inner_vignette.visible = true
+	inner_vignette.visible = false
 	inner_vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	inner_vignette.add_theme_stylebox_override("panel", _make_panel_style(Color(0.005, 0.009, 0.028, 0.05), Color(0.26, 0.37, 0.58, 0.28), 1, 0))
 	add_child(inner_vignette)
@@ -405,6 +417,41 @@ func _build_top_icons() -> void:
 	back_button = _make_icon_button("返回", "BackButton")
 	back_button.pressed.connect(func() -> void: back_requested.emit())
 	row.add_child(back_button)
+
+
+func _build_projected_ui_board_controls() -> void:
+	var panel := PanelContainer.new()
+	panel.name = "ProjectedUiBoardPanel"
+	panel.anchor_left = 0.015
+	panel.anchor_top = 0.125
+	panel.anchor_right = 0.125
+	panel.anchor_bottom = 0.275
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.025, 0.040, 0.052, 0.94), Color(0.00, 0.88, 0.66, 0.82), 3, 5))
+	add_child(panel)
+
+	var margin := _make_margin(10, 8, 10, 8)
+	panel.add_child(margin)
+	var rows := VBoxContainer.new()
+	rows.name = "ProjectedUiBoardRows"
+	rows.add_theme_constant_override("separation", 4)
+	margin.add_child(rows)
+
+	var title := _make_label("3D界面", 15, Color(0.88, 1.00, 0.94))
+	title.name = "ProjectedUiBoardTitle"
+	rows.add_child(title)
+
+	projected_ui_board_visible_check = _make_projected_ui_check("显示", "ProjectedUiBoardVisibleCheck", true)
+	projected_ui_board_visible_check.toggled.connect(func(enabled: bool) -> void:
+		projected_ui_board_visibility_changed.emit(enabled)
+	)
+	rows.add_child(projected_ui_board_visible_check)
+
+	projected_ui_board_flat_check = _make_projected_ui_check("放平", "ProjectedUiBoardFlatCheck", false)
+	projected_ui_board_flat_check.toggled.connect(func(enabled: bool) -> void:
+		projected_ui_board_flat_mode_changed.emit(enabled)
+	)
+	rows.add_child(projected_ui_board_flat_check)
 
 
 func _build_throw_dock() -> void:
@@ -1118,6 +1165,20 @@ func _add_top_badge(parent: Control, text: String, fill: Color) -> void:
 
 func _make_icon_button(text: String, node_name: String) -> Button:
 	return _make_button(text, node_name, Vector2(72, 42), 16)
+
+
+func _make_projected_ui_check(text: String, node_name: String, pressed: bool) -> CheckBox:
+	var check := CheckBox.new()
+	check.name = node_name
+	check.text = text
+	check.button_pressed = pressed
+	check.custom_minimum_size = Vector2(0, 26)
+	check.focus_mode = Control.FOCUS_NONE
+	check.add_theme_font_size_override("font_size", 14)
+	check.add_theme_color_override("font_color", Color(0.90, 0.96, 0.92, 1.0))
+	check.add_theme_color_override("font_pressed_color", Color(1.00, 0.94, 0.58, 1.0))
+	check.add_theme_color_override("font_hover_color", Color(0.98, 1.00, 0.94, 1.0))
+	return check
 
 
 func _make_margin(left: int, top: int, right: int, bottom: int) -> MarginContainer:

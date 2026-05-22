@@ -3,6 +3,7 @@ class_name DebugBattleDiceInputSmokeTest
 
 
 const BattleDiceStage3D = preload("res://scripts/ui/battle/components/BattleDiceStage3D.gd")
+const EXPECTED_BATTLE_BACKGROUND_PATH := "res://assets/ui/map/map_tabletop_neon_comic.png"
 
 
 func _init() -> void:
@@ -37,8 +38,10 @@ func _init() -> void:
 
 	var viewport = stage.get("dice_viewport") if stage != null else null
 	var picked_index := -1
+	all_passed = _check("正式战斗舞台使用指定桌面背景", _battle_background_texture_is_wired(stage)) and all_passed
 	all_passed = _check("3D 骰子视口存在", viewport != null) and all_passed
 	if viewport != null:
+		all_passed = _check("正式战斗骰子视口透明叠在桌面背景上", _battle_viewport_overlays_background(viewport)) and all_passed
 		var points: Array = viewport.call("get_dice_local_points")
 		all_passed = _check("3D 视口暴露可点击骰子点", points.size() >= 6) and all_passed
 		if points.size() >= 1:
@@ -47,11 +50,9 @@ func _init() -> void:
 			all_passed = _check("3D 视口可根据投影点拾取骰子", picked_dice != null) and all_passed
 			picked_index = int(stage.call("_avatar_index", picked_dice)) if picked_dice != null else -1
 			_send_viewport_click(viewport, points[0], battle_screen)
-			if picked_index >= 0 and not _is_roll_selected(battle_screen, picked_index):
-				stage.call("_on_dice_viewport_dice_clicked", picked_dice)
 			await process_frame
 			await process_frame
-			all_passed = _check("点击 3D 骰子会选择被拾取的骰子", picked_index >= 0 and _is_roll_selected(battle_screen, picked_index)) and all_passed
+			all_passed = _check("点击 3D 骰子会选择被拾取的骰子，且没有被 HUD 层挡住", picked_index >= 0 and _is_roll_selected(battle_screen, picked_index)) and all_passed
 
 	if stage != null:
 		stage.call("request_info_for_die", 0)
@@ -65,7 +66,13 @@ func _init() -> void:
 	var reroll_button := _find_node_by_name(stage, "RerollButton") as Button if stage != null else null
 	var score_button := _find_node_by_name(stage, "ScoreButton") as Button if stage != null else null
 	var action_layer := _find_node_by_name(stage, "BattleActionButtonsLayer") as Control if stage != null else null
+	var hud_panel := _find_node_by_name(stage, "BattleDiceStage3DHud") if stage != null else null
+	var status_label := _find_node_by_name(stage, "StageStatusLabel") if stage != null else null
+	var preview_label := _find_node_by_name(stage, "PreviewLabel") if stage != null else null
+	var log_label := _find_node_by_name(stage, "ScoreLogLabel") if stage != null else null
+	var selection_label := _find_node_by_name(stage, "SelectionCounterLabel") if stage != null else null
 	all_passed = _check("战斗操作按钮独立悬浮显示", action_layer != null and action_layer.visible) and all_passed
+	all_passed = _check("3D 舞台不再创建底部行动提示 HUD 块", hud_panel == null and status_label == null and preview_label == null and log_label == null and selection_label == null) and all_passed
 	all_passed = _check("3D 舞台提供重投所选按钮", reroll_button != null and reroll_button.text == "重投所选") and all_passed
 	all_passed = _check("3D 舞台提供结算所选按钮", score_button != null and score_button.text == "结算所选") and all_passed
 	all_passed = _check("重投与结算按钮使用横幅大按钮尺寸", _uses_banner_button_size(reroll_button) and _uses_banner_button_size(score_button)) and all_passed
@@ -104,12 +111,6 @@ func _send_viewport_click(viewport: Control, position: Vector2, battle_screen: N
 	release.position = global_position
 	release.global_position = global_position
 	battle_screen.get_viewport().push_input(release)
-
-	var direct_press := InputEventMouseButton.new()
-	direct_press.button_index = MOUSE_BUTTON_LEFT
-	direct_press.pressed = true
-	direct_press.position = position
-	viewport.call("_gui_input", direct_press)
 
 
 func _find_die_view(root_node: Node, die_index: int) -> Control:
@@ -192,6 +193,21 @@ func _uses_accent_button_style(button: Button) -> bool:
 		return false
 	var style := button.get_theme_stylebox("normal") as StyleBoxFlat
 	return style != null and style.get_border_width(SIDE_TOP) >= 4 and style.shadow_size >= 8
+
+
+func _battle_background_texture_is_wired(stage) -> bool:
+	var background := _find_node_by_name(stage, "BattleStageBackgroundTexture") as TextureRect
+	return background != null \
+		and background.visible \
+		and background.texture != null \
+		and background.texture.resource_path == EXPECTED_BATTLE_BACKGROUND_PATH
+
+
+func _battle_viewport_overlays_background(viewport) -> bool:
+	var sub_viewport := viewport.get("sub_viewport") as SubViewport
+	return sub_viewport != null \
+		and sub_viewport.transparent_bg \
+		and str(viewport.call("get_throw_surface_texture_path")) == ""
 
 
 func _stage_hides_all_dice(stage) -> bool:

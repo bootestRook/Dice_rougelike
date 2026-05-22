@@ -1,5 +1,10 @@
 # 战斗入场与操作按钮发现记录
 
+## 2026-05-21 追加发现：地图前进骰仍是独立 D6
+- `GameFlowController._roll_map_movement_dice()` 原先直接用 `map_rng.randi_range(1, 6)`，不读取 `RunState.dice`，因此安装到正式战斗骰上的点数分布不会影响地图投掷。
+- `MapStageView._ensure_movement_dice_views()` 原先创建 `map_move_d6_*` 占位骰，地图 UI 无法证明自己绑定的是局内正式战斗骰。
+- 修复方向：流程层只取 `RunState.dice` 前两颗并复用 `RollService.roll_die()`；地图状态额外暴露 face index / face count；地图视图同步这两颗正式骰给物理表现层。
+
 ## 2026-05-21 追加发现：结算高亮数组类型
 - `BattleScreen.move_selected_dice_to_resolution_by_trace()` 构造的 `visual_slot_indices` 是普通 `Array`，通过 `has_method()` 后直接调用 `BattleDiceStage3D.set_highlighted_die_indices()`。
 - `BattleDiceStage3D.set_highlighted_die_indices(indices: Array[int])` 要求 typed array，普通 `Array` 在运行时会被 Godot 拒绝，导致结算阶段报错。
@@ -27,3 +32,8 @@
 
 ## 待确认
 - 视觉效果已由 Debug 测试验证节点尺寸和样式属性；仍建议后续人工看一眼实际动效观感。
+## 2026-05-21 追加发现：地图骰子只是换色，没有接入 GM 场景链路
+- 用户反馈“用 GM 场景的那种骰子和逻辑”，确认之前只把地图自写物理骰子的材质/数据换成正式骰引用，视觉和投掷链路仍不是正式战斗使用的 GM 3D 骰子。
+- 正式战斗的实际链路是 `GmDiceViewport` 创建固定 2.5D 视口，`GmReadyMgr` 管准备位，`GmBattleMgr.roll_using_dices()` 投掷并在回位后暴露 face index / pip。
+- 修复方向：地图组件直接复用这三者，只保留两个 formal dice definition；地图移动提交 GM 物理骰实际落面，而不是提前生成结果再播放旧骰子动画。
+- 兼容点：GM target 原本只接受 pip，补充 `{face_index: ...}` 后可保留精确骰面请求，不影响原有 pip target 测试。

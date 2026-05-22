@@ -26,6 +26,7 @@ const BattleUiStyleConfig = preload("res://scripts/ui/battle/resources/BattleUiS
 const BattleIconLibrary = preload("res://scripts/ui/battle/resources/BattleIconLibrary.gd")
 const DiceVisualLibrary = preload("res://scripts/ui/battle/resources/DiceVisualLibrary.gd")
 const RoundIntroBanner = preload("res://scripts/ui/battle/components/RoundIntroBanner.gd")
+const RuntimeUiLayoutTuner = preload("res://scripts/ui/debug/RuntimeUiLayoutTuner.gd")
 
 
 @export var style_config: BattleUiStyleConfig = preload("res://scenes/battle/resources/BattleUiStyleConfig.tres")
@@ -61,7 +62,10 @@ var combo_info_popup: Control = null
 var layout_root: Control = null
 var battle_main_stage_area: Control = null
 var battle_stage_content: Control = null
+var map_transition_cover: ColorRect = null
 var map_stage_overlay_host: Control = null
+var runtime_ui_layout_tuner: RuntimeUiLayoutTuner = null
+var map_stage_transition_active: bool = false
 var animation_layer: Control = null
 var options_menu_overlay: Control = null
 var options_menu_previous_pause_state: bool = false
@@ -139,6 +143,8 @@ func start_battle_with_run_state(new_game_flow_controller: GameFlowController = 
 	run_state = new_run_state
 	_connect_game_flow_signals()
 	defer_initial_battle_start = false
+	clear_map_stage_overlay()
+	_set_map_stage_transition_active(false)
 	_clear_reward_phase_ui()
 	_clear_battle_animation_layer()
 	cleanup_resolution_area()
@@ -154,18 +160,22 @@ func start_battle_with_run_state(new_game_flow_controller: GameFlowController = 
 
 
 func prepare_for_map_stage() -> void:
+	_set_map_stage_transition_active(true)
+	_set_map_stage_overlay_visible(true)
 	_clear_reward_phase_ui()
 	cleanup_resolution_area()
 	_clear_battle_animation_layer()
 	current_preview_result = null
 	if combo_info_popup != null:
 		combo_info_popup.visible = false
+	_clear_battle_dice_stage_for_map()
 	_refresh_hud()
 
 
 func _ready() -> void:
 	_ensure_resources()
 	_build_view()
+	_ensure_runtime_ui_layout_tuner()
 	_create_controller()
 	if defer_initial_battle_start:
 		if run_state != null:
@@ -207,6 +217,26 @@ func attach_map_stage_view(map_view: Control) -> void:
 			map_view.get_parent().remove_child(map_view)
 		map_stage_overlay_host.add_child(map_view)
 	map_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+
+func clear_map_stage_overlay() -> void:
+	if map_stage_overlay_host == null:
+		return
+	for child in map_stage_overlay_host.get_children():
+		map_stage_overlay_host.remove_child(child)
+		child.queue_free()
+	map_stage_overlay_host.visible = false
+
+
+func _set_map_stage_overlay_visible(is_visible: bool) -> void:
+	if map_stage_overlay_host == null:
+		return
+	map_stage_overlay_host.visible = is_visible
+	if is_visible:
+		return
+	for child in map_stage_overlay_host.get_children():
+		if child is CanvasItem:
+			(child as CanvasItem).visible = false
 
 
 func _connect_game_flow_signals() -> void:
@@ -284,6 +314,9 @@ func _circle_base_action_count_for_display() -> int:
 
 
 func _input(event: InputEvent) -> void:
+	if _handle_runtime_ui_layout_tuner_hotkey(event):
+		return
+
 	if event.is_action_pressed("ui_cancel") and _is_options_menu_visible():
 		_hide_options_menu()
 		get_viewport().set_input_as_handled()
@@ -309,11 +342,13 @@ func _build_view() -> void:
 	var background := ColorRect.new()
 	background.color = style_config.background_color
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(background)
 
 	layout_root = Control.new()
 	layout_root.name = "ResolutionScaledBattleLayout"
 	layout_root.size = design_resolution
+	layout_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(layout_root)
 
 	animation_layer = Control.new()
@@ -323,18 +358,30 @@ func _build_view() -> void:
 	animation_layer.z_index = 300
 	layout_root.add_child(animation_layer)
 
+	map_stage_overlay_host = Control.new()
+	map_stage_overlay_host.name = "MapStageOverlayHost"
+	map_stage_overlay_host.clip_contents = true
+	map_stage_overlay_host.mouse_filter = Control.MOUSE_FILTER_PASS
+	map_stage_overlay_host.z_index = 80
+	map_stage_overlay_host.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	map_stage_overlay_host.visible = false
+	layout_root.add_child(map_stage_overlay_host)
+
 	var margin := MarginContainer.new()
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	style_config.apply_margin(margin, style_config.outer_margin)
 	layout_root.add_child(margin)
 
 	var root := HBoxContainer.new()
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	root.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	root.add_theme_constant_override("separation", style_config.layout_gap)
 	margin.add_child(root)
 
 	left_sidebar = _instantiate_control(left_sidebar_scene, PanelContainer.new())
+	left_sidebar.z_index = 120
 	root.add_child(left_sidebar)
 	if left_sidebar.has_method("setup_style"):
 		left_sidebar.setup_style(style_config)
@@ -345,12 +392,14 @@ func _build_view() -> void:
 
 	var main_area := VBoxContainer.new()
 	main_area.name = "MainBattleArea"
+	main_area.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	main_area.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	main_area.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	main_area.add_theme_constant_override("separation", style_config.layout_gap)
 	root.add_child(main_area)
 
 	top_inventory_bar = _instantiate_control(top_inventory_bar_scene, HBoxContainer.new())
+	top_inventory_bar.z_index = 120
 	main_area.add_child(top_inventory_bar)
 	if top_inventory_bar.has_method("setup"):
 		top_inventory_bar.setup(style_config, icon_library, inventory_slot_view_scene)
@@ -358,12 +407,14 @@ func _build_view() -> void:
 	battle_main_stage_area = Control.new()
 	battle_main_stage_area.name = "BattleMainStageArea"
 	battle_main_stage_area.clip_contents = true
+	battle_main_stage_area.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	battle_main_stage_area.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	battle_main_stage_area.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	main_area.add_child(battle_main_stage_area)
 
 	battle_stage_content = VBoxContainer.new()
 	battle_stage_content.name = "BattleStageContent"
+	battle_stage_content.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	battle_stage_content.add_theme_constant_override("separation", style_config.layout_gap)
 	battle_stage_content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	battle_main_stage_area.add_child(battle_stage_content)
@@ -418,15 +469,42 @@ func _build_view() -> void:
 	if dice_bench_area.has_signal("install_requested"):
 		dice_bench_area.install_requested.connect(_on_install_requested)
 
-	map_stage_overlay_host = Control.new()
-	map_stage_overlay_host.name = "MapStageOverlayHost"
-	map_stage_overlay_host.clip_contents = true
-	map_stage_overlay_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	map_stage_overlay_host.z_index = 80
-	map_stage_overlay_host.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	battle_main_stage_area.add_child(map_stage_overlay_host)
+	map_transition_cover = ColorRect.new()
+	map_transition_cover.name = "MapStageTransitionCover"
+	map_transition_cover.color = style_config.background_color if style_config != null else Color(0.01, 0.06, 0.04, 1.0)
+	map_transition_cover.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	map_transition_cover.z_index = 70
+	map_transition_cover.visible = false
+	map_transition_cover.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	battle_main_stage_area.add_child(map_transition_cover)
 
 	_ensure_combo_info_popup()
+
+
+func _ensure_runtime_ui_layout_tuner() -> void:
+	if runtime_ui_layout_tuner != null:
+		return
+	runtime_ui_layout_tuner = RuntimeUiLayoutTuner.new()
+	runtime_ui_layout_tuner.setup(self)
+	add_child(runtime_ui_layout_tuner)
+
+
+func _handle_runtime_ui_layout_tuner_hotkey(event: InputEvent) -> bool:
+	if not OS.is_debug_build():
+		return false
+	if not event is InputEventKey:
+		return false
+	var key_event := event as InputEventKey
+	if not key_event.pressed or key_event.echo:
+		return false
+	if not key_event.ctrl_pressed or not key_event.shift_pressed:
+		return false
+	if key_event.keycode != KEY_F9 and key_event.physical_keycode != KEY_F9:
+		return false
+	_ensure_runtime_ui_layout_tuner()
+	runtime_ui_layout_tuner.toggle_tuner()
+	get_viewport().set_input_as_handled()
+	return true
 
 
 func _apply_resolution_scale() -> void:
@@ -464,6 +542,24 @@ func _create_controller() -> void:
 	controller.battle_lost.connect(_on_battle_lost)
 	controller.phase_changed.connect(_on_phase_changed)
 	controller.score_preview_changed.connect(_on_score_preview_changed)
+
+
+func _set_map_stage_transition_active(active: bool) -> void:
+	map_stage_transition_active = active
+	if battle_stage_content != null:
+		battle_stage_content.visible = not active
+	if map_transition_cover != null:
+		map_transition_cover.visible = active
+
+
+func _clear_battle_dice_stage_for_map() -> void:
+	if dice_bench_area == null:
+		return
+	if dice_bench_area.has_method("clear_for_map_stage"):
+		dice_bench_area.call("clear_for_map_stage")
+	var stage_battle_mgr = dice_bench_area.get("battle_mgr")
+	if stage_battle_mgr != null and stage_battle_mgr.has_method("clear"):
+		stage_battle_mgr.call("clear")
 
 
 func _on_battle_started() -> void:
@@ -555,15 +651,23 @@ func _on_score_preview_changed(result: ScoreResult) -> void:
 
 
 func _on_info_pressed() -> void:
-	if is_battle_intro_playing:
+	if _is_info_button_locked():
 		return
 	_show_combo_info_popup()
 
 
 func _on_options_pressed() -> void:
-	if is_battle_intro_playing:
+	if _is_options_button_locked():
 		return
 	_show_options_menu()
+
+
+func _is_info_button_locked() -> bool:
+	return is_reroll_playing or is_resolution_playing
+
+
+func _is_options_button_locked() -> bool:
+	return is_battle_intro_playing or is_reroll_playing or is_resolution_playing
 
 
 func _show_options_menu() -> void:
@@ -950,6 +1054,14 @@ func automation_get_snapshot() -> Dictionary:
 		"status_text": status_text,
 		"is_battle_intro_playing": is_battle_intro_playing,
 		"battle_intro_sequence_events": battle_intro_sequence_events.duplicate(),
+		"map_stage_overlay_visible": map_stage_overlay_host != null and map_stage_overlay_host.visible,
+		"map_stage_overlay_child_count": map_stage_overlay_host.get_child_count() if map_stage_overlay_host != null else 0,
+		"map_stage_overlay_child_visible_count": _map_stage_overlay_child_visible_count(),
+		"map_transition_cover_visible": map_transition_cover != null and map_transition_cover.visible,
+		"battle_stage_content_visible": battle_stage_content != null and battle_stage_content.visible,
+		"map_stage_transition_active": map_stage_transition_active,
+		"has_runtime_ui_layout_tuner": runtime_ui_layout_tuner != null,
+		"runtime_ui_layout_tuner": runtime_ui_layout_tuner.automation_get_snapshot() if runtime_ui_layout_tuner != null else {},
 	}
 	if controller == null or controller.battle_state == null:
 		return snapshot
@@ -969,6 +1081,16 @@ func automation_get_snapshot() -> Dictionary:
 	snapshot["selected_indices"] = _automation_selected_indices()
 	snapshot["preview"] = _automation_preview_snapshot()
 	return snapshot
+
+
+func _map_stage_overlay_child_visible_count() -> int:
+	if map_stage_overlay_host == null:
+		return 0
+	var count := 0
+	for child in map_stage_overlay_host.get_children():
+		if child is CanvasItem and (child as CanvasItem).visible:
+			count += 1
+	return count
 
 
 func automation_preview_selection(indices: Array[int]) -> Dictionary:
@@ -1858,6 +1980,8 @@ func _refresh_hud() -> void:
 		scoring_area.render(state)
 	if dice_bench_area.has_method("render"):
 		dice_bench_area.render(state)
+	if map_stage_transition_active:
+		_clear_battle_dice_stage_for_map()
 	_sync_battle_intro_hidden_dice()
 	if _is_combo_info_popup_visible() and combo_info_popup.has_method("render"):
 		combo_info_popup.render(_build_combo_info_rows())
@@ -1909,7 +2033,7 @@ func _build_hud_state() -> BattleHudState:
 		state.preview_text = str(TranslationServer.translate(&"AUTO.TEXT.83C19741CC0F"))
 		return state
 
-	if controller.battle_state == null or (game_flow_controller != null and game_flow_controller.current_state_id == &"map"):
+	if map_stage_transition_active or controller.battle_state == null or (game_flow_controller != null and game_flow_controller.current_state_id == &"map"):
 		state.preview_text = ""
 		state.controls_locked = true
 		state.can_reroll = false
@@ -1928,6 +2052,8 @@ func _build_hud_state() -> BattleHudState:
 	state.max_selected_dice = controller.get_max_selected_dice()
 	state.phase_text = DisplayNames.phase_name(controller.get_phase_name())
 	state.controls_locked = is_battle_intro_playing or is_reroll_playing or is_resolution_playing
+	state.info_button_locked = _is_info_button_locked()
+	state.options_button_locked = _is_options_button_locked()
 	state.can_reroll = controller.can_reroll() and not is_resolution_playing and not is_reroll_playing and not is_battle_intro_playing and not reward_phase_active
 	state.can_score = controller.can_score() and not is_resolution_playing and not is_reroll_playing and not is_battle_intro_playing and not reward_phase_active
 	state.dice_results = _build_die_view_data()

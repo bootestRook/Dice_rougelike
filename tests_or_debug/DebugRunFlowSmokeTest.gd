@@ -24,6 +24,7 @@ func _init() -> void:
 	all_passed = _check("battle_index starts at 0", flow.get_run_state().battle_index == 0) and all_passed
 	all_passed = _check("new run starts on start node", int(flow.get_map_state().get("current_index", -1)) == 0) and all_passed
 	all_passed = _check_one_die_map_roll() and all_passed
+	all_passed = _check_map_movement_uses_first_two_formal_dice() and all_passed
 	all_passed = _check_danger_target_formula() and all_passed
 	all_passed = _check_circle_boss_final_rule() and all_passed
 	all_passed = _check_map_boss_stop_and_return_refresh(flow) and all_passed
@@ -111,6 +112,40 @@ func _check_one_die_map_roll() -> bool:
 	all_passed = _check("one-die map roll increases circle action count", int(state.get("circle_action_count", 0)) == 1) and all_passed
 	flow.free()
 	return all_passed
+
+
+func _check_map_movement_uses_first_two_formal_dice() -> bool:
+	var flow := GameFlowController.new()
+	flow.start_new_run()
+	var run_state := flow.get_run_state()
+	_set_all_face_pips(run_state.dice[0], 6)
+	_set_all_face_pips(run_state.dice[1], 4)
+	_set_all_face_pips(run_state.dice[2], 1)
+
+	var result := flow.roll_map_movement([0, 1])
+	var state: Dictionary = result.get("state", {})
+	var roll_values: Array = state.get("last_rolls", [])
+	var face_indices: Array = state.get("last_roll_face_indices", [])
+	var movement_face_counts: Array = state.get("movement_die_face_counts", [])
+	var movement_dice := flow.get_map_movement_dice()
+
+	var all_passed := true
+	all_passed = _check("map movement exposes exactly two formal dice", movement_dice.size() == 2 and int(state.get("movement_dice_count", 0)) == 2) and all_passed
+	all_passed = _check("map movement uses first formal die pips", roll_values.size() == 2 and int(roll_values[0]) == 6) and all_passed
+	all_passed = _check("map movement uses second formal die pips", roll_values.size() == 2 and int(roll_values[1]) == 4) and all_passed
+	all_passed = _check("map movement ignores third combat die", int(result.get("steps", 0)) == 10) and all_passed
+	all_passed = _check("map movement records formal face indices", face_indices.size() == 2 and int(face_indices[0]) >= 0 and int(face_indices[1]) >= 0) and all_passed
+	all_passed = _check("map movement exposes formal face counts", movement_face_counts.size() == 2 and int(movement_face_counts[0]) == 6 and int(movement_face_counts[1]) == 6) and all_passed
+	flow.free()
+	return all_passed
+
+
+func _set_all_face_pips(die, pip: int) -> void:
+	if die == null:
+		return
+	for face in die.faces:
+		if face != null:
+			face.pip = pip
 
 
 func _check_map_boss_stop_and_return_refresh(flow: GameFlowController) -> bool:

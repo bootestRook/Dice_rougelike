@@ -10,6 +10,7 @@ const GmBattleMgrScript = preload("res://scripts/ui/debug/gm_dice_port/GmBattleM
 const GmGameMgrScript = preload("res://scripts/ui/debug/gm_dice_port/GmGameMgr.gd")
 const GmDiceFlowModuleScript = preload("res://scripts/ui/debug/gm_dice_port/GmDiceFlowModule.gd")
 const GmSceneBridgeScript = preload("res://scripts/ui/debug/gm_dice_port/GmSceneBridge.gd")
+const GmProjectedUiBoardScript = preload("res://scripts/ui/debug/gm_dice_port/GmProjectedUiBoard.gd")
 
 
 signal back_requested
@@ -43,6 +44,7 @@ var battle_mgr: GmBattleMgr = null
 var game_mgr: GmGameMgr = null
 var dice_flow_module: GmDiceFlowModule = null
 var hud: GmDiceHud = null
+var projected_ui_board: GmProjectedUiBoard = null
 var target_score := DEFAULT_TARGET_SCORE
 var idle_drift_tuning := {
 	"min_seconds": 1.15,
@@ -91,6 +93,7 @@ func _ready() -> void:
 	_build_screen_backdrop()
 	_build_bridge()
 	_build_dice_viewport()
+	_build_projected_ui_board()
 	_build_hud()
 	_build_managers()
 	game_mgr.boot(4)
@@ -130,6 +133,11 @@ func automation_get_snapshot() -> Dictionary:
 		"key_light_pitch": key_light_pitch,
 		"key_light_yaw": key_light_yaw,
 	}
+	var projected_ui_snapshot := projected_ui_board.automation_get_snapshot() if projected_ui_board != null else {}
+	snapshot["projected_ui_board"] = projected_ui_snapshot
+	snapshot["projected_ui_board_ready"] = bool(projected_ui_snapshot.get("ready", false))
+	snapshot["projected_ui_board_visible"] = bool(projected_ui_snapshot.get("visible", false))
+	snapshot["projected_ui_board_flat"] = bool(projected_ui_snapshot.get("flat", false))
 	var bridged_snapshot: Dictionary = scene_bridge.make_snapshot(snapshot, hud_targets, camera_state, target_score) if scene_bridge != null else snapshot
 	snapshot_changed.emit(bridged_snapshot)
 	return bridged_snapshot
@@ -279,6 +287,28 @@ func automation_set_camera_tuning(config: Dictionary) -> void:
 	_update_hud()
 
 
+func automation_set_projected_ui_board_visible(enabled: bool) -> void:
+	if projected_ui_board != null:
+		projected_ui_board.set_board_visible(enabled)
+	if hud != null:
+		hud.set_projected_ui_board_controls(
+			projected_ui_board.is_board_visible() if projected_ui_board != null else enabled,
+			projected_ui_board.is_flat_mode() if projected_ui_board != null else false
+		)
+	_update_hud()
+
+
+func automation_set_projected_ui_board_flat(enabled: bool) -> void:
+	if projected_ui_board != null:
+		projected_ui_board.set_flat_mode(enabled)
+	if hud != null:
+		hud.set_projected_ui_board_controls(
+			projected_ui_board.is_board_visible() if projected_ui_board != null else true,
+			projected_ui_board.is_flat_mode() if projected_ui_board != null else enabled
+		)
+	_update_hud()
+
+
 func automation_drop_random(count: int = 2) -> void:
 	automation_set_dice_count(count)
 	var targets: Array = []
@@ -386,6 +416,15 @@ func _build_dice_viewport() -> void:
 	dice_viewport.configure_key_light(key_light_pitch, key_light_yaw)
 
 
+func _build_projected_ui_board() -> void:
+	if dice_viewport == null or dice_viewport.dice_world == null:
+		return
+	projected_ui_board = GmProjectedUiBoardScript.new() as GmProjectedUiBoard
+	projected_ui_board.name = "GmProjectedUiBoard"
+	dice_viewport.dice_world.add_child(projected_ui_board)
+	projected_ui_board.ensure_built()
+
+
 func _build_hud() -> void:
 	hud = GmDiceHudScript.new() as GmDiceHud
 	hud.name = "GmDiceHud"
@@ -409,6 +448,12 @@ func _build_hud() -> void:
 	hud.exit_return_tuning_changed.connect(_on_hud_exit_return_tuning_changed)
 	hud.camera_tuning_changed.connect(_on_hud_camera_tuning_changed)
 	hud.dice_replace_requested.connect(_on_hud_dice_replace_requested)
+	hud.projected_ui_board_visibility_changed.connect(_on_hud_projected_ui_board_visibility_changed)
+	hud.projected_ui_board_flat_mode_changed.connect(_on_hud_projected_ui_board_flat_mode_changed)
+	hud.set_projected_ui_board_controls(
+		projected_ui_board.is_board_visible() if projected_ui_board != null else true,
+		projected_ui_board.is_flat_mode() if projected_ui_board != null else false
+	)
 	idle_drift_tuning = hud.get_idle_drift_tuning()
 	throw_speed_tuning = hud.get_throw_speed_tuning()
 	throw_spin_tuning = hud.get_throw_spin_tuning()
@@ -543,6 +588,14 @@ func _on_hud_exit_return_tuning_changed(config: Dictionary) -> void:
 
 func _on_hud_camera_tuning_changed(config: Dictionary) -> void:
 	_apply_camera_tuning(config)
+
+
+func _on_hud_projected_ui_board_visibility_changed(enabled: bool) -> void:
+	automation_set_projected_ui_board_visible(enabled)
+
+
+func _on_hud_projected_ui_board_flat_mode_changed(enabled: bool) -> void:
+	automation_set_projected_ui_board_flat(enabled)
 
 
 func _on_battle_snapshot_changed(_snapshot: Dictionary) -> void:

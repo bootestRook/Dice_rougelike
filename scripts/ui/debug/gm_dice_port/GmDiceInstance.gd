@@ -88,6 +88,15 @@ func resolve_face_request(requested_face) -> int:
 		return 0
 	if requested_face == null:
 		return -1
+	if requested_face is Dictionary:
+		var request: Dictionary = requested_face
+		var requested_face_index := int(request.get("face_index", -1))
+		if requested_face_index >= 0 and requested_face_index < run_faces.size():
+			return requested_face_index
+		if request.has("value"):
+			requested_face = request["value"]
+		else:
+			return -1
 	var requested := int(requested_face)
 	if requested < 0:
 		return -1

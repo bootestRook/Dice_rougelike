@@ -1045,6 +1045,14 @@ func _normalize_targets(target_values: Array) -> Array:
 		var value = target_values[index] if index < target_values.size() else null
 		if value == null:
 			normalized.append(null)
+		elif value is Dictionary:
+			var request: Dictionary = value
+			var face_index := int(request.get("face_index", -1))
+			if face_index >= 0:
+				normalized.append({"face_index": face_index})
+			else:
+				var pip := int(request.get("value", 0))
+				normalized.append(pip if pip >= 1 and pip <= 6 else null)
 		else:
 			var pip := int(value)
 			normalized.append(pip if pip >= 1 and pip <= 6 else null)

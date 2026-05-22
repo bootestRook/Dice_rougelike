@@ -12,6 +12,7 @@ const GmDiceFaceDefinitionScript = preload("res://scripts/ui/debug/gm_dice_port/
 const GmDiceViewportScript = preload("res://scripts/ui/debug/gm_dice_port/GmDiceViewport.gd")
 const GmReadyMgrScript = preload("res://scripts/ui/debug/gm_dice_port/GmReadyMgr.gd")
 const GmBattleMgrScript = preload("res://scripts/ui/debug/gm_dice_port/GmBattleMgr.gd")
+const BATTLE_STAGE_BACKGROUND_TEXTURE = preload("res://assets/ui/map/map_tabletop_neon_comic.png")
 
 
 signal die_pressed(index: int)
@@ -46,17 +47,13 @@ var dice_visual_library: DiceVisualLibrary = null
 var dice_info_popup_scene: PackedScene = null
 var face_info_card_scene: PackedScene = null
 var floating_score_text_scene: PackedScene = null
+var stage_background_texture: TextureRect = null
 var current_state: BattleHudState = null
 var dice_viewport: GmDiceViewport = null
 var ready_mgr: GmReadyMgr = null
 var battle_mgr: GmBattleMgr = null
 var overlay_layer: Control = null
-var hud_panel: PanelContainer = null
 var action_buttons_layer: Control = null
-var status_label: Label = null
-var preview_label: Label = null
-var log_label: Label = null
-var selection_label: Label = null
 var reroll_button: Button = null
 var organize_button: Button = null
 var score_button: Button = null
@@ -243,6 +240,27 @@ func clear_hidden_die_indices() -> void:
 	_apply_transient_state()
 
 
+func clear_for_map_stage() -> void:
+	current_state = null
+	roster_signature = ""
+	display_die_order.clear()
+	hidden_die_indices.clear()
+	highlighted_die_indices.clear()
+	resolution_die_indices.clear()
+	entry_return_revealing = false
+	last_entry_return_started_from_hidden = false
+	hide_info()
+	hide_reward_choices()
+	if marker_layer != null:
+		_clear_children(marker_layer)
+	if floating_layer != null:
+		_clear_children(floating_layer)
+	if action_buttons_layer != null:
+		action_buttons_layer.visible = false
+	if battle_mgr != null:
+		battle_mgr.clear()
+
+
 func set_highlighted_die_indices(indices: Array) -> void:
 	highlighted_die_indices = _int_indices_from_array(indices)
 	_apply_transient_state()
@@ -354,11 +372,8 @@ func highlight_resolution_index(index: int) -> void:
 	set_highlighted_die_indices([die_index] if die_index >= 0 else [])
 
 
-func show_step_text(title: String, detail: String) -> void:
-	if status_label != null:
-		status_label.text = title
-	if preview_label != null:
-		preview_label.text = detail
+func show_step_text(_title: String, _detail: String) -> void:
+	pass
 
 
 func show_floating_score(text: String) -> void:
@@ -401,6 +416,15 @@ func _build() -> void:
 	stage_root.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	margin.add_child(stage_root)
 
+	stage_background_texture = TextureRect.new()
+	stage_background_texture.name = "BattleStageBackgroundTexture"
+	stage_background_texture.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	stage_background_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	stage_background_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	stage_background_texture.texture = BATTLE_STAGE_BACKGROUND_TEXTURE
+	stage_background_texture.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	stage_root.add_child(stage_background_texture)
+
 	dice_viewport = GmDiceViewportScript.new()
 	dice_viewport.name = "FormalBattleDiceViewport"
 	stage_root.add_child(dice_viewport)
@@ -409,6 +433,7 @@ func _build() -> void:
 	dice_viewport.configure_ready_row_height(dice_initial_height)
 	dice_viewport.configure_key_light(key_light_pitch, key_light_yaw)
 	dice_viewport.dice_clicked.connect(_on_dice_viewport_dice_clicked)
+	_configure_battle_stage_background()
 
 	ready_mgr = GmReadyMgrScript.new()
 	ready_mgr.name = "FormalBattleReadyMgr"
@@ -455,74 +480,29 @@ func _build() -> void:
 	marker_layer.z_index = 35
 	stage_root.add_child(marker_layer)
 
-	_build_hud_overlay(stage_root)
+	_build_action_buttons(stage_root)
 
 
-func _build_hud_overlay(parent: Control) -> void:
-	hud_panel = PanelContainer.new()
-	hud_panel.name = "BattleDiceStage3DHud"
-	hud_panel.mouse_filter = Control.MOUSE_FILTER_PASS
-	hud_panel.anchor_left = 0.0
-	hud_panel.anchor_top = 1.0
-	hud_panel.anchor_right = 1.0
-	hud_panel.anchor_bottom = 1.0
-	hud_panel.offset_left = 22.0
-	hud_panel.offset_top = -232.0
-	hud_panel.offset_right = -22.0
-	hud_panel.offset_bottom = -18.0
-	hud_panel.z_index = 25
-	parent.add_child(hud_panel)
-
-	var root := VBoxContainer.new()
-	root.mouse_filter = Control.MOUSE_FILTER_PASS
-	root.add_theme_constant_override("separation", 10)
-	hud_panel.add_child(root)
-
-	var top_row := HBoxContainer.new()
-	top_row.mouse_filter = Control.MOUSE_FILTER_PASS
-	top_row.add_theme_constant_override("separation", 14)
-	root.add_child(top_row)
-
-	status_label = Label.new()
-	status_label.name = "StageStatusLabel"
-	status_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	status_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	status_label.text = "选择骰子后重投或结算"
-	top_row.add_child(status_label)
-
-	selection_label = Label.new()
-	selection_label.name = "SelectionCounterLabel"
-	selection_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	selection_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	top_row.add_child(selection_label)
-
-	var spacer := Control.new()
-	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	root.add_child(spacer)
-
-	preview_label = Label.new()
-	preview_label.name = "PreviewLabel"
-	preview_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	preview_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	preview_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	root.add_child(preview_label)
-
-	log_label = Label.new()
-	log_label.name = "ScoreLogLabel"
-	log_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	log_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	log_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	log_label.max_lines_visible = 3
-	root.add_child(log_label)
-
-	_build_action_buttons(parent)
+func _configure_battle_stage_background() -> void:
+	if stage_background_texture != null:
+		stage_background_texture.texture = BATTLE_STAGE_BACKGROUND_TEXTURE
+		stage_background_texture.visible = stage_background_texture.texture != null
+	if dice_viewport == null or dice_viewport.sub_viewport == null:
+		return
+	dice_viewport.sub_viewport.transparent_bg = true
+	dice_viewport.sub_viewport.render_target_clear_mode = SubViewport.CLEAR_MODE_ALWAYS
+	var environment := dice_viewport.sub_viewport.get_node_or_null("DiceWorld/WorldEnvironment") as WorldEnvironment
+	if environment != null and environment.environment != null:
+		environment.environment.background_mode = Environment.BG_COLOR
+		environment.environment.background_color = Color(0.0, 0.0, 0.0, 0.0)
+	if dice_viewport.has_method("set_throw_surface_texture"):
+		dice_viewport.call("set_throw_surface_texture", null, Color.WHITE, false)
 
 
 func _build_action_buttons(parent: Control) -> void:
 	action_buttons_layer = Control.new()
 	action_buttons_layer.name = "BattleActionButtonsLayer"
-	action_buttons_layer.mouse_filter = Control.MOUSE_FILTER_PASS
+	action_buttons_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	action_buttons_layer.anchor_left = 0.0
 	action_buttons_layer.anchor_top = 1.0
 	action_buttons_layer.anchor_right = 1.0
@@ -536,13 +516,13 @@ func _build_action_buttons(parent: Control) -> void:
 
 	var center := CenterContainer.new()
 	center.name = "ActionButtonsCenter"
-	center.mouse_filter = Control.MOUSE_FILTER_PASS
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	action_buttons_layer.add_child(center)
 
 	var actions := HBoxContainer.new()
 	actions.name = "ActionButtonsRow"
-	actions.mouse_filter = Control.MOUSE_FILTER_PASS
+	actions.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	actions.alignment = BoxContainer.ALIGNMENT_CENTER
 	actions.add_theme_constant_override("separation", 42)
 	center.add_child(actions)
@@ -577,16 +557,6 @@ func _apply_style() -> void:
 		return
 	if style_config != null:
 		add_theme_stylebox_override("panel", style_config.get_panel_style())
-		if hud_panel != null:
-			var hud_style := style_config.get_panel_style().duplicate()
-			if hud_style is StyleBoxFlat:
-				(hud_style as StyleBoxFlat).bg_color = Color(0.02, 0.04, 0.045, 0.18)
-			hud_panel.add_theme_stylebox_override("panel", hud_style)
-		for label in [status_label, preview_label, log_label, selection_label]:
-			if label != null:
-				style_config.apply_label(label, style_config.body_font_size)
-		if log_label != null:
-			style_config.apply_label(log_label, style_config.small_font_size, Color(0.88, 0.91, 0.84, 0.88))
 		for button in [reroll_button, organize_button, score_button]:
 			if button != null:
 				style_config.apply_button(button)
@@ -652,7 +622,8 @@ func _make_banner_button_style(fill: Color, accent: Color, y_offset: float, alph
 
 func _ensure_roster_for_state(state: BattleHudState) -> void:
 	var next_signature := _roster_signature(state)
-	if next_signature == roster_signature:
+	var has_live_roster := battle_mgr != null and battle_mgr.using_dices.size() > 0
+	if next_signature == roster_signature and (next_signature != "" or not has_live_roster):
 		return
 	roster_signature = next_signature
 	display_die_order.clear()
@@ -662,7 +633,10 @@ func _ensure_roster_for_state(state: BattleHudState) -> void:
 	for die_data in state.dice_results:
 		definitions.append(_definition_from_die_data(die_data))
 	if battle_mgr != null:
-		battle_mgr.create_dice_from_definitions(definitions)
+		if definitions.is_empty():
+			battle_mgr.clear()
+		else:
+			battle_mgr.create_dice_from_definitions(definitions)
 
 
 func _definition_from_die_data(die_data: DieViewData) -> GmDiceDefinition:
@@ -730,14 +704,6 @@ func _apply_transient_state() -> void:
 func _render_overlay_text(state: BattleHudState) -> void:
 	if action_buttons_layer != null:
 		action_buttons_layer.visible = not state.dice_results.is_empty() and not state.controls_locked
-	if status_label != null:
-		status_label.text = "%s  %s" % [state.phase_text, state.status_text]
-	if preview_label != null:
-		preview_label.text = state.preview_text
-	if selection_label != null:
-		selection_label.text = "已选 %d / %d" % [state.selected_dice_indices.size(), state.max_selected_dice]
-	if log_label != null:
-		log_label.text = "\n".join(state.score_log.slice(maxi(0, state.score_log.size() - 3), state.score_log.size()))
 	if reroll_button != null:
 		reroll_button.disabled = not state.can_reroll
 	if score_button != null:

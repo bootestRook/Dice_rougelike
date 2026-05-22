@@ -135,8 +135,8 @@ func render(state: BattleHudState) -> void:
 	_set_circle_base_score_text(maxi(0, state.circle_base_score))
 	max_battle_value.text = "%d/%d" % [maxi(1, state.battle_number), maxi(1, state.max_battles)]
 	_set_money_text(state.money)
-	info_button.disabled = state.controls_locked
-	options_button.disabled = state.controls_locked
+	info_button.disabled = state.info_button_locked
+	options_button.disabled = state.options_button_locked
 
 
 func play_battle_victory_target_feedback() -> void:

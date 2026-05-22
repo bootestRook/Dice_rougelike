@@ -15,6 +15,7 @@ func _init() -> void:
 
 	var main_start_passed := await _check_main_start_enters_map()
 	all_passed = main_start_passed and all_passed
+	all_passed = await _check_roll_button_accepts_button_rect_click() and all_passed
 
 	var flow := GameFlowController.new()
 	root.add_child(flow)
@@ -35,7 +36,7 @@ func _init() -> void:
 	all_passed = _check("map first circle shows battle nodes before boss", _first_circle_map_is_battle_only(flow.get_map_state().get("nodes", []))) and all_passed
 	all_passed = _check("map art config has all node textures", _has_all_node_textures(map_view)) and all_passed
 	all_passed = _check("map rest node uses generated texture", _rest_node_uses_generated_texture(map_view)) and all_passed
-	all_passed = _check("map 2D node text labels are readable", _node_label_is_readable(map_view)) and all_passed
+	all_passed = _check("map 3D node text labels are readable", _node_label_is_readable(map_view)) and all_passed
 	all_passed = _check("map final node is boss", _node_type_at(flow, 31) == &"boss") and all_passed
 	all_passed = _check("map player marker is centered on current node", _player_marker_is_centered(map_view)) and all_passed
 	all_passed = _check("map movement step label exists", _find_node_by_name(map_view, "MovementStepLabel") != null) and all_passed
@@ -43,12 +44,28 @@ func _init() -> void:
 	all_passed = await _check_board_raise_locks_map_interaction(map_view) and all_passed
 	all_passed = _check("map movement step duration is slower", float(map_view.call("automation_get_snapshot").get("marker_step_duration", 0.0)) >= 0.28) and all_passed
 	all_passed = _check("map stage uses two movement dice views", _count_nodes_by_prefix(map_view, "MovementDice_") == 2) and all_passed
+	all_passed = _check("map movement dice click hotspots do not draw yellow button frames", _movement_die_button_is_invisible_hotspot(map_view, 1) and _movement_die_button_is_invisible_hotspot(map_view, 2)) and all_passed
+	all_passed = _check("map center panel does not block movement dice clicks", _center_panel_does_not_block_movement_dice(map_view)) and all_passed
 	all_passed = _check("map stage has movement magic fx layer", _find_node_by_name(map_view, "MovementRollFxLayer") != null) and all_passed
 	all_passed = _check("map stage wires black magic fx scene", bool(map_view.call("automation_get_snapshot").get("has_movement_magic_fx", false))) and all_passed
 	all_passed = _check("map stage uses physics movement dice view", bool(map_view.call("automation_get_snapshot").get("has_movement_physics_dice", false))) and all_passed
+	all_passed = _check("map stage uses configured 3D tabletop", _map_uses_3d_tabletop(map_view)) and all_passed
+	var formal_snapshot: Dictionary = map_view.call("automation_get_snapshot")
+	var formal_ids: Array = formal_snapshot.get("movement_dice_ids", [])
+	var formal_face_counts: Array = formal_snapshot.get("movement_die_face_counts", [])
+	var physics_formal_snapshot: Dictionary = formal_snapshot.get("movement_physics_dice", {})
+	all_passed = _check("map stage binds exactly two formal movement dice", formal_ids.size() == 2 and int(formal_snapshot.get("movement_dice_count", 0)) == 2) and all_passed
+	all_passed = _check("map stage formal movement dice use combat dice ids", formal_ids.size() == 2 and str(formal_ids[0]) == "normal_d6_1" and str(formal_ids[1]) == "normal_d6_2") and all_passed
+	all_passed = _check("map stage exposes formal movement face counts", formal_face_counts.size() == 2 and int(formal_face_counts[0]) == 6 and int(formal_face_counts[1]) == 6) and all_passed
+	all_passed = _check("map movement dice defaults to one selected die", _selected_movement_dice(formal_snapshot) == [0]) and all_passed
+	all_passed = _check("map physics view defaults to one selected die", _selected_physics_movement_dice(formal_snapshot) == [0]) and all_passed
+	all_passed = _check("map physics view receives formal movement dice", int(physics_formal_snapshot.get("formal_dice_count", 0)) == 2) and all_passed
+	all_passed = _check("map movement dice use GM scene dice view", bool(physics_formal_snapshot.get("uses_gm_dice_view", false))) and all_passed
 	all_passed = _check("map 3D camera is fixed", bool((map_view.call("automation_get_snapshot").get("movement_physics_dice", {}) as Dictionary).get("fixed_camera", false))) and all_passed
 	all_passed = _check("map physics dice start in shared 3D throw area", _map_physics_dice_start_at_two_positions(map_view)) and all_passed
 	all_passed = _check("roll button uses texture button", _find_texture_button(map_view, "RollMovementButton") != null) and all_passed
+	all_passed = _check("roll button has separated transparent hit area", _texture_button_has_hit_area(map_view, "RollMovementButton")) and all_passed
+	all_passed = _check("roll button is lowered away from movement dice", _action_button_is_clear_of_movement_dice(map_view, "RollMovementButton", 52.0)) and all_passed
 	all_passed = _check("map danger label exists", _find_node_by_name(map_view, "DangerLabel") != null) and all_passed
 	var circle_action_label := _find_node_by_name(map_view, "CircleActionLabel") as Label
 	all_passed = _check("map shows circle action count in map area", circle_action_label != null and circle_action_label.visible and circle_action_label.text.contains("本圈行动：0 次")) and all_passed
@@ -74,6 +91,7 @@ func _init() -> void:
 	all_passed = _check("movement can stop on battle node", bool(state.get("pending_battle", false))) and all_passed
 	var enter_button_wrapper := _find_node_by_name(map_view, "EnterBattleButton") as Control
 	all_passed = _check("enter battle button appears on battle node", enter_button_wrapper != null and enter_button_wrapper.visible) and all_passed
+	all_passed = _check("enter battle button is lowered away from movement dice", _action_button_is_clear_of_movement_dice(map_view, "EnterBattleButton", 28.0)) and all_passed
 
 	all_passed = _check("enter battle from map succeeds", flow.request_enter_battle_from_map()) and all_passed
 	all_passed = _check("flow switches to battle phase", flow.current_state_id == &"battle") and all_passed
@@ -107,21 +125,28 @@ func _check_main_start_enters_map() -> bool:
 	var passed := true
 	var rise_snapshot: Dictionary = map_stage.call("automation_get_snapshot") if map_stage != null else {}
 	passed = _check("map board is raising from bottom at run start", map_stage != null and bool(rise_snapshot.get("is_board_animating", false))) and passed
+	passed = _check("map movement dice stay hidden before board finishes raising", map_stage != null and not bool(rise_snapshot.get("movement_physics_dice_visible", true))) and passed
 	passed = _check("run stage input shield blocks other buttons during map raise", input_shield != null and input_shield.visible) and passed
 	await create_timer(0.85).timeout
 	await process_frame
+	var raised_snapshot: Dictionary = map_stage.call("automation_get_snapshot") if map_stage != null else {}
 	passed = _check("main start enters map phase", flow != null and flow.current_state_id == &"map") and passed
 	passed = _check("main stage container exists", main_stage != null) and passed
 	passed = _check("map stage view is visible after start", map_stage != null and map_stage.visible) and passed
+	passed = _check("map movement dice reveal after board raise", map_stage != null and bool(raised_snapshot.get("movement_physics_dice_visible", false))) and passed
 	passed = _check("run stage input shield is released after map raise", input_shield != null and not input_shield.visible) and passed
 	passed = _check("map stage is mounted over scoring and prep area", map_stage != null and map_stage.get_parent() != null and map_stage.get_parent().name == "MapStageOverlayHost") and passed
 	passed = _check("battle stage stays underneath map", battle_screen != null and battle_screen.visible) and passed
 	if battle_screen != null:
+		var map_phase_battle_snapshot: Dictionary = battle_screen.call("automation_get_snapshot") if battle_screen.has_method("automation_get_snapshot") else {}
 		passed = _check("battle controller is deferred during map phase", battle_screen.controller != null and battle_screen.controller.battle_state == null) and passed
 		passed = _check("battle dice stay hidden before battle starts", _battle_stage_dice_count(battle_screen) == 0) and passed
+		passed = _check("battle stage content is masked while map is active", bool(map_phase_battle_snapshot.get("map_transition_cover_visible", false)) and not bool(map_phase_battle_snapshot.get("battle_stage_content_visible", true))) and passed
 		var overlay_host := _find_node_by_name(battle_screen, "MapStageOverlayHost") as Control
 		var top_inventory := _find_node_by_name(battle_screen, "TopInventoryBar") as Control
-		passed = _check("map overlay is below top inventory", overlay_host != null and top_inventory != null and overlay_host.get_global_rect().position.y > top_inventory.get_global_rect().position.y) and passed
+		var left_sidebar := _find_node_by_name(battle_screen, "LeftBattleSidebar") as Control
+		passed = _check("map overlay spans under side and inventory UI", _map_overlay_spans_under_ui(overlay_host, top_inventory, left_sidebar)) and passed
+		passed = _check("map overlay renders below side and inventory UI", overlay_host != null and top_inventory != null and left_sidebar != null and overlay_host.z_index < top_inventory.z_index and overlay_host.z_index < left_sidebar.z_index) and passed
 		var battle_title := _find_node_by_name(battle_screen, "BattleTitle") as Label
 		var battle_value := _find_node_by_name(battle_screen, "BattleValue") as Label
 		var circle_action_label := _find_node_by_name(map_stage, "CircleActionLabel") as Label
@@ -137,10 +162,59 @@ func _check_main_start_enters_map() -> bool:
 		passed = _check("underlying battle sidebar omits map action count and danger", battle_value != null and not battle_value.text.contains("次") and not battle_value.text.contains("%")) and passed
 		passed = _check("map overlay shows action count outside sidebar", circle_action_label != null and circle_action_label.text.contains("本圈行动：1 次")) and passed
 		passed = await _check_sidebar_base_score_waits_for_map_stop(flow, map_stage, battle_value, input_shield) and passed
+		passed = await _check_main_enter_battle_removes_map_overlay(main_view, flow, map_stage) and passed
 
 	main_view.queue_free()
 	await process_frame
 	return passed
+
+
+func _check_roll_button_accepts_button_rect_click() -> bool:
+	var flow := GameFlowController.new()
+	root.add_child(flow)
+	flow.start_new_run()
+
+	var map_view = MapStageViewScript.new()
+	map_view.setup(flow, flow.get_map_state())
+	root.add_child(map_view)
+	await process_frame
+	await process_frame
+	await map_view.play_raise()
+	await process_frame
+
+	var wrapper := _find_node_by_name(map_view, "RollMovementButton") as Control
+	var hit_area := _find_node_by_name(wrapper, "ButtonHitArea") as Control if wrapper != null else null
+	var second_die := _find_node_by_name(map_view, "MovementDice_2") as Control
+	var all_passed := true
+	all_passed = _check("roll button rect-click setup exists", hit_area != null and hit_area.visible) and all_passed
+	all_passed = _check("movement die rect-click setup exists", second_die != null and second_die.visible) and all_passed
+	if second_die != null:
+		_send_map_stage_gui_click(map_view, second_die.get_global_rect().get_center())
+		await process_frame
+		var selected_after_die_click: Array = (map_view.call("automation_get_snapshot") as Dictionary).get("selected_movement_dice_indices", [])
+		all_passed = _check("movement die accepts button-rect click and toggles selection", selected_after_die_click == [0, 1]) and all_passed
+	if hit_area != null:
+		_send_map_stage_gui_click(map_view, hit_area.get_global_rect().get_center())
+		var waited := 0.0
+		while waited < 9.0 and int(flow.get_map_state().get("circle_action_count", 0)) == 0:
+			await create_timer(0.1).timeout
+			waited += 0.1
+		var state: Dictionary = flow.get_map_state()
+		all_passed = _check("roll button accepts button-rect click and rolls movement die", int(state.get("circle_action_count", 0)) == 1 and not (state.get("last_rolled_dice_indices", []) as Array).is_empty()) and all_passed
+
+	map_view.queue_free()
+	flow.queue_free()
+	await process_frame
+	return all_passed
+
+
+func _send_map_stage_gui_click(map_view: Node, position: Vector2) -> void:
+	var down := InputEventMouseButton.new()
+	down.button_index = MOUSE_BUTTON_LEFT
+	down.pressed = true
+	down.position = position
+	if map_view != null and map_view.has_method("_gui_input"):
+		map_view.call("_gui_input", down)
 
 
 func _check_board_raise_locks_map_interaction(map_view: Node) -> bool:
@@ -154,12 +228,18 @@ func _check_board_raise_locks_map_interaction(map_view: Node) -> bool:
 	all_passed = _check("map board reports animation while raising", bool(snapshot.get("is_board_animating", false))) and all_passed
 	all_passed = _check("map interaction lock is active while board moves", bool(snapshot.get("interaction_locked", false))) and all_passed
 	all_passed = _check("map roll button is disabled while board moves", roll_button != null and roll_button.disabled) and all_passed
+	all_passed = _check("map roll button stays hidden while board moves", not bool(snapshot.get("roll_button_visible", true))) and all_passed
+	all_passed = _check("map action count stays hidden while board moves", not bool(snapshot.get("circle_action_badge_visible", true))) and all_passed
 	all_passed = _check("map movement die is disabled while board moves", first_die is BaseButton and (first_die as BaseButton).disabled) and all_passed
+	all_passed = _check("map movement dice viewport is hidden while board moves", not bool(snapshot.get("movement_physics_dice_visible", true))) and all_passed
 
 	await raise_task
 	snapshot = map_view.call("automation_get_snapshot")
 	all_passed = _check("map board interaction lock releases after raise", not bool(snapshot.get("is_board_animating", true)) and not bool(snapshot.get("interaction_locked", true))) and all_passed
 	all_passed = _check("map roll button is enabled after board raise", roll_button != null and not roll_button.disabled) and all_passed
+	all_passed = _check("map roll button appears after board raise", bool(snapshot.get("roll_button_visible", false))) and all_passed
+	all_passed = _check("map action count appears after board raise", bool(snapshot.get("circle_action_badge_visible", false))) and all_passed
+	all_passed = _check("map movement dice viewport appears after board raise", bool(snapshot.get("movement_physics_dice_visible", false))) and all_passed
 	return all_passed
 
 
@@ -198,6 +278,50 @@ func _check_sidebar_base_score_waits_for_map_stop(flow: GameFlowController, map_
 	await create_timer(0.85).timeout
 	var expected_text := str(flow.get_run_state().get_current_circle_adjusted_base_score())
 	all_passed = _check("base score settles after marker stops", battle_value.text == expected_text) and all_passed
+	return all_passed
+
+
+func _check_main_enter_battle_removes_map_overlay(main_view: Node, flow: GameFlowController, map_stage: Control) -> bool:
+	if main_view == null or flow == null or map_stage == null:
+		return _check("battle transition remove setup exists", false)
+	flow.map_position_index = 1
+	flow.map_state_changed.emit(flow.get_map_state())
+	await process_frame
+	var requested := flow.request_enter_battle_from_map()
+	await create_timer(0.12).timeout
+	var lowering_snapshot: Dictionary = map_stage.call("automation_get_snapshot")
+	var lowering_battle_screen = main_view.call("_current_battle_screen")
+	var lowering_battle_snapshot: Dictionary = lowering_battle_screen.call("automation_get_snapshot") if lowering_battle_screen != null and lowering_battle_screen.has_method("automation_get_snapshot") else {}
+	var waited := 0.0
+	var battle_screen = main_view.call("_current_battle_screen")
+	var battle_snapshot: Dictionary = {}
+	while waited < 2.0:
+		battle_screen = main_view.call("_current_battle_screen")
+		battle_snapshot = battle_screen.call("automation_get_snapshot") if battle_screen != null and battle_screen.has_method("automation_get_snapshot") else {}
+		var intro_events: Array = battle_snapshot.get("battle_intro_sequence_events", [])
+		if flow.current_state_id == &"battle" and battle_snapshot.has("phase") and _events_include(intro_events, "round_banner_started"):
+			break
+		await create_timer(0.1).timeout
+		waited += 0.1
+	var overlay_host := _find_node_by_name(battle_screen, "MapStageOverlayHost") as Control if battle_screen != null else null
+	var map_stage_after_enter := _find_node_by_name(main_view, "MapStageView") as Control
+	battle_snapshot = battle_screen.call("automation_get_snapshot") if battle_screen != null and battle_screen.has_method("automation_get_snapshot") else {}
+	var lowering_intro_events: Array = lowering_battle_snapshot.get("battle_intro_sequence_events", [])
+	var lowering_physics_snapshot: Dictionary = lowering_snapshot.get("movement_physics_dice", {})
+	var lowering_tabletop_snapshot: Dictionary = lowering_physics_snapshot.get("tabletop_3d", {})
+	var final_intro_events: Array = battle_snapshot.get("battle_intro_sequence_events", [])
+	var all_passed := true
+	all_passed = _check("enter battle request from main map succeeds", requested) and all_passed
+	all_passed = _check("map lowers before battle starts", bool(lowering_snapshot.get("visible", false)) and bool(lowering_snapshot.get("is_board_animating", false)) and bool(lowering_snapshot.get("is_board_lowering", false))) and all_passed
+	all_passed = _check("map movement dice lower with map board", bool(lowering_snapshot.get("movement_physics_dice_visible", false))) and all_passed
+	all_passed = _check("map lowering keeps separate tabletop background visible without duplicate throw mat", bool(lowering_snapshot.get("tabletop_background_visible", false)) and str(lowering_snapshot.get("tabletop_background_texture_path", "")) == "res://assets/ui/map/map_tabletop_neon_comic.png" and not bool(lowering_physics_snapshot.get("gm_throw_mat_visible", true)) and str(lowering_physics_snapshot.get("gm_throw_surface_texture_path", "")) == "" and not bool(lowering_physics_snapshot.get("tabletop_backing_visible", true)) and not bool(lowering_tabletop_snapshot.get("board_visible", true))) and all_passed
+	all_passed = _check("battle stage remains masked while map lowers", bool(lowering_battle_snapshot.get("map_transition_cover_visible", false)) and not bool(lowering_battle_snapshot.get("battle_stage_content_visible", true))) and all_passed
+	all_passed = _check("round banner waits while map is lowering", not bool(lowering_battle_snapshot.get("is_battle_intro_playing", false)) and not _events_include(lowering_intro_events, "round_banner_started")) and all_passed
+	all_passed = _check("main flow enters battle after map lower", flow.current_state_id == &"battle" and battle_snapshot.has("phase")) and all_passed
+	all_passed = _check("round banner starts after map lower finishes", _events_include(final_intro_events, "round_banner_started")) and all_passed
+	all_passed = _check("battle stage is revealed after map exits", not bool(battle_snapshot.get("map_transition_cover_visible", true)) and bool(battle_snapshot.get("battle_stage_content_visible", false))) and all_passed
+	all_passed = _check("battle map overlay host is empty after entering battle", overlay_host != null and not overlay_host.visible and int(battle_snapshot.get("map_stage_overlay_child_count", -1)) == 0) and all_passed
+	all_passed = _check("map stage view is removed after entering battle", map_stage_after_enter == null and main_view.map_stage_view == null) and all_passed
 	return all_passed
 
 
@@ -251,11 +375,26 @@ func _check_map_view_can_roll_one_selected_die(map_view: Node, flow: GameFlowCon
 	var roll_button := _find_texture_button(map_view, "RollMovementButton")
 	if roll_button == null:
 		return _check("one-die map roll button exists", false)
-	map_view.call("_on_movement_die_pressed", 1)
+	var second_die_button := _find_node_by_name(map_view, "MovementDice_2") as BaseButton
+	if second_die_button != null:
+		second_die_button.pressed.emit()
+	else:
+		map_view.call("_on_movement_die_pressed", 1)
 	var snapshot: Dictionary = map_view.call("automation_get_snapshot")
 	var selected_indices: Array = snapshot.get("selected_movement_dice_indices", [])
 	var all_passed := true
-	all_passed = _check("map view can deselect one movement die", selected_indices.size() == 1 and int(selected_indices[0]) == 0) and all_passed
+	all_passed = _check("map view can click second movement die to select up to two", selected_indices.size() == 2 and int(selected_indices[0]) == 0 and int(selected_indices[1]) == 1) and all_passed
+	if second_die_button != null:
+		second_die_button.pressed.emit()
+	else:
+		map_view.call("_on_movement_die_pressed", 1)
+	snapshot = map_view.call("automation_get_snapshot")
+	selected_indices = snapshot.get("selected_movement_dice_indices", [])
+	all_passed = _check("map view can click selected second die back to one selected die", selected_indices.size() == 1 and int(selected_indices[0]) == 0) and all_passed
+	map_view.call("_on_movement_die_pressed", 0)
+	snapshot = map_view.call("automation_get_snapshot")
+	selected_indices = snapshot.get("selected_movement_dice_indices", [])
+	all_passed = _check("map view keeps at least one movement die selected", selected_indices.size() == 1 and int(selected_indices[0]) == 0) and all_passed
 	var before_roll_count := int(flow.get_map_state().get("roll_count", 0))
 	roll_button.pressed.emit()
 	await create_timer(0.12).timeout
@@ -269,9 +408,11 @@ func _check_map_view_can_roll_one_selected_die(map_view: Node, flow: GameFlowCon
 	var state := flow.get_map_state()
 	var last_rolls: Array = state.get("last_rolls", [])
 	var rolled_indices: Array = state.get("last_rolled_dice_indices", [])
+	var face_indices: Array = state.get("last_roll_face_indices", [])
 	var node_count := int(state.get("nodes", []).size())
 	all_passed = _check("map view one-die roll records one die", rolled_indices.size() == 1 and int(rolled_indices[0]) == 0) and all_passed
 	all_passed = _check("map view one-die roll leaves second die empty", last_rolls.size() == 2 and int(last_rolls[1]) == 0) and all_passed
+	all_passed = _check("map view one-die roll records formal face index", face_indices.size() == 2 and int(face_indices[0]) >= 0 and int(face_indices[1]) == -1) and all_passed
 	var physics_snapshot := (map_view.call("automation_get_snapshot").get("movement_physics_dice", {}) as Dictionary)
 	var physics_values: Array = physics_snapshot.get("display_values", [])
 	all_passed = _check("map physics dice display rolled pip", physics_values.size() == 2 and int(physics_values[0]) == int(last_rolls[0])) and all_passed
@@ -290,7 +431,7 @@ func _check_map_view_can_roll_one_selected_die(map_view: Node, flow: GameFlowCon
 func _wait_for_map_animation(map_view: Node) -> void:
 	await process_frame
 	var waited := 0.0
-	while bool(map_view.get("is_marker_animating")) and waited < 7.0:
+	while bool(map_view.get("is_marker_animating")) and waited < 14.0:
 		await create_timer(0.1).timeout
 		waited += 0.1
 
@@ -331,16 +472,37 @@ func _node_label_is_readable(map_view) -> bool:
 	var art = map_view.art_config
 	if art == null:
 		return false
-	var label := _find_node_by_name(map_view, "NodeLabel") as Label
-	var background := _find_node_by_name(map_view, "NodeLabelBackground") as Panel
+	var node_root := _find_node_by_name(map_view, "MapNode3D_00")
+	var label: Label3D = null
+	if node_root != null:
+		label = node_root.get_node_or_null("NodeLabel") as Label3D
 	return art.show_node_text_labels \
 		and art.node_font_size >= 20 \
 		and art.node_label_size.y >= 38.0 \
 		and label != null \
 		and label.visible \
-		and not label.clip_text \
-		and background != null \
-		and background.visible
+		and label.text != "" \
+		and label.font_size >= 40
+
+
+func _map_uses_3d_tabletop(map_view) -> bool:
+	var snapshot: Dictionary = map_view.call("automation_get_snapshot")
+	var physics_snapshot: Dictionary = snapshot.get("movement_physics_dice", {})
+	var tabletop_snapshot: Dictionary = physics_snapshot.get("tabletop_3d", {})
+	return bool(physics_snapshot.get("map_visuals_enabled", false)) \
+		and bool(snapshot.get("tabletop_background_visible", false)) \
+		and str(snapshot.get("tabletop_background_texture_path", "")) == "res://assets/ui/map/map_tabletop_neon_comic.png" \
+		and bool(physics_snapshot.get("has_3d_tabletop", false)) \
+		and not bool(physics_snapshot.get("gm_throw_mat_visible", true)) \
+		and str(physics_snapshot.get("gm_throw_surface_texture_path", "")) == "" \
+		and bool(physics_snapshot.get("external_tabletop_background_enabled", false)) \
+		and not bool(physics_snapshot.get("tabletop_backing_visible", true)) \
+		and str(physics_snapshot.get("tabletop_backing_texture_path", "")) == "res://assets/ui/map/map_tabletop_neon_comic.png" \
+		and not bool(tabletop_snapshot.get("board_visible", true)) \
+		and not bool(tabletop_snapshot.get("board_mesh_enabled", true)) \
+		and not bool(tabletop_snapshot.get("overlay_visible", true)) \
+		and int(tabletop_snapshot.get("visible_node_count", 0)) == 32 \
+		and str(tabletop_snapshot.get("board_texture_path", "")) == "res://assets/ui/map/map_tabletop_neon_comic.png"
 
 
 func _node_type_at(flow: GameFlowController, index: int) -> StringName:
@@ -399,6 +561,59 @@ func _find_texture_button(root_node: Node, wrapper_name: String) -> TextureButto
 	return wrapper.get_node_or_null("ButtonTexture") as TextureButton
 
 
+func _texture_button_has_hit_area(root_node: Node, wrapper_name: String) -> bool:
+	var wrapper := _find_node_by_name(root_node, wrapper_name)
+	if wrapper == null:
+		return false
+	var hit_area := wrapper.get_node_or_null("ButtonHitArea") as Button
+	return hit_area != null and hit_area.flat and hit_area.mouse_filter == Control.MOUSE_FILTER_STOP
+
+
+func _movement_die_button_is_invisible_hotspot(root_node: Node, index: int) -> bool:
+	var button := _find_node_by_name(root_node, "MovementDice_%d" % [index]) as Button
+	if button == null:
+		return false
+	if not button.flat or button.mouse_filter != Control.MOUSE_FILTER_STOP:
+		return false
+	for state in ["normal", "hover", "pressed", "disabled", "focus"]:
+		if not button.has_theme_stylebox_override(state):
+			return false
+	return true
+
+
+func _center_panel_does_not_block_movement_dice(root_node: Node) -> bool:
+	for node_name in ["MapCenterRollArea", "CenterContentMargin", "CenterContent", "MovementDiceRow"]:
+		var control := _find_node_by_name(root_node, node_name) as Control
+		if control == null or control.mouse_filter != Control.MOUSE_FILTER_IGNORE:
+			return false
+	return true
+
+
+func _selected_movement_dice(snapshot: Dictionary) -> Array:
+	return snapshot.get("selected_movement_dice_indices", [])
+
+
+func _selected_physics_movement_dice(snapshot: Dictionary) -> Array:
+	var physics_snapshot: Dictionary = snapshot.get("movement_physics_dice", {})
+	return physics_snapshot.get("selected_indices", [])
+
+
+func _action_button_is_clear_of_movement_dice(root_node: Node, button_name: String, min_gap: float) -> bool:
+	var action_button := _find_node_by_name(root_node, button_name) as Control
+	if action_button == null or not action_button.visible:
+		return false
+	var dice_bottom := -INF
+	for index in range(1, 3):
+		var die_button := _find_node_by_name(root_node, "MovementDice_%d" % [index]) as Control
+		if die_button == null:
+			continue
+		dice_bottom = maxf(dice_bottom, die_button.get_global_rect().end.y)
+	if dice_bottom <= -INF:
+		return false
+	var gap := action_button.get_global_rect().position.y - dice_bottom
+	return gap >= min_gap
+
+
 func _battle_stage_dice_count(battle_screen: Node) -> int:
 	if battle_screen == null:
 		return -1
@@ -409,6 +624,18 @@ func _battle_stage_dice_count(battle_screen: Node) -> int:
 	if battle_mgr == null:
 		return -1
 	return int(battle_mgr.get_snapshot().get("dice_count", -1))
+
+
+func _map_overlay_spans_under_ui(overlay_host: Control, top_inventory: Control, left_sidebar: Control) -> bool:
+	if overlay_host == null or top_inventory == null or left_sidebar == null:
+		return false
+	var overlay_rect := overlay_host.get_global_rect()
+	var top_rect := top_inventory.get_global_rect()
+	var left_rect := left_sidebar.get_global_rect()
+	return overlay_rect.position.x <= left_rect.position.x + 1.0 \
+		and overlay_rect.position.y <= top_rect.position.y + 1.0 \
+		and overlay_rect.end.x >= top_rect.end.x - 1.0 \
+		and overlay_rect.end.y >= left_rect.end.y - 1.0
 
 
 func _count_nodes_by_prefix(root_node: Node, prefix: String) -> int:
@@ -428,6 +655,13 @@ func _find_node_by_name(root_node: Node, node_name: String) -> Node:
 		if result != null:
 			return result
 	return null
+
+
+func _events_include(events: Array, event_name: String) -> bool:
+	for event in events:
+		if str(event) == event_name:
+			return true
+	return false
 
 
 func _check(label: String, passed: bool) -> bool:

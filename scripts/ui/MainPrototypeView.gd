@@ -481,16 +481,23 @@ func _on_battle_requested(requested_run_state: RunState) -> void:
 	current_view_id = &"battle"
 	_ensure_run_stage(game_flow_controller.get_map_state() if game_flow_controller != null else {})
 	_ensure_battle_stage_screen(requested_run_state, true)
+	_prepare_battle_screen_for_map_stage()
 	await _ensure_map_stage_view(game_flow_controller.get_map_state() if game_flow_controller != null else {})
+	_prepare_battle_screen_for_map_stage()
+	var locked_for_map_exit := false
 	if map_stage_view != null and map_stage_view.has_method("play_lower"):
 		_set_run_stage_input_locked(true)
+		locked_for_map_exit = true
 		await map_stage_view.call("play_lower")
-		_set_run_stage_input_locked(false)
 	elif map_stage_view != null:
 		map_stage_view.visible = false
-		_set_run_stage_input_locked(false)
+	if locked_for_map_exit:
+		await get_tree().process_frame
+	_discard_map_stage_view(not locked_for_map_exit)
 	if battle_screen != null and battle_screen.has_method("start_battle_with_run_state"):
 		battle_screen.call("start_battle_with_run_state", game_flow_controller, requested_run_state)
+	if locked_for_map_exit:
+		_set_run_stage_input_locked(false)
 
 
 func _on_map_requested(map_state: Dictionary) -> void:
@@ -614,6 +621,19 @@ func _ensure_map_stage_view(map_state: Dictionary = {}) -> void:
 		map_stage_view.connect("interaction_lock_changed", Callable(self, "_on_map_interaction_lock_changed"))
 	if battle_screen.has_method("attach_map_stage_view"):
 		battle_screen.call("attach_map_stage_view", map_stage_view)
+
+
+func _discard_map_stage_view(release_input_lock: bool = true) -> void:
+	if release_input_lock:
+		_set_run_stage_input_locked(false)
+	if map_stage_view != null and is_instance_valid(map_stage_view):
+		if map_stage_view.get_parent() != null:
+			map_stage_view.get_parent().remove_child(map_stage_view)
+		map_stage_view.queue_free()
+	map_stage_view = null
+	var existing_battle_screen := _current_battle_screen()
+	if existing_battle_screen != null and existing_battle_screen.has_method("clear_map_stage_overlay"):
+		existing_battle_screen.call("clear_map_stage_overlay")
 
 
 func _ensure_run_stage_input_shield() -> void:

@@ -8,6 +8,10 @@ const ForgeService = preload("res://scripts/rules/forge/ForgeService.gd")
 const RewardGenerator = preload("res://scripts/rules/reward/RewardGenerator.gd")
 const RunState = preload("res://scripts/core/battle/RunState.gd")
 const ShopService = preload("res://scripts/rules/shop/ShopService.gd")
+const RollService = preload("res://scripts/rules/roll/RollService.gd")
+
+
+const MAP_MOVEMENT_DICE_COUNT := 2
 
 signal flow_state_changed(state_id: StringName)
 signal run_started(run_state: RunState)
@@ -29,10 +33,12 @@ var dice_tool_service := DiceToolService.new()
 var reward_generator := RewardGenerator.new()
 var forge_service := ForgeService.new()
 var shop_service := ShopService.new()
+var map_roll_service := RollService.new()
 var map_nodes: Array[Dictionary] = []
 var map_position_index: int = 0
 var map_last_roll: int = 0
 var map_last_rolls: Array[int] = []
+var map_last_roll_face_indices: Array[int] = []
 var map_last_rolled_dice_indices: Array[int] = []
 var map_last_path: Array[int] = []
 var map_last_refresh_path_index: int = -1
@@ -268,6 +274,7 @@ func get_map_state() -> Dictionary:
 		"current_index": map_position_index,
 		"last_roll": map_last_roll,
 		"last_rolls": map_last_rolls.duplicate(),
+		"last_roll_face_indices": map_last_roll_face_indices.duplicate(),
 		"last_rolled_dice_indices": map_last_rolled_dice_indices.duplicate(),
 		"last_path": map_last_path.duplicate(),
 		"last_refresh_path_index": map_last_refresh_path_index,
@@ -283,9 +290,14 @@ func get_map_state() -> Dictionary:
 		"danger_bonus_percent": run_state.get_danger_bonus_percent() if run_state != null else 0,
 		"danger_multiplier": run_state.get_danger_multiplier() if run_state != null else 1.0,
 		"current_node_target_score": _current_map_node_target_score(),
-		"movement_dice_count": 2,
-		"movement_die_face_count": 6,
+		"movement_dice_count": _map_movement_dice_count(),
+		"movement_die_face_count": _first_map_movement_die_face_count(),
+		"movement_die_face_counts": _map_movement_die_face_counts(),
 	}
+
+
+func get_map_movement_dice() -> Array[DieState]:
+	return _map_movement_dice()
 
 
 func roll_map_movement(selected_dice_indices: Array = [0, 1]) -> Dictionary:
@@ -299,8 +311,10 @@ func roll_map_movement(selected_dice_indices: Array = [0, 1]) -> Dictionary:
 		_reset_demo_map()
 
 	var rolled_indices := _normalize_map_movement_dice_indices(selected_dice_indices)
-	var rolls := _roll_map_movement_dice(rolled_indices)
-	return _apply_map_movement_rolls(rolled_indices, rolls)
+	var roll_result := _roll_map_movement_dice(rolled_indices)
+	var rolls: Array[int] = roll_result.get("rolls", [])
+	var face_indices: Array[int] = roll_result.get("face_indices", [])
+	return _apply_map_movement_rolls(rolled_indices, rolls, face_indices)
 
 
 func prepare_map_movement_roll(selected_dice_indices: Array = [0, 1]) -> Dictionary:
@@ -314,17 +328,20 @@ func prepare_map_movement_roll(selected_dice_indices: Array = [0, 1]) -> Diction
 		_reset_demo_map()
 
 	var rolled_indices := _normalize_map_movement_dice_indices(selected_dice_indices)
-	var rolls := _roll_map_movement_dice(rolled_indices)
+	var roll_result := _roll_map_movement_dice(rolled_indices)
+	var rolls: Array[int] = roll_result.get("rolls", [])
+	var face_indices: Array[int] = roll_result.get("face_indices", [])
 	return {
 		"success": true,
 		"rolls": rolls.duplicate(),
+		"face_indices": face_indices.duplicate(),
 		"rolled_dice_indices": rolled_indices.duplicate(),
 		"steps": _sum_int_array(rolls),
 		"state": get_map_state(),
 	}
 
 
-func apply_prepared_map_movement_roll(selected_dice_indices: Array, prepared_rolls: Array) -> Dictionary:
+func apply_prepared_map_movement_roll(selected_dice_indices: Array, prepared_rolls: Array, prepared_face_indices: Array = []) -> Dictionary:
 	if current_state_id != &"map":
 		return {
 			"success": false,
@@ -342,13 +359,15 @@ func apply_prepared_map_movement_roll(selected_dice_indices: Array, prepared_rol
 			"message": "前进骰结果无效。",
 			"state": get_map_state(),
 		}
-	return _apply_map_movement_rolls(rolled_indices, rolls)
+	var face_indices := _sanitize_prepared_map_movement_face_indices(rolled_indices, rolls, prepared_face_indices)
+	return _apply_map_movement_rolls(rolled_indices, rolls, face_indices)
 
 
-func _apply_map_movement_rolls(rolled_indices: Array[int], rolls: Array[int]) -> Dictionary:
+func _apply_map_movement_rolls(rolled_indices: Array[int], rolls: Array[int], face_indices: Array[int] = []) -> Dictionary:
 	var previous_index := map_position_index
 	map_last_rolled_dice_indices = rolled_indices.duplicate()
 	map_last_rolls = rolls.duplicate()
+	map_last_roll_face_indices = _map_roll_face_indices_for_state(rolled_indices, rolls, face_indices)
 	var steps := _sum_int_array(map_last_rolls)
 	var path := _movement_path_until_forced_stop(previous_index, steps)
 
@@ -438,6 +457,7 @@ func _reset_demo_map() -> void:
 	map_position_index = _start_map_index()
 	map_last_roll = 0
 	map_last_rolls.clear()
+	map_last_roll_face_indices.clear()
 	map_last_rolled_dice_indices.clear()
 	map_last_path.clear()
 	map_last_refresh_path_index = -1
@@ -487,9 +507,10 @@ func _mark_current_map_node_cleared() -> void:
 
 func _normalize_map_movement_dice_indices(raw_indices: Array) -> Array[int]:
 	var result: Array[int] = []
+	var dice_count := _map_movement_dice_count()
 	for raw_index in raw_indices:
 		var index := int(raw_index)
-		if index < 0 or index >= 2:
+		if index < 0 or index >= dice_count:
 			continue
 		if result.has(index):
 			continue
@@ -500,25 +521,54 @@ func _normalize_map_movement_dice_indices(raw_indices: Array) -> Array[int]:
 	return result
 
 
-func _roll_map_movement_dice(selected_dice_indices: Array[int]) -> Array[int]:
-	var rolls: Array[int] = [0, 0]
+func _roll_map_movement_dice(selected_dice_indices: Array[int]) -> Dictionary:
+	var movement_dice := _map_movement_dice()
+	var rolls := _empty_map_movement_roll_slots()
+	var face_indices := _empty_map_movement_face_index_slots()
 	for die_index in selected_dice_indices:
-		if die_index < 0 or die_index >= rolls.size():
+		if die_index < 0 or die_index >= movement_dice.size():
 			continue
-		rolls[die_index] = map_rng.randi_range(1, 6)
-	return rolls
+		var rolled_face = map_roll_service.roll_die(movement_dice[die_index], die_index, map_rng)
+		if rolled_face == null or rolled_face.face == null:
+			continue
+		rolls[die_index] = int(rolled_face.rolled_pip)
+		face_indices[die_index] = int(rolled_face.face_index)
+	return {
+		"rolls": rolls,
+		"face_indices": face_indices,
+	}
 
 
 func _sanitize_prepared_map_movement_rolls(selected_dice_indices: Array[int], raw_rolls: Array) -> Array[int]:
-	var rolls: Array[int] = [0, 0]
+	var movement_dice := _map_movement_dice()
+	var rolls := _empty_map_movement_roll_slots()
 	for die_index in selected_dice_indices:
-		if die_index < 0 or die_index >= rolls.size() or die_index >= raw_rolls.size():
+		if die_index < 0 or die_index >= movement_dice.size() or die_index >= raw_rolls.size():
 			return []
 		var pip := int(raw_rolls[die_index])
-		if pip < 1 or pip > 6:
+		if not _die_has_pip(movement_dice[die_index], pip):
 			return []
 		rolls[die_index] = pip
 	return rolls
+
+
+func _sanitize_prepared_map_movement_face_indices(
+	selected_dice_indices: Array[int],
+	rolls: Array[int],
+	raw_face_indices: Array
+) -> Array[int]:
+	var movement_dice := _map_movement_dice()
+	var face_indices := _empty_map_movement_face_index_slots()
+	for die_index in selected_dice_indices:
+		if die_index < 0 or die_index >= movement_dice.size():
+			continue
+		var face_index := -1
+		if die_index < raw_face_indices.size():
+			face_index = int(raw_face_indices[die_index])
+		if not _die_face_index_matches_pip(movement_dice[die_index], face_index, int(rolls[die_index])):
+			face_index = _first_face_index_for_pip(movement_dice[die_index], int(rolls[die_index]))
+		face_indices[die_index] = face_index
+	return face_indices
 
 
 func _is_battle_map_node_type(node_type: StringName) -> bool:
@@ -567,6 +617,7 @@ func _return_to_start_after_boss_battle() -> void:
 	map_pending_battle = false
 	map_last_roll = 0
 	map_last_rolls.clear()
+	map_last_roll_face_indices.clear()
 	map_last_rolled_dice_indices.clear()
 	map_last_path.clear()
 	map_last_refresh_path_index = -1
@@ -689,6 +740,91 @@ func _sum_int_array(values: Array[int]) -> int:
 	for value in values:
 		total += value
 	return total
+
+
+func _map_movement_dice() -> Array[DieState]:
+	var result: Array[DieState] = []
+	if run_state != null:
+		run_state.ensure_starting_dice()
+		for die_index in range(mini(MAP_MOVEMENT_DICE_COUNT, run_state.dice.size())):
+			var die := run_state.dice[die_index]
+			if die != null:
+				result.append(die)
+	while result.size() < MAP_MOVEMENT_DICE_COUNT:
+		result.append(DieState.create_normal_d6(StringName("fallback_map_d6_%d" % [result.size() + 1])))
+	return result
+
+
+func _map_movement_dice_count() -> int:
+	return _map_movement_dice().size()
+
+
+func _first_map_movement_die_face_count() -> int:
+	var movement_dice := _map_movement_dice()
+	if movement_dice.is_empty() or movement_dice[0] == null:
+		return 0
+	return int(movement_dice[0].face_count)
+
+
+func _map_movement_die_face_counts() -> Array[int]:
+	var result: Array[int] = []
+	for die in _map_movement_dice():
+		result.append(int(die.face_count) if die != null else 0)
+	return result
+
+
+func _empty_map_movement_roll_slots() -> Array[int]:
+	var result: Array[int] = []
+	for _index in range(_map_movement_dice_count()):
+		result.append(0)
+	return result
+
+
+func _empty_map_movement_face_index_slots() -> Array[int]:
+	var result: Array[int] = []
+	for _index in range(_map_movement_dice_count()):
+		result.append(-1)
+	return result
+
+
+func _map_roll_face_indices_for_state(
+	rolled_indices: Array[int],
+	rolls: Array[int],
+	face_indices: Array[int]
+) -> Array[int]:
+	var result := _empty_map_movement_face_index_slots()
+	var movement_dice := _map_movement_dice()
+	for die_index in rolled_indices:
+		if die_index < 0 or die_index >= movement_dice.size() or die_index >= rolls.size():
+			continue
+		var face_index := -1
+		if die_index < face_indices.size():
+			face_index = int(face_indices[die_index])
+		if not _die_face_index_matches_pip(movement_dice[die_index], face_index, int(rolls[die_index])):
+			face_index = _first_face_index_for_pip(movement_dice[die_index], int(rolls[die_index]))
+		result[die_index] = face_index
+	return result
+
+
+func _die_has_pip(die: DieState, pip: int) -> bool:
+	return _first_face_index_for_pip(die, pip) >= 0
+
+
+func _first_face_index_for_pip(die: DieState, pip: int) -> int:
+	if die == null:
+		return -1
+	for face_index in range(die.faces.size()):
+		var face = die.faces[face_index]
+		if face != null and int(face.pip) == pip:
+			return face_index
+	return -1
+
+
+func _die_face_index_matches_pip(die: DieState, face_index: int, pip: int) -> bool:
+	if die == null or face_index < 0 or face_index >= die.faces.size():
+		return false
+	var face = die.faces[face_index]
+	return face != null and int(face.pip) == pip
 
 
 func _current_map_node_target_score() -> int:

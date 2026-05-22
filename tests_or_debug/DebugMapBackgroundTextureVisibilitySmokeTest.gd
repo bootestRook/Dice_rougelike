@@ -25,15 +25,18 @@ func _init() -> void:
 	await process_frame
 
 	all_passed = _check("map backdrop texture node stays wired but hidden", _texture_node_hidden(map_view, "MapBackdropTexture")) and all_passed
-	all_passed = _check("2D map board texture shows parchment map", _texture_node_visible_with_path(map_view, "MapBoardTexture", "res://assets/ui/map/map.png")) and all_passed
-	all_passed = _check("2D map board texture covers the scoring and prep stage", _texture_node_covers_root(map_view, "MapBoardTexture")) and all_passed
-	all_passed = _check("3D dice viewport is mounted and sized", _physics_map_stage_is_sized(map_view)) and all_passed
-	all_passed = _check("3D dice viewport hides map board and route nodes", _physics_map_visuals_are_disabled(map_view)) and all_passed
+	all_passed = _check("2D map board texture stays wired but hidden in 3D tabletop mode", _texture_node_hidden_with_path(map_view, "MapBoardTexture", "res://assets/ui/map/map.png")) and all_passed
+	all_passed = _check("2D map board texture keeps fallback coverage", _texture_node_covers_root(map_view, "MapBoardTexture")) and all_passed
+	all_passed = _check("map tabletop background is its own red-frame-sized layer", _tabletop_background_is_separate_red_frame_layer(map_view)) and all_passed
+	all_passed = _check("map dice viewport stays fixed-size over generated tabletop background", _gm_viewport_overlays_generated_tabletop_background(map_view)) and all_passed
+	all_passed = _check("3D dice viewport is mounted at content size", _physics_map_stage_is_sized(map_view)) and all_passed
+	all_passed = _check("map action badge, movement dice and roll button share center line", _map_primary_controls_share_center_line(map_view)) and all_passed
+	all_passed = _check("3D tabletop uses map config for board and nodes", _physics_map_tabletop_is_enabled(map_view)) and all_passed
 	all_passed = _check("movement dice panel texture node stays wired but hidden", _texture_node_hidden(map_view, "MoveDicePanelTexture")) and all_passed
-	all_passed = _check("2D map path floor tiles stay visible", _texture_node_visible(map_view, "PathFloorTexture")) and all_passed
-	all_passed = _check("2D map route nodes stay visible", _texture_node_visible(map_view, "NodeTexture")) and all_passed
+	all_passed = _check("2D map path layer is hidden in 3D tabletop mode", _control_hidden(map_view, "PathFloorLayer")) and all_passed
+	all_passed = _check("2D map route node layer is hidden in 3D tabletop mode", _control_hidden(map_view, "MapNodeLayer")) and all_passed
 	all_passed = _check("movement controls stay mounted", _find_node_by_name(map_view, "RollMovementButton") != null) and all_passed
-	all_passed = _check("map POV tuner stays hidden in 2D map mode", _pov_tuner_is_hidden(map_view)) and all_passed
+	all_passed = _check("map POV tuner stays hidden in 3D tabletop mode", _pov_tuner_is_hidden(map_view)) and all_passed
 	all_passed = _check("map POV tuner still updates dice camera parameters", _pov_tuning_updates_camera(map_view)) and all_passed
 
 	map_view.queue_free()
@@ -58,6 +61,16 @@ func _texture_node_visible_with_path(root_node: Node, node_name: String, expecte
 	return node != null and node.texture != null and node.visible and node.texture.resource_path == expected_path
 
 
+func _texture_node_hidden_with_path(root_node: Node, node_name: String, expected_path: String) -> bool:
+	var node := _find_node_by_name(root_node, node_name) as TextureRect
+	return node != null and node.texture != null and not node.visible and node.texture.resource_path == expected_path
+
+
+func _control_hidden(root_node: Node, node_name: String) -> bool:
+	var node := _find_node_by_name(root_node, node_name) as Control
+	return node != null and not node.visible
+
+
 func _texture_node_covers_root(root_node: Control, node_name: String) -> bool:
 	var node := _find_node_by_name(root_node, node_name) as Control
 	if node == null:
@@ -70,14 +83,58 @@ func _texture_node_covers_root(root_node: Control, node_name: String) -> bool:
 		and texture_rect.end.y >= root_rect.end.y
 
 
-func _physics_map_visuals_are_disabled(map_view: Node) -> bool:
+func _physics_map_tabletop_is_enabled(map_view: Node) -> bool:
 	var snapshot: Dictionary = map_view.call("automation_get_snapshot")
 	var physics_snapshot: Dictionary = snapshot.get("movement_physics_dice", {})
+	var tabletop_snapshot: Dictionary = physics_snapshot.get("tabletop_3d", {})
 	return bool(physics_snapshot.get("has_board_texture", false)) \
+		and bool(snapshot.get("tabletop_background_visible", false)) \
 		and bool(physics_snapshot.get("fixed_camera", false)) \
-		and not bool(physics_snapshot.get("map_visuals_enabled", true)) \
-		and not bool(physics_snapshot.get("board_visible", true)) \
-		and int(physics_snapshot.get("visible_node_count", -1)) == 0
+		and bool(physics_snapshot.get("map_visuals_enabled", false)) \
+		and bool(physics_snapshot.get("has_3d_tabletop", false)) \
+		and int(physics_snapshot.get("visible_node_count", -1)) == 32 \
+		and not bool(tabletop_snapshot.get("board_visible", true)) \
+		and not bool(tabletop_snapshot.get("overlay_visible", true)) \
+		and bool(tabletop_snapshot.get("player_marker_visible", false)) \
+		and int(tabletop_snapshot.get("node_count", 0)) == 32 \
+		and not bool(physics_snapshot.get("gm_throw_mat_visible", true)) \
+		and str(physics_snapshot.get("gm_throw_surface_texture_path", "")) == "" \
+		and bool(physics_snapshot.get("external_tabletop_background_enabled", false)) \
+		and not bool(physics_snapshot.get("tabletop_backing_visible", true)) \
+		and str(physics_snapshot.get("tabletop_backing_texture_path", "")) == "res://assets/ui/map/map_tabletop_neon_comic.png" \
+		and str(tabletop_snapshot.get("overlay_texture_path", "")) == ""
+
+
+func _tabletop_background_is_separate_red_frame_layer(map_view: Node) -> bool:
+	var snapshot: Dictionary = map_view.call("automation_get_snapshot")
+	var rect := snapshot.get("tabletop_background_rect", Rect2()) as Rect2
+	var content_rect := snapshot.get("map_content_rect", Rect2()) as Rect2
+	return bool(snapshot.get("tabletop_background_visible", false)) \
+		and str(snapshot.get("tabletop_background_texture_path", "")) == "res://assets/ui/map/map_tabletop_neon_comic.png" \
+		and _rect_close(rect, Rect2(Vector2(436.0, 188.0), Vector2(1488.0, 897.0)), 2.0) \
+		and _rect_close(content_rect, Rect2(Vector2(460.0, 256.0), Vector2(1440.0, 810.0)), 2.0)
+
+
+func _gm_viewport_overlays_generated_tabletop_background(map_view: Node) -> bool:
+	var snapshot: Dictionary = map_view.call("automation_get_snapshot")
+	var physics_snapshot: Dictionary = snapshot.get("movement_physics_dice", {})
+	var gm_texture_path := str(physics_snapshot.get("gm_throw_surface_texture_path", ""))
+	return gm_texture_path == "" \
+		and not bool(physics_snapshot.get("gm_throw_mat_visible", true)) \
+		and bool(physics_snapshot.get("external_tabletop_background_enabled", false)) \
+		and not bool(physics_snapshot.get("tabletop_backing_visible", true)) \
+		and str(physics_snapshot.get("tabletop_backing_texture_path", "")) == "res://assets/ui/map/map_tabletop_neon_comic.png" \
+		and _content_view_keeps_fixed_size(physics_snapshot)
+
+
+func _content_view_keeps_fixed_size(physics_snapshot: Dictionary) -> bool:
+	var control_size := physics_snapshot.get("control_size", Vector2.ZERO) as Vector2
+	return control_size.distance_to(Vector2(1440.0, 810.0)) <= 2.0
+
+
+func _rect_close(actual: Rect2, expected: Rect2, tolerance: float) -> bool:
+	return actual.position.distance_to(expected.position) <= tolerance \
+		and actual.size.distance_to(expected.size) <= tolerance
 
 
 func _physics_map_stage_is_sized(map_view: Node) -> bool:
@@ -86,6 +143,22 @@ func _physics_map_stage_is_sized(map_view: Node) -> bool:
 	var physics_snapshot: Dictionary = snapshot.get("movement_physics_dice", {})
 	var control_size := physics_snapshot.get("control_size", Vector2.ZERO) as Vector2
 	return node != null and bool(physics_snapshot.get("has_physics_viewport", false)) and control_size.x >= 900.0 and control_size.y >= 500.0
+
+
+func _map_primary_controls_share_center_line(map_view: Node) -> bool:
+	var snapshot: Dictionary = map_view.call("automation_get_snapshot")
+	var content_rect := snapshot.get("map_content_rect", Rect2()) as Rect2
+	var expected_center_x := content_rect.get_center().x
+	var badge := _find_node_by_name(map_view, "CircleActionBadge") as Control
+	var roll_button := _find_node_by_name(map_view, "RollMovementButton") as Control
+	var first_die := _find_node_by_name(map_view, "MovementDice_1") as Control
+	var second_die := _find_node_by_name(map_view, "MovementDice_2") as Control
+	if badge == null or roll_button == null or first_die == null or second_die == null:
+		return false
+	var dice_center_x := (first_die.get_global_rect().get_center().x + second_die.get_global_rect().get_center().x) * 0.5
+	return absf(badge.get_global_rect().get_center().x - expected_center_x) <= 2.0 \
+		and absf(roll_button.get_global_rect().get_center().x - expected_center_x) <= 2.0 \
+		and absf(dice_center_x - expected_center_x) <= 4.0
 
 
 func _pov_tuner_is_hidden(map_view: Node) -> bool:

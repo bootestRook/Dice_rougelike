@@ -1,5 +1,10 @@
 # 战斗入场与操作按钮实现计划
 
+## 2026-05-21 追加处理：地图前进骰正式化
+- 状态：complete
+- 范围：地图移动只绑定 `RunState.dice` 的前两颗正式战斗骰，流程层通过 `RollService` 投掷并记录 `last_roll_face_indices`；地图 UI 同步这两颗正式骰的 id / 面数，物理表现层接收正式骰引用。
+- 验证：`DebugRunFlowSmokeTest.gd` 新增“前两颗正式骰决定地图步数”断言；`DebugMapStageFlowSmokeTest.gd` 新增地图 UI 绑定正式骰断言；相关地图、战斗、骰子模型、中文显示和主场景 headless 检查通过。
+
 ## 追加处理：结算高亮 typed array 报错
 - 状态：complete
 - 范围：`BattleDiceStage3D` 对外高亮 / 隐藏索引入口改为接收普通 `Array`，内部转换为 `Array[int]`，避免 Godot typed array 运行时不匹配。
@@ -38,3 +43,8 @@
 | 时间 | 错误 | 处理 |
 |---|---|---|
 | 2026-05-21 | `session-catchup.py` 返回 exit 1 且无输出 | 已记录，改用 `git status`、现有计划文件和源码审查继续 |
+## 2026-05-21 追加处理：地图前进骰接入 GM 场景骰子 - 状态：complete
+- 范围：`MapMovementDicePhysicsView` 内部改为复用 `GmDiceViewport` / `GmReadyMgr` / `GmBattleMgr`，地图上实际显示和投掷的是 GM 场景同一套 3D 骰子，不再使用自写 D6 网格只换颜色。
+- 逻辑：地图 UI 等待 GM 物理骰实际落面，读取点数和 face index 后调用 `GameFlowController.apply_prepared_map_movement_roll()`；流程层继续校验这些结果必须来自 `RunState.dice` 的前两颗正式战斗骰。
+- 兼容：GM target 参数补充 `{face_index: ...}` 格式，保留原 pip target 行为；地图只启用两颗骰，GM 视口透明叠在 2D 地图上。
+- 验证：地图流程、地图背景、运行流程、GM 物理骰、正式战斗输入、战斗 smoke、骰子模型、中文显示、主场景 headless、`git diff --check` 均通过。
