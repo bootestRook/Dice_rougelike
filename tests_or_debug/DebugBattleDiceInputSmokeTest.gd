@@ -207,7 +207,16 @@ func _battle_viewport_overlays_background(viewport) -> bool:
 	var sub_viewport := viewport.get("sub_viewport") as SubViewport
 	return sub_viewport != null \
 		and sub_viewport.transparent_bg \
-		and str(viewport.call("get_throw_surface_texture_path")) == ""
+		and str(viewport.call("get_throw_surface_texture_path")) == "" \
+		and _battle_throw_mat_hidden(viewport)
+
+
+func _battle_throw_mat_hidden(viewport) -> bool:
+	var sub_viewport := viewport.get("sub_viewport") as SubViewport
+	if sub_viewport == null:
+		return false
+	var throw_mat := sub_viewport.get_node_or_null("DiceWorld/FixedThrowMat") as Node3D
+	return throw_mat == null or not throw_mat.visible
 
 
 func _stage_hides_all_dice(stage) -> bool:

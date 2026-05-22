@@ -145,13 +145,18 @@ func configure_key_light(new_pitch: float, new_yaw: float) -> void:
 
 
 func set_throw_surface_texture(texture: Texture2D, tint: Color = Color.WHITE, visible_when_empty: bool = true) -> void:
+	var throw_mat_node := _fixed_throw_mat_node()
 	var throw_mat := _fixed_throw_mat()
-	if throw_mat == null:
+	if throw_mat_node == null and throw_mat == null:
 		return
 	if texture == null:
-		_restore_default_throw_surface_mesh(throw_mat)
-		throw_mat.visible = visible_when_empty
-		throw_mat.material_override = _make_material(Color(0.30, 0.29, 0.39, 1.0), 0.78, 0.0)
+		if throw_mat != null:
+			_restore_default_throw_surface_mesh(throw_mat)
+			throw_mat.material_override = _make_material(Color(0.30, 0.29, 0.39, 1.0), 0.78, 0.0)
+		if throw_mat_node != null:
+			throw_mat_node.visible = visible_when_empty
+		return
+	if throw_mat == null:
 		return
 	_apply_texture_throw_surface_mesh(throw_mat, texture)
 	var material := StandardMaterial3D.new()
@@ -162,7 +167,8 @@ func set_throw_surface_texture(texture: Texture2D, tint: Color = Color.WHITE, vi
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	material.cull_mode = BaseMaterial3D.CULL_DISABLED
 	throw_mat.material_override = material
-	throw_mat.visible = true
+	if throw_mat_node != null:
+		throw_mat_node.visible = true
 
 
 func get_throw_surface_texture_path() -> String:
@@ -212,6 +218,12 @@ func _fixed_throw_mat() -> MeshInstance3D:
 	if dice_world == null:
 		return null
 	return dice_world.get_node_or_null("FixedThrowMat") as MeshInstance3D
+
+
+func _fixed_throw_mat_node() -> Node3D:
+	if dice_world == null:
+		return null
+	return dice_world.get_node_or_null("FixedThrowMat") as Node3D
 
 
 func _apply_texture_throw_surface_mesh(throw_mat: MeshInstance3D, texture: Texture2D) -> void:
