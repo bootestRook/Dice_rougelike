@@ -14,10 +14,13 @@ const DEFAULT_ROTATION := Vector3(-0.31415927, 0.59341195, 0.17453292)
 const DEFAULT_ZOOM := 1.0
 const DIE_SCALE := 1.36
 const FACE_OFFSET := 0.708
+const PREVIEW_BACKGROUND_COLOR := Color(0.18, 0.18, 0.19, 1.0)
+const PREVIEW_AMBIENT_COLOR := Color(0.58, 0.58, 0.60, 1.0)
 
 
 var material_id: StringName = GmDiceDefinition.MATERIAL_STANDARD
 var material_name := ""
+var material_source_path := ""
 var interactive := false
 var show_pips := true
 var auto_rotate := false
@@ -45,7 +48,10 @@ func build(new_material_id: StringName, new_interactive := false) -> void:
 	material_id = GmDiceDefinition.normalize_material_id(new_material_id)
 	material_name = GmDiceDefinition.material_name(material_id)
 	interactive = new_interactive
-	name = "InspectorPreviewViewport" if interactive else "MaterialPreviewViewport_%s" % str(material_id)
+	if interactive:
+		name = "InspectorPreviewViewport"
+	elif name.is_empty() or str(name).begins_with("@"):
+		name = "MaterialPreviewViewport_%s" % str(material_id)
 	stretch = true
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	set_process(interactive)
@@ -68,7 +74,7 @@ func _gui_input(event: InputEvent) -> void:
 		var mouse_event := event as InputEventMouseButton
 		if mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
 			preview_clicked.emit(material_id)
-			accept_event()
+			_consume_event()
 
 
 func reset_view() -> void:
@@ -131,7 +137,11 @@ func get_snapshot() -> Dictionary:
 	return {
 		"material_id": str(material_id),
 		"material_name": material_name,
+		"material_source_path": material_source_path,
 		"material_resource_path": material.resource_path if material != null else "",
+		"preview_instance_id": get_instance_id(),
+		"dice_root_instance_id": dice_root.get_instance_id() if dice_root != null else 0,
+		"dice_mesh_instance_id": dice_mesh.get_instance_id() if dice_mesh != null else 0,
 		"mesh_resource_path": dice_mesh.mesh.resource_path if dice_mesh != null and dice_mesh.mesh != null else "",
 		"interactive": interactive,
 		"show_pips": show_pips,
@@ -147,17 +157,17 @@ func _handle_interactive_input(event: InputEvent) -> void:
 		var mouse_event := event as InputEventMouseButton
 		if mouse_event.button_index == MOUSE_BUTTON_LEFT:
 			drag_active = mouse_event.pressed
-			accept_event()
+			_consume_event()
 			return
 		if mouse_event.pressed and mouse_event.button_index == MOUSE_BUTTON_WHEEL_UP:
 			zoom = clampf(zoom - 0.08, 0.55, 1.80)
 			_apply_view_transform()
-			accept_event()
+			_consume_event()
 			return
 		if mouse_event.pressed and mouse_event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			zoom = clampf(zoom + 0.08, 0.55, 1.80)
 			_apply_view_transform()
-			accept_event()
+			_consume_event()
 			return
 	if event is InputEventMouseMotion and drag_active:
 		var motion := event as InputEventMouseMotion
@@ -165,7 +175,7 @@ func _handle_interactive_input(event: InputEvent) -> void:
 		rotation_value.x += motion.relative.y * 0.010
 		rotation_value.x = clampf(rotation_value.x, deg_to_rad(-80.0), deg_to_rad(80.0))
 		_apply_view_transform()
-		accept_event()
+		_consume_event()
 
 
 func _build_viewport() -> void:
@@ -174,6 +184,8 @@ func _build_viewport() -> void:
 	sub_viewport.size = VIEWPORT_SIZE
 	sub_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	sub_viewport.transparent_bg = false
+	_set_existing(sub_viewport, ["own_world_3d"], true)
+	_set_existing(sub_viewport, ["handle_input_locally"], true)
 	add_child(sub_viewport)
 
 	world_root = Node3D.new()
@@ -191,11 +203,11 @@ func _build_environment() -> void:
 	world_environment.name = "PreviewWorldEnvironment"
 	var environment := Environment.new()
 	environment.background_mode = Environment.BG_COLOR
-	environment.background_color = Color(0.028, 0.040, 0.090)
+	environment.background_color = PREVIEW_BACKGROUND_COLOR
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.ambient_light_color = Color(0.36, 0.42, 0.60)
+	environment.ambient_light_color = PREVIEW_AMBIENT_COLOR
 	environment.ambient_light_energy = float(lighting_config["ambient_energy"])
-	environment.ambient_light_sky_contribution = 0.10
+	environment.ambient_light_sky_contribution = 0.04
 	_set_existing(environment, ["tonemap_mode"], 3)
 	_set_existing(environment, ["tonemap_exposure"], 1.05)
 	_set_existing(environment, ["glow_enabled"], true)
@@ -229,7 +241,7 @@ func _build_dice() -> void:
 
 	dice_mesh = MeshInstance3D.new()
 	dice_mesh.name = "PreviewDiceMesh"
-	var mesh := GmDiceMaterialResolver.load_body_mesh(material_id)
+	var mesh := GmDiceMaterialResolver.load_preview_mesh(material_id)
 	if mesh != null:
 		dice_mesh.mesh = mesh
 		dice_mesh.scale = Vector3.ONE * DIE_SCALE
@@ -237,7 +249,8 @@ func _build_dice() -> void:
 		var fallback_mesh := BoxMesh.new()
 		fallback_mesh.size = Vector3.ONE * DIE_SCALE
 		dice_mesh.mesh = fallback_mesh
-	dice_mesh.material_override = GmDiceMaterialResolver.make_body_material(_body_color_for_material(), material_id)
+	material_source_path = GmDiceMaterialResolver.material_resource_path(material_id)
+	dice_mesh.material_override = GmDiceMaterialResolver.make_body_material_instance(_body_color_for_material(), material_id)
 	dice_root.add_child(dice_mesh)
 	_create_face_labels()
 
@@ -327,6 +340,13 @@ func _clear_children() -> void:
 	for child in get_children():
 		remove_child(child)
 		child.queue_free()
+
+
+func _consume_event() -> void:
+	accept_event()
+	var viewport := get_viewport()
+	if viewport != null:
+		viewport.set_input_as_handled()
 
 
 func _set_existing(object: Object, names: Array, value) -> bool:

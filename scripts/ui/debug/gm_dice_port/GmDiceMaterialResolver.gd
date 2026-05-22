@@ -5,6 +5,7 @@ class_name GmDiceMaterialResolver
 const GmDiceDefinition = preload("res://scripts/ui/debug/gm_dice_port/GmDiceDefinition.gd")
 
 
+const STANDARD_D6_MESH_PATH := "res://assets/models/dice/standard_d6_mesh.tres"
 const ROUNDED_D6_MESH_PATH := "res://assets/models/dice/rounded_d6_mesh.tres"
 const REPRO_DICE_SHADER_PATH := "res://assets/shaders/dice/repro_glow_dice.gdshader"
 const MATERIAL_RESOURCE_PATHS := {
@@ -31,7 +32,7 @@ static func get_material_rows() -> Array[Dictionary]:
 			"resource_path": path,
 			"has_resource": not path.is_empty() and ResourceLoader.exists(path),
 			"programmatic": path.is_empty() or not ResourceLoader.exists(path),
-			"mesh_path": ROUNDED_D6_MESH_PATH if ResourceLoader.exists(ROUNDED_D6_MESH_PATH) else "",
+			"mesh_path": preview_mesh_path(),
 		})
 	return rows
 
@@ -54,6 +55,21 @@ static func load_body_mesh(_material_id: StringName = GmDiceDefinition.MATERIAL_
 	return load(ROUNDED_D6_MESH_PATH) as Mesh
 
 
+static func preview_mesh_path() -> String:
+	if ResourceLoader.exists(STANDARD_D6_MESH_PATH):
+		return STANDARD_D6_MESH_PATH
+	if ResourceLoader.exists(ROUNDED_D6_MESH_PATH):
+		return ROUNDED_D6_MESH_PATH
+	return ""
+
+
+static func load_preview_mesh(_material_id: StringName = GmDiceDefinition.MATERIAL_STANDARD) -> Mesh:
+	var path := preview_mesh_path()
+	if path.is_empty():
+		return null
+	return load(path) as Mesh
+
+
 static func make_body_material(body_color: Color, material_id: StringName) -> Material:
 	var normalized_id := GmDiceDefinition.normalize_material_id(material_id)
 	var resource_material := load_body_material(normalized_id)
@@ -63,6 +79,13 @@ static func make_body_material(body_color: Color, material_id: StringName) -> Ma
 	if programmatic_material != null:
 		return programmatic_material
 	return make_standard_fallback_material(body_color, normalized_id)
+
+
+static func make_body_material_instance(body_color: Color, material_id: StringName) -> Material:
+	var material := make_body_material(body_color, material_id)
+	if material == null:
+		return null
+	return material.duplicate(true) as Material
 
 
 static func make_programmatic_body_material(body_color: Color, material_id: StringName) -> Material:

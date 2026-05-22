@@ -46,3 +46,10 @@
 - [x] 6.4 Add checks that visible material labels are Chinese and do not expose forbidden internal UI text.
 - [x] 6.5 Run relevant existing GM material tests: `DebugDiceMaterialPipelineSmokeTest.gd`, `DebugGmDiceLightingSmokeTest.gd`, and `DebugGmDiceEditSmokeTest.gd`.
 - [x] 6.6 Run main scene startup check with headless Godot.
+
+## 7. Acceptance Fixes
+
+- [x] 7.1 Use the dice material pipeline preview mesh for the material inspector so atlas-based resources display correctly.
+- [x] 7.2 Ensure the popup preview owns an independent dice/material instance and drag input does not affect cabinet previews.
+- [x] 7.3 Add a neutral gray modal/background treatment for material and lighting inspection.
+- [x] 7.4 Extend the smoke test to cover preview mesh choice, popup isolation, and gray background metadata.

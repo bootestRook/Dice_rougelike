@@ -10,10 +10,17 @@ const GmDiceMaterialPreviewViewport = preload("res://scripts/ui/debug/GmDiceMate
 signal back_requested
 
 
+const SCREEN_BACKGROUND_COLOR := Color(0.16, 0.16, 0.17, 1.0)
+const PANEL_BACKGROUND_COLOR := Color(0.22, 0.22, 0.24, 0.98)
+const CARD_BACKGROUND_COLOR := Color(0.20, 0.20, 0.22, 0.96)
+const MODAL_BACKDROP_COLOR := Color(0.12, 0.12, 0.13, 0.70)
+
+
 var back_callback: Callable
 var material_rows: Array[Dictionary] = []
 var cabinet_grid: GridContainer = null
 var popup_layer: Control = null
+var popup_backdrop: ColorRect = null
 var inspector_popup: PanelContainer = null
 var inspector_preview: GmDiceMaterialPreviewViewport = null
 var popup_drag_active := false
@@ -52,11 +59,14 @@ func automation_get_snapshot() -> Dictionary:
 			"has_resource": bool(row.get("has_resource", false)),
 			"programmatic": bool(row.get("programmatic", false)),
 			"card_exists": _find_node_by_name(self, "MaterialCard_%s" % material_id) != null,
+			"preview": _card_preview_snapshot(material_id),
 		})
 	return {
 		"view": "gm_dice_material_inspector",
 		"material_count": cards.size(),
 		"materials": cards,
+		"background_color": SCREEN_BACKGROUND_COLOR,
+		"popup_layer_blocking": popup_layer != null and popup_layer.mouse_filter == Control.MOUSE_FILTER_STOP,
 		"popup_open": inspector_popup != null and is_instance_valid(inspector_popup),
 		"popup": _popup_snapshot(),
 	}
@@ -84,7 +94,7 @@ func automation_apply_light_preset(preset_id: StringName) -> void:
 func _build_background() -> void:
 	var background := ColorRect.new()
 	background.name = "MaterialInspectorBackdrop"
-	background.color = Color(0.025, 0.036, 0.078, 1.0)
+	background.color = SCREEN_BACKGROUND_COLOR
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(background)
@@ -165,7 +175,7 @@ func _add_material_card(row: Dictionary) -> void:
 	card.custom_minimum_size = Vector2(250, 250)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.mouse_filter = Control.MOUSE_FILTER_STOP
-	card.add_theme_stylebox_override("panel", _make_panel_style(Color(0.045, 0.065, 0.120, 0.96), Color(0.30, 0.50, 0.70, 0.78), 2, 6))
+	card.add_theme_stylebox_override("panel", _make_panel_style(CARD_BACKGROUND_COLOR, Color(0.48, 0.48, 0.50, 0.78), 2, 6))
 	cabinet_grid.add_child(card)
 
 	var margin := _make_margin(12, 12, 12, 12)
@@ -211,6 +221,13 @@ func _open_inspector(row: Dictionary) -> void:
 	if row.is_empty():
 		return
 	_close_inspector_popup()
+	popup_layer.mouse_filter = Control.MOUSE_FILTER_STOP
+	popup_backdrop = ColorRect.new()
+	popup_backdrop.name = "InspectorModalBackdrop"
+	popup_backdrop.color = MODAL_BACKDROP_COLOR
+	popup_backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
+	popup_backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	popup_layer.add_child(popup_backdrop)
 	var material_id := GmDiceDefinition.normalize_material_id(StringName(str(row.get("id", ""))))
 	var material_name := str(row.get("name", GmDiceDefinition.material_name(material_id)))
 
@@ -218,7 +235,7 @@ func _open_inspector(row: Dictionary) -> void:
 	inspector_popup.name = "DiceMaterialInspectorPopup"
 	inspector_popup.custom_minimum_size = Vector2(860, 590)
 	inspector_popup.mouse_filter = Control.MOUSE_FILTER_STOP
-	inspector_popup.add_theme_stylebox_override("panel", _make_panel_style(Color(0.035, 0.048, 0.092, 0.98), Color(0.86, 0.78, 0.52, 0.88), 3, 7))
+	inspector_popup.add_theme_stylebox_override("panel", _make_panel_style(PANEL_BACKGROUND_COLOR, Color(0.76, 0.76, 0.68, 0.88), 3, 7))
 	inspector_popup.position = Vector2(260, 120)
 	popup_layer.add_child(inspector_popup)
 
@@ -376,9 +393,14 @@ func _slider_value(key: String, fallback: float) -> float:
 func _close_inspector_popup() -> void:
 	if inspector_popup != null and is_instance_valid(inspector_popup):
 		inspector_popup.queue_free()
+	if popup_backdrop != null and is_instance_valid(popup_backdrop):
+		popup_backdrop.queue_free()
 	inspector_popup = null
+	popup_backdrop = null
 	inspector_preview = null
 	popup_drag_active = false
+	if popup_layer != null:
+		popup_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
 func _on_popup_drag_handle_gui_input(event: InputEvent) -> void:
@@ -392,18 +414,32 @@ func _on_popup_drag_handle_gui_input(event: InputEvent) -> void:
 		if popup_drag_active:
 			popup_drag_offset = mouse_event.global_position - inspector_popup.global_position
 			inspector_popup.move_to_front()
-		get_viewport().set_input_as_handled()
+		_consume_popup_event()
 		return
 	if event is InputEventMouseMotion and popup_drag_active:
 		var motion := event as InputEventMouseMotion
 		inspector_popup.global_position = motion.global_position - popup_drag_offset
-		get_viewport().set_input_as_handled()
+		_consume_popup_event()
 
 
 func _on_back_pressed() -> void:
 	back_requested.emit()
 	if back_callback.is_valid():
 		back_callback.call()
+
+
+func _consume_popup_event() -> void:
+	accept_event()
+	var viewport := get_viewport()
+	if viewport != null:
+		viewport.set_input_as_handled()
+
+
+func _card_preview_snapshot(material_id_text: String) -> Dictionary:
+	var preview := _find_node_by_name(self, "MaterialPreview_%s" % material_id_text) as GmDiceMaterialPreviewViewport
+	if preview == null:
+		return {}
+	return preview.get_snapshot()
 
 
 func _popup_snapshot() -> Dictionary:
@@ -413,6 +449,9 @@ func _popup_snapshot() -> Dictionary:
 	return {
 		"title": title_label.text if title_label != null else "",
 		"position": inspector_popup.global_position,
+		"has_modal_backdrop": popup_backdrop != null and is_instance_valid(popup_backdrop),
+		"modal_backdrop_color": MODAL_BACKDROP_COLOR,
+		"popup_layer_blocking": popup_layer != null and popup_layer.mouse_filter == Control.MOUSE_FILTER_STOP,
 		"preview": inspector_preview.get_snapshot() if inspector_preview != null else {},
 		"has_close_button": _find_node_by_name(inspector_popup, "InspectorCloseButton") is Button,
 		"has_reset_button": _find_node_by_name(inspector_popup, "ResetViewButton") is Button,
