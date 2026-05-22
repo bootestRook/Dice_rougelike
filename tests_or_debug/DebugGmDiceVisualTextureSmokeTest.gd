@@ -19,6 +19,12 @@ const REPRO_MATERIAL_PATHS := {
 	"repro_gold": "res://assets/materials/dice/repro_gold_dice.tres",
 	"repro_silverwhite": "res://assets/materials/dice/repro_silverwhite_dice.tres",
 }
+const EXPECTED_VISUAL_LAYER_ROLES := [
+	"body",
+	"face_marker",
+	"state_overlay",
+	"contact_shadow",
+]
 
 
 func _init() -> void:
@@ -41,6 +47,7 @@ func _check_repro_shader() -> bool:
 		var code := shader.code
 		ok = _check("visual repro shader has atlas face detail", code.contains("face_uv") and code.contains("inset_line")) and ok
 		ok = _check("visual repro shader has edge detail controls", code.contains("face_detail_strength") and code.contains("edge_line_strength")) and ok
+		ok = _check("visual repro shader tones down wireframe emission", code.contains("face_light_rolloff") and code.contains("fresnel_strength * 0.28")) and ok
 	return ok
 
 
@@ -75,6 +82,7 @@ func _check_default_screen_dice() -> bool:
 	await process_frame
 	await process_frame
 	var snapshot: Dictionary = screen.call("automation_get_snapshot")
+	ok = _check("gm throw camera keeps default tuning", _camera_keeps_default_tuning(snapshot)) and ok
 	var dice_rows: Array = snapshot.get("dice", [])
 	ok = _check("default visual repro screen has six dice", dice_rows.size() == EXPECTED_DEFAULT_MATERIAL_IDS.size()) and ok
 	for index in range(mini(dice_rows.size(), EXPECTED_DEFAULT_MATERIAL_IDS.size())):
@@ -86,11 +94,27 @@ func _check_default_screen_dice() -> bool:
 		ok = _check("die %d uses repro shader" % [index + 1], row != null and str(row.get("body_material_shader_path", "")) == REPRO_SHADER_PATH) and ok
 		ok = _check("die %d exposes shader face detail" % [index + 1], row != null and float(row.get("body_material_face_detail_strength", 0.0)) > 0.0) and ok
 		ok = _check("die %d uses rounded d6 mesh" % [index + 1], row != null and str(row.get("body_mesh_resource_path", "")) == ROUNDED_MESH_PATH) and ok
+		var layer_roles: Dictionary = row.get("visual_layer_roles", {}) if row != null else {}
+		for role in EXPECTED_VISUAL_LAYER_ROLES:
+			ok = _check("die %d exposes %s visual layer" % [index + 1, role], bool(layer_roles.get(role, false))) and ok
+		ok = _check("die %d matches material inspector without edge/rim frame layer" % [index + 1], row != null and not bool(row.get("edge_rim_layer_exists", true)) and int(row.get("edge_rim_bar_count", -1)) == 0) and ok
+		ok = _check("die %d keeps state outside body material" % [index + 1], row != null and bool(row.get("state_overlay_layer_exists", false)) and bool(row.get("selection_frame_visible", false)) == bool(row.get("selected", false))) and ok
+		ok = _check("die %d matches material inspector without square face texture panels" % [index + 1], row != null and not bool(row.get("face_texture_layer_exists", true)) and int(row.get("face_texture_panel_count", -1)) == 0) and ok
+		ok = _check("die %d face marker layer owns six labels" % [index + 1], row != null and int(row.get("face_marker_label_count", 0)) == 6) and ok
 		ok = _check("die %d has six centered face labels" % [index + 1], row != null and int(row.get("face_label_count", 0)) == 6 and bool(row.get("face_label_centered", false))) and ok
 		ok = _check("die %d face labels are double-sided" % [index + 1], row != null and bool(row.get("face_label_double_sided", false))) and ok
 		ok = _check("die %d face labels clear rounded mesh" % [index + 1], row != null and float(row.get("face_label_min_surface_offset", 0.0)) >= 0.030) and ok
 	screen.queue_free()
 	return ok
+
+
+func _camera_keeps_default_tuning(snapshot: Dictionary) -> bool:
+	var fov := float(snapshot.get("camera_fov", 0.0))
+	var position: Vector3 = snapshot.get("camera_position", Vector3.ZERO)
+	var look_at: Vector3 = snapshot.get("camera_look_at", Vector3.ZERO)
+	return is_equal_approx(fov, 38.0) \
+		and position.distance_to(Vector3(0.0, 18.5, 1.0)) <= 0.001 \
+		and look_at.distance_to(Vector3(0.0, 0.72, -0.04)) <= 0.001
 
 
 func _check(label: String, passed: bool) -> bool:

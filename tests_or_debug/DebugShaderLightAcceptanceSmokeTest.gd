@@ -12,6 +12,7 @@ const EXPECTED_CASES := {
 	"dice_shader_basic": "shader_material",
 	"table_shader_basic": "shader_material",
 	"light_effect_basic": "lighting_effect",
+	"battle_star_dice_repro_full": "full_scene_repro",
 }
 const EXPECTED_SCENE_NODES := [
 	"VA_Camera3D",
@@ -32,6 +33,9 @@ func _init() -> void:
 	all_passed = _check("shell runner exists", FileAccess.file_exists("res://tests_or_debug/run_shader_light_acceptance.sh")) and all_passed
 	all_passed = _check("cases directory exists", DirAccess.dir_exists_absolute(ProjectSettings.globalize_path(CASES_DIR))) and all_passed
 	all_passed = _check("runner writes local outputs under tmp_report", FileAccess.get_file_as_string(RUNNER_PATH).contains(TMP_REPORT_DIR)) and all_passed
+	all_passed = _check("runner records engineering status", FileAccess.get_file_as_string(RUNNER_PATH).contains("engineering_status")) and all_passed
+	all_passed = _check("runner records visual acceptance status", FileAccess.get_file_as_string(RUNNER_PATH).contains("visual_acceptance_status")) and all_passed
+	all_passed = _check("runner records reference gap checklist", FileAccess.get_file_as_string(RUNNER_PATH).contains("reference_gap_checklist")) and all_passed
 	all_passed = _check_cases() and all_passed
 	all_passed = _check_scene_nodes() and all_passed
 	print("PASS: DebugShaderLightAcceptanceSmokeTest" if all_passed else "FAIL: DebugShaderLightAcceptanceSmokeTest")
@@ -52,6 +56,9 @@ func _check_cases() -> bool:
 		ok = _check("%s case type is expected" % case_id, str(data.get("type", "")) == str(EXPECTED_CASES[case_id])) and ok
 		ok = _check("%s has camera marker" % case_id, str(data.get("camera_marker", "")) == case_id) and ok
 		ok = _check("%s has capture time" % case_id, data.get("capture", {}) is Dictionary and float((data.get("capture", {}) as Dictionary).get("time", 0.0)) > 0.0) and ok
+		if case_id == "battle_star_dice_repro_full":
+			var scene_state: Dictionary = data.get("scene_state", {}) if data.get("scene_state", {}) is Dictionary else {}
+			ok = _check("full-scene case fixes six dice values", scene_state.get("dice_values", []) is Array and (scene_state.get("dice_values", []) as Array).size() == 6) and ok
 	return ok
 
 
@@ -65,7 +72,22 @@ func _check_scene_nodes() -> bool:
 		ok = _check("scene has %s" % node_name, _scene_state_has_node_name(state, node_name)) and ok
 	for case_id in EXPECTED_CASES.keys():
 		ok = _check("scene has camera marker %s" % case_id, _scene_state_has_node_name(state, case_id)) and ok
+	ok = _check("scene has rounded bevel rails", _scene_state_count_nodes_with_prefix(state, "EdgeBevelRail") >= 72) and ok
+	ok = _check("scene has rounded bevel corner caps", _scene_state_count_nodes_with_prefix(state, "EdgeCornerBevelCap") >= 48) and ok
+	ok = _check("scene has solid top face fills", _scene_state_count_nodes_with_prefix(state, "TopFaceFill") >= 6) and ok
+	ok = _check("scene has solid front face fills", _scene_state_count_nodes_with_prefix(state, "FrontFaceFill") >= 6) and ok
+	ok = _check("scene has solid side face fills", _scene_state_count_nodes_with_prefix(state, "SideFaceFill") >= 12) and ok
+	ok = _check("scene has front star emblems", _scene_state_count_nodes_with_prefix(state, "FrontStarEmblem") >= 24) and ok
+	ok = _check("scene has top face panels", _scene_state_count_nodes_with_prefix(state, "TopFacePanel") >= 24) and ok
 	return ok
+
+
+func _scene_state_count_nodes_with_prefix(state: SceneState, prefix: String) -> int:
+	var count := 0
+	for node_index in range(state.get_node_count()):
+		if str(state.get_node_name(node_index)).begins_with(prefix):
+			count += 1
+	return count
 
 
 func _scene_state_has_node_name(state: SceneState, node_name: String) -> bool:

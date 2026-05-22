@@ -1,0 +1,30 @@
+{
+	"body_mesh_paths": [
+		"res://assets/models/dice/rounded_d6_mesh.tres",
+		"res://assets/models/dice/rounded_d6_mesh.tres",
+		"res://assets/models/dice/rounded_d6_mesh.tres",
+		"res://assets/models/dice/rounded_d6_mesh.tres",
+		"res://assets/models/dice/rounded_d6_mesh.tres",
+		"res://assets/models/dice/rounded_d6_mesh.tres"
+	],
+	"camera_fov": 38.0,
+	"camera_look_at": "(0.0, 0.72, -0.04)",
+	"camera_pitch": -86.6524303818126,
+	"camera_position": "(0.0, 18.5, 1.0)",
+	"capture_phase": "physical_settle_after_drop",
+	"capture_scene": "res://scenes/debug/GmPhysicsDiceTestScreen.tscn",
+	"capture_wait_max_frames": 900,
+	"dice_count": 6,
+	"dice_viewport_output": "E:/project/godot/Dice_rougelike/tests_or_debug/captures/gm_throw_scene/after_actual_gm_dice_viewport.png",
+	"entry_scene": "res://scenes/main/Main.tscn",
+	"output": "E:/project/godot/Dice_rougelike/tests_or_debug/captures/gm_throw_scene/after_actual_gm_throw_scene.png",
+	"settled": true,
+	"settled_positions": [
+		"(-2.299941, 0.374399, 1.637961)",
+		"(-1.775685, 0.374399, 0.063325)",
+		"(-2.60512, 0.373749, 0.183382)",
+		"(4.613974, 0.374399, 2.44459)",
+		"(-1.448233, 0.374398, 1.779868)",
+		"(0.817038, 0.374398, 0.363094)"
+	]
+}

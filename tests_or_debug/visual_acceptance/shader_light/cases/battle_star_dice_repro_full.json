@@ -1,0 +1,18 @@
+{
+	"id": "battle_star_dice_repro_full",
+	"type": "full_scene_repro",
+	"camera_marker": "battle_star_dice_repro_full",
+	"seed": 4201104,
+	"capture": {
+		"id": "main",
+		"time": 0.75
+	},
+	"camera": {
+		"fov": 34.0,
+		"target": [0.0, 0.42, 0.12]
+	},
+	"scene_state": {
+		"dice_values": [4, 3, 3, 4, 1, 6],
+		"material_palette": ["星蓝骰胚", "星紫骰胚", "星青骰胚", "星紫骰胚", "星金骰胚", "银白骰胚"]
+	}
+}

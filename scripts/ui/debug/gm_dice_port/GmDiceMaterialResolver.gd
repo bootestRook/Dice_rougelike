@@ -3,9 +3,11 @@ class_name GmDiceMaterialResolver
 
 
 const GmDiceDefinition = preload("res://scripts/ui/debug/gm_dice_port/GmDiceDefinition.gd")
+const RoundedDiceMeshFactory := preload("res://scripts/ui/debug/RoundedDiceMeshFactory.gd")
 
 
 const STANDARD_D6_MESH_PATH := "res://assets/models/dice/standard_d6_mesh.tres"
+const ROUNDED_DICE_BASE_GLB_PATH := "res://assets/models/dice/rounded_dice_base.glb"
 const ROUNDED_D6_MESH_PATH := "res://assets/models/dice/rounded_d6_mesh.tres"
 const REPRO_DICE_SHADER_PATH := "res://assets/shaders/dice/repro_glow_dice.gdshader"
 const MATERIAL_RESOURCE_PATHS := {
@@ -50,14 +52,20 @@ static func load_body_material(material_id: StringName) -> Material:
 
 
 static func load_body_mesh(_material_id: StringName = GmDiceDefinition.MATERIAL_STANDARD) -> Mesh:
-	if not ResourceLoader.exists(ROUNDED_D6_MESH_PATH):
-		return null
-	return load(ROUNDED_D6_MESH_PATH) as Mesh
+	if ResourceLoader.exists(ROUNDED_DICE_BASE_GLB_PATH):
+		var glb_mesh := _load_first_mesh_from_scene(ROUNDED_DICE_BASE_GLB_PATH)
+		if glb_mesh != null:
+			return glb_mesh
+	if ResourceLoader.exists(ROUNDED_D6_MESH_PATH):
+		return load(ROUNDED_D6_MESH_PATH) as Mesh
+	return RoundedDiceMeshFactory.create_rounded_cube({
+		"resource_name": "rounded_d6_mesh_runtime_fallback",
+	})
 
 
 static func preview_mesh_path() -> String:
-	if ResourceLoader.exists(STANDARD_D6_MESH_PATH):
-		return STANDARD_D6_MESH_PATH
+	if ResourceLoader.exists(ROUNDED_DICE_BASE_GLB_PATH):
+		return ROUNDED_DICE_BASE_GLB_PATH
 	if ResourceLoader.exists(ROUNDED_D6_MESH_PATH):
 		return ROUNDED_D6_MESH_PATH
 	return ""
@@ -66,8 +74,35 @@ static func preview_mesh_path() -> String:
 static func load_preview_mesh(_material_id: StringName = GmDiceDefinition.MATERIAL_STANDARD) -> Mesh:
 	var path := preview_mesh_path()
 	if path.is_empty():
-		return null
+		return RoundedDiceMeshFactory.create_rounded_cube({
+			"resource_name": "rounded_d6_preview_runtime_fallback",
+		})
+	if path.ends_with(".glb"):
+		var glb_mesh := _load_first_mesh_from_scene(path)
+		if glb_mesh != null:
+			return glb_mesh
 	return load(path) as Mesh
+
+
+static func _load_first_mesh_from_scene(path: String) -> Mesh:
+	var packed := load(path) as PackedScene
+	if packed == null:
+		return null
+	var root := packed.instantiate()
+	var mesh := _find_first_mesh(root)
+	root.free()
+	return mesh
+
+
+static func _find_first_mesh(node: Node) -> Mesh:
+	var mesh_instance := node as MeshInstance3D
+	if mesh_instance != null and mesh_instance.mesh != null:
+		return mesh_instance.mesh
+	for child in node.get_children():
+		var mesh := _find_first_mesh(child)
+		if mesh != null:
+			return mesh
+	return null
 
 
 static func make_body_material(body_color: Color, material_id: StringName) -> Material:
@@ -88,6 +123,54 @@ static func make_body_material_instance(body_color: Color, material_id: StringNa
 	return material.duplicate(true) as Material
 
 
+static func make_edge_rim_material(material_id: StringName, fallback_color: Color = Color(0.80, 0.94, 1.00, 1.0)) -> StandardMaterial3D:
+	var color := edge_rim_color(material_id, fallback_color)
+	var material := StandardMaterial3D.new()
+	material.resource_name = "gm_%s_edge_frame_layer" % str(GmDiceDefinition.normalize_material_id(material_id))
+	material.albedo_color = Color(color.r * 0.58, color.g * 0.58, color.b * 0.60, 0.26)
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.emission_enabled = true
+	material.emission = color
+	material.emission_energy_multiplier = edge_rim_energy(material_id) * 0.24
+	material.roughness = 0.42
+	material.metallic = 0.0
+	return material
+
+
+static func edge_rim_color(material_id: StringName, fallback_color: Color = Color(0.80, 0.94, 1.00, 1.0)) -> Color:
+	match GmDiceDefinition.normalize_material_id(material_id):
+		GmDiceDefinition.MATERIAL_REPRO_BLUE:
+			return Color(0.58, 0.86, 1.00, 1.0)
+		GmDiceDefinition.MATERIAL_REPRO_PURPLE:
+			return Color(0.92, 0.56, 1.00, 1.0)
+		GmDiceDefinition.MATERIAL_REPRO_CYAN:
+			return Color(0.62, 1.00, 0.96, 1.0)
+		GmDiceDefinition.MATERIAL_REPRO_GOLD, GmDiceDefinition.MATERIAL_GOLD:
+			return Color(1.00, 0.91, 0.46, 1.0)
+		GmDiceDefinition.MATERIAL_REPRO_SILVERWHITE, GmDiceDefinition.MATERIAL_CRYSTAL:
+			return Color(0.96, 1.00, 1.00, 1.0)
+		GmDiceDefinition.MATERIAL_IRON, GmDiceDefinition.MATERIAL_BRONZE:
+			return Color(0.95, 0.84, 0.66, 1.0)
+		GmDiceDefinition.MATERIAL_GLASS:
+			return Color(0.82, 1.00, 1.00, 1.0)
+		_:
+			return fallback_color
+
+
+static func edge_rim_energy(material_id: StringName) -> float:
+	match GmDiceDefinition.normalize_material_id(material_id):
+		GmDiceDefinition.MATERIAL_REPRO_GOLD, GmDiceDefinition.MATERIAL_GOLD:
+			return 0.08
+		GmDiceDefinition.MATERIAL_REPRO_SILVERWHITE, GmDiceDefinition.MATERIAL_CRYSTAL:
+			return 0.07
+		GmDiceDefinition.MATERIAL_REPRO_BLUE, GmDiceDefinition.MATERIAL_REPRO_PURPLE, GmDiceDefinition.MATERIAL_REPRO_CYAN:
+			return 0.085
+		GmDiceDefinition.MATERIAL_GLASS:
+			return 0.09
+		_:
+			return 0.07
+
+
 static func make_programmatic_body_material(body_color: Color, material_id: StringName) -> Material:
 	if not ResourceLoader.exists(REPRO_DICE_SHADER_PATH):
 		return null
@@ -104,34 +187,34 @@ static func make_programmatic_body_material(body_color: Color, material_id: Stri
 	var edge := Color(0.80, 0.94, 1.00, 1.0)
 	var emission := Color(base.r * 0.55 + 0.10, base.g * 0.55 + 0.20, base.b * 0.70 + 0.22, 1.0)
 	var metallic := 0.22
-	var roughness := 0.28
+	var roughness := 0.34
 	match normalized_id:
 		GmDiceDefinition.MATERIAL_IRON:
 			base = Color(0.70, 0.76, 0.84, 1.0)
 			edge = Color(0.95, 1.00, 1.00, 1.0)
 			emission = Color(0.36, 0.50, 0.70, 1.0)
 			metallic = 0.55
-			roughness = 0.26
+			roughness = 0.34
 		GmDiceDefinition.MATERIAL_GLASS:
 			base = Color(0.42, 0.82, 1.00, 0.72)
 			edge = Color(0.82, 1.00, 1.00, 1.0)
 			emission = Color(0.18, 0.62, 1.00, 1.0)
 			metallic = 0.04
-			roughness = 0.12
+			roughness = 0.22
 
 	material.set_shader_parameter("base_color", base)
 	material.set_shader_parameter("edge_color", edge)
 	material.set_shader_parameter("emission_color", emission)
 	material.set_shader_parameter("metallic", metallic)
 	material.set_shader_parameter("roughness", roughness)
-	material.set_shader_parameter("emission_strength", 0.24)
-	material.set_shader_parameter("fresnel_strength", 1.10)
-	material.set_shader_parameter("fresnel_power", 2.75)
+	material.set_shader_parameter("emission_strength", 0.10)
+	material.set_shader_parameter("fresnel_strength", 0.62)
+	material.set_shader_parameter("fresnel_power", 3.20)
 	material.set_shader_parameter("surface_variation", 0.028)
 	material.set_shader_parameter("face_detail_strength", 1.0)
-	material.set_shader_parameter("edge_line_strength", 1.0)
-	material.set_shader_parameter("corner_glint_strength", 0.45)
-	material.set_shader_parameter("side_shadow_strength", 0.24)
+	material.set_shader_parameter("edge_line_strength", 0.58)
+	material.set_shader_parameter("corner_glint_strength", 0.24)
+	material.set_shader_parameter("side_shadow_strength", 0.36)
 	return material
 
 

@@ -5,15 +5,15 @@ uniform vec4 base_color : source_color = vec4(0.16, 0.42, 1.0, 1.0);
 uniform vec4 edge_color : source_color = vec4(0.65, 0.88, 1.0, 1.0);
 uniform vec4 emission_color : source_color = vec4(0.18, 0.56, 1.0, 1.0);
 uniform float metallic : hint_range(0.0, 1.0, 0.01) = 0.18;
-uniform float roughness : hint_range(0.02, 1.0, 0.01) = 0.28;
-uniform float emission_strength : hint_range(0.0, 4.0, 0.01) = 0.22;
-uniform float fresnel_strength : hint_range(0.0, 5.0, 0.01) = 1.10;
+uniform float roughness : hint_range(0.02, 1.0, 0.01) = 0.34;
+uniform float emission_strength : hint_range(0.0, 4.0, 0.01) = 0.12;
+uniform float fresnel_strength : hint_range(0.0, 5.0, 0.01) = 0.62;
 uniform float fresnel_power : hint_range(0.5, 8.0, 0.05) = 3.0;
 uniform float surface_variation : hint_range(0.0, 0.20, 0.01) = 0.035;
 uniform float face_detail_strength : hint_range(0.0, 2.0, 0.01) = 1.0;
 uniform float edge_line_strength : hint_range(0.0, 2.0, 0.01) = 1.0;
 uniform float corner_glint_strength : hint_range(0.0, 2.0, 0.01) = 0.45;
-uniform float side_shadow_strength : hint_range(0.0, 1.0, 0.01) = 0.24;
+uniform float side_shadow_strength : hint_range(0.0, 1.0, 0.01) = 0.36;
 
 float hash21(vec2 p) {
 	p = fract(p * vec2(123.34, 456.21));
@@ -49,15 +49,17 @@ void fragment() {
 	corner_marks = max(corner_marks, corner_glint(face_uv, vec2(0.82, 0.82)));
 	float fine_grain = hash21(UV * 176.0) - 0.5;
 	float soft_panel_noise = hash21(floor(UV * 48.0)) - 0.5;
-	float detail_mask = clamp(inset_line * 0.85 + bevel_edge * 0.56 + corner_marks * corner_glint_strength + star_cross * 0.18, 0.0, 1.0);
-	float top_light_rolloff = mix(0.72, 1.0, smoothstep(0.0, 0.72, fresnel));
-	vec3 body = base_color.rgb * top_light_rolloff * (1.0 + (fine_grain + soft_panel_noise * 0.35) * surface_variation);
+	float detail_mask = clamp(inset_line * 0.70 + bevel_edge * 0.42 + corner_marks * corner_glint_strength + star_cross * 0.14, 0.0, 1.0);
+	float side_weight = smoothstep(0.16, 0.92, abs(NORMAL.x));
+	float vertical_weight = smoothstep(-0.12, 0.82, NORMAL.y);
+	float face_light_rolloff = clamp(0.74 + vertical_weight * 0.24 - side_weight * 0.20 + fresnel * 0.05, 0.48, 1.04);
+	vec3 body = base_color.rgb * face_light_rolloff * (1.0 + (fine_grain + soft_panel_noise * 0.35) * surface_variation);
 	body *= 1.0 - inner_shadow * side_shadow_strength * face_detail_strength;
-	body = mix(body, edge_color.rgb, clamp((bevel_edge * 0.16 + inset_line * 0.12) * edge_line_strength, 0.0, 0.36));
-	ALBEDO = mix(body, edge_color.rgb, clamp(fresnel * 0.08 + detail_mask * 0.09 * face_detail_strength, 0.0, 0.34));
+	body = mix(body, edge_color.rgb, clamp((bevel_edge * 0.08 + inset_line * 0.06) * edge_line_strength, 0.0, 0.22));
+	ALBEDO = mix(body, edge_color.rgb, clamp(fresnel * 0.025 + detail_mask * 0.045 * face_detail_strength, 0.0, 0.20));
 	METALLIC = metallic;
 	ROUGHNESS = roughness;
 	SPECULAR = 0.72;
-	EMISSION = emission_color.rgb * emission_strength * (0.42 + fresnel * 1.45) + edge_color.rgb * (fresnel * fresnel_strength + detail_mask * 0.16 * face_detail_strength);
+	EMISSION = emission_color.rgb * emission_strength * (0.18 + fresnel * 0.42) + edge_color.rgb * (fresnel * fresnel_strength * 0.28 + detail_mask * 0.035 * face_detail_strength);
 	ALPHA = base_color.a;
 }

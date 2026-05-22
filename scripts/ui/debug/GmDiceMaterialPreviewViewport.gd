@@ -246,9 +246,7 @@ func _build_dice() -> void:
 		dice_mesh.mesh = mesh
 		dice_mesh.scale = Vector3.ONE * DIE_SCALE
 	else:
-		var fallback_mesh := BoxMesh.new()
-		fallback_mesh.size = Vector3.ONE * DIE_SCALE
-		dice_mesh.mesh = fallback_mesh
+		push_error("Rounded dice preview mesh is unavailable")
 	material_source_path = GmDiceMaterialResolver.material_resource_path(material_id)
 	dice_mesh.material_override = GmDiceMaterialResolver.make_body_material_instance(_body_color_for_material(), material_id)
 	dice_root.add_child(dice_mesh)

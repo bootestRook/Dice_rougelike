@@ -12,6 +12,13 @@ const EXPECTED_METAL_REFLECTION_LIGHTS := [
 	"WarmMetalReflectionLight",
 	"CoolMetalReflectionLight",
 ]
+const EXPECTED_VISUAL_LIGHT_ROLES := {
+	"soft_key_top": "SoftTopKeyLight",
+	"cool_table_bounce": "CoolTableBounceLight",
+	"warm_gold_edge_kicker": "WarmGoldEdgeKickerLight",
+	"local_glint_highlight": "LocalGlintHighlightLight",
+	"reflection_reference": "ReflectionReferenceLight",
+}
 const READY_ROW_SAMPLE := Vector3(0.0, 7.5, 0.08)
 
 
@@ -43,6 +50,15 @@ func _init() -> void:
 		all_passed = _check("%s has controlled metal specular" % light_name, light != null and not light.shadow_enabled and light.light_specular >= 0.30 and light.light_specular <= 0.50) and all_passed
 		all_passed = _check("%s reaches ready dice row" % light_name, light != null and light.omni_range >= 10.0 and light.position.distance_to(READY_ROW_SAMPLE) <= light.omni_range) and all_passed
 
+	for role in EXPECTED_VISUAL_LIGHT_ROLES.keys():
+		var light_name := str(EXPECTED_VISUAL_LIGHT_ROLES[role])
+		var light := _find_node_by_name(screen, light_name) as OmniLight3D
+		all_passed = _check("%s role light exists" % light_name, light != null) and all_passed
+		all_passed = _check("%s role metadata is stable" % light_name, light != null and str(light.get_meta("visual_light_role", "")) == role) and all_passed
+		all_passed = _check("%s role light has bounded energy" % light_name, light != null and light.light_energy >= 0.20 and light.light_energy <= 1.00) and all_passed
+		all_passed = _check("%s role light has bounded range" % light_name, light != null and light.omni_range >= 5.0 and light.omni_range <= 16.5) and all_passed
+		all_passed = _check("%s role light has bounded specular" % light_name, light != null and light.light_specular >= 0.05 and light.light_specular <= 0.70) and all_passed
+
 	var world_environment := _find_node_by_name(screen, "WorldEnvironment") as WorldEnvironment
 	all_passed = _check("ambient light leaves room for glowing dice edges", world_environment != null and world_environment.environment != null and world_environment.environment.ambient_light_energy <= 0.42) and all_passed
 	all_passed = _check("ambient light keeps deep blue scene readable", world_environment != null and world_environment.environment != null and world_environment.environment.ambient_light_energy >= 0.30) and all_passed
@@ -69,11 +85,19 @@ func _init() -> void:
 	var snapshot: Dictionary = screen.call("automation_get_snapshot")
 	var light_rows: Array = snapshot.get("multi_diffuse_lights", [])
 	var metal_rows: Array = snapshot.get("metal_reflection_lights", [])
+	var role_rows: Array = snapshot.get("visual_light_roles", [])
+	var rendering_features: Dictionary = snapshot.get("rendering_features", {})
 	all_passed = _check("snapshot exposes four multi diffuse lights", light_rows.size() == EXPECTED_LIGHTS.size()) and all_passed
 	all_passed = _check("snapshot exposes metal reflection lights", metal_rows.size() == EXPECTED_METAL_REFLECTION_LIGHTS.size()) and all_passed
+	all_passed = _check("snapshot exposes visual light roles", _snapshot_has_roles(role_rows, EXPECTED_VISUAL_LIGHT_ROLES.keys())) and all_passed
+	all_passed = _check("snapshot exposes rendering features", rendering_features.has("glow_enabled") and rendering_features.has("reflection_probe")) and all_passed
+	all_passed = _check("snapshot records reflection probe availability", bool(rendering_features.get("reflection_probe", false))) and all_passed
+	all_passed = _check("snapshot records transparent marker fallback", bool(rendering_features.get("transparent_marker_layers", false))) and all_passed
 	all_passed = _check("diffuse light colors are varied", _unique_light_colors(light_rows) >= 4) and all_passed
 	all_passed = _check("bridge contract exposes multi diffuse lights", ((snapshot.get("bridge_contract", {}) as Dictionary).get("snapshot_keys", []) as Array).has("multi_diffuse_lights")) and all_passed
 	all_passed = _check("bridge contract exposes metal reflection lights", ((snapshot.get("bridge_contract", {}) as Dictionary).get("snapshot_keys", []) as Array).has("metal_reflection_lights")) and all_passed
+	all_passed = _check("bridge contract exposes visual light roles", ((snapshot.get("bridge_contract", {}) as Dictionary).get("snapshot_keys", []) as Array).has("visual_light_roles")) and all_passed
+	all_passed = _check("bridge contract exposes rendering features", ((snapshot.get("bridge_contract", {}) as Dictionary).get("snapshot_keys", []) as Array).has("rendering_features")) and all_passed
 
 	screen.queue_free()
 	print("PASS: DebugGmDiceLightingSmokeTest" if all_passed else "FAIL: DebugGmDiceLightingSmokeTest")
@@ -90,6 +114,18 @@ func _unique_light_colors(light_rows: Array) -> int:
 		var key := "%d/%d/%d" % [roundi(color.r * 100.0), roundi(color.g * 100.0), roundi(color.b * 100.0)]
 		keys[key] = true
 	return keys.size()
+
+
+func _snapshot_has_roles(role_rows: Array, expected_roles: Array) -> bool:
+	var present := {}
+	for row in role_rows:
+		if not (row is Dictionary):
+			continue
+		present[str((row as Dictionary).get("role", ""))] = true
+	for role in expected_roles:
+		if not present.has(str(role)):
+			return false
+	return true
 
 
 func _object_bool(object: Object, property_name: String) -> bool:

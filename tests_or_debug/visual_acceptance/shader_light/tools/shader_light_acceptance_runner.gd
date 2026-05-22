@@ -9,8 +9,8 @@ const LATEST_DIR := TMP_REPORT_DIR + "/latest"
 const REPORTS_DIR := TMP_REPORT_DIR + "/reports"
 const GM_SCENE_PATH := "res://scenes/debug/gm_dice_scene_visual_repro.tscn"
 const RESOLUTION := Vector2i(1920, 1080)
-const SUPPORTED_TYPES := ["shader_material", "lighting_effect"]
-const CASE_ORDER := ["dice_shader_basic", "table_shader_basic", "light_effect_basic"]
+const SUPPORTED_TYPES := ["shader_material", "lighting_effect", "full_scene_repro"]
+const CASE_ORDER := ["dice_shader_basic", "table_shader_basic", "light_effect_basic", "battle_star_dice_repro_full"]
 
 
 func _init() -> void:
@@ -76,6 +76,18 @@ func _run() -> int:
 		"git": git_hash,
 		"branch": git_branch,
 		"resolution": {"width": RESOLUTION.x, "height": RESOLUTION.y},
+		"rendering_features": _rendering_features_snapshot(scene),
+		"engineering_status": "pass",
+		"visual_acceptance_status": "pending_human_review",
+		"human_review_required": true,
+		"visual_evidence": {
+			"baseline_png_res": "",
+			"updated_png_res": "",
+			"comparison_png_res": "",
+			"shown_in_codex_conversation": false,
+		},
+		"reference_gap_checklist": _reference_gap_checklist(),
+		"unresolved_gaps": [],
 		"status": "valid",
 		"cases": [],
 		"latest_invalid_pngs": [],
@@ -93,7 +105,9 @@ func _run() -> int:
 	var invalid_pngs := _find_unregistered_latest_pngs(registered_latest)
 	if not invalid_pngs.is_empty():
 		manifest["status"] = "invalid"
+		manifest["engineering_status"] = "fail"
 		manifest["latest_invalid_pngs"] = invalid_pngs
+	manifest["unresolved_gaps"] = _unresolved_gap_ids(manifest.get("reference_gap_checklist", []))
 
 	root.remove_child(scene)
 	scene.free()
@@ -133,7 +147,7 @@ func _parse_selection(args: Array) -> Dictionary:
 				selection["case_id"] = str(args[index + 1])
 			"--type":
 				if index + 1 >= args.size():
-					return {"ok": false, "error": "--type requires shader_material or lighting_effect"}
+					return {"ok": false, "error": "--type requires shader_material, lighting_effect, or full_scene_repro"}
 				selection["type"] = str(args[index + 1])
 	if str(selection["type"]) != "" and not SUPPORTED_TYPES.has(str(selection["type"])):
 		return {"ok": false, "error": "Unsupported type: %s" % selection["type"]}
@@ -306,10 +320,60 @@ func _capture_case(
 		"output_png_res": output_res,
 		"latest_png_res": latest_res,
 		"watermark": watermark_text,
+		"scene_state": case_data.get("scene_state", {}) if case_data.get("scene_state", {}) is Dictionary else {},
 		"valid": true,
 	}
 	print("captured case=%s type=%s latest=%s" % [case_id, case_type, latest_res])
 	return {"ok": true, "entry": entry}
+
+
+func _rendering_features_snapshot(scene: Node) -> Dictionary:
+	var env_node := _find_node_by_name(scene, "WorldEnvironment") as WorldEnvironment
+	var env := env_node.environment if env_node != null else null
+	return {
+		"renderer": str(ProjectSettings.get_setting("rendering/renderer/rendering_method", "unknown")),
+		"environment": {
+			"glow_enabled": _object_bool(env, "glow_enabled"),
+			"ssao_enabled": _object_bool(env, "ssao_enabled"),
+			"tonemap_mode": int(env.get("tonemap_mode")) if env != null and _object_has_property(env, "tonemap_mode") else -1,
+			"ambient_light_energy": float(env.ambient_light_energy) if env != null else 0.0,
+		},
+		"node_counts": {
+			"reflection_probe": _count_nodes_by_class(scene, "ReflectionProbe"),
+			"world_environment": _count_nodes_by_class(scene, "WorldEnvironment"),
+			"canvas_layer": _count_nodes_by_class(scene, "CanvasLayer"),
+		},
+		"fallbacks": {
+			"contact_shadow_layer": _find_node_by_name(scene, "SoftContactShadow") != null,
+		},
+	}
+
+
+func _reference_gap_checklist() -> Array:
+	return [
+		{"id": "solid_dice_body", "label": "实体圆角骰体", "status": "pending_human_review"},
+		{"id": "three_visible_faces", "label": "顶面、前面、侧面三面可见", "status": "pending_human_review"},
+		{"id": "top_values", "label": "顶面数值 4,3,3,4,1,6 清晰", "status": "pending_human_review"},
+		{"id": "front_star_emblems", "label": "前脸星徽存在且不是占位加号", "status": "pending_human_review"},
+		{"id": "side_shading", "label": "侧面暗部和实体厚度", "status": "pending_human_review"},
+		{"id": "glowing_borders", "label": "边缘发光不形成透明空壳", "status": "pending_human_review"},
+		{"id": "contact_shadow", "label": "骰子落在星盘上且有接触阴影", "status": "pending_human_review"},
+		{"id": "star_table", "label": "深蓝星盘、金色环线和星点可见", "status": "pending_human_review"},
+		{"id": "blue_gold_ui", "label": "蓝金 UI 框架比例接近参考", "status": "pending_human_review"},
+		{"id": "bottom_action_bar", "label": "底部行动栏可读且不遮挡主体", "status": "pending_human_review"},
+	]
+
+
+func _unresolved_gap_ids(rows: Array) -> Array:
+	var unresolved := []
+	for row_value in rows:
+		if not (row_value is Dictionary):
+			continue
+		var row: Dictionary = row_value
+		var status := str(row.get("status", ""))
+		if status != "accepted" and status != "improved":
+			unresolved.append(str(row.get("id", "")))
+	return unresolved
 
 
 func _capture_root_image() -> Image:
@@ -379,17 +443,19 @@ func _write_manifest(run_id: String, manifest: Dictionary) -> bool:
 func _write_report(run_id: String, manifest: Dictionary) -> bool:
 	var report_res := REPORTS_DIR.path_join("%s_visual_report.md" % run_id)
 	var lines := PackedStringArray()
-	lines.append("# Shader / Light Visual Acceptance")
+	lines.append("# 着色器 / 灯光视觉验收")
 	lines.append("")
-	lines.append("- Run ID: `%s`" % run_id)
-	lines.append("- Status: `%s`" % manifest.get("status", "invalid"))
-	lines.append("- Git: `%s`" % manifest.get("git", "unknown"))
-	lines.append("- Branch: `%s`" % manifest.get("branch", "unknown"))
-	lines.append("- Resolution: `%dx%d`" % [RESOLUTION.x, RESOLUTION.y])
-	lines.append("- Scene: `%s`" % GM_SCENE_PATH)
+	lines.append("- 运行编号：`%s`" % run_id)
+	lines.append("- 状态：`%s`" % manifest.get("status", "invalid"))
+	lines.append("- 提交：`%s`" % manifest.get("git", "unknown"))
+	lines.append("- 分支：`%s`" % manifest.get("branch", "unknown"))
+	lines.append("- 分辨率：`%dx%d`" % [RESOLUTION.x, RESOLUTION.y])
+	lines.append("- 场景：`%s`" % GM_SCENE_PATH)
+	lines.append("- 渲染特性：`%s`" % JSON.stringify(manifest.get("rendering_features", {})))
 	lines.append("")
-	lines.append("Only images listed in this run manifest are valid acceptance images for this report.")
+	lines.append("只有本次 manifest 中列出的图片才是本报告的有效验收图。")
 	lines.append("")
+	_append_acceptance_summary(lines, manifest)
 	for entry_value in manifest.get("cases", []):
 		if not (entry_value is Dictionary):
 			continue
@@ -399,10 +465,10 @@ func _write_report(run_id: String, manifest: Dictionary) -> bool:
 		var latest_res := str(entry.get("latest_png_res", ""))
 		lines.append("## %s" % entry.get("id", "unknown"))
 		lines.append("")
-		lines.append("- Type: `%s`" % entry.get("type", ""))
-		lines.append("- Capture: `%s`" % entry.get("capture", ""))
-		lines.append("- Seed: `%s`" % entry.get("seed", ""))
-		lines.append("- Latest: `%s`" % latest_res)
+		lines.append("- 类型：`%s`" % entry.get("type", ""))
+		lines.append("- 截图：`%s`" % entry.get("capture", ""))
+		lines.append("- 种子：`%s`" % entry.get("seed", ""))
+		lines.append("- 最新图：`%s`" % latest_res)
 		lines.append("")
 		lines.append("![%s](../latest/%s/%s/%s_%s.png)" % [
 			entry.get("id", "case"),
@@ -429,6 +495,23 @@ func _write_report(run_id: String, manifest: Dictionary) -> bool:
 	return error == OK
 
 
+func _append_acceptance_summary(lines: PackedStringArray, manifest: Dictionary) -> void:
+	lines.append("## 参考图视觉接受")
+	lines.append("")
+	lines.append("- 工程状态：`%s`" % manifest.get("engineering_status", "unknown"))
+	lines.append("- 视觉接受：`%s`" % manifest.get("visual_acceptance_status", "pending_human_review"))
+	lines.append("- 需要人工验收：`%s`" % str(manifest.get("human_review_required", true)))
+	lines.append("")
+	lines.append("## 参考图差距清单")
+	lines.append("")
+	for row_value in manifest.get("reference_gap_checklist", []):
+		if not (row_value is Dictionary):
+			continue
+		var row: Dictionary = row_value
+		lines.append("- `%s`：%s" % [row.get("status", "pending_human_review"), row.get("label", "")])
+	lines.append("")
+
+
 func _make_watermark_text(
 	run_id: String,
 	case_type: String,
@@ -439,14 +522,14 @@ func _make_watermark_text(
 	seed_value: int
 ) -> String:
 	return "\n".join(PackedStringArray([
-		"Run ID: %s" % run_id,
-		"Type: %s" % case_type,
-		"Case: %s" % case_id,
-		"Capture: %s" % capture_id,
-		"Git: %s" % git_hash,
-		"Branch: %s" % git_branch,
-		"Seed: %d" % seed_value,
-		"Resolution: %dx%d" % [RESOLUTION.x, RESOLUTION.y],
+		"运行编号：%s" % run_id,
+		"类型：%s" % case_type,
+		"用例：%s" % case_id,
+		"截图：%s" % capture_id,
+		"提交：%s" % git_hash,
+		"分支：%s" % git_branch,
+		"种子：%d" % seed_value,
+		"分辨率：%dx%d" % [RESOLUTION.x, RESOLUTION.y],
 	]))
 
 
@@ -454,6 +537,42 @@ func _vector3_from_value(value, fallback: Vector3) -> Vector3:
 	if value is Array and value.size() >= 3:
 		return Vector3(float(value[0]), float(value[1]), float(value[2]))
 	return fallback
+
+
+func _find_node_by_name(root_node: Node, node_name: String) -> Node:
+	if root_node == null:
+		return null
+	if root_node.name == node_name:
+		return root_node
+	for child in root_node.get_children():
+		var found := _find_node_by_name(child, node_name)
+		if found != null:
+			return found
+	return null
+
+
+func _count_nodes_by_class(root_node: Node, class_text: String) -> int:
+	if root_node == null:
+		return 0
+	var count := 1 if root_node.get_class() == class_text else 0
+	for child in root_node.get_children():
+		count += _count_nodes_by_class(child, class_text)
+	return count
+
+
+func _object_bool(object: Object, property_name: String) -> bool:
+	if object == null or not _object_has_property(object, property_name):
+		return false
+	return bool(object.get(property_name))
+
+
+func _object_has_property(object: Object, property_name: String) -> bool:
+	if object == null:
+		return false
+	for item in object.get_property_list():
+		if str(item.get("name", "")) == property_name:
+			return true
+	return false
 
 
 func _make_run_id() -> String:

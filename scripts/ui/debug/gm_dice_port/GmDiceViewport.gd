@@ -70,14 +70,69 @@ const METAL_REFLECTION_LIGHT_SPECS := [
 		"specular": 0.34,
 	},
 ]
+const VISUAL_LIGHT_ROLE_SPECS := [
+	{
+		"role": "soft_key_top",
+		"name": "SoftTopKeyLight",
+		"position": Vector3(0.0, 8.4, 1.6),
+		"color": Color(1.00, 0.90, 0.72),
+		"energy": 0.94,
+		"range": 16.0,
+		"specular": 0.18,
+		"attenuation": 0.62,
+	},
+	{
+		"role": "cool_table_bounce",
+		"name": "CoolTableBounceLight",
+		"position": Vector3(-2.8, 1.35, 1.8),
+		"color": Color(0.26, 0.52, 1.00),
+		"energy": 0.74,
+		"range": 12.0,
+		"specular": 0.08,
+		"attenuation": 0.72,
+	},
+	{
+		"role": "warm_gold_edge_kicker",
+		"name": "WarmGoldEdgeKickerLight",
+		"position": Vector3(4.8, 3.1, 3.5),
+		"color": Color(1.00, 0.66, 0.28),
+		"energy": 0.78,
+		"range": 10.2,
+		"specular": 0.42,
+		"attenuation": 0.68,
+	},
+	{
+		"role": "local_glint_highlight",
+		"name": "LocalGlintHighlightLight",
+		"position": Vector3(-1.3, 2.4, 2.2),
+		"color": Color(0.84, 0.96, 1.00),
+		"energy": 0.46,
+		"range": 5.4,
+		"specular": 0.56,
+		"attenuation": 0.56,
+	},
+	{
+		"role": "reflection_reference",
+		"name": "ReflectionReferenceLight",
+		"position": Vector3(2.2, 4.4, -3.0),
+		"color": Color(0.92, 0.98, 1.00),
+		"energy": 0.34,
+		"range": 9.4,
+		"specular": 0.62,
+		"attenuation": 0.60,
+	},
+]
 
 
 var sub_viewport: SubViewport = null
 var dice_world: Node3D = null
+var world_environment: WorldEnvironment = null
+var reflection_probe: Node3D = null
 var fixed_camera: Camera3D = null
 var key_light: DirectionalLight3D = null
 var multi_diffuse_lights: Array[OmniLight3D] = []
 var metal_reflection_lights: Array[OmniLight3D] = []
+var visual_role_lights: Array[OmniLight3D] = []
 var dice_box_anchors: Node3D = null
 var spawn_point: Marker3D = null
 var dice_container: Node3D = null
@@ -260,6 +315,8 @@ func get_camera_state() -> Dictionary:
 		"key_light_yaw": key_light_rotation.y,
 		"multi_diffuse_lights": _get_multi_diffuse_light_state(),
 		"metal_reflection_lights": _get_metal_reflection_light_state(),
+		"visual_light_roles": _get_visual_light_role_state(),
+		"rendering_features": _get_rendering_feature_state(),
 		"visible_stage_size": Vector2(VISIBLE_MAT_WIDTH, VISIBLE_MAT_DEPTH),
 		"collision_stage_size": Vector2(COLLISION_WIDTH, COLLISION_DEPTH),
 		"throw_surface_texture_path": get_throw_surface_texture_path(),
@@ -345,11 +402,12 @@ func screen_point_to_world_on_y(screen_x: float, screen_y: float, plane_y: float
 
 
 func _build_environment() -> void:
-	var environment := WorldEnvironment.new()
-	environment.name = "WorldEnvironment"
+	world_environment = WorldEnvironment.new()
+	world_environment.name = "WorldEnvironment"
 	var env := _make_visual_environment()
-	environment.environment = env
-	dice_world.add_child(environment)
+	world_environment.environment = env
+	dice_world.add_child(world_environment)
+	_build_reflection_probe()
 
 	key_light = DirectionalLight3D.new()
 	key_light.name = "KeyLight"
@@ -379,6 +437,7 @@ func _build_environment() -> void:
 
 	_build_multi_diffuse_lights()
 	_build_metal_reflection_lights()
+	_build_visual_role_lights()
 
 
 func _build_collision_stage() -> void:
@@ -518,6 +577,42 @@ func _build_metal_reflection_lights() -> void:
 		metal_reflection_lights.append(light)
 
 
+func _build_visual_role_lights() -> void:
+	visual_role_lights.clear()
+	for spec in VISUAL_LIGHT_ROLE_SPECS:
+		var light := OmniLight3D.new()
+		light.name = str(spec["name"])
+		light.position = spec["position"]
+		light.light_color = spec["color"]
+		light.light_energy = float(spec["energy"])
+		light.light_specular = float(spec["specular"])
+		light.omni_range = float(spec["range"])
+		light.omni_attenuation = float(spec["attenuation"])
+		light.shadow_enabled = false
+		light.set_meta("visual_light_role", str(spec["role"]))
+		dice_world.add_child(light)
+		visual_role_lights.append(light)
+
+
+func _build_reflection_probe() -> void:
+	reflection_probe = null
+	if not ClassDB.class_exists("ReflectionProbe"):
+		return
+	var probe := ClassDB.instantiate("ReflectionProbe") as Node3D
+	if probe == null:
+		return
+	probe.name = "GlossReflectionProbe"
+	probe.position = Vector3(0.0, 2.20, 0.10)
+	_set_existing(probe, ["size"], Vector3(10.5, 5.2, 8.5))
+	_set_existing(probe, ["origin_offset"], Vector3(0.0, 0.18, 0.0))
+	_set_existing(probe, ["intensity"], 0.68)
+	_set_existing(probe, ["max_distance"], 14.0)
+	_set_existing(probe, ["box_projection"], true)
+	_set_existing(probe, ["enable_shadows"], false)
+	dice_world.add_child(probe)
+	reflection_probe = probe
+
+
 func _get_multi_diffuse_light_state() -> Array[Dictionary]:
 	var rows: Array[Dictionary] = []
 	for light in multi_diffuse_lights:
@@ -548,6 +643,40 @@ func _get_metal_reflection_light_state() -> Array[Dictionary]:
 			"specular": light.light_specular,
 		})
 	return rows
+
+
+func _get_visual_light_role_state() -> Array[Dictionary]:
+	var rows: Array[Dictionary] = []
+	for light in visual_role_lights:
+		if light == null:
+			continue
+		rows.append({
+			"role": str(light.get_meta("visual_light_role", "")),
+			"name": light.name,
+			"position": light.position,
+			"color": light.light_color,
+			"energy": light.light_energy,
+			"range": light.omni_range,
+			"specular": light.light_specular,
+			"attenuation": light.omni_attenuation,
+		})
+	return rows
+
+
+func _get_rendering_feature_state() -> Dictionary:
+	var env := world_environment.environment if world_environment != null else null
+	return {
+		"renderer": str(ProjectSettings.get_setting("rendering/renderer/rendering_method", "unknown")),
+		"world_environment": world_environment != null and env != null,
+		"reflection_probe": reflection_probe != null,
+		"reflection_probe_name": reflection_probe.name if reflection_probe != null else "",
+		"glow_enabled": _object_bool(env, "glow_enabled"),
+		"ssao_enabled": _object_bool(env, "ssao_enabled"),
+		"tonemap_mode": int(_object_value(env, "tonemap_mode", -1)),
+		"ambient_light_energy": env.ambient_light_energy if env != null else 0.0,
+		"contact_shadow_fallback": true,
+		"transparent_marker_layers": true,
+	}
 
 
 func _camera_pitch_degrees() -> float:
@@ -631,16 +760,16 @@ func _make_visual_environment() -> Environment:
 	env.ambient_light_energy = 0.42
 	env.ambient_light_sky_contribution = 0.16
 	_set_existing(env, ["tonemap_mode"], 3)
-	_set_existing(env, ["tonemap_exposure"], 1.05)
-	_set_existing(env, ["tonemap_white"], 1.55)
+	_set_existing(env, ["tonemap_exposure"], 1.00)
+	_set_existing(env, ["tonemap_white"], 1.70)
 	_set_existing(env, ["glow_enabled"], true)
-	_set_existing(env, ["glow_intensity"], 0.44)
-	_set_existing(env, ["glow_strength"], 0.78)
+	_set_existing(env, ["glow_intensity"], 0.40)
+	_set_existing(env, ["glow_strength"], 0.72)
 	_set_existing(env, ["glow_bloom"], 0.10)
-	_set_existing(env, ["glow_hdr_threshold"], 0.78)
+	_set_existing(env, ["glow_hdr_threshold"], 0.82)
 	_set_existing(env, ["ssao_enabled"], true)
 	_set_existing(env, ["ssao_radius"], 1.35)
-	_set_existing(env, ["ssao_intensity"], 0.58)
+	_set_existing(env, ["ssao_intensity"], 0.62)
 	return env
 
 
@@ -651,8 +780,8 @@ func _add_visual_throw_mat() -> void:
 			var stage := stage_scene.instantiate() as Node3D
 			if stage != null:
 				stage.name = "FixedThrowMat"
-				stage.position = Vector3(0.0, 0.002, 0.50)
-				stage.rotation_degrees = Vector3(-58.0, 0.0, 0.0)
+				stage.position = Vector3(0.0, 0.002, 0.0)
+				stage.rotation_degrees = Vector3.ZERO
 				stage.scale = Vector3.ONE * 1.32
 				dice_world.add_child(stage)
 				return
@@ -688,3 +817,21 @@ func _set_existing(object: Object, names: Array, value) -> bool:
 			object.set(name, value)
 			return true
 	return false
+
+
+func _object_bool(object: Object, property_name: String) -> bool:
+	if object == null:
+		return false
+	for item in object.get_property_list():
+		if str(item.get("name", "")) == property_name:
+			return bool(object.get(property_name))
+	return false
+
+
+func _object_value(object: Object, property_name: String, fallback):
+	if object == null:
+		return fallback
+	for item in object.get_property_list():
+		if str(item.get("name", "")) == property_name:
+			return object.get(property_name)
+	return fallback

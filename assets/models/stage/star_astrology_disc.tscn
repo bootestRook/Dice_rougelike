@@ -20,14 +20,14 @@ bottom_radius = 5.48
 height = 0.28
 radial_segments = 192
 
-[node name="StarAstrologyDisc" type="Node3D" unique_id=1612855244]
+[node name="StarAstrologyDisc" type="Node3D" unique_id=284014798]
 
-[node name="LitAstrologyDiscTop" type="MeshInstance3D" parent="." unique_id=309725400]
+[node name="LitAstrologyDiscTop" type="MeshInstance3D" parent="." unique_id=1942625157]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.012, 0)
 material_override = ExtResource("1_x1nwp")
 mesh = SubResource("ArrayMesh_ljn6m")
 
-[node name="LitAstrologyDiscSide" type="MeshInstance3D" parent="." unique_id=1433458968]
+[node name="LitAstrologyDiscSide" type="MeshInstance3D" parent="." unique_id=809341292]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.14, 0)
 material_override = ExtResource("2_i3wfi")
 mesh = SubResource("CylinderMesh_26r1p")

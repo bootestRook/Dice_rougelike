@@ -99,7 +99,11 @@ func _init() -> void:
 		all_passed = _check("gm scene bridge exists", _find_node_by_name(screen, "GmSceneBridge") != null) and all_passed
 		all_passed = _check("fixed dice viewport exists", _find_node_by_name(screen, "DiceViewport") != null) and all_passed
 		all_passed = _check("fixed camera exists", _find_node_by_name(screen, "FixedCamera") != null) and all_passed
-		all_passed = _check("throw plane exists", _find_node_by_name(screen, "ThrowPlane") != null) and all_passed
+		var throw_plane := _find_node_by_name(screen, "ThrowPlane") as StaticBody3D
+		var visual_throw_mat := _find_node_by_name(screen, "FixedThrowMat") as Node3D
+		all_passed = _check("throw plane exists", throw_plane != null) and all_passed
+		all_passed = _check("visual star disc is centered on physical throw plane", _visual_disc_centered_on_throw_plane(visual_throw_mat, throw_plane)) and all_passed
+		all_passed = _check("visual star disc is level with physical throw plane", visual_throw_mat != null and _vector3_close(visual_throw_mat.rotation_degrees, Vector3.ZERO, 0.01)) and all_passed
 		all_passed = _check("hidden safety net exists", _find_node_by_name(screen, "SafetyNet") != null) and all_passed
 		all_passed = _check("bounds exist", _find_node_by_name(screen, "Bounds") != null) and all_passed
 		all_passed = _check("hidden ceiling bound is removed", _find_node_by_name(screen, "CeilingBound") == null) and all_passed
@@ -920,6 +924,20 @@ func _return_faces_match_randomized_indices(snapshot: Dictionary) -> bool:
 		if int(row.get("visual_top_face_index", -1)) != randomized_face_index:
 			return false
 	return true
+
+
+func _visual_disc_centered_on_throw_plane(visual_disc: Node3D, throw_plane: StaticBody3D) -> bool:
+	if visual_disc == null or throw_plane == null:
+		return false
+	return (
+		absf(visual_disc.position.x - throw_plane.position.x) <= 0.01
+		and absf(visual_disc.position.z - throw_plane.position.z) <= 0.01
+		and absf(visual_disc.position.y - 0.002) <= 0.01
+	)
+
+
+func _vector3_close(a: Vector3, b: Vector3, epsilon: float) -> bool:
+	return absf(a.x - b.x) <= epsilon and absf(a.y - b.y) <= epsilon and absf(a.z - b.z) <= epsilon
 
 
 func _rolled_from_current_positions(snapshot: Dictionary, before_positions: Array, indices: Array) -> bool:

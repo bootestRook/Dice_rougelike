@@ -39,6 +39,9 @@ const TORQUE_SCALE := 0.5
 const MAX_ANGULAR_SPEED := 1000.0
 const DIE_SIZE := 0.72
 const DIE_HALF := DIE_SIZE * 0.5
+const FACE_TEXTURE_SURFACE_OFFSET := 0.024
+const FACE_TEXTURE_SIZE := DIE_SIZE * 0.54
+const FACE_TEXTURE_BORDER_THICKNESS := DIE_SIZE * 0.026
 const FACE_LABEL_SURFACE_OFFSET := 0.034
 const FACE_LABEL_FONT_SIZE := 70
 const FACE_LABEL_PIXEL_SIZE := 0.0058
@@ -103,8 +106,15 @@ var throw_spin_tuning := DEFAULT_THROW_SPIN_TUNING.duplicate(true)
 var idle_drift_tuning := DEFAULT_IDLE_DRIFT_TUNING.duplicate(true)
 
 var _rng := RandomNumberGenerator.new()
+var _body_layer: Node3D = null
 var _body_mesh: MeshInstance3D = null
 var _body_material: Material = null
+var _edge_rim_layer: Node3D = null
+var _edge_rim_material: StandardMaterial3D = null
+var _face_marker_layer: Node3D = null
+var _face_texture_layer: Node3D = null
+var _state_overlay_layer: Node3D = null
+var _contact_shadow_layer: Node3D = null
 var _hover_shadow: MeshInstance3D = null
 var _shadow_material: StandardMaterial3D = null
 var _selection_frame: Node3D = null
@@ -193,19 +203,32 @@ func build_visuals(body_color: Color, mark_color: Color) -> void:
 	inner_dice.name = "InnerDice"
 	add_child(inner_dice)
 
+	_body_layer = Node3D.new()
+	_body_layer.name = "BodyMaterialLayer"
+	inner_dice.add_child(_body_layer)
+
 	_body_material = _make_body_material(body_color, GmDiceDefinition.MATERIAL_STANDARD)
 
 	_body_mesh = MeshInstance3D.new()
 	_body_mesh.name = "DiceMesh"
 	_body_mesh.material_override = _body_material
 	_body_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
-	inner_dice.add_child(_body_mesh)
+	_body_layer.add_child(_body_mesh)
+
 	_apply_body_mesh(GmDiceDefinition.MATERIAL_STANDARD)
 
-	var face_visuals := Node3D.new()
-	face_visuals.name = "FaceVisuals"
-	inner_dice.add_child(face_visuals)
-	_create_face_labels(face_visuals, mark_color)
+	_face_marker_layer = Node3D.new()
+	_face_marker_layer.name = "FaceMarkerLayer"
+	inner_dice.add_child(_face_marker_layer)
+	_create_face_labels(_face_marker_layer, mark_color)
+
+	_state_overlay_layer = Node3D.new()
+	_state_overlay_layer.name = "StateOverlayLayer"
+	add_child(_state_overlay_layer)
+
+	_contact_shadow_layer = Node3D.new()
+	_contact_shadow_layer.name = "ContactShadowLayer"
+	add_child(_contact_shadow_layer)
 
 	var fx_anchors := Node3D.new()
 	fx_anchors.name = "FxAnchors"
@@ -799,6 +822,20 @@ func get_debug_snapshot() -> Dictionary:
 		"body_mesh_resource_path": _body_mesh.mesh.resource_path if _body_mesh != null and _body_mesh.mesh != null else "",
 		"face_pips": config.get_face_pips() if config != null else [],
 		"face_labels": config.get_face_labels() if config != null else [],
+		"visual_layer_roles": _visual_layer_roles_snapshot(),
+		"body_layer_exists": _body_layer != null,
+		"edge_rim_layer_exists": _edge_rim_layer != null,
+		"edge_rim_material_name": _edge_rim_material.resource_name if _edge_rim_material != null else "",
+		"edge_rim_emission_energy": _edge_rim_material_emission_energy(),
+		"edge_rim_alpha": _edge_rim_material_alpha(),
+		"edge_rim_bar_count": _edge_rim_bar_count(),
+		"edge_rim_is_full_shell": false,
+		"face_marker_layer_exists": _face_marker_layer != null,
+		"face_texture_layer_exists": _face_texture_layer != null,
+		"face_texture_panel_count": _face_texture_panel_count(),
+		"face_marker_label_count": _face_labels.size() if _face_marker_layer != null else 0,
+		"state_overlay_layer_exists": _state_overlay_layer != null,
+		"contact_shadow_layer_exists": _contact_shadow_layer != null,
 		"face_label_count": _face_labels.size(),
 		"face_label_centered": _face_labels_are_centered(),
 		"face_label_double_sided": _face_labels_are_double_sided(),
@@ -885,6 +922,44 @@ func _body_material_shader_float(parameter_name: String) -> float:
 	if value == null:
 		return 0.0
 	return float(value)
+
+
+func _visual_layer_roles_snapshot() -> Dictionary:
+	return {
+		"body": _body_layer != null and _body_mesh != null and _body_mesh.mesh != null,
+		"edge_rim": _edge_rim_layer != null and _edge_rim_bar_count() > 0 and _edge_rim_material != null,
+		"face_marker": _face_marker_layer != null and _face_texture_panel_count() == 0 and _face_labels.size() == 6,
+		"state_overlay": _state_overlay_layer != null and _selection_frame != null,
+		"contact_shadow": _contact_shadow_layer != null and _hover_shadow != null,
+	}
+
+
+func _edge_rim_material_emission_energy() -> float:
+	if _edge_rim_material == null:
+		return 0.0
+	return _edge_rim_material.emission_energy_multiplier
+
+
+func _edge_rim_material_alpha() -> float:
+	if _edge_rim_material == null:
+		return 0.0
+	return _edge_rim_material.albedo_color.a
+
+
+func _edge_rim_bar_count() -> int:
+	if _edge_rim_layer == null:
+		return 0
+	return _edge_rim_layer.get_child_count()
+
+
+func _face_texture_panel_count() -> int:
+	if _face_texture_layer == null:
+		return 0
+	var count := 0
+	for child in _face_texture_layer.get_children():
+		if str(child.name).begins_with("FaceTexturePanel"):
+			count += 1
+	return count
 
 
 func _face_labels_are_centered() -> bool:
@@ -1188,7 +1263,8 @@ func _build_hover_shadow() -> void:
 	_hover_shadow.material_override = _shadow_material
 	_hover_shadow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_hover_shadow.top_level = true
-	add_child(_hover_shadow)
+	var parent := _contact_shadow_layer if _contact_shadow_layer != null else self
+	parent.add_child(_hover_shadow)
 	_update_hover_shadow()
 
 
@@ -1200,7 +1276,7 @@ func _update_hover_shadow() -> void:
 		return
 	var height := maxf(global_position.y - SHADOW_Y, 0.0)
 	var shadow_scale := clampf(0.76 + height * 0.08, 0.76, 0.98)
-	var shadow_alpha := clampf(0.24 - height * 0.035, 0.11, 0.22)
+	var shadow_alpha := clampf(0.28 - height * 0.038, 0.13, 0.26)
 	_hover_shadow.visible = config != null
 	_hover_shadow.global_position = Vector3(global_position.x, SHADOW_Y, global_position.z)
 	_hover_shadow.global_rotation = Vector3.ZERO
@@ -1223,7 +1299,8 @@ func _build_selection_frame() -> void:
 	_selection_frame.name = "SelectionFrame"
 	_selection_frame.top_level = true
 	_selection_frame.visible = false
-	add_child(_selection_frame)
+	var parent := _state_overlay_layer if _state_overlay_layer != null else self
+	parent.add_child(_selection_frame)
 
 	var half := SELECTION_FRAME_SIZE * 0.5
 	var corner_center := half - SELECTION_FRAME_CORNER_LENGTH * 0.5
@@ -1285,11 +1362,80 @@ func _apply_body_mesh(material_id: StringName) -> void:
 	if pipeline_mesh != null:
 		_body_mesh.mesh = pipeline_mesh
 		_body_mesh.scale = Vector3.ONE * DIE_SIZE
+		_sync_edge_rim_mesh()
 		return
-	var mesh := BoxMesh.new()
-	mesh.size = Vector3.ONE * DIE_SIZE
-	_body_mesh.mesh = mesh
-	_body_mesh.scale = Vector3.ONE
+	push_error("Rounded dice body mesh is unavailable")
+	_body_mesh.mesh = null
+	_sync_edge_rim_mesh()
+
+
+func _sync_edge_rim_mesh() -> void:
+	if _edge_rim_layer == null:
+		return
+	for child in _edge_rim_layer.get_children():
+		_edge_rim_layer.remove_child(child)
+		child.free()
+	var half := DIE_SIZE * 0.432
+	var length := half * 2.0
+	var radius := DIE_SIZE * 0.010
+	for sy in [-1.0, 1.0]:
+		for sz in [-1.0, 1.0]:
+			_add_edge_bevel_rail(Vector3(0.0, sy * half, sz * half), "x", length, radius)
+	for sx in [-1.0, 1.0]:
+		for sz in [-1.0, 1.0]:
+			_add_edge_bevel_rail(Vector3(sx * half, 0.0, sz * half), "y", length, radius)
+	for sx in [-1.0, 1.0]:
+		for sy in [-1.0, 1.0]:
+			_add_edge_bevel_rail(Vector3(sx * half, sy * half, 0.0), "z", length, radius)
+	for sx in [-1.0, 1.0]:
+		for sy in [-1.0, 1.0]:
+			for sz in [-1.0, 1.0]:
+				_add_edge_corner_bevel_cap(Vector3(sx * half, sy * half, sz * half), radius)
+
+
+func _add_edge_bevel_rail(local_position: Vector3, axis: String, length: float, radius: float) -> void:
+	if _edge_rim_layer == null:
+		return
+	var mesh := CylinderMesh.new()
+	mesh.top_radius = radius
+	mesh.bottom_radius = radius
+	mesh.height = length
+	mesh.radial_segments = 10
+	mesh.rings = 1
+	var bar := MeshInstance3D.new()
+	bar.name = "EdgeBevelRail_%02d" % [_edge_rim_layer.get_child_count() + 1]
+	bar.mesh = mesh
+	bar.position = local_position
+	if axis == "x":
+		bar.rotation.z = PI * 0.5
+	elif axis == "z":
+		bar.rotation.x = PI * 0.5
+	bar.material_override = _edge_rim_material
+	bar.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_edge_rim_layer.add_child(bar)
+
+
+func _add_edge_corner_bevel_cap(local_position: Vector3, radius: float) -> void:
+	if _edge_rim_layer == null:
+		return
+	var mesh := SphereMesh.new()
+	mesh.radius = radius
+	mesh.height = radius * 2.0
+	mesh.radial_segments = 12
+	mesh.rings = 6
+	var cap := MeshInstance3D.new()
+	cap.name = "EdgeCornerBevelCap_%02d" % [_edge_rim_layer.get_child_count() + 1]
+	cap.mesh = mesh
+	cap.position = local_position
+	cap.material_override = _edge_rim_material
+	cap.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_edge_rim_layer.add_child(cap)
+
+
+func _apply_edge_rim_style(material_id: StringName) -> void:
+	_edge_rim_material = GmDiceMaterialResolver.make_edge_rim_material(material_id, _mark_color)
+	if _edge_rim_layer != null:
+		_sync_edge_rim_mesh()
 
 
 func _load_pipeline_body_material(material_id: StringName) -> Material:
@@ -1317,6 +1463,117 @@ func _apply_face_label_style(material_id: StringName) -> void:
 		label.modulate = text_color
 		label.outline_size = 12
 		label.outline_modulate = outline_color
+
+
+func _sync_face_texture_decals(material_id: StringName) -> void:
+	if _face_texture_layer == null:
+		return
+	for child in _face_texture_layer.get_children():
+		_face_texture_layer.remove_child(child)
+		child.free()
+	var fill_material := _make_face_texture_material(material_id)
+	var border_material := _make_face_texture_border_material(material_id)
+	var face_offset := DIE_HALF + FACE_TEXTURE_SURFACE_OFFSET
+	var face_rows := [
+		{"name": "FaceTexture1", "normal": Vector3.UP, "axis_x": Vector3.RIGHT, "axis_z": Vector3.BACK},
+		{"name": "FaceTexture6", "normal": Vector3.DOWN, "axis_x": Vector3.RIGHT, "axis_z": Vector3.FORWARD},
+		{"name": "FaceTexture2", "normal": Vector3.FORWARD, "axis_x": Vector3.RIGHT, "axis_z": Vector3.UP},
+		{"name": "FaceTexture5", "normal": Vector3.BACK, "axis_x": Vector3.LEFT, "axis_z": Vector3.UP},
+		{"name": "FaceTexture3", "normal": Vector3.RIGHT, "axis_x": Vector3.BACK, "axis_z": Vector3.UP},
+		{"name": "FaceTexture4", "normal": Vector3.LEFT, "axis_x": Vector3.FORWARD, "axis_z": Vector3.UP},
+	]
+	for index in range(face_rows.size()):
+		var row: Dictionary = face_rows[index]
+		var normal: Vector3 = (row["normal"] as Vector3).normalized()
+		var axis_x: Vector3 = (row["axis_x"] as Vector3).normalized()
+		var axis_z: Vector3 = (row["axis_z"] as Vector3).normalized()
+		var basis := Basis(axis_x, normal, axis_z).orthonormalized()
+		var center := normal * face_offset
+		_add_face_texture_quad(
+			"FaceTexturePanel%d" % [index + 1],
+			center,
+			basis,
+			Vector2(FACE_TEXTURE_SIZE, FACE_TEXTURE_SIZE),
+			fill_material
+		)
+		var half := FACE_TEXTURE_SIZE * 0.5
+		var border := FACE_TEXTURE_BORDER_THICKNESS
+		var border_offset := normal * 0.0015
+		_add_face_texture_quad(
+			"FaceTextureBorderTop%d" % [index + 1],
+			center + axis_z * (half - border * 0.5) + border_offset,
+			basis,
+			Vector2(FACE_TEXTURE_SIZE, border),
+			border_material
+		)
+		_add_face_texture_quad(
+			"FaceTextureBorderBottom%d" % [index + 1],
+			center - axis_z * (half - border * 0.5) + border_offset,
+			basis,
+			Vector2(FACE_TEXTURE_SIZE, border),
+			border_material
+		)
+		_add_face_texture_quad(
+			"FaceTextureBorderLeft%d" % [index + 1],
+			center - axis_x * (half - border * 0.5) + border_offset,
+			basis,
+			Vector2(border, FACE_TEXTURE_SIZE),
+			border_material
+		)
+		_add_face_texture_quad(
+			"FaceTextureBorderRight%d" % [index + 1],
+			center + axis_x * (half - border * 0.5) + border_offset,
+			basis,
+			Vector2(border, FACE_TEXTURE_SIZE),
+			border_material
+		)
+
+
+func _add_face_texture_quad(name: String, local_position: Vector3, local_basis: Basis, size: Vector2, material: Material) -> void:
+	if _face_texture_layer == null:
+		return
+	var panel := MeshInstance3D.new()
+	panel.name = name
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(size.x, 0.006, size.y)
+	panel.mesh = mesh
+	panel.position = local_position
+	panel.basis = local_basis
+	panel.material_override = material
+	panel.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_face_texture_layer.add_child(panel)
+
+
+func _make_face_texture_material(material_id: StringName) -> StandardMaterial3D:
+	var edge := GmDiceMaterialResolver.edge_rim_color(material_id, _mark_color)
+	var material := StandardMaterial3D.new()
+	material.resource_name = "gm_%s_face_texture_panel" % str(GmDiceDefinition.normalize_material_id(material_id))
+	material.albedo_color = Color(edge.r * 0.08, edge.g * 0.12, edge.b * 0.17, 1.0)
+	material.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.emission_enabled = true
+	material.emission = Color(edge.r * 0.10, edge.g * 0.16, edge.b * 0.24, 1.0)
+	material.emission_energy_multiplier = 0.34
+	material.roughness = 0.52
+	material.metallic = 0.0
+	return material
+
+
+func _make_face_texture_border_material(material_id: StringName) -> StandardMaterial3D:
+	var edge := GmDiceMaterialResolver.edge_rim_color(material_id, _mark_color)
+	var material := StandardMaterial3D.new()
+	material.resource_name = "gm_%s_face_texture_border" % str(GmDiceDefinition.normalize_material_id(material_id))
+	material.albedo_color = Color(edge.r, edge.g, edge.b, 1.0)
+	material.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.emission_enabled = true
+	material.emission = edge
+	material.emission_energy_multiplier = 0.24
+	material.roughness = 0.46
+	material.metallic = 0.0
+	return material
 
 
 func _face_label_color_for_material(material_id: StringName) -> Color:

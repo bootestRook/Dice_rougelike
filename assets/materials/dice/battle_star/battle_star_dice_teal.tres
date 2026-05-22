@@ -1,0 +1,18 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://assets/shaders/dice/battle_star_dice_full.gdshader" id="1_o0syl"]
+
+[resource]
+resource_name = "battle_star_dice_teal"
+render_priority = 0
+shader = ExtResource("1_o0syl")
+shader_parameter/base_albedo = Color(0.01, 0.315, 0.33, 1)
+shader_parameter/edge_color = Color(0.58, 1, 0.94, 1)
+shader_parameter/emission_color = Color(0.06, 0.92, 0.88, 1)
+shader_parameter/metallic_value = 0.18
+shader_parameter/roughness_value = 0.32
+shader_parameter/emission_energy = 0.58
+shader_parameter/emission_mask_power = 1.04
+shader_parameter/fake_normal_strength = 0.32
+shader_parameter/panel_shadow_strength = 0.36
+shader_parameter/micro_detail_strength = 0.055

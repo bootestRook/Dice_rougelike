@@ -1,0 +1,18 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://assets/shaders/dice/battle_star_dice_full.gdshader" id="1_ep86q"]
+
+[resource]
+resource_name = "battle_star_dice_white"
+render_priority = 0
+shader = ExtResource("1_ep86q")
+shader_parameter/base_albedo = Color(0.64, 0.735, 0.9, 1)
+shader_parameter/edge_color = Color(0.98, 1, 1, 1)
+shader_parameter/emission_color = Color(0.5, 0.74, 1, 1)
+shader_parameter/metallic_value = 0.36
+shader_parameter/roughness_value = 0.3
+shader_parameter/emission_energy = 0.44
+shader_parameter/emission_mask_power = 0.94
+shader_parameter/fake_normal_strength = 0.28
+shader_parameter/panel_shadow_strength = 0.36
+shader_parameter/micro_detail_strength = 0.055

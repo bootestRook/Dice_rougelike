@@ -10,7 +10,7 @@ signal back_requested
 signal snapshot_pushed(snapshot: Dictionary)
 
 
-const CONTRACT_VERSION := 14
+const CONTRACT_VERSION := 15
 const INTERFACE_SOURCE := "GM场景接口"
 const LEGACY_TARGET_PLAN_SOURCE := "GM复刻接口"
 
@@ -70,6 +70,8 @@ func get_contract() -> Dictionary:
 			"key_light_yaw",
 			"multi_diffuse_lights",
 			"metal_reflection_lights",
+			"visual_light_roles",
+			"rendering_features",
 			"idle_drift_tuning",
 			"throw_speed_tuning",
 			"throw_spin_tuning",

@@ -1,6 +1,8 @@
 ﻿extends SceneTree
 
 
+const RoundedDiceMeshFactory := preload("res://scripts/ui/debug/RoundedDiceMeshFactory.gd")
+
 const CELL_SIZE := 128
 const ATLAS_COLS := 3
 const ATLAS_ROWS := 2
@@ -9,6 +11,16 @@ const BEVEL_RADIUS := 0.078
 const BEVEL_SEGMENTS := 4
 const EDGE_LENGTH_SEGMENTS := 5
 const INNER_HALF := DICE_HALF - BEVEL_RADIUS
+const SHOWCASE_DICE_SCALE := 0.76
+const EDGE_FRAME_HALF := DICE_HALF - 0.014
+const EDGE_FRAME_LENGTH := EDGE_FRAME_HALF * 2.0
+const EDGE_BEVEL_RADIUS := 0.040
+const EDGE_CORNER_CAP_RADIUS := EDGE_BEVEL_RADIUS
+const FACE_PANEL_HALF := 0.36
+const FACE_PANEL_THICKNESS := 0.020
+const FACE_PANEL_FILL_HALF := 0.335
+const FACE_PANEL_FILL_THICKNESS := 0.014
+const FACE_PANEL_OFFSET := DICE_HALF + 0.026
 
 const ROUNDED_MESH_PATH := "res://assets/models/dice/rounded_d6_mesh.tres"
 const ROUNDED_PREVIEW_PATH := "res://assets/models/dice/rounded_d6_preview.tscn"
@@ -23,73 +35,73 @@ const STAGE_DATA_TEXTURE_NAMES := ["orm", "height"]
 const DICE_MATERIALS := {
 	"blue": {
 		"path": "res://assets/materials/dice/repro_blue_dice.tres",
-		"base": Color(0.018, 0.100, 0.420, 1.0),
+		"base": Color(0.026, 0.150, 0.520, 1.0),
 		"edge": Color(0.58, 0.86, 1.00, 1.0),
 		"emission": Color(0.10, 0.45, 1.00, 1.0),
-		"metallic": 0.18,
-		"roughness": 0.16,
-		"emission_strength": 0.24,
-		"fresnel_strength": 1.55,
+		"metallic": 0.22,
+		"roughness": 0.28,
+		"emission_strength": 0.09,
+		"fresnel_strength": 0.72,
 		"face_detail_strength": 1.12,
-		"edge_line_strength": 1.08,
-		"corner_glint_strength": 0.46,
-		"side_shadow_strength": 0.28,
+		"edge_line_strength": 0.58,
+		"corner_glint_strength": 0.24,
+		"side_shadow_strength": 0.36,
 	},
 	"purple": {
 		"path": "res://assets/materials/dice/repro_purple_dice.tres",
-		"base": Color(0.170, 0.020, 0.420, 1.0),
+		"base": Color(0.235, 0.045, 0.500, 1.0),
 		"edge": Color(0.92, 0.56, 1.00, 1.0),
 		"emission": Color(0.67, 0.18, 1.00, 1.0),
-		"metallic": 0.14,
-		"roughness": 0.17,
-		"emission_strength": 0.23,
-		"fresnel_strength": 1.62,
+		"metallic": 0.18,
+		"roughness": 0.29,
+		"emission_strength": 0.09,
+		"fresnel_strength": 0.76,
 		"face_detail_strength": 1.10,
-		"edge_line_strength": 1.16,
-		"corner_glint_strength": 0.52,
-		"side_shadow_strength": 0.26,
+		"edge_line_strength": 0.62,
+		"corner_glint_strength": 0.28,
+		"side_shadow_strength": 0.35,
 	},
 	"cyan": {
 		"path": "res://assets/materials/dice/repro_cyan_dice.tres",
-		"base": Color(0.000, 0.210, 0.240, 1.0),
+		"base": Color(0.000, 0.300, 0.330, 1.0),
 		"edge": Color(0.62, 1.00, 0.96, 1.0),
 		"emission": Color(0.05, 0.92, 0.92, 1.0),
-		"metallic": 0.12,
-		"roughness": 0.16,
-		"emission_strength": 0.22,
-		"fresnel_strength": 1.42,
+		"metallic": 0.16,
+		"roughness": 0.30,
+		"emission_strength": 0.08,
+		"fresnel_strength": 0.66,
 		"face_detail_strength": 1.05,
-		"edge_line_strength": 1.05,
-		"corner_glint_strength": 0.42,
-		"side_shadow_strength": 0.25,
+		"edge_line_strength": 0.54,
+		"corner_glint_strength": 0.22,
+		"side_shadow_strength": 0.34,
 	},
 	"gold": {
 		"path": "res://assets/materials/dice/repro_gold_dice.tres",
-		"base": Color(0.620, 0.350, 0.055, 1.0),
+		"base": Color(0.720, 0.430, 0.080, 1.0),
 		"edge": Color(1.00, 0.91, 0.46, 1.0),
 		"emission": Color(1.00, 0.58, 0.13, 1.0),
-		"metallic": 0.62,
-		"roughness": 0.18,
-		"emission_strength": 0.14,
-		"fresnel_strength": 1.18,
+		"metallic": 0.58,
+		"roughness": 0.30,
+		"emission_strength": 0.06,
+		"fresnel_strength": 0.58,
 		"face_detail_strength": 0.96,
-		"edge_line_strength": 1.22,
-		"corner_glint_strength": 0.44,
-		"side_shadow_strength": 0.22,
+		"edge_line_strength": 0.64,
+		"corner_glint_strength": 0.22,
+		"side_shadow_strength": 0.32,
 	},
 	"silverwhite": {
 		"path": "res://assets/materials/dice/repro_silverwhite_dice.tres",
-		"base": Color(0.500, 0.640, 0.820, 1.0),
+		"base": Color(0.580, 0.700, 0.870, 1.0),
 		"edge": Color(0.96, 1.00, 1.00, 1.0),
 		"emission": Color(0.48, 0.74, 1.00, 1.0),
-		"metallic": 0.38,
-		"roughness": 0.15,
-		"emission_strength": 0.12,
-		"fresnel_strength": 1.28,
+		"metallic": 0.34,
+		"roughness": 0.29,
+		"emission_strength": 0.05,
+		"fresnel_strength": 0.60,
 		"face_detail_strength": 1.02,
-		"edge_line_strength": 1.10,
-		"corner_glint_strength": 0.48,
-		"side_shadow_strength": 0.20,
+		"edge_line_strength": 0.52,
+		"corner_glint_strength": 0.20,
+		"side_shadow_strength": 0.30,
 	},
 }
 
@@ -195,25 +207,12 @@ func _save_rounded_d6_mesh() -> bool:
 
 
 func _make_rounded_d6_mesh() -> ArrayMesh:
-	var vertices := PackedVector3Array()
-	var normals := PackedVector3Array()
-	var uvs := PackedVector2Array()
-	var indices := PackedInt32Array()
-
-	_add_flat_faces(vertices, normals, uvs, indices)
-	_add_edge_patches(vertices, normals, uvs, indices)
-	_add_corner_patches(vertices, normals, uvs, indices)
-
-	var arrays := []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = vertices
-	arrays[Mesh.ARRAY_NORMAL] = normals
-	arrays[Mesh.ARRAY_TEX_UV] = uvs
-	arrays[Mesh.ARRAY_INDEX] = indices
-
-	var mesh := ArrayMesh.new()
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	return mesh
+	return RoundedDiceMeshFactory.create_rounded_cube({
+		"bevel_radius": 0.125,
+		"bevel_segments": 6,
+		"edge_length_segments": 7,
+		"resource_name": "rounded_d6_mesh",
+	})
 
 
 func _add_flat_faces(vertices: PackedVector3Array, normals: PackedVector3Array, uvs: PackedVector2Array, indices: PackedInt32Array) -> void:
@@ -347,7 +346,7 @@ func _add_triangle_indices(vertices: PackedVector3Array, normals: PackedVector3A
 	if face_normal.length_squared() <= 0.00000001:
 		return
 	var target_normal := (normals[i0] + normals[i1] + normals[i2]).normalized()
-	if face_normal.dot(target_normal) < 0.0:
+	if face_normal.dot(target_normal) > 0.0:
 		indices.append_array(PackedInt32Array([i0, i2, i1]))
 	else:
 		indices.append_array(PackedInt32Array([i0, i1, i2]))
@@ -440,19 +439,19 @@ func _make_stage_disc_material() -> Material:
 	var material = ClassDB.instantiate("ORMMaterial3D") if ClassDB.class_exists("ORMMaterial3D") else StandardMaterial3D.new()
 	material.resource_name = "star_disc_base"
 	material.albedo_color = Color(1.0, 1.0, 1.0, 1.0)
-	material.roughness = 0.58
-	material.metallic = 0.08
+	material.roughness = 0.50
+	material.metallic = 0.10
 	_set_existing(material, ["albedo_texture"], _load_stage_texture("albedo"))
 	_set_existing(material, ["orm_texture"], _load_stage_texture("orm"))
 	_set_existing(material, ["normal_enabled"], true)
 	_set_existing(material, ["normal_texture"], _load_stage_texture("normal"))
-	_set_existing(material, ["normal_scale"], 0.72)
+	_set_existing(material, ["normal_scale"], 0.86)
 	_set_existing(material, ["heightmap_enabled"], true)
 	_set_existing(material, ["heightmap_texture"], _load_stage_texture("height"))
-	_set_existing(material, ["heightmap_scale"], 0.035)
+	_set_existing(material, ["heightmap_scale"], 0.045)
 	_set_existing(material, ["emission_enabled"], true)
-	_set_existing(material, ["emission"], Color(0.08, 0.14, 0.26, 1.0))
-	_set_existing(material, ["emission_energy_multiplier"], 0.32)
+	_set_existing(material, ["emission"], Color(0.10, 0.17, 0.32, 1.0))
+	_set_existing(material, ["emission_energy_multiplier"], 0.40)
 	_set_existing(material, ["emission_texture"], _load_stage_texture("emission"))
 	return material
 
@@ -498,16 +497,16 @@ func _save_environment() -> bool:
 	_set_existing(env, ["ambient_light_sky_contribution"], 0.16)
 	_set_existing(env, ["reflected_light_source"], 0)
 	_set_existing(env, ["glow_enabled"], true)
-	_set_existing(env, ["glow_intensity"], 0.44)
-	_set_existing(env, ["glow_strength"], 0.78)
+	_set_existing(env, ["glow_intensity"], 0.40)
+	_set_existing(env, ["glow_strength"], 0.72)
 	_set_existing(env, ["glow_bloom"], 0.10)
-	_set_existing(env, ["glow_hdr_threshold"], 0.78)
+	_set_existing(env, ["glow_hdr_threshold"], 0.82)
 	_set_existing(env, ["tonemap_mode"], 3)
-	_set_existing(env, ["tonemap_exposure"], 1.05)
-	_set_existing(env, ["tonemap_white"], 1.55)
+	_set_existing(env, ["tonemap_exposure"], 1.00)
+	_set_existing(env, ["tonemap_white"], 1.70)
 	_set_existing(env, ["ssao_enabled"], true)
 	_set_existing(env, ["ssao_radius"], 1.35)
-	_set_existing(env, ["ssao_intensity"], 0.68)
+	_set_existing(env, ["ssao_intensity"], 0.62)
 	return _save_resource(env, ENVIRONMENT_PATH)
 
 
@@ -688,6 +687,7 @@ func _save_showcase_scene() -> bool:
 		root.add_child(stage)
 
 	_add_showcase_lights(root)
+	_add_showcase_reflection_probe(root)
 	_add_showcase_camera(root)
 	_add_showcase_dice(root)
 	_add_showcase_visual_acceptance_nodes(root)
@@ -699,16 +699,16 @@ func _add_showcase_lights(root: Node3D) -> void:
 	key.name = "KeyLight"
 	key.rotation_degrees = Vector3(-48.0, 38.0, 0.0)
 	key.light_color = Color(1.00, 0.86, 0.66)
-	key.light_energy = 2.35
-	key.light_specular = 0.56
+	key.light_energy = 2.65
+	key.light_specular = 0.64
 	key.shadow_enabled = true
 	root.add_child(key)
 
 	var fill := OmniLight3D.new()
 	fill.name = "CoolFillLight"
-	fill.position = Vector3(-3.8, 2.8, 3.2)
+	fill.position = Vector3(-3.8, 2.2, 3.2)
 	fill.light_color = Color(0.32, 0.62, 1.0)
-	fill.light_energy = 1.15
+	fill.light_energy = 0.86
 	fill.light_specular = 0.28
 	fill.omni_range = 8.6
 	root.add_child(fill)
@@ -717,8 +717,8 @@ func _add_showcase_lights(root: Node3D) -> void:
 	rim.name = "CyanRimLight"
 	rim.position = Vector3(3.6, 2.4, -2.8)
 	rim.light_color = Color(0.16, 0.92, 1.0)
-	rim.light_energy = 1.40
-	rim.light_specular = 0.38
+	rim.light_energy = 1.05
+	rim.light_specular = 0.52
 	rim.omni_range = 7.4
 	root.add_child(rim)
 
@@ -726,10 +726,92 @@ func _add_showcase_lights(root: Node3D) -> void:
 	gold.name = "WarmGoldBounceLight"
 	gold.position = Vector3(0.0, 1.15, 3.6)
 	gold.light_color = Color(1.0, 0.63, 0.24)
-	gold.light_energy = 0.52
+	gold.light_energy = 0.72
 	gold.light_specular = 0.40
 	gold.omni_range = 5.6
 	root.add_child(gold)
+
+	var role_specs := [
+		{
+			"role": "soft_key_top",
+			"name": "SoftTopKeyLight",
+			"position": Vector3(0.0, 7.8, 1.5),
+			"color": Color(1.00, 0.90, 0.72),
+			"energy": 1.18,
+			"range": 15.5,
+			"specular": 0.18,
+			"attenuation": 0.62,
+		},
+		{
+			"role": "cool_table_bounce",
+			"name": "CoolTableBounceLight",
+			"position": Vector3(-2.5, 1.18, 1.75),
+			"color": Color(0.26, 0.52, 1.00),
+			"energy": 0.58,
+			"range": 11.2,
+			"specular": 0.08,
+			"attenuation": 0.72,
+		},
+		{
+			"role": "warm_gold_edge_kicker",
+			"name": "WarmGoldEdgeKickerLight",
+			"position": Vector3(4.3, 2.6, 3.2),
+			"color": Color(1.00, 0.66, 0.28),
+			"energy": 0.78,
+			"range": 9.6,
+			"specular": 0.42,
+			"attenuation": 0.68,
+		},
+		{
+			"role": "local_glint_highlight",
+			"name": "LocalGlintHighlightLight",
+			"position": Vector3(-1.1, 2.2, 2.0),
+			"color": Color(0.84, 0.96, 1.00),
+			"energy": 0.62,
+			"range": 5.2,
+			"specular": 0.56,
+			"attenuation": 0.56,
+		},
+		{
+			"role": "reflection_reference",
+			"name": "ReflectionReferenceLight",
+			"position": Vector3(2.0, 3.8, -2.8),
+			"color": Color(0.92, 0.98, 1.00),
+			"energy": 0.34,
+			"range": 8.8,
+			"specular": 0.62,
+			"attenuation": 0.60,
+		},
+	]
+	for spec in role_specs:
+		var role_light := OmniLight3D.new()
+		role_light.name = str(spec["name"])
+		role_light.position = spec["position"]
+		role_light.light_color = spec["color"]
+		role_light.light_energy = float(spec["energy"])
+		role_light.light_specular = float(spec["specular"])
+		role_light.omni_range = float(spec["range"])
+		role_light.omni_attenuation = float(spec["attenuation"])
+		role_light.shadow_enabled = false
+		role_light.set_meta("visual_light_role", str(spec["role"]))
+		root.add_child(role_light)
+
+
+func _add_showcase_reflection_probe(root: Node3D) -> void:
+	if not ClassDB.class_exists("ReflectionProbe"):
+		return
+	var probe := ClassDB.instantiate("ReflectionProbe") as Node3D
+	if probe == null:
+		return
+	probe.name = "GlossReflectionProbe"
+	probe.position = Vector3(0.0, 1.85, 0.10)
+	_set_existing(probe, ["size"], Vector3(9.4, 4.8, 7.2))
+	_set_existing(probe, ["origin_offset"], Vector3(0.0, 0.14, 0.0))
+	_set_existing(probe, ["intensity"], 0.66)
+	_set_existing(probe, ["max_distance"], 12.0)
+	_set_existing(probe, ["box_projection"], true)
+	_set_existing(probe, ["enable_shadows"], false)
+	root.add_child(probe)
 
 
 func _add_showcase_camera(root: Node3D) -> void:
@@ -760,6 +842,7 @@ func _add_showcase_visual_acceptance_nodes(root: Node3D) -> void:
 	_add_va_camera_marker(markers, "dice_shader_basic", Vector3(0.0, 5.65, 6.95), Vector3(0.0, 0.44, 0.12))
 	_add_va_camera_marker(markers, "table_shader_basic", Vector3(0.0, 7.8, 4.8), Vector3(0.0, 0.05, 0.0))
 	_add_va_camera_marker(markers, "light_effect_basic", Vector3(3.6, 3.2, 5.4), Vector3(0.15, 0.55, 0.1))
+	_add_va_camera_marker(markers, "battle_star_dice_repro_full", Vector3(0.0, 5.65, 6.95), Vector3(0.0, 0.42, 0.12))
 
 	var watermark_layer := CanvasLayer.new()
 	watermark_layer.name = "VA_WatermarkLayer"
@@ -797,31 +880,121 @@ func _add_showcase_dice(root: Node3D) -> void:
 	var mesh := load(ROUNDED_MESH_PATH) as Mesh
 	var values := [4, 3, 3, 4, 1, 6]
 	var material_ids := ["blue", "purple", "cyan", "purple", "gold", "silverwhite"]
-	var x_positions := [-2.55, -1.52, -0.50, 0.52, 1.54, 2.56]
+	var x_positions := [-1.95, -1.17, -0.39, 0.39, 1.17, 1.95]
 	for i in range(values.size()):
 		var dice_root := Node3D.new()
 		dice_root.name = "RoundedD6_%02d" % [i + 1]
-		dice_root.position = Vector3(float(x_positions[i]), 0.54, 0.12 + 0.08 * float(i % 2))
-		dice_root.rotation_degrees = Vector3(-13.0, -18.0 + 7.0 * float(i), 6.0 - 2.0 * float(i % 3))
+		dice_root.position = Vector3(float(x_positions[i]), 0.43, 0.12 + 0.035 * float(i % 2))
+		dice_root.scale = Vector3.ONE * SHOWCASE_DICE_SCALE
+		dice_root.rotation_degrees = Vector3(-11.0, -16.0 + 5.5 * float(i), 4.0 - 1.5 * float(i % 3))
 		root.add_child(dice_root)
+
+		var body_layer := Node3D.new()
+		body_layer.name = "BodyMaterialLayer"
+		dice_root.add_child(body_layer)
 
 		var body := MeshInstance3D.new()
 		body.name = "DiceMesh"
 		body.mesh = mesh
 		body.material_override = load(str(DICE_MATERIALS[material_ids[i]]["path"])) as Material
 		body.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
-		dice_root.add_child(body)
-		_add_face_labels(dice_root, int(values[i]), _digit_color_for_material(material_ids[i]))
+		body_layer.add_child(body)
 
+		var edge_rim := Node3D.new()
+		edge_rim.name = "EdgeRimGlowLayer"
+		dice_root.add_child(edge_rim)
+		_add_edge_frame_bars(edge_rim, _make_showcase_edge_rim_material(material_ids[i]))
+
+		var face_layer := Node3D.new()
+		face_layer.name = "FaceMarkerLayer"
+		dice_root.add_child(face_layer)
+		_add_face_markers(face_layer, int(values[i]), material_ids[i])
+
+		var state_layer := Node3D.new()
+		state_layer.name = "StateOverlayLayer"
+		state_layer.visible = false
+		dice_root.add_child(state_layer)
+
+		var contact_layer := Node3D.new()
+		contact_layer.name = "ContactShadowLayer"
+		dice_root.add_child(contact_layer)
 		var shadow := MeshInstance3D.new()
 		shadow.name = "SoftContactShadow"
 		shadow.mesh = _make_annulus_mesh(0.02, 0.42, 0.0)
-		shadow.scale = Vector3(1.25, 1.0, 0.62)
-		shadow.position = Vector3(0.0, -0.50, 0.02)
-		var shadow_mat := _make_standard_material(Color(0.0, 0.0, 0.0, 0.24), 0.92, 0.0, Color.BLACK, 0.0)
+		shadow.scale = Vector3(1.05, 1.0, 0.54)
+		shadow.position = Vector3(0.0, -0.505, 0.02)
+		var shadow_mat := _make_standard_material(Color(0.0, 0.0, 0.0, 0.42), 0.92, 0.0, Color.BLACK, 0.0)
 		shadow_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		shadow.material_override = shadow_mat
-		dice_root.add_child(shadow)
+		contact_layer.add_child(shadow)
+
+
+func _add_edge_frame_bars(parent: Node3D, material: Material) -> void:
+	var h := EDGE_FRAME_HALF
+	var l := EDGE_FRAME_LENGTH
+	for sy in [-1.0, 1.0]:
+		for sz in [-1.0, 1.0]:
+			_add_edge_bevel_rail(parent, Vector3(0.0, sy * h, sz * h), "x", l, material)
+	for sx in [-1.0, 1.0]:
+		for sz in [-1.0, 1.0]:
+			_add_edge_bevel_rail(parent, Vector3(sx * h, 0.0, sz * h), "y", l, material)
+	for sx in [-1.0, 1.0]:
+		for sy in [-1.0, 1.0]:
+			_add_edge_bevel_rail(parent, Vector3(sx * h, sy * h, 0.0), "z", l, material)
+	for sx in [-1.0, 1.0]:
+		for sy in [-1.0, 1.0]:
+			for sz in [-1.0, 1.0]:
+				_add_edge_corner_bevel_cap(parent, Vector3(sx * h, sy * h, sz * h), material)
+
+
+func _add_edge_bevel_rail(parent: Node3D, local_position: Vector3, axis: String, length: float, material: Material) -> void:
+	var mesh := CylinderMesh.new()
+	mesh.top_radius = EDGE_BEVEL_RADIUS
+	mesh.bottom_radius = EDGE_BEVEL_RADIUS
+	mesh.height = length
+	mesh.radial_segments = 10
+	mesh.rings = 1
+	var bar := MeshInstance3D.new()
+	bar.name = "EdgeBevelRail_%02d" % [parent.get_child_count() + 1]
+	bar.mesh = mesh
+	bar.position = local_position
+	if axis == "x":
+		bar.rotation.z = PI * 0.5
+	elif axis == "z":
+		bar.rotation.x = PI * 0.5
+	bar.material_override = material
+	bar.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	parent.add_child(bar)
+
+
+func _add_edge_corner_bevel_cap(parent: Node3D, local_position: Vector3, material: Material) -> void:
+	var mesh := SphereMesh.new()
+	mesh.radius = EDGE_CORNER_CAP_RADIUS
+	mesh.height = EDGE_CORNER_CAP_RADIUS * 2.0
+	mesh.radial_segments = 12
+	mesh.rings = 6
+	var cap := MeshInstance3D.new()
+	cap.name = "EdgeCornerBevelCap_%02d" % [parent.get_child_count() + 1]
+	cap.mesh = mesh
+	cap.position = local_position
+	cap.material_override = material
+	cap.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	parent.add_child(cap)
+
+
+func _make_showcase_edge_rim_material(material_id: String) -> StandardMaterial3D:
+	var spec: Dictionary = DICE_MATERIALS.get(material_id, DICE_MATERIALS["blue"])
+	var edge: Color = spec.get("edge", Color(0.80, 0.94, 1.00, 1.0))
+	var material := StandardMaterial3D.new()
+	material.resource_name = "showcase_%s_edge_rim_layer" % material_id
+	material.albedo_color = Color(edge.r * 0.58, edge.g * 0.58, edge.b * 0.60, 1.0)
+	material.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
+	material.emission_enabled = true
+	material.emission = edge
+	material.emission_energy_multiplier = clampf(float(spec.get("fresnel_strength", 0.7)) * 0.10, 0.045, 0.085)
+	material.roughness = 0.42
+	material.metallic = 0.0
+	return material
 
 
 func _digit_color_for_material(material_id: String) -> Color:
@@ -838,10 +1011,134 @@ func _digit_color_for_material(material_id: String) -> Color:
 			return Color(0.86, 0.95, 1.0, 1.0)
 
 
+func _add_face_markers(parent: Node3D, top_value: int, material_id: String) -> void:
+	var digit_color := _digit_color_for_material(material_id)
+	var spec: Dictionary = DICE_MATERIALS.get(material_id, DICE_MATERIALS["blue"])
+	var edge: Color = spec.get("edge", digit_color)
+	var base: Color = spec.get("base", Color(0.12, 0.20, 0.36, 1.0))
+	var panel_fill_material := _make_face_panel_fill_material(base, edge, float(spec.get("metallic", 0.14)))
+	var side_fill_material := _make_face_panel_fill_material(base.darkened(0.22), edge.darkened(0.20), float(spec.get("metallic", 0.14)))
+	var panel_border_material := _make_face_marker_material(Color(edge.r, edge.g, edge.b, 1.0), 0.11)
+	var emblem_material := _make_face_marker_material(digit_color, 0.30)
+	_add_top_face_fill(parent, panel_fill_material)
+	_add_front_face_fill(parent, panel_fill_material)
+	_add_side_face_fills(parent, side_fill_material)
+	_add_top_face_panel(parent, panel_border_material)
+	_add_front_face_panel(parent, panel_border_material)
+	_add_front_star_emblem(parent, emblem_material)
+	_add_face_labels(parent, top_value, digit_color)
+
+
+func _make_face_marker_material(color: Color, emission_energy: float) -> StandardMaterial3D:
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color(color.r, color.g, color.b, 1.0)
+	material.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.emission_enabled = true
+	material.emission = Color(color.r, color.g, color.b, 1.0)
+	material.emission_energy_multiplier = emission_energy
+	return material
+
+
+func _make_face_panel_fill_material(base: Color, edge: Color, metallic: float) -> StandardMaterial3D:
+	var material := StandardMaterial3D.new()
+	var fill := base.lerp(edge, 0.18)
+	material.albedo_color = Color(fill.r, fill.g, fill.b, 1.0)
+	material.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
+	material.roughness = 0.38
+	material.metallic = clampf(metallic * 0.45, 0.0, 0.30)
+	material.emission_enabled = true
+	material.emission = edge.darkened(0.38)
+	material.emission_energy_multiplier = 0.035
+	return material
+
+
+func _add_top_face_fill(parent: Node3D, material: Material) -> void:
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(FACE_PANEL_FILL_HALF * 2.0, FACE_PANEL_FILL_THICKNESS, FACE_PANEL_FILL_HALF * 2.0)
+	var panel := MeshInstance3D.new()
+	panel.name = "TopFaceFill"
+	panel.mesh = mesh
+	panel.position = Vector3(0.0, FACE_PANEL_OFFSET - 0.004, 0.0)
+	panel.material_override = material
+	panel.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	parent.add_child(panel)
+
+
+func _add_front_face_fill(parent: Node3D, material: Material) -> void:
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(FACE_PANEL_FILL_HALF * 2.0, FACE_PANEL_FILL_HALF * 2.0, FACE_PANEL_FILL_THICKNESS)
+	var panel := MeshInstance3D.new()
+	panel.name = "FrontFaceFill"
+	panel.mesh = mesh
+	panel.position = Vector3(0.0, 0.0, FACE_PANEL_OFFSET - 0.004)
+	panel.material_override = material
+	panel.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	parent.add_child(panel)
+
+
+func _add_side_face_fills(parent: Node3D, material: Material) -> void:
+	for sx in [-1.0, 1.0]:
+		var mesh := BoxMesh.new()
+		mesh.size = Vector3(FACE_PANEL_FILL_THICKNESS, FACE_PANEL_FILL_HALF * 2.0, FACE_PANEL_FILL_HALF * 2.0)
+		var panel := MeshInstance3D.new()
+		panel.name = "SideFaceFill_L" if sx < 0.0 else "SideFaceFill_R"
+		panel.mesh = mesh
+		panel.position = Vector3(sx * (FACE_PANEL_OFFSET - 0.004), 0.0, 0.0)
+		panel.material_override = material
+		panel.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		parent.add_child(panel)
+
+
+func _add_top_face_panel(parent: Node3D, material: Material) -> void:
+	var h := FACE_PANEL_HALF
+	var t := FACE_PANEL_THICKNESS
+	var y := FACE_PANEL_OFFSET
+	_add_face_panel_bar(parent, "TopFacePanel", Vector3(0.0, y, -h), Vector3(h * 2.0, t, t), material)
+	_add_face_panel_bar(parent, "TopFacePanel", Vector3(0.0, y, h), Vector3(h * 2.0, t, t), material)
+	_add_face_panel_bar(parent, "TopFacePanel", Vector3(-h, y, 0.0), Vector3(t, t, h * 2.0), material)
+	_add_face_panel_bar(parent, "TopFacePanel", Vector3(h, y, 0.0), Vector3(t, t, h * 2.0), material)
+
+
+func _add_front_face_panel(parent: Node3D, material: Material) -> void:
+	var h := FACE_PANEL_HALF
+	var t := FACE_PANEL_THICKNESS
+	var z := FACE_PANEL_OFFSET
+	_add_face_panel_bar(parent, "FrontFacePanel", Vector3(0.0, -h, z), Vector3(h * 2.0, t, t), material)
+	_add_face_panel_bar(parent, "FrontFacePanel", Vector3(0.0, h, z), Vector3(h * 2.0, t, t), material)
+	_add_face_panel_bar(parent, "FrontFacePanel", Vector3(-h, 0.0, z), Vector3(t, h * 2.0, t), material)
+	_add_face_panel_bar(parent, "FrontFacePanel", Vector3(h, 0.0, z), Vector3(t, h * 2.0, t), material)
+
+
+func _add_face_panel_bar(parent: Node3D, node_name: String, local_position: Vector3, size: Vector3, material: Material) -> void:
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	var bar := MeshInstance3D.new()
+	bar.name = "%s_%02d" % [node_name, parent.get_child_count() + 1]
+	bar.mesh = mesh
+	bar.position = local_position
+	bar.material_override = material
+	bar.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	parent.add_child(bar)
+
+
+func _add_front_star_emblem(parent: Node3D, material: Material) -> void:
+	for angle in [0.0, PI * 0.25, PI * 0.5, PI * 0.75]:
+		var mesh := BoxMesh.new()
+		mesh.size = Vector3(0.30 if angle == 0.0 or angle == PI * 0.5 else 0.22, 0.020, 0.012)
+		var bar := MeshInstance3D.new()
+		bar.name = "FrontStarEmblem_%02d" % [parent.get_child_count() + 1]
+		bar.mesh = mesh
+		bar.position = Vector3(0.0, 0.0, DICE_HALF + 0.043)
+		bar.rotation = Vector3(0.0, 0.0, angle)
+		bar.material_override = material
+		bar.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		parent.add_child(bar)
+
+
 func _add_face_labels(parent: Node3D, top_value: int, digit_color: Color) -> void:
 	var face_rows := [
-		{"name": "FaceTop", "text": str(top_value), "position": Vector3(0.0, DICE_HALF + 0.012, 0.0), "rotation": Vector3(-PI * 0.5, 0.0, 0.0), "scale": 1.0},
-		{"name": "FaceFront", "text": "+", "position": Vector3(0.0, 0.0, DICE_HALF + 0.012), "rotation": Vector3(0.0, 0.0, 0.0), "scale": 0.56},
+		{"name": "FaceTop", "text": str(top_value), "position": Vector3(0.0, DICE_HALF + 0.044, 0.0), "rotation": Vector3(-PI * 0.5, 0.0, 0.0), "scale": 1.0},
 	]
 	for row in face_rows:
 		var label := Label3D.new()
@@ -942,11 +1239,31 @@ func _validate_outputs() -> bool:
 		ok = _check("showcase has key light", _scene_state_has_node_name(state, "KeyLight")) and ok
 		ok = _check("showcase has cool fill light", _scene_state_has_node_name(state, "CoolFillLight")) and ok
 		ok = _check("showcase has cyan rim light", _scene_state_has_node_name(state, "CyanRimLight")) and ok
+		ok = _check("showcase has soft top key role light", _scene_state_has_node_name(state, "SoftTopKeyLight")) and ok
+		ok = _check("showcase has cool table bounce role light", _scene_state_has_node_name(state, "CoolTableBounceLight")) and ok
+		ok = _check("showcase has warm gold edge kicker role light", _scene_state_has_node_name(state, "WarmGoldEdgeKickerLight")) and ok
+		ok = _check("showcase has local glint role light", _scene_state_has_node_name(state, "LocalGlintHighlightLight")) and ok
+		ok = _check("showcase has reflection reference role light", _scene_state_has_node_name(state, "ReflectionReferenceLight")) and ok
+		ok = _check("showcase has gloss reflection probe", _scene_state_has_node_name(state, "GlossReflectionProbe")) and ok
 		ok = _check("showcase has six rounded dice", _scene_state_count_nodes_with_prefix(state, "RoundedD6_") == 6) and ok
+		ok = _check("showcase has dice body material layers", _scene_state_count_nodes_with_name(state, "BodyMaterialLayer") == 6) and ok
+		ok = _check("showcase has edge/rim glow layers", _scene_state_count_nodes_with_name(state, "EdgeRimGlowLayer") == 6) and ok
+		ok = _check("showcase has rounded bevel rails", _scene_state_count_nodes_with_prefix(state, "EdgeBevelRail") >= 72) and ok
+		ok = _check("showcase has rounded bevel corner caps", _scene_state_count_nodes_with_prefix(state, "EdgeCornerBevelCap") >= 48) and ok
+		ok = _check("showcase has face marker layers", _scene_state_count_nodes_with_name(state, "FaceMarkerLayer") == 6) and ok
+		ok = _check("showcase has top face fills", _scene_state_count_nodes_with_name(state, "TopFaceFill") == 6) and ok
+		ok = _check("showcase has front face fills", _scene_state_count_nodes_with_name(state, "FrontFaceFill") == 6) and ok
+		ok = _check("showcase has side face fills", _scene_state_count_nodes_with_prefix(state, "SideFaceFill") >= 12) and ok
+		ok = _check("showcase has top face panels", _scene_state_count_nodes_with_prefix(state, "TopFacePanel") >= 24) and ok
+		ok = _check("showcase has front face panels", _scene_state_count_nodes_with_prefix(state, "FrontFacePanel") >= 24) and ok
+		ok = _check("showcase has front star emblems", _scene_state_count_nodes_with_prefix(state, "FrontStarEmblem") >= 24) and ok
+		ok = _check("showcase has state overlay layers", _scene_state_count_nodes_with_name(state, "StateOverlayLayer") == 6) and ok
+		ok = _check("showcase has contact shadow layers", _scene_state_count_nodes_with_name(state, "ContactShadowLayer") == 6) and ok
 		ok = _check("showcase has VA camera", _scene_state_has_node_name(state, "VA_Camera3D")) and ok
 		ok = _check("showcase has VA camera markers", _scene_state_has_node_name(state, "VA_CameraMarkers")) and ok
 		ok = _check("showcase has VA watermark layer", _scene_state_has_node_name(state, "VA_WatermarkLayer")) and ok
 		ok = _check("showcase has VA watermark label", _scene_state_has_node_name(state, "VA_WatermarkLabel")) and ok
+		ok = _check("showcase has full-scene VA marker", _scene_state_has_node_name(state, "battle_star_dice_repro_full")) and ok
 		ok = _check("showcase has VA runner marker", _scene_state_has_node_name(state, "VA_ShaderLightAcceptanceRunner")) and ok
 	var disc_scene := load(DISC_SCENE_PATH) as PackedScene
 	if disc_scene != null:
@@ -1002,5 +1319,13 @@ func _scene_state_count_nodes_with_prefix(state, prefix: String) -> int:
 	var count := 0
 	for node_index in range(state.get_node_count()):
 		if str(state.get_node_name(node_index)).begins_with(prefix):
+			count += 1
+	return count
+
+
+func _scene_state_count_nodes_with_name(state, node_name: String) -> int:
+	var count := 0
+	for node_index in range(state.get_node_count()):
+		if str(state.get_node_name(node_index)) == node_name:
 			count += 1
 	return count

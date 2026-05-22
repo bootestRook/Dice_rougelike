@@ -1,0 +1,18 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://assets/shaders/dice/battle_star_dice_full.gdshader" id="1_ygerd"]
+
+[resource]
+resource_name = "battle_star_dice_gold"
+render_priority = 0
+shader = ExtResource("1_ygerd")
+shader_parameter/base_albedo = Color(0.76, 0.44, 0.085, 1)
+shader_parameter/edge_color = Color(1, 0.88, 0.46, 1)
+shader_parameter/emission_color = Color(1, 0.6, 0.14, 1)
+shader_parameter/metallic_value = 0.66
+shader_parameter/roughness_value = 0.34
+shader_parameter/emission_energy = 0.48
+shader_parameter/emission_mask_power = 1.0
+shader_parameter/fake_normal_strength = 0.3
+shader_parameter/panel_shadow_strength = 0.36
+shader_parameter/micro_detail_strength = 0.055
