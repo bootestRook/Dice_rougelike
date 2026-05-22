@@ -1,0 +1,14 @@
+{
+	"id": "dice_shader_basic",
+	"type": "shader_material",
+	"camera_marker": "dice_shader_basic",
+	"seed": 4201101,
+	"capture": {
+		"id": "main",
+		"time": 0.45
+	},
+	"camera": {
+		"fov": 34.0,
+		"target": [0.0, 0.44, 0.12]
+	}
+}

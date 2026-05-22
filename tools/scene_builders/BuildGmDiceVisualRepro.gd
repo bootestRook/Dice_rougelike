@@ -690,6 +690,7 @@ func _save_showcase_scene() -> bool:
 	_add_showcase_lights(root)
 	_add_showcase_camera(root)
 	_add_showcase_dice(root)
+	_add_showcase_visual_acceptance_nodes(root)
 	return _save_scene(root, SHOWCASE_SCENE_PATH)
 
 
@@ -741,6 +742,55 @@ func _add_showcase_camera(root: Node3D) -> void:
 	camera.current = true
 	camera.look_at_from_position(camera.position, Vector3(0.0, 0.36, 0.10), Vector3.UP)
 	root.add_child(camera)
+
+
+func _add_showcase_visual_acceptance_nodes(root: Node3D) -> void:
+	var camera := Camera3D.new()
+	camera.name = "VA_Camera3D"
+	camera.position = Vector3(0.0, 5.65, 6.95)
+	camera.fov = 34.0
+	camera.near = 0.05
+	camera.far = 80.0
+	camera.look_at_from_position(camera.position, Vector3(0.0, 0.44, 0.12), Vector3.UP)
+	root.add_child(camera)
+
+	var markers := Node3D.new()
+	markers.name = "VA_CameraMarkers"
+	root.add_child(markers)
+	_add_va_camera_marker(markers, "dice_shader_basic", Vector3(0.0, 5.65, 6.95), Vector3(0.0, 0.44, 0.12))
+	_add_va_camera_marker(markers, "table_shader_basic", Vector3(0.0, 7.8, 4.8), Vector3(0.0, 0.05, 0.0))
+	_add_va_camera_marker(markers, "light_effect_basic", Vector3(3.6, 3.2, 5.4), Vector3(0.15, 0.55, 0.1))
+
+	var watermark_layer := CanvasLayer.new()
+	watermark_layer.name = "VA_WatermarkLayer"
+	watermark_layer.layer = 128
+	root.add_child(watermark_layer)
+
+	var watermark_label := Label.new()
+	watermark_label.name = "VA_WatermarkLabel"
+	watermark_label.text = "VA pending"
+	watermark_label.offset_left = 18.0
+	watermark_label.offset_top = 16.0
+	watermark_label.offset_right = 720.0
+	watermark_label.offset_bottom = 236.0
+	watermark_label.add_theme_color_override("font_color", Color(0.88, 0.96, 1.0, 1.0))
+	watermark_label.add_theme_color_override("font_outline_color", Color(0.01, 0.015, 0.03, 0.92))
+	watermark_label.add_theme_constant_override("outline_size", 4)
+	watermark_label.add_theme_font_size_override("font_size", 20)
+	watermark_layer.add_child(watermark_label)
+
+	var runner_marker := Node.new()
+	runner_marker.name = "VA_ShaderLightAcceptanceRunner"
+	root.add_child(runner_marker)
+
+
+func _add_va_camera_marker(parent: Node3D, marker_name: String, position: Vector3, target: Vector3) -> void:
+	var marker := Marker3D.new()
+	marker.name = marker_name
+	marker.position = position
+	marker.set_meta("va_target", target)
+	marker.look_at_from_position(position, target, Vector3.UP)
+	parent.add_child(marker)
 
 
 func _add_showcase_dice(root: Node3D) -> void:
@@ -893,6 +943,11 @@ func _validate_outputs() -> bool:
 		ok = _check("showcase has cool fill light", _scene_state_has_node_name(state, "CoolFillLight")) and ok
 		ok = _check("showcase has cyan rim light", _scene_state_has_node_name(state, "CyanRimLight")) and ok
 		ok = _check("showcase has six rounded dice", _scene_state_count_nodes_with_prefix(state, "RoundedD6_") == 6) and ok
+		ok = _check("showcase has VA camera", _scene_state_has_node_name(state, "VA_Camera3D")) and ok
+		ok = _check("showcase has VA camera markers", _scene_state_has_node_name(state, "VA_CameraMarkers")) and ok
+		ok = _check("showcase has VA watermark layer", _scene_state_has_node_name(state, "VA_WatermarkLayer")) and ok
+		ok = _check("showcase has VA watermark label", _scene_state_has_node_name(state, "VA_WatermarkLabel")) and ok
+		ok = _check("showcase has VA runner marker", _scene_state_has_node_name(state, "VA_ShaderLightAcceptanceRunner")) and ok
 	var disc_scene := load(DISC_SCENE_PATH) as PackedScene
 	if disc_scene != null:
 		var disc_state := disc_scene.get_state()

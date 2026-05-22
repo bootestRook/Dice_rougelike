@@ -1,0 +1,14 @@
+{
+	"id": "light_effect_basic",
+	"type": "lighting_effect",
+	"camera_marker": "light_effect_basic",
+	"seed": 4201103,
+	"capture": {
+		"id": "main",
+		"time": 0.65
+	},
+	"camera": {
+		"fov": 38.0,
+		"target": [0.15, 0.55, 0.1]
+	}
+}

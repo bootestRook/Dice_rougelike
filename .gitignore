@@ -35,6 +35,9 @@ Thumbs.db
 tmp/
 temp/
 
+# Local visual acceptance outputs
+tests_or_debug/tmp_report/
+
 # Node / WebApp
 node_modules/
 npm-debug.log*

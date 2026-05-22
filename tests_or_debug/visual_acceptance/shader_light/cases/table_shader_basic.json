@@ -1,0 +1,14 @@
+{
+	"id": "table_shader_basic",
+	"type": "shader_material",
+	"camera_marker": "table_shader_basic",
+	"seed": 4201102,
+	"capture": {
+		"id": "main",
+		"time": 0.45
+	},
+	"camera": {
+		"fov": 40.0,
+		"target": [0.0, 0.05, 0.0]
+	}
+}

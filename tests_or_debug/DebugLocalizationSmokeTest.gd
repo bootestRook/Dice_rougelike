@@ -1,5 +1,4 @@
 extends SceneTree
-class_name DebugLocalizationSmokeTest
 
 
 const LocKeys = preload("res://scripts/i18n/LocKeys.gd")

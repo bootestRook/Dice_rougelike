@@ -366,3 +366,39 @@ outline_size = 10
 transform = Transform3D(1.25, 0, 0, 0, 1, 0, 0, 0, 0.62, 0, -0.5, 0.02)
 material_override = SubResource("StandardMaterial3D_dpn0n")
 mesh = SubResource("ArrayMesh_gmo77")
+
+[node name="VA_Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.79146284, 0.6112173, 0, -0.6112173, 0.79146284, 0, 5.65, 6.95)
+fov = 34.0
+near = 0.05
+far = 80.0
+
+[node name="VA_CameraMarkers" type="Node3D" parent="."]
+
+[node name="dice_shader_basic" type="Marker3D" parent="VA_CameraMarkers"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.65, 6.95)
+metadata/va_target = Vector3(0, 0.44, 0.12)
+
+[node name="table_shader_basic" type="Marker3D" parent="VA_CameraMarkers"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 7.8, 4.8)
+metadata/va_target = Vector3(0, 0.05, 0)
+
+[node name="light_effect_basic" type="Marker3D" parent="VA_CameraMarkers"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.6, 3.2, 5.4)
+metadata/va_target = Vector3(0.15, 0.55, 0.1)
+
+[node name="VA_WatermarkLayer" type="CanvasLayer" parent="."]
+layer = 128
+
+[node name="VA_WatermarkLabel" type="Label" parent="VA_WatermarkLayer"]
+offset_left = 18.0
+offset_top = 16.0
+offset_right = 720.0
+offset_bottom = 236.0
+theme_override_colors/font_color = Color(0.88, 0.96, 1, 1)
+theme_override_colors/font_outline_color = Color(0.01, 0.015, 0.03, 0.92)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 20
+text = "VA pending"
+
+[node name="VA_ShaderLightAcceptanceRunner" type="Node" parent="."]
