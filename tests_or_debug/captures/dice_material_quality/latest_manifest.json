@@ -1,0 +1,122 @@
+{
+	"capture_method": "display_server_window_rect",
+	"capture_options": {
+		"clean_body_diagnostic": false,
+		"lighting_preset": "neutral",
+		"show_labels": true,
+		"show_pips": true
+	},
+	"capture_settle_frames": 120,
+	"capture_settle_seconds": 2.0,
+	"capture_source": "res://scripts/ui/debug/GmDiceMaterialPreviewViewport.gd",
+	"materials": [
+		{
+			"clean_body_diagnostic_enabled": false,
+			"has_preview_lighting_rig": true,
+			"has_reflection_probe": true,
+			"id": "bronze",
+			"label": "青铜",
+			"lighting": {
+				"ambient_energy": 0.52,
+				"fill_energy": 0.5,
+				"key_energy": 2.35,
+				"key_yaw": 36.0,
+				"rim_energy": 0.66
+			},
+			"lighting_rig": {
+				"ambient_color": "(0.34, 0.36, 0.39, 1.0)",
+				"background_color": "(0.075, 0.09, 0.115, 1.0)",
+				"config": {
+					"ambient_energy": 0.52,
+					"fill_energy": 0.5,
+					"key_energy": 2.35,
+					"key_yaw": 36.0,
+					"rim_energy": 0.66
+				},
+				"fill_light": true,
+				"key_light": true,
+				"light_card_count": 3,
+				"reflection_probe": true,
+				"rim_light": true,
+				"world_environment": true
+			},
+			"material_instance_resource_path": "",
+			"material_source_path": "res://assets/materials/dice/bronze_dice.tres",
+			"mesh_resource_path": "res://assets/models/dice/preview_rounded_d6_body_mesh.tres"
+		},
+		{
+			"clean_body_diagnostic_enabled": false,
+			"has_preview_lighting_rig": true,
+			"has_reflection_probe": true,
+			"id": "gold",
+			"label": "黄金",
+			"lighting": {
+				"ambient_energy": 0.52,
+				"fill_energy": 0.5,
+				"key_energy": 2.35,
+				"key_yaw": 36.0,
+				"rim_energy": 0.66
+			},
+			"lighting_rig": {
+				"ambient_color": "(0.34, 0.36, 0.39, 1.0)",
+				"background_color": "(0.075, 0.09, 0.115, 1.0)",
+				"config": {
+					"ambient_energy": 0.52,
+					"fill_energy": 0.5,
+					"key_energy": 2.35,
+					"key_yaw": 36.0,
+					"rim_energy": 0.66
+				},
+				"fill_light": true,
+				"key_light": true,
+				"light_card_count": 3,
+				"reflection_probe": true,
+				"rim_light": true,
+				"world_environment": true
+			},
+			"material_instance_resource_path": "",
+			"material_source_path": "res://assets/materials/dice/gold_dice.tres",
+			"mesh_resource_path": "res://assets/models/dice/preview_rounded_d6_body_mesh.tres"
+		},
+		{
+			"clean_body_diagnostic_enabled": false,
+			"has_preview_lighting_rig": true,
+			"has_reflection_probe": true,
+			"id": "repro_gold",
+			"label": "星金",
+			"lighting": {
+				"ambient_energy": 0.52,
+				"fill_energy": 0.5,
+				"key_energy": 2.35,
+				"key_yaw": 36.0,
+				"rim_energy": 0.66
+			},
+			"lighting_rig": {
+				"ambient_color": "(0.34, 0.36, 0.39, 1.0)",
+				"background_color": "(0.075, 0.09, 0.115, 1.0)",
+				"config": {
+					"ambient_energy": 0.52,
+					"fill_energy": 0.5,
+					"key_energy": 2.35,
+					"key_yaw": 36.0,
+					"rim_energy": 0.66
+				},
+				"fill_light": true,
+				"key_light": true,
+				"light_card_count": 3,
+				"reflection_probe": true,
+				"rim_light": true,
+				"world_environment": true
+			},
+			"material_instance_resource_path": "",
+			"material_source_path": "res://assets/materials/dice/repro_gold_dice.tres",
+			"mesh_resource_path": "res://assets/models/dice/preview_rounded_d6_body_mesh.tres"
+		}
+	],
+	"output": "E:/project/godot/Dice_rougelike/tests_or_debug/captures/dice_material_quality/dice_face_layer_system_after.png",
+	"requested_lighting": "preview_lighting_rig",
+	"stage": "dice_face_layer_system_after",
+	"window_borderless": true,
+	"window_position": "(311, 117)",
+	"window_size": "(1680, 720)"
+}

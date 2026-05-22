@@ -77,17 +77,20 @@ const DICE_MATERIALS := {
 	},
 	"gold": {
 		"path": "res://assets/materials/dice/repro_gold_dice.tres",
-		"base": Color(0.720, 0.430, 0.080, 1.0),
-		"edge": Color(1.00, 0.91, 0.46, 1.0),
-		"emission": Color(1.00, 0.58, 0.13, 1.0),
-		"metallic": 0.58,
-		"roughness": 0.30,
-		"emission_strength": 0.06,
-		"fresnel_strength": 0.58,
+		"base": Color(0.909804, 0.847059, 0.686275, 1.0),
+		"edge": Color(1.00, 0.973, 0.918, 1.0),
+		"emission": Color(0.960784, 0.949020, 0.909804, 1.0),
+		"metallic": 0.96,
+		"roughness": 0.18,
+		"roughness_body": 0.18,
+		"roughness_panel": 0.24,
+		"roughness_edge": 0.10,
+		"emission_strength": 0.16,
+		"fresnel_strength": 0.72,
 		"face_detail_strength": 0.96,
 		"edge_line_strength": 0.64,
 		"corner_glint_strength": 0.22,
-		"side_shadow_strength": 0.32,
+		"side_shadow_strength": 0.16,
 	},
 	"silverwhite": {
 		"path": "res://assets/materials/dice/repro_silverwhite_dice.tres",
@@ -490,10 +493,10 @@ func _save_environment() -> bool:
 	var env := Environment.new()
 	env.resource_name = "gm_dice_visual_repro_environment"
 	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color(0.034, 0.060, 0.145, 1.0)
+	env.background_color = Color(0.095, 0.115, 0.140, 1.0)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.30, 0.38, 0.62, 1.0)
-	env.ambient_light_energy = 0.42
+	env.ambient_light_color = Color(0.32, 0.36, 0.40, 1.0)
+	env.ambient_light_energy = 0.56
 	_set_existing(env, ["ambient_light_sky_contribution"], 0.16)
 	_set_existing(env, ["reflected_light_source"], 0)
 	_set_existing(env, ["glow_enabled"], true)
@@ -698,8 +701,8 @@ func _add_showcase_lights(root: Node3D) -> void:
 	var key := DirectionalLight3D.new()
 	key.name = "KeyLight"
 	key.rotation_degrees = Vector3(-48.0, 38.0, 0.0)
-	key.light_color = Color(1.00, 0.86, 0.66)
-	key.light_energy = 2.65
+	key.light_color = Color(1.00, 0.949, 0.839)
+	key.light_energy = 1.90
 	key.light_specular = 0.64
 	key.shadow_enabled = true
 	root.add_child(key)
@@ -707,8 +710,8 @@ func _add_showcase_lights(root: Node3D) -> void:
 	var fill := OmniLight3D.new()
 	fill.name = "CoolFillLight"
 	fill.position = Vector3(-3.8, 2.2, 3.2)
-	fill.light_color = Color(0.32, 0.62, 1.0)
-	fill.light_energy = 0.86
+	fill.light_color = Color(0.722, 0.843, 1.0)
+	fill.light_energy = 0.53
 	fill.light_specular = 0.28
 	fill.omni_range = 8.6
 	root.add_child(fill)
@@ -716,8 +719,8 @@ func _add_showcase_lights(root: Node3D) -> void:
 	var rim := OmniLight3D.new()
 	rim.name = "CyanRimLight"
 	rim.position = Vector3(3.6, 2.4, -2.8)
-	rim.light_color = Color(0.16, 0.92, 1.0)
-	rim.light_energy = 1.05
+	rim.light_color = Color(1.0, 0.973, 0.918)
+	rim.light_energy = 0.38
 	rim.light_specular = 0.52
 	rim.omni_range = 7.4
 	root.add_child(rim)
@@ -807,7 +810,7 @@ func _add_showcase_reflection_probe(root: Node3D) -> void:
 	probe.position = Vector3(0.0, 1.85, 0.10)
 	_set_existing(probe, ["size"], Vector3(9.4, 4.8, 7.2))
 	_set_existing(probe, ["origin_offset"], Vector3(0.0, 0.14, 0.0))
-	_set_existing(probe, ["intensity"], 0.66)
+	_set_existing(probe, ["intensity"], 0.95)
 	_set_existing(probe, ["max_distance"], 12.0)
 	_set_existing(probe, ["box_projection"], true)
 	_set_existing(probe, ["enable_shadows"], false)
@@ -992,7 +995,7 @@ func _make_showcase_edge_rim_material(material_id: String) -> StandardMaterial3D
 	material.emission_enabled = true
 	material.emission = edge
 	material.emission_energy_multiplier = clampf(float(spec.get("fresnel_strength", 0.7)) * 0.10, 0.045, 0.085)
-	material.roughness = 0.42
+	material.roughness = float(spec.get("roughness_edge", 0.42))
 	material.metallic = 0.0
 	return material
 
@@ -1000,7 +1003,7 @@ func _make_showcase_edge_rim_material(material_id: String) -> StandardMaterial3D
 func _digit_color_for_material(material_id: String) -> Color:
 	match material_id:
 		"gold":
-			return Color(1.0, 0.96, 0.72, 1.0)
+			return Color(0.960784, 0.949020, 0.909804, 1.0)
 		"silverwhite":
 			return Color(0.96, 0.98, 1.0, 1.0)
 		"cyan":
@@ -1016,10 +1019,10 @@ func _add_face_markers(parent: Node3D, top_value: int, material_id: String) -> v
 	var spec: Dictionary = DICE_MATERIALS.get(material_id, DICE_MATERIALS["blue"])
 	var edge: Color = spec.get("edge", digit_color)
 	var base: Color = spec.get("base", Color(0.12, 0.20, 0.36, 1.0))
-	var panel_fill_material := _make_face_panel_fill_material(base, edge, float(spec.get("metallic", 0.14)))
-	var side_fill_material := _make_face_panel_fill_material(base.darkened(0.22), edge.darkened(0.20), float(spec.get("metallic", 0.14)))
+	var panel_fill_material := _make_face_panel_fill_material(base, edge, float(spec.get("metallic", 0.14)), float(spec.get("roughness_panel", 0.38)))
+	var side_fill_material := _make_face_panel_fill_material(base.darkened(0.22), edge.darkened(0.20), float(spec.get("metallic", 0.14)), float(spec.get("roughness_panel", 0.38)))
 	var panel_border_material := _make_face_marker_material(Color(edge.r, edge.g, edge.b, 1.0), 0.11)
-	var emblem_material := _make_face_marker_material(digit_color, 0.30)
+	var emblem_material := _make_face_marker_material(digit_color, 0.50)
 	_add_top_face_fill(parent, panel_fill_material)
 	_add_front_face_fill(parent, panel_fill_material)
 	_add_side_face_fills(parent, side_fill_material)
@@ -1040,12 +1043,12 @@ func _make_face_marker_material(color: Color, emission_energy: float) -> Standar
 	return material
 
 
-func _make_face_panel_fill_material(base: Color, edge: Color, metallic: float) -> StandardMaterial3D:
+func _make_face_panel_fill_material(base: Color, edge: Color, metallic: float, roughness: float) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
 	var fill := base.lerp(edge, 0.18)
 	material.albedo_color = Color(fill.r, fill.g, fill.b, 1.0)
 	material.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
-	material.roughness = 0.38
+	material.roughness = roughness
 	material.metallic = clampf(metallic * 0.45, 0.0, 0.30)
 	material.emission_enabled = true
 	material.emission = edge.darkened(0.38)

@@ -39,14 +39,18 @@ const MATERIAL_SPECS := {
 	},
 	"gold": {
 		"name": "battle_star_dice_gold",
-		"base_albedo": Color(0.760, 0.440, 0.085, 1.0),
-		"edge_color": Color(1.0, 0.88, 0.46, 1.0),
-		"emission_color": Color(1.0, 0.60, 0.14, 1.0),
-		"metallic": 0.66,
-		"roughness": 0.34,
-		"emission_energy": 0.48,
+		"base_albedo": Color(0.909804, 0.847059, 0.686275, 1.0),
+		"edge_color": Color(1.0, 0.973, 0.918, 1.0),
+		"emission_color": Color(0.960784, 0.949020, 0.909804, 1.0),
+		"metallic": 0.96,
+		"roughness": 0.18,
+		"roughness_body": 0.18,
+		"roughness_panel": 0.24,
+		"roughness_edge": 0.10,
+		"emission_energy": 0.50,
 		"emission_mask_power": 1.00,
 		"fake_normal_strength": 0.30,
+		"panel_shadow_strength": 0.22,
 	},
 	"white": {
 		"name": "battle_star_dice_white",
@@ -91,11 +95,11 @@ static func make_body_material(material_id: String, shader: Shader) -> ShaderMat
 	material.set_shader_parameter("edge_color", spec["edge_color"])
 	material.set_shader_parameter("emission_color", spec["emission_color"])
 	material.set_shader_parameter("metallic_value", float(spec["metallic"]))
-	material.set_shader_parameter("roughness_value", float(spec["roughness"]))
+	material.set_shader_parameter("roughness_value", float(spec.get("roughness_body", spec["roughness"])))
 	material.set_shader_parameter("emission_energy", float(spec["emission_energy"]))
 	material.set_shader_parameter("emission_mask_power", float(spec["emission_mask_power"]))
 	material.set_shader_parameter("fake_normal_strength", float(spec["fake_normal_strength"]))
-	material.set_shader_parameter("panel_shadow_strength", 0.36)
+	material.set_shader_parameter("panel_shadow_strength", float(spec.get("panel_shadow_strength", 0.36)))
 	material.set_shader_parameter("micro_detail_strength", 0.055)
 	return material
 
@@ -108,7 +112,7 @@ static func make_panel_fill_material(material_id: String, side_darkening: float 
 	var material := StandardMaterial3D.new()
 	material.resource_name = "battle_star_%s_panel_fill" % material_id
 	material.albedo_color = fill
-	material.roughness = clampf(float(spec["roughness"]) + 0.10, 0.0, 1.0)
+	material.roughness = float(spec.get("roughness_panel", clampf(float(spec["roughness"]) + 0.10, 0.0, 1.0)))
 	material.metallic = clampf(float(spec["metallic"]) * 0.42, 0.0, 1.0)
 	material.emission_enabled = true
 	material.emission = edge.darkened(0.62)
@@ -126,7 +130,7 @@ static func make_glow_line_material(material_id: String, energy_scale: float = 1
 	material.emission_enabled = true
 	material.emission = color
 	material.emission_energy_multiplier = clampf(float(spec["emission_energy"]) * 1.75 * energy_scale, 0.35, 1.65)
-	material.roughness = 0.36
+	material.roughness = float(spec.get("roughness_edge", 0.36))
 	material.metallic = 0.0
 	return material
 
@@ -135,7 +139,7 @@ static func make_digit_material(material_id: String) -> StandardMaterial3D:
 	var spec: Dictionary = MATERIAL_SPECS.get(material_id, MATERIAL_SPECS["blue"])
 	var color: Color = spec["edge_color"]
 	if material_id == "gold":
-		color = Color(1.0, 0.96, 0.72, 1.0)
+		color = Color(0.960784, 0.949020, 0.909804, 1.0)
 	elif material_id == "white":
 		color = Color(0.98, 1.0, 1.0, 1.0)
 	var material := StandardMaterial3D.new()
@@ -144,7 +148,7 @@ static func make_digit_material(material_id: String) -> StandardMaterial3D:
 	material.albedo_color = color
 	material.emission_enabled = true
 	material.emission = color
-	material.emission_energy_multiplier = 1.85
+	material.emission_energy_multiplier = 0.50
 	return material
 
 

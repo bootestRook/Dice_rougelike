@@ -48,6 +48,7 @@ static func _settings(options: Dictionary) -> Dictionary:
 		"edge_length_segments": maxi(2, int(options.get("edge_length_segments", DEFAULT_EDGE_LENGTH_SEGMENTS))),
 		"inner_half": dice_half - bevel_radius,
 		"resource_name": str(options.get("resource_name", "RoundedDiceMesh")),
+		"vertex_cache": {},
 	}
 
 
@@ -216,10 +217,17 @@ static func _append_vertex(
 	settings: Dictionary
 ) -> int:
 	var normalized := normal.normalized()
+	var uv := _uv_for_point(position, normalized, settings)
+	var cache: Dictionary = settings["vertex_cache"]
+	var key := _vertex_attribute_key(position, normalized, uv)
+	if cache.has(key):
+		return int(cache[key])
 	vertices.append(position)
 	normals.append(normalized)
-	uvs.append(_uv_for_point(position, normalized, settings))
-	return vertices.size() - 1
+	uvs.append(uv)
+	var index := vertices.size() - 1
+	cache[key] = index
+	return index
 
 
 static func _add_triangle_indices(vertices: PackedVector3Array, normals: PackedVector3Array, indices: PackedInt32Array, i0: int, i1: int, i2: int) -> void:
@@ -277,3 +285,16 @@ static func _uv_rect_for_value(value: int, settings: Dictionary) -> Rect2:
 	var u1 := float(col + 1) / float(atlas_cols) - pad
 	var v1 := float(row + 1) / float(atlas_rows) - pad
 	return Rect2(Vector2(u0, v0), Vector2(u1 - u0, v1 - v0))
+
+
+static func _vertex_attribute_key(position: Vector3, normal: Vector3, uv: Vector2) -> String:
+	return "%d,%d,%d|%d,%d,%d|%d,%d" % [
+		roundi(position.x * 100000.0),
+		roundi(position.y * 100000.0),
+		roundi(position.z * 100000.0),
+		roundi(normal.x * 100000.0),
+		roundi(normal.y * 100000.0),
+		roundi(normal.z * 100000.0),
+		roundi(uv.x * 100000.0),
+		roundi(uv.y * 100000.0),
+	]

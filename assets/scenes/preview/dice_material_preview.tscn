@@ -24,57 +24,57 @@ roughness = 0.74
 [sub_resource type="BoxMesh" id="BoxMesh_52i5m"]
 size = Vector3(5.9, 0.08, 2.5)
 
-[node name="DiceMaterialPreview" type="Node3D" unique_id=684295869]
+[node name="DiceMaterialPreview" type="Node3D" unique_id=636199760]
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1043177903]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=923681567]
 environment = SubResource("Environment_noqx4")
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1481858851]
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=111751269]
 transform = Transform3D(0.809017, -0.42281732, 0.40830997, 0, 0.6946584, 0.7193398, -0.58778524, -0.5819581, 0.56199044, 0, 0, 0)
 light_energy = 2.35
 shadow_enabled = true
 
-[node name="AuxPointLight" type="OmniLight3D" parent="." unique_id=1220225275]
+[node name="AuxPointLight" type="OmniLight3D" parent="." unique_id=1346721949]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 1.6, 2.2)
 light_color = Color(0.62, 0.86, 1, 1)
 light_energy = 1.75
 omni_range = 5.8
 
-[node name="RimGlowLight" type="OmniLight3D" parent="." unique_id=1704636731]
+[node name="RimGlowLight" type="OmniLight3D" parent="." unique_id=1030722099]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.4, 1.5, -1.9)
 light_color = Color(0.3, 0.95, 1, 1)
 light_energy = 1.25
 omni_range = 5.2
 
-[node name="MetalReflectionFillLight" type="OmniLight3D" parent="." unique_id=1384722922]
+[node name="MetalReflectionFillLight" type="OmniLight3D" parent="." unique_id=709919325]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.8, 1.15, 2.6)
 light_color = Color(1, 0.78, 0.46, 1)
 light_energy = 0.55
 light_specular = 0.45
 omni_range = 4.8
 
-[node name="PreviewCamera" type="Camera3D" parent="." unique_id=1484595474]
+[node name="PreviewCamera" type="Camera3D" parent="." unique_id=687654816]
 transform = Transform3D(1, 0, 0, 0, 0.9346618, 0.35553804, 0, -0.35553804, 0.9346618, 0, 2.2, 5.1)
 current = true
 fov = 42.0
 far = 50.0
 
-[node name="PreviewFloor" type="MeshInstance3D" parent="." unique_id=2118147355]
+[node name="PreviewFloor" type="MeshInstance3D" parent="." unique_id=1743514409]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.55, 0)
 material_override = SubResource("StandardMaterial3D_kefjc")
 mesh = SubResource("BoxMesh_52i5m")
 
-[node name="BronzeDiceMesh" type="MeshInstance3D" parent="." unique_id=1086934272]
+[node name="BronzeDiceMesh" type="MeshInstance3D" parent="." unique_id=1800512211]
 transform = Transform3D(0.78643626, -0.31413573, 0.53182405, 0.16514924, 0.93660784, 0.309017, -0.59518385, -0.15519184, 0.7884616, -1.75, 0.1, 0)
 material_override = ExtResource("1_tkoms")
 mesh = ExtResource("2_eswnl")
 
-[node name="GoldDiceMesh" type="MeshInstance3D" parent="." unique_id=1340344292]
+[node name="GoldDiceMesh" type="MeshInstance3D" parent="." unique_id=1088708851]
 transform = Transform3D(0.78643626, -0.31413573, 0.53182405, 0.16514924, 0.93660784, 0.309017, -0.59518385, -0.15519184, 0.7884616, 0, 0.1, 0)
 material_override = ExtResource("3_460vh")
 mesh = ExtResource("2_eswnl")
 
-[node name="CrystalDiceMesh" type="MeshInstance3D" parent="." unique_id=116346178]
+[node name="CrystalDiceMesh" type="MeshInstance3D" parent="." unique_id=1130781797]
 transform = Transform3D(0.78643626, -0.31413573, 0.53182405, 0.16514924, 0.93660784, 0.309017, -0.59518385, -0.15519184, 0.7884616, 1.75, 0.1, 0)
 material_override = ExtResource("4_7bbw5")
 mesh = ExtResource("2_eswnl")

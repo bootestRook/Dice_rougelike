@@ -8,7 +8,7 @@
 
 [resource]
 resource_name = "bronze_dice"
-albedo_color = Color(0.56, 0.33, 0.16, 1)
+albedo_color = Color(0.545098, 0.352941, 0.168627, 1)
 albedo_texture = ExtResource("1_xc2mj")
 orm_texture = ExtResource("5_8dfhp")
 emission_enabled = true

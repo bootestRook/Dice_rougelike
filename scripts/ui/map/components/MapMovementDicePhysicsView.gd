@@ -1750,13 +1750,16 @@ func _make_flat_beveled_cube_mesh(cube_size: float, bevel: float) -> ArrayMesh:
 
 
 func _add_flat_quad(st: SurfaceTool, p0: Vector3, p1: Vector3, p2: Vector3, p3: Vector3, normal: Vector3) -> void:
-	for point in [p0, p1, p2, p0, p2, p3]:
-		st.set_normal(normal)
-		st.add_vertex(point)
+	_add_flat_triangle(st, p0, p1, p2, normal)
+	_add_flat_triangle(st, p0, p2, p3, normal)
 
 
 func _add_flat_triangle(st: SurfaceTool, p0: Vector3, p1: Vector3, p2: Vector3, normal: Vector3) -> void:
-	for point in [p0, p1, p2]:
+	var points := [p0, p1, p2]
+	var face_normal := (p1 - p0).cross(p2 - p0)
+	if face_normal.length_squared() > 0.00000001 and face_normal.normalized().dot(normal.normalized()) > 0.0:
+		points = [p0, p2, p1]
+	for point in points:
 		st.set_normal(normal)
 		st.add_vertex(point)
 
@@ -1787,7 +1790,7 @@ func _make_die_material(color: Color) -> StandardMaterial3D:
 	material.clearcoat_enabled = true
 	material.clearcoat = 0.36
 	material.clearcoat_roughness = 0.32
-	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	material.cull_mode = BaseMaterial3D.CULL_BACK
 	return material
 
 

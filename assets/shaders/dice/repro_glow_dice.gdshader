@@ -14,6 +14,9 @@ uniform float face_detail_strength : hint_range(0.0, 2.0, 0.01) = 1.0;
 uniform float edge_line_strength : hint_range(0.0, 2.0, 0.01) = 1.0;
 uniform float corner_glint_strength : hint_range(0.0, 2.0, 0.01) = 0.45;
 uniform float side_shadow_strength : hint_range(0.0, 1.0, 0.01) = 0.36;
+uniform sampler2D face_albedo_texture : source_color, filter_linear_mipmap, repeat_enable;
+uniform float face_layer_enabled : hint_range(0.0, 1.0, 1.0) = 0.0;
+uniform float face_layer_strength : hint_range(0.0, 1.0, 0.01) = 1.0;
 
 float hash21(vec2 p) {
 	p = fract(p * vec2(123.34, 456.21));
@@ -56,7 +59,14 @@ void fragment() {
 	vec3 body = base_color.rgb * face_light_rolloff * (1.0 + (fine_grain + soft_panel_noise * 0.35) * surface_variation);
 	body *= 1.0 - inner_shadow * side_shadow_strength * face_detail_strength;
 	body = mix(body, edge_color.rgb, clamp((bevel_edge * 0.08 + inset_line * 0.06) * edge_line_strength, 0.0, 0.22));
-	ALBEDO = mix(body, edge_color.rgb, clamp(fresnel * 0.025 + detail_mask * 0.045 * face_detail_strength, 0.0, 0.20));
+	vec3 final_albedo = mix(body, edge_color.rgb, clamp(fresnel * 0.025 + detail_mask * 0.045 * face_detail_strength, 0.0, 0.20));
+	if (face_layer_enabled > 0.5) {
+		vec4 face_layer = texture(face_albedo_texture, UV);
+		float layer_alpha = clamp(face_layer.a * face_layer_strength, 0.0, 1.0);
+		vec3 shaded_face = face_layer.rgb * face_light_rolloff;
+		final_albedo = mix(final_albedo, shaded_face, layer_alpha);
+	}
+	ALBEDO = final_albedo;
 	METALLIC = metallic;
 	ROUGHNESS = roughness;
 	SPECULAR = 0.72;

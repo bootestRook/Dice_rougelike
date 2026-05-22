@@ -14,6 +14,9 @@ uniform float fresnel_power : hint_range(0.5, 8.0, 0.05) = 3.2;
 uniform float flow_speed : hint_range(0.0, 4.0, 0.01) = 0.18;
 uniform vec4 glow_color : source_color = vec4(0.30, 0.95, 1.00, 1.0);
 uniform vec4 tint_color : source_color = vec4(0.45, 0.88, 1.00, 1.0);
+uniform sampler2D face_albedo_texture : source_color, filter_linear_mipmap, repeat_enable;
+uniform float face_layer_enabled : hint_range(0.0, 1.0, 1.0) = 0.0;
+uniform float face_layer_strength : hint_range(0.0, 1.0, 0.01) = 1.0;
 
 void fragment() {
 	vec2 flow_uv = UV + vec2(TIME * flow_speed, TIME * flow_speed * 0.31);
@@ -25,7 +28,14 @@ void fragment() {
 	float fresnel = pow(1.0 - clamp(dot(normalize(NORMAL), normalize(VIEW)), 0.0, 1.0), fresnel_power);
 
 	vec3 tinted = mix(albedo_sample.rgb, tint_color.rgb, 0.62);
-	ALBEDO = mix(tinted, glow_color.rgb, clamp(flow_sample * 0.18 + height_sample * 0.08, 0.0, 0.35));
+	vec3 final_albedo = mix(tinted, glow_color.rgb, clamp(flow_sample * 0.18 + height_sample * 0.08, 0.0, 0.35));
+	if (face_layer_enabled > 0.5) {
+		vec4 face_layer = texture(face_albedo_texture, UV);
+		float layer_alpha = clamp(face_layer.a * face_layer_strength, 0.0, 1.0);
+		float face_light = clamp(0.72 + NORMAL.y * 0.22 + fresnel * 0.08, 0.46, 1.06);
+		final_albedo = mix(final_albedo, face_layer.rgb * face_light, layer_alpha);
+	}
+	ALBEDO = final_albedo;
 	METALLIC = 0.0;
 	ROUGHNESS = clamp(orm_sample.g * 0.62 + 0.03, 0.02, 0.55);
 	AO = orm_sample.r;

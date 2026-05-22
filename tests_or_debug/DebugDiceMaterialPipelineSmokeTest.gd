@@ -23,14 +23,18 @@ const CELL_SIZE := 128
 const MAX_BAKED_PIP_CONTRAST := 0.035
 const MAX_BRONZE_GREENISH_RATIO := 0.085
 const MAX_BRONZE_FACE_GREENISH_RATIO := 0.12
-const MIN_GOLD_METALLIC_MEAN := 0.84
-const MAX_GOLD_METALLIC_MEAN := 0.96
+const MIN_GOLD_METALLIC_MEAN := 0.95
+const MAX_GOLD_METALLIC_MEAN := 0.98
 const MAX_GOLD_METALLIC_MAX_RATIO := 0.08
-const MIN_GOLD_ROUGHNESS_MEAN := 0.48
-const MAX_GOLD_ROUGHNESS_MEAN := 0.68
-const MIN_BRONZE_ROUGHNESS_MEAN := 0.66
-const MAX_BRONZE_ROUGHNESS_MEAN := 0.82
-const MAX_LOW_ROUGHNESS_RATIO := 0.03
+const MIN_GOLD_ROUGHNESS_MEAN := 0.23
+const MAX_GOLD_ROUGHNESS_MEAN := 0.30
+const MIN_GOLD_LOW_ROUGHNESS_RATIO := 0.18
+const MAX_GOLD_LOW_ROUGHNESS_RATIO := 0.34
+const MIN_BRONZE_METALLIC_MEAN := 0.90
+const MAX_BRONZE_METALLIC_MEAN := 0.93
+const MIN_BRONZE_ROUGHNESS_MEAN := 0.39
+const MAX_BRONZE_ROUGHNESS_MEAN := 0.44
+const MAX_BRONZE_LOW_ROUGHNESS_RATIO := 0.02
 const MIN_DARK_PREVIEW_LUMA := {
 	"bronze": 0.074,
 	"gold": 0.105,
@@ -150,11 +154,12 @@ func _check_orm_visual_quality(material_id: String, image: Image) -> bool:
 	if material_id == "gold":
 		ok = _check("gold metallic average stays bounded", float(metallic["mean"]) >= MIN_GOLD_METALLIC_MEAN and float(metallic["mean"]) <= MAX_GOLD_METALLIC_MEAN) and ok
 		ok = _check("gold metallic is not full-frame maximum", float(metallic["max_ratio"]) <= MAX_GOLD_METALLIC_MAX_RATIO) and ok
-		ok = _check("gold roughness average supports stable highlights", float(roughness["mean"]) >= MIN_GOLD_ROUGHNESS_MEAN and float(roughness["mean"]) <= MAX_GOLD_ROUGHNESS_MEAN) and ok
-		ok = _check("gold has no large low-roughness regions", float(roughness["low_ratio"]) <= MAX_LOW_ROUGHNESS_RATIO) and ok
+		ok = _check("gold roughness average supports clear gold highlights", float(roughness["mean"]) >= MIN_GOLD_ROUGHNESS_MEAN and float(roughness["mean"]) <= MAX_GOLD_ROUGHNESS_MEAN) and ok
+		ok = _check("gold keeps crisp low-roughness edge highlights", float(roughness["low_ratio"]) >= MIN_GOLD_LOW_ROUGHNESS_RATIO and float(roughness["low_ratio"]) <= MAX_GOLD_LOW_ROUGHNESS_RATIO) and ok
 	elif material_id == "bronze":
+		ok = _check("bronze metallic average supports old heavy metal", float(metallic["mean"]) >= MIN_BRONZE_METALLIC_MEAN and float(metallic["mean"]) <= MAX_BRONZE_METALLIC_MEAN) and ok
 		ok = _check("bronze roughness average supports aged metal", float(roughness["mean"]) >= MIN_BRONZE_ROUGHNESS_MEAN and float(roughness["mean"]) <= MAX_BRONZE_ROUGHNESS_MEAN) and ok
-		ok = _check("bronze has no large low-roughness regions", float(roughness["low_ratio"]) <= MAX_LOW_ROUGHNESS_RATIO) and ok
+		ok = _check("bronze keeps sharp polished areas limited", float(roughness["low_ratio"]) <= MAX_BRONZE_LOW_ROUGHNESS_RATIO) and ok
 	return ok
 
 
@@ -171,7 +176,7 @@ func _channel_stats(image: Image, channel: int) -> Dictionary:
 			count += 1
 			if value >= 0.98:
 				max_count += 1
-			if value <= 0.28:
+			if value <= 0.20:
 				low_count += 1
 	return {
 		"mean": total / float(maxi(1, count)),

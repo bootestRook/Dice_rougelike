@@ -3,11 +3,11 @@
 [resource]
 resource_name = "battle_star_dice_full_environment"
 background_mode = 1
-background_color = Color(0.02, 0.036, 0.1, 1)
+background_color = Color(0.095, 0.115, 0.14, 1)
 ambient_light_source = 2
-ambient_light_color = Color(0.24, 0.32, 0.56, 1)
+ambient_light_color = Color(0.32, 0.36, 0.4, 1)
 ambient_light_sky_contribution = 0.12
-ambient_light_energy = 0.34
+ambient_light_energy = 0.56
 tonemap_mode = 3
 tonemap_exposure = 1.06
 tonemap_white = 1.55

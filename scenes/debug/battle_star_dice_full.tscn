@@ -1038,11 +1038,11 @@ _surfaces = [{
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5fmxa"]
 resource_name = "battle_star_gold_panel_fill"
-albedo_color = Color(0.79359996, 0.5016, 0.1375, 1)
-metallic = 0.2772
-roughness = 0.44
+albedo_color = Color(0.9224314, 0.8646907, 0.7187165, 1)
+metallic = 0.4032
+roughness = 0.24
 emission_enabled = true
-emission = Color(0.38, 0.3344, 0.1748, 1)
+emission = Color(0.38, 0.36973998, 0.34884, 1)
 emission_energy_multiplier = 0.055
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_w838s"]
@@ -1075,11 +1075,11 @@ _surfaces = [{
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sws2a"]
 resource_name = "battle_star_gold_panel_fill"
-albedo_color = Color(0.63488, 0.40128002, 0.11000001, 1)
-metallic = 0.2772
-roughness = 0.44
+albedo_color = Color(0.73794514, 0.6917526, 0.5749732, 1)
+metallic = 0.4032
+roughness = 0.24
 emission_enabled = true
-emission = Color(0.38, 0.3344, 0.1748, 1)
+emission = Color(0.38, 0.36973998, 0.34884, 1)
 emission_energy_multiplier = 0.055
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_oa4eu"]
@@ -1113,7 +1113,7 @@ _surfaces = [{
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qy4jm"]
 resource_name = "battle_star_gold_glow_line"
 shading_mode = 0
-albedo_color = Color(1, 0.88, 0.46, 1)
+albedo_color = Color(1, 0.973, 0.918, 1)
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_wbto1"]
 resource_name = "DiceDecalArrayMesh"
@@ -1230,7 +1230,7 @@ _surfaces = [{
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8frgl"]
 resource_name = "battle_star_gold_glow_line"
 shading_mode = 0
-albedo_color = Color(1, 0.88, 0.46, 1)
+albedo_color = Color(1, 0.973, 0.918, 1)
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_w7lp3"]
 resource_name = "DiceDecalArrayMesh"
@@ -1630,130 +1630,130 @@ _surfaces = [{
 "vertex_data": PackedByteArray("AAAAAAAAAAAAAAAAj8L1PgAAAAAAAAAA2zv1PgAAAAB5loA8UajzPgAAAAD+TwA9rQnxPgAAAAAWyD89zGLtPgAAAADybX49sbfoPgAAAABy/p09eQ3jPgAAAAC4GLw9W2rcPgAAAADMZNk9m9XUPgAAAACPwvU9i1fMPgAAAAB1iQg+evnCPgAAAAD1mxU+rMW4PgAAAAB0CiI+UMetPgAAAABQxy0+dAqiPgAAAACsxTg+9ZuVPgAAAAB6+UI+dYmIPgAAAACLV0w+j8J1PgAAAACb1VQ+zGRZPgAAAABbalw+uBg8PgAAAAB5DWM+cv4dPgAAAACxt2g+8m3+PQAAAADMYm0+Fsi/PQAAAACtCXE+/k+APQAAAABRqHM+eZYAPQAAAADbO3U+PYoHJAAAAACPwnU+eZYAvQAAAADbO3U+/k+AvQAAAABRqHM+Fsi/vQAAAACtCXE+8m3+vQAAAADMYm0+cv4dvgAAAACxt2g+uBg8vgAAAAB5DWM+zGRZvgAAAABbalw+j8J1vgAAAACb1VQ+dYmIvgAAAACLV0w+9ZuVvgAAAAB6+UI+dAqivgAAAACsxTg+UMetvgAAAABQxy0+rMW4vgAAAAB0CiI+evnCvgAAAAD1mxU+i1fMvgAAAAB1iQg+m9XUvgAAAACPwvU9W2rcvgAAAADMZNk9eQ3jvgAAAAC4GLw9sbfovgAAAABy/p09zGLtvgAAAADybX49rQnxvgAAAAAWyD89UajzvgAAAAD+TwA92zv1vgAAAAB5loA8j8L1vgAAAAA9igck2zv1vgAAAAB5loC8UajzvgAAAAD+TwC9rQnxvgAAAAAWyD+9zGLtvgAAAADybX69sbfovgAAAABy/p29eQ3jvgAAAAC4GLy9W2rcvgAAAADMZNm9m9XUvgAAAACPwvW9i1fMvgAAAAB1iQi+evnCvgAAAAD1mxW+rMW4vgAAAAB0CiK+UMetvgAAAABQxy2+dAqivgAAAACsxTi+9ZuVvgAAAAB6+UK+dYmIvgAAAACLV0y+j8J1vgAAAACb1VS+zGRZvgAAAABbaly+uBg8vgAAAAB5DWO+cv4dvgAAAACxt2i+8m3+vQAAAADMYm2+Fsi/vQAAAACtCXG+/k+AvQAAAABRqHO+eZYAvQAAAADbO3W+XE/LpAAAAACPwnW+eZYAPQAAAADbO3W+/k+APQAAAABRqHO+Fsi/PQAAAACtCXG+8m3+PQAAAADMYm2+cv4dPgAAAACxt2i+uBg8PgAAAAB5DWO+zGRZPgAAAABbaly+j8J1PgAAAACb1VS+dYmIPgAAAACLV0y+9ZuVPgAAAAB6+UK+dAqiPgAAAACsxTi+UMetPgAAAABQxy2+rMW4PgAAAAB0CiK+evnCPgAAAAD1mxW+i1fMPgAAAAB1iQi+m9XUPgAAAACPwvW9W2rcPgAAAADMZNm9eQ3jPgAAAAC4GLy9sbfoPgAAAABy/p29zGLtPgAAAADybX69rQnxPgAAAAAWyD+9UajzPgAAAAD+TwC92zv1PgAAAAB5loC8/3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/78=")
 }]
 
-[node name="BattleStarDiceFull" type="Node3D" unique_id=973392958]
+[node name="BattleStarDiceFull" type="Node3D" unique_id=129059862]
 metadata/visual_scope = "dice_only_no_gameplay_ui_physics"
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1683403257]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=68216237]
 environment = ExtResource("1_s1vnf")
 
-[node name="Board3D" type="Node3D" parent="." unique_id=1414630253]
+[node name="Board3D" type="Node3D" parent="." unique_id=156736499]
 
-[node name="ExistingStarAstrologyDisc" type="Node3D" parent="Board3D" unique_id=190586090 instance=ExtResource("2_pabsd")]
+[node name="ExistingStarAstrologyDisc" type="Node3D" parent="Board3D" unique_id=557883566 instance=ExtResource("2_pabsd")]
 
-[node name="LitAstrologyDiscTop" type="MeshInstance3D" parent="Board3D/ExistingStarAstrologyDisc" unique_id=470833973]
+[node name="LitAstrologyDiscTop" type="MeshInstance3D" parent="Board3D/ExistingStarAstrologyDisc" unique_id=1369418650]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.012, 0)
 material_override = ExtResource("3_lbbb3")
 mesh = SubResource("ArrayMesh_ljn6m")
 
-[node name="LitAstrologyDiscSide" type="MeshInstance3D" parent="Board3D/ExistingStarAstrologyDisc" unique_id=10960089]
+[node name="LitAstrologyDiscSide" type="MeshInstance3D" parent="Board3D/ExistingStarAstrologyDisc" unique_id=234977348]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.14, 0)
 material_override = ExtResource("4_7rgav")
 mesh = SubResource("CylinderMesh_26r1p")
 
-[node name="DiceGlossReflectionProbe" type="ReflectionProbe" parent="." unique_id=433423089]
+[node name="DiceGlossReflectionProbe" type="ReflectionProbe" parent="." unique_id=1267355381]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.75, 0.12)
-intensity = 0.58
+intensity = 0.95
 max_distance = 10.0
 size = Vector3(7.4, 3.2, 5.4)
 origin_offset = Vector3(0, 0.18, 0)
 box_projection = true
 
-[node name="Camera3D" type="Camera3D" parent="." unique_id=734081055]
+[node name="Camera3D" type="Camera3D" parent="." unique_id=1265444256]
 transform = Transform3D(1, 0, 0, 0, 0.7939617, 0.6079678, 0, -0.6079678, 0.7939617, 0, 5.65, 6.95)
 current = true
 fov = 34.0
 far = 80.0
 
-[node name="DiceRow" type="Node3D" parent="." unique_id=1122575078]
+[node name="DiceRow" type="Node3D" parent="." unique_id=1628764647]
 
-[node name="RoundedDice_01" type="Node3D" parent="DiceRow" unique_id=1702173726]
+[node name="RoundedDice_01" type="Node3D" parent="DiceRow" unique_id=1956547601]
 transform = Transform3D(0.7508193, -0.011378833, -0.21104702, 0.053410377, 0.7638041, 0.14883101, 0.20449367, -0.15771449, 0.73600847, -1.95, 0.43, 0.12)
 
-[node name="BodyMaterialLayer" type="Node3D" parent="DiceRow/RoundedDice_01" unique_id=208115700]
+[node name="BodyMaterialLayer" type="Node3D" parent="DiceRow/RoundedDice_01" unique_id=2128263602]
 
-[node name="RoundedDiceMesh" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/BodyMaterialLayer" unique_id=1156555170]
+[node name="RoundedDiceMesh" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/BodyMaterialLayer" unique_id=404405883]
 material_override = ExtResource("5_7lsjl")
 mesh = ExtResource("6_fp8gi")
 
-[node name="FacePanelInsetLayer" type="Node3D" parent="DiceRow/RoundedDice_01" unique_id=1940381285]
+[node name="FacePanelInsetLayer" type="Node3D" parent="DiceRow/RoundedDice_01" unique_id=1834811399]
 
-[node name="TopInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/FacePanelInsetLayer" unique_id=1921287954]
+[node name="TopInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/FacePanelInsetLayer" unique_id=189798558]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.512, 0)
 material_override = SubResource("StandardMaterial3D_6p6wy")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_yeame")
 
-[node name="FrontInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/FacePanelInsetLayer" unique_id=687769839]
+[node name="FrontInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/FacePanelInsetLayer" unique_id=330355246]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.512)
 material_override = SubResource("StandardMaterial3D_6p6wy")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_nrnvl")
 
-[node name="LeftInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/FacePanelInsetLayer" unique_id=670104935]
+[node name="LeftInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/FacePanelInsetLayer" unique_id=1772113164]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.512, 0, 0)
 material_override = SubResource("StandardMaterial3D_pygsh")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_jgaws")
 
-[node name="RightInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/FacePanelInsetLayer" unique_id=1040960463]
+[node name="RightInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/FacePanelInsetLayer" unique_id=89142678]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.512, 0, 0)
 material_override = SubResource("StandardMaterial3D_pygsh")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_7w8vn")
 
-[node name="FacePanelGlowLayer" type="Node3D" parent="DiceRow/RoundedDice_01" unique_id=1566936117]
+[node name="FacePanelGlowLayer" type="Node3D" parent="DiceRow/RoundedDice_01" unique_id=1898308875]
 
-[node name="TopPanelGlowBorder_01" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/FacePanelGlowLayer" unique_id=1381540426]
+[node name="TopPanelGlowBorder_01" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/FacePanelGlowLayer" unique_id=411182522]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.532, -0.355)
 material_override = SubResource("StandardMaterial3D_c85la")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_g6vni")
 
-[node name="TopPanelGlowBorder_02" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/FacePanelGlowLayer" unique_id=11226775]
+[node name="TopPanelGlowBorder_02" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/FacePanelGlowLayer" unique_id=274380877]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.532, 0.355)
 material_override = SubResource("StandardMaterial3D_c85la")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_ivtbs")
 
-[node name="TopPanelGlowBorder_03" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/FacePanelGlowLayer" unique_id=1019864349]
+[node name="TopPanelGlowBorder_03" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/FacePanelGlowLayer" unique_id=396034168]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.355, 0.532, 0)
 material_override = SubResource("StandardMaterial3D_c85la")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_07toi")
 
-[node name="TopPanelGlowBorder_04" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/FacePanelGlowLayer" unique_id=1835279461]
+[node name="TopPanelGlowBorder_04" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/FacePanelGlowLayer" unique_id=438154607]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.355, 0.532, 0)
 material_override = SubResource("StandardMaterial3D_c85la")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_76y4b")
 
-[node name="FrontPanelGlowBorder_05" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/FacePanelGlowLayer" unique_id=2046058515]
+[node name="FrontPanelGlowBorder_05" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/FacePanelGlowLayer" unique_id=1061700977]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.355, 0.532)
 material_override = SubResource("StandardMaterial3D_c85la")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_xacrv")
 
-[node name="FrontPanelGlowBorder_06" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/FacePanelGlowLayer" unique_id=312636367]
+[node name="FrontPanelGlowBorder_06" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/FacePanelGlowLayer" unique_id=138684422]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.355, 0.532)
 material_override = SubResource("StandardMaterial3D_c85la")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_0cw4a")
 
-[node name="FrontPanelGlowBorder_07" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/FacePanelGlowLayer" unique_id=1594835991]
+[node name="FrontPanelGlowBorder_07" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/FacePanelGlowLayer" unique_id=753796976]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.355, 0, 0.532)
 material_override = SubResource("StandardMaterial3D_c85la")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_h6ufr")
 
-[node name="FrontPanelGlowBorder_08" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/FacePanelGlowLayer" unique_id=880872380]
+[node name="FrontPanelGlowBorder_08" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/FacePanelGlowLayer" unique_id=2124809555]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.355, 0, 0.532)
 material_override = SubResource("StandardMaterial3D_c85la")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_cnbi7")
 
-[node name="DigitAndDecalLayer" type="Node3D" parent="DiceRow/RoundedDice_01" unique_id=1177011477]
+[node name="DigitAndDecalLayer" type="Node3D" parent="DiceRow/RoundedDice_01" unique_id=2008247277]
 
-[node name="TopDigitGlow" type="Label3D" parent="DiceRow/RoundedDice_01/DigitAndDecalLayer" unique_id=377535357]
+[node name="TopDigitGlow" type="Label3D" parent="DiceRow/RoundedDice_01/DigitAndDecalLayer" unique_id=2140685134]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0.55, 0)
 pixel_size = 0.0047
 modulate = Color(0.9075, 1.3859999, 1.65, 1)
@@ -1762,118 +1762,118 @@ text = "4"
 font_size = 96
 outline_size = 10
 
-[node name="FrontStarGlowDecal_02" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/DigitAndDecalLayer" unique_id=1338392110]
+[node name="FrontStarGlowDecal_02" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/DigitAndDecalLayer" unique_id=1942474894]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.546)
 material_override = SubResource("StandardMaterial3D_y36m4")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_gt1vr")
 
-[node name="FrontStarGlowDecal_03" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/DigitAndDecalLayer" unique_id=1942343587]
+[node name="FrontStarGlowDecal_03" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/DigitAndDecalLayer" unique_id=613466480]
 transform = Transform3D(0.70710677, -0.70710677, 0, 0.70710677, 0.70710677, 0, 0, 0, 1, 0, 0, 0.546)
 material_override = SubResource("StandardMaterial3D_y36m4")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_lpvka")
 
-[node name="FrontStarGlowDecal_04" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/DigitAndDecalLayer" unique_id=807777310]
+[node name="FrontStarGlowDecal_04" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/DigitAndDecalLayer" unique_id=1107645144]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, 0, 0.546)
 material_override = SubResource("StandardMaterial3D_y36m4")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_k7bwh")
 
-[node name="FrontStarGlowDecal_05" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/DigitAndDecalLayer" unique_id=1982252028]
+[node name="FrontStarGlowDecal_05" type="MeshInstance3D" parent="DiceRow/RoundedDice_01/DigitAndDecalLayer" unique_id=694841025]
 transform = Transform3D(-0.70710677, -0.70710677, 0, 0.70710677, -0.70710677, 0, 0, 0, 1, 0, 0, 0.546)
 material_override = SubResource("StandardMaterial3D_y36m4")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_i80kc")
 
-[node name="RoundedDice_02" type="Node3D" parent="DiceRow" unique_id=488495216]
+[node name="RoundedDice_02" type="Node3D" parent="DiceRow" unique_id=426499714]
 transform = Transform3D(0.7673919, -0.0063569187, -0.13953212, 0.03339802, 0.7649404, 0.14883101, 0.13562521, -0.15239976, 0.75284797, -1.17, 0.43, 0.155)
 
-[node name="BodyMaterialLayer" type="Node3D" parent="DiceRow/RoundedDice_02" unique_id=904284776]
+[node name="BodyMaterialLayer" type="Node3D" parent="DiceRow/RoundedDice_02" unique_id=1261914208]
 
-[node name="RoundedDiceMesh" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/BodyMaterialLayer" unique_id=408207401]
+[node name="RoundedDiceMesh" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/BodyMaterialLayer" unique_id=924373087]
 material_override = ExtResource("7_hyrt2")
 mesh = ExtResource("6_fp8gi")
 
-[node name="FacePanelInsetLayer" type="Node3D" parent="DiceRow/RoundedDice_02" unique_id=1345981437]
+[node name="FacePanelInsetLayer" type="Node3D" parent="DiceRow/RoundedDice_02" unique_id=1690591028]
 
-[node name="TopInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/FacePanelInsetLayer" unique_id=408583059]
+[node name="TopInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/FacePanelInsetLayer" unique_id=1504501482]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.512, 0)
 material_override = SubResource("StandardMaterial3D_khj8b")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_dnwo2")
 
-[node name="FrontInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/FacePanelInsetLayer" unique_id=1418375056]
+[node name="FrontInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/FacePanelInsetLayer" unique_id=413666366]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.512)
 material_override = SubResource("StandardMaterial3D_khj8b")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_2h36i")
 
-[node name="LeftInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/FacePanelInsetLayer" unique_id=1207499450]
+[node name="LeftInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/FacePanelInsetLayer" unique_id=450145272]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.512, 0, 0)
 material_override = SubResource("StandardMaterial3D_0ci52")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_uamln")
 
-[node name="RightInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/FacePanelInsetLayer" unique_id=498553511]
+[node name="RightInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/FacePanelInsetLayer" unique_id=413322511]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.512, 0, 0)
 material_override = SubResource("StandardMaterial3D_0ci52")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_xelfh")
 
-[node name="FacePanelGlowLayer" type="Node3D" parent="DiceRow/RoundedDice_02" unique_id=1178751976]
+[node name="FacePanelGlowLayer" type="Node3D" parent="DiceRow/RoundedDice_02" unique_id=1770208085]
 
-[node name="TopPanelGlowBorder_01" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/FacePanelGlowLayer" unique_id=1756846422]
+[node name="TopPanelGlowBorder_01" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/FacePanelGlowLayer" unique_id=409242265]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.532, -0.355)
 material_override = SubResource("StandardMaterial3D_6qxmt")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_stmrk")
 
-[node name="TopPanelGlowBorder_02" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/FacePanelGlowLayer" unique_id=2109469471]
+[node name="TopPanelGlowBorder_02" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/FacePanelGlowLayer" unique_id=314199679]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.532, 0.355)
 material_override = SubResource("StandardMaterial3D_6qxmt")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_u6vj8")
 
-[node name="TopPanelGlowBorder_03" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/FacePanelGlowLayer" unique_id=243986764]
+[node name="TopPanelGlowBorder_03" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/FacePanelGlowLayer" unique_id=1843237940]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.355, 0.532, 0)
 material_override = SubResource("StandardMaterial3D_6qxmt")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_fln7i")
 
-[node name="TopPanelGlowBorder_04" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/FacePanelGlowLayer" unique_id=2125286484]
+[node name="TopPanelGlowBorder_04" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/FacePanelGlowLayer" unique_id=305601050]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.355, 0.532, 0)
 material_override = SubResource("StandardMaterial3D_6qxmt")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_i077o")
 
-[node name="FrontPanelGlowBorder_05" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/FacePanelGlowLayer" unique_id=1177988831]
+[node name="FrontPanelGlowBorder_05" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/FacePanelGlowLayer" unique_id=1788606492]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.355, 0.532)
 material_override = SubResource("StandardMaterial3D_6qxmt")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_c0mkq")
 
-[node name="FrontPanelGlowBorder_06" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/FacePanelGlowLayer" unique_id=448588263]
+[node name="FrontPanelGlowBorder_06" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/FacePanelGlowLayer" unique_id=485423076]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.355, 0.532)
 material_override = SubResource("StandardMaterial3D_6qxmt")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_1etn4")
 
-[node name="FrontPanelGlowBorder_07" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/FacePanelGlowLayer" unique_id=628495101]
+[node name="FrontPanelGlowBorder_07" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/FacePanelGlowLayer" unique_id=1342787841]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.355, 0, 0.532)
 material_override = SubResource("StandardMaterial3D_6qxmt")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_105u1")
 
-[node name="FrontPanelGlowBorder_08" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/FacePanelGlowLayer" unique_id=1504811169]
+[node name="FrontPanelGlowBorder_08" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/FacePanelGlowLayer" unique_id=1722997896]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.355, 0, 0.532)
 material_override = SubResource("StandardMaterial3D_6qxmt")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_3nyp1")
 
-[node name="DigitAndDecalLayer" type="Node3D" parent="DiceRow/RoundedDice_02" unique_id=1193843499]
+[node name="DigitAndDecalLayer" type="Node3D" parent="DiceRow/RoundedDice_02" unique_id=1030754072]
 
-[node name="TopDigitGlow" type="Label3D" parent="DiceRow/RoundedDice_02/DigitAndDecalLayer" unique_id=1509409344]
+[node name="TopDigitGlow" type="Label3D" parent="DiceRow/RoundedDice_02/DigitAndDecalLayer" unique_id=1951510794]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0.55, 0)
 pixel_size = 0.0047
 modulate = Color(1.518, 0.9075, 1.65, 1)
@@ -1882,118 +1882,118 @@ text = "3"
 font_size = 96
 outline_size = 10
 
-[node name="FrontStarGlowDecal_02" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/DigitAndDecalLayer" unique_id=271195463]
+[node name="FrontStarGlowDecal_02" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/DigitAndDecalLayer" unique_id=2016952675]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.546)
 material_override = SubResource("StandardMaterial3D_eod1t")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_6ktai")
 
-[node name="FrontStarGlowDecal_03" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/DigitAndDecalLayer" unique_id=38564480]
+[node name="FrontStarGlowDecal_03" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/DigitAndDecalLayer" unique_id=1137463433]
 transform = Transform3D(0.70710677, -0.70710677, 0, 0.70710677, 0.70710677, 0, 0, 0, 1, 0, 0, 0.546)
 material_override = SubResource("StandardMaterial3D_eod1t")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_s0ukn")
 
-[node name="FrontStarGlowDecal_04" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/DigitAndDecalLayer" unique_id=1003720032]
+[node name="FrontStarGlowDecal_04" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/DigitAndDecalLayer" unique_id=1320867491]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, 0, 0.546)
 material_override = SubResource("StandardMaterial3D_eod1t")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_gtpr4")
 
-[node name="FrontStarGlowDecal_05" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/DigitAndDecalLayer" unique_id=245572727]
+[node name="FrontStarGlowDecal_05" type="MeshInstance3D" parent="DiceRow/RoundedDice_02/DigitAndDecalLayer" unique_id=1562698562]
 transform = Transform3D(-0.70710677, -0.70710677, 0, 0.70710677, -0.70710677, 0, 0, 0, 1, 0, 0, 0.546)
 material_override = SubResource("StandardMaterial3D_eod1t")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_5wsoh")
 
-[node name="RoundedDice_03" type="Node3D" parent="DiceRow" unique_id=509005882]
+[node name="RoundedDice_03" type="Node3D" parent="DiceRow" unique_id=365375152]
 transform = Transform3D(0.7771399, -0.00059157534, -0.06673246, 0.013362768, 0.7655526, 0.14883101, 0.065383546, -0.14942852, 0.7627556, -0.39, 0.43, 0.12)
 
-[node name="BodyMaterialLayer" type="Node3D" parent="DiceRow/RoundedDice_03" unique_id=2117385620]
+[node name="BodyMaterialLayer" type="Node3D" parent="DiceRow/RoundedDice_03" unique_id=1724579741]
 
-[node name="RoundedDiceMesh" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/BodyMaterialLayer" unique_id=1484003149]
+[node name="RoundedDiceMesh" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/BodyMaterialLayer" unique_id=1831675586]
 material_override = ExtResource("8_3vdo6")
 mesh = ExtResource("6_fp8gi")
 
-[node name="FacePanelInsetLayer" type="Node3D" parent="DiceRow/RoundedDice_03" unique_id=953852725]
+[node name="FacePanelInsetLayer" type="Node3D" parent="DiceRow/RoundedDice_03" unique_id=2096929387]
 
-[node name="TopInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/FacePanelInsetLayer" unique_id=561537391]
+[node name="TopInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/FacePanelInsetLayer" unique_id=1582717196]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.512, 0)
 material_override = SubResource("StandardMaterial3D_clh75")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_ab8k4")
 
-[node name="FrontInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/FacePanelInsetLayer" unique_id=721043711]
+[node name="FrontInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/FacePanelInsetLayer" unique_id=1368439199]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.512)
 material_override = SubResource("StandardMaterial3D_clh75")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_emvlh")
 
-[node name="LeftInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/FacePanelInsetLayer" unique_id=1956288171]
+[node name="LeftInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/FacePanelInsetLayer" unique_id=1891744038]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.512, 0, 0)
 material_override = SubResource("StandardMaterial3D_a1lnp")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_wxab1")
 
-[node name="RightInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/FacePanelInsetLayer" unique_id=647528250]
+[node name="RightInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/FacePanelInsetLayer" unique_id=720134452]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.512, 0, 0)
 material_override = SubResource("StandardMaterial3D_a1lnp")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_r5uxo")
 
-[node name="FacePanelGlowLayer" type="Node3D" parent="DiceRow/RoundedDice_03" unique_id=1376195320]
+[node name="FacePanelGlowLayer" type="Node3D" parent="DiceRow/RoundedDice_03" unique_id=469521134]
 
-[node name="TopPanelGlowBorder_01" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/FacePanelGlowLayer" unique_id=883885924]
+[node name="TopPanelGlowBorder_01" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/FacePanelGlowLayer" unique_id=2083127860]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.532, -0.355)
 material_override = SubResource("StandardMaterial3D_noad5")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_0efid")
 
-[node name="TopPanelGlowBorder_02" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/FacePanelGlowLayer" unique_id=892972892]
+[node name="TopPanelGlowBorder_02" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/FacePanelGlowLayer" unique_id=2063228516]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.532, 0.355)
 material_override = SubResource("StandardMaterial3D_noad5")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_pk20e")
 
-[node name="TopPanelGlowBorder_03" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/FacePanelGlowLayer" unique_id=215263502]
+[node name="TopPanelGlowBorder_03" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/FacePanelGlowLayer" unique_id=1663818088]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.355, 0.532, 0)
 material_override = SubResource("StandardMaterial3D_noad5")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_b0acs")
 
-[node name="TopPanelGlowBorder_04" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/FacePanelGlowLayer" unique_id=395292020]
+[node name="TopPanelGlowBorder_04" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/FacePanelGlowLayer" unique_id=1649000869]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.355, 0.532, 0)
 material_override = SubResource("StandardMaterial3D_noad5")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_wjbms")
 
-[node name="FrontPanelGlowBorder_05" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/FacePanelGlowLayer" unique_id=1386613558]
+[node name="FrontPanelGlowBorder_05" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/FacePanelGlowLayer" unique_id=623872085]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.355, 0.532)
 material_override = SubResource("StandardMaterial3D_noad5")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_y5w8v")
 
-[node name="FrontPanelGlowBorder_06" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/FacePanelGlowLayer" unique_id=1030249592]
+[node name="FrontPanelGlowBorder_06" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/FacePanelGlowLayer" unique_id=884154148]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.355, 0.532)
 material_override = SubResource("StandardMaterial3D_noad5")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_bnr2t")
 
-[node name="FrontPanelGlowBorder_07" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/FacePanelGlowLayer" unique_id=276148760]
+[node name="FrontPanelGlowBorder_07" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/FacePanelGlowLayer" unique_id=866758339]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.355, 0, 0.532)
 material_override = SubResource("StandardMaterial3D_noad5")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_56xo7")
 
-[node name="FrontPanelGlowBorder_08" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/FacePanelGlowLayer" unique_id=430755578]
+[node name="FrontPanelGlowBorder_08" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/FacePanelGlowLayer" unique_id=1719690935]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.355, 0, 0.532)
 material_override = SubResource("StandardMaterial3D_noad5")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_iup12")
 
-[node name="DigitAndDecalLayer" type="Node3D" parent="DiceRow/RoundedDice_03" unique_id=1034210060]
+[node name="DigitAndDecalLayer" type="Node3D" parent="DiceRow/RoundedDice_03" unique_id=392851112]
 
-[node name="TopDigitGlow" type="Label3D" parent="DiceRow/RoundedDice_03/DigitAndDecalLayer" unique_id=1319193241]
+[node name="TopDigitGlow" type="Label3D" parent="DiceRow/RoundedDice_03/DigitAndDecalLayer" unique_id=1851084869]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0.55, 0)
 pixel_size = 0.0047
 modulate = Color(0.95699996, 1.65, 1.551, 1)
@@ -2002,118 +2002,118 @@ text = "3"
 font_size = 96
 outline_size = 10
 
-[node name="FrontStarGlowDecal_02" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/DigitAndDecalLayer" unique_id=1622176177]
+[node name="FrontStarGlowDecal_02" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/DigitAndDecalLayer" unique_id=1100215000]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.546)
 material_override = SubResource("StandardMaterial3D_utfgd")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_yplgo")
 
-[node name="FrontStarGlowDecal_03" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/DigitAndDecalLayer" unique_id=969353783]
+[node name="FrontStarGlowDecal_03" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/DigitAndDecalLayer" unique_id=1318173157]
 transform = Transform3D(0.70710677, -0.70710677, 0, 0.70710677, 0.70710677, 0, 0, 0, 1, 0, 0, 0.546)
 material_override = SubResource("StandardMaterial3D_utfgd")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_5elnv")
 
-[node name="FrontStarGlowDecal_04" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/DigitAndDecalLayer" unique_id=676588166]
+[node name="FrontStarGlowDecal_04" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/DigitAndDecalLayer" unique_id=104539392]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, 0, 0.546)
 material_override = SubResource("StandardMaterial3D_utfgd")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_x4rps")
 
-[node name="FrontStarGlowDecal_05" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/DigitAndDecalLayer" unique_id=511480012]
+[node name="FrontStarGlowDecal_05" type="MeshInstance3D" parent="DiceRow/RoundedDice_03/DigitAndDecalLayer" unique_id=407890933]
 transform = Transform3D(-0.70710677, -0.70710677, 0, 0.70710677, -0.70710677, 0, 0, 0, 1, 0, 0, 0.546)
 material_override = SubResource("StandardMaterial3D_utfgd")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_6uco2")
 
-[node name="RoundedDice_04" type="Node3D" parent="DiceRow" unique_id=546839904]
+[node name="RoundedDice_04" type="Node3D" parent="DiceRow" unique_id=499857144]
 transform = Transform3D(0.77797973, -0.055703588, 0.0066816392, 0.053410377, 0.7638041, 0.14883101, -0.017171647, -0.147988, 0.76564, 0.39, 0.43, 0.155)
 
-[node name="BodyMaterialLayer" type="Node3D" parent="DiceRow/RoundedDice_04" unique_id=426050632]
+[node name="BodyMaterialLayer" type="Node3D" parent="DiceRow/RoundedDice_04" unique_id=661826595]
 
-[node name="RoundedDiceMesh" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/BodyMaterialLayer" unique_id=651741372]
+[node name="RoundedDiceMesh" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/BodyMaterialLayer" unique_id=2129710513]
 material_override = ExtResource("7_hyrt2")
 mesh = ExtResource("6_fp8gi")
 
-[node name="FacePanelInsetLayer" type="Node3D" parent="DiceRow/RoundedDice_04" unique_id=795621065]
+[node name="FacePanelInsetLayer" type="Node3D" parent="DiceRow/RoundedDice_04" unique_id=315391841]
 
-[node name="TopInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/FacePanelInsetLayer" unique_id=2061552224]
+[node name="TopInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/FacePanelInsetLayer" unique_id=989792911]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.512, 0)
 material_override = SubResource("StandardMaterial3D_tkpqk")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_17dpf")
 
-[node name="FrontInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/FacePanelInsetLayer" unique_id=1760889328]
+[node name="FrontInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/FacePanelInsetLayer" unique_id=912972418]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.512)
 material_override = SubResource("StandardMaterial3D_tkpqk")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_tnp00")
 
-[node name="LeftInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/FacePanelInsetLayer" unique_id=1804055276]
+[node name="LeftInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/FacePanelInsetLayer" unique_id=1742748589]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.512, 0, 0)
 material_override = SubResource("StandardMaterial3D_h3gxl")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_m6c1j")
 
-[node name="RightInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/FacePanelInsetLayer" unique_id=1573024939]
+[node name="RightInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/FacePanelInsetLayer" unique_id=1010626451]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.512, 0, 0)
 material_override = SubResource("StandardMaterial3D_h3gxl")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_1unmj")
 
-[node name="FacePanelGlowLayer" type="Node3D" parent="DiceRow/RoundedDice_04" unique_id=1683682965]
+[node name="FacePanelGlowLayer" type="Node3D" parent="DiceRow/RoundedDice_04" unique_id=1346854116]
 
-[node name="TopPanelGlowBorder_01" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/FacePanelGlowLayer" unique_id=1817549846]
+[node name="TopPanelGlowBorder_01" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/FacePanelGlowLayer" unique_id=1024141270]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.532, -0.355)
 material_override = SubResource("StandardMaterial3D_wwcxd")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_2m0dd")
 
-[node name="TopPanelGlowBorder_02" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/FacePanelGlowLayer" unique_id=803504815]
+[node name="TopPanelGlowBorder_02" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/FacePanelGlowLayer" unique_id=1567508958]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.532, 0.355)
 material_override = SubResource("StandardMaterial3D_wwcxd")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_rdioo")
 
-[node name="TopPanelGlowBorder_03" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/FacePanelGlowLayer" unique_id=1998804230]
+[node name="TopPanelGlowBorder_03" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/FacePanelGlowLayer" unique_id=1385774735]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.355, 0.532, 0)
 material_override = SubResource("StandardMaterial3D_wwcxd")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_ibigo")
 
-[node name="TopPanelGlowBorder_04" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/FacePanelGlowLayer" unique_id=1477576440]
+[node name="TopPanelGlowBorder_04" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/FacePanelGlowLayer" unique_id=520497175]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.355, 0.532, 0)
 material_override = SubResource("StandardMaterial3D_wwcxd")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_kwcpj")
 
-[node name="FrontPanelGlowBorder_05" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/FacePanelGlowLayer" unique_id=2091864042]
+[node name="FrontPanelGlowBorder_05" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/FacePanelGlowLayer" unique_id=970350204]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.355, 0.532)
 material_override = SubResource("StandardMaterial3D_wwcxd")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_qo1me")
 
-[node name="FrontPanelGlowBorder_06" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/FacePanelGlowLayer" unique_id=1651604461]
+[node name="FrontPanelGlowBorder_06" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/FacePanelGlowLayer" unique_id=1282171352]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.355, 0.532)
 material_override = SubResource("StandardMaterial3D_wwcxd")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_pili8")
 
-[node name="FrontPanelGlowBorder_07" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/FacePanelGlowLayer" unique_id=273030755]
+[node name="FrontPanelGlowBorder_07" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/FacePanelGlowLayer" unique_id=62513379]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.355, 0, 0.532)
 material_override = SubResource("StandardMaterial3D_wwcxd")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_fvg3f")
 
-[node name="FrontPanelGlowBorder_08" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/FacePanelGlowLayer" unique_id=229164215]
+[node name="FrontPanelGlowBorder_08" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/FacePanelGlowLayer" unique_id=484371334]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.355, 0, 0.532)
 material_override = SubResource("StandardMaterial3D_wwcxd")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_kxfas")
 
-[node name="DigitAndDecalLayer" type="Node3D" parent="DiceRow/RoundedDice_04" unique_id=1380447896]
+[node name="DigitAndDecalLayer" type="Node3D" parent="DiceRow/RoundedDice_04" unique_id=1671658739]
 
-[node name="TopDigitGlow" type="Label3D" parent="DiceRow/RoundedDice_04/DigitAndDecalLayer" unique_id=58582070]
+[node name="TopDigitGlow" type="Label3D" parent="DiceRow/RoundedDice_04/DigitAndDecalLayer" unique_id=1854037256]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0.55, 0)
 pixel_size = 0.0047
 modulate = Color(1.518, 0.9075, 1.65, 1)
@@ -2122,238 +2122,238 @@ text = "4"
 font_size = 96
 outline_size = 10
 
-[node name="FrontStarGlowDecal_02" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/DigitAndDecalLayer" unique_id=955849935]
+[node name="FrontStarGlowDecal_02" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/DigitAndDecalLayer" unique_id=1866998378]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.546)
 material_override = SubResource("StandardMaterial3D_xvy4q")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_xbajr")
 
-[node name="FrontStarGlowDecal_03" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/DigitAndDecalLayer" unique_id=1610752252]
+[node name="FrontStarGlowDecal_03" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/DigitAndDecalLayer" unique_id=507052423]
 transform = Transform3D(0.70710677, -0.70710677, 0, 0.70710677, 0.70710677, 0, 0, 0, 1, 0, 0, 0.546)
 material_override = SubResource("StandardMaterial3D_xvy4q")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_varpg")
 
-[node name="FrontStarGlowDecal_04" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/DigitAndDecalLayer" unique_id=1244375367]
+[node name="FrontStarGlowDecal_04" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/DigitAndDecalLayer" unique_id=1461581575]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, 0, 0.546)
 material_override = SubResource("StandardMaterial3D_xvy4q")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_lnp2n")
 
-[node name="FrontStarGlowDecal_05" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/DigitAndDecalLayer" unique_id=20891424]
+[node name="FrontStarGlowDecal_05" type="MeshInstance3D" parent="DiceRow/RoundedDice_04/DigitAndDecalLayer" unique_id=778215776]
 transform = Transform3D(-0.70710677, -0.70710677, 0, 0.70710677, -0.70710677, 0, 0, 0, 1, 0, 0, 0.546)
 material_override = SubResource("StandardMaterial3D_xvy4q")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_tk6dv")
 
-[node name="RoundedDice_05" type="Node3D" parent="DiceRow" unique_id=258666034]
+[node name="RoundedDice_05" type="Node3D" parent="DiceRow" unique_id=1088162906]
 transform = Transform3D(0.7743101, -0.049379006, 0.08003422, 0.03339802, 0.7649404, 0.14883101, -0.08791096, -0.14431843, 0.7614748, 1.17, 0.43, 0.12)
 
-[node name="BodyMaterialLayer" type="Node3D" parent="DiceRow/RoundedDice_05" unique_id=1604737016]
+[node name="BodyMaterialLayer" type="Node3D" parent="DiceRow/RoundedDice_05" unique_id=462778471]
 
-[node name="RoundedDiceMesh" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/BodyMaterialLayer" unique_id=1483601468]
+[node name="RoundedDiceMesh" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/BodyMaterialLayer" unique_id=442491186]
 material_override = ExtResource("9_rtsx4")
 mesh = ExtResource("6_fp8gi")
 
-[node name="FacePanelInsetLayer" type="Node3D" parent="DiceRow/RoundedDice_05" unique_id=1705259213]
+[node name="FacePanelInsetLayer" type="Node3D" parent="DiceRow/RoundedDice_05" unique_id=680038794]
 
-[node name="TopInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/FacePanelInsetLayer" unique_id=887039879]
+[node name="TopInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/FacePanelInsetLayer" unique_id=1683670058]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.512, 0)
 material_override = SubResource("StandardMaterial3D_5fmxa")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_w838s")
 
-[node name="FrontInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/FacePanelInsetLayer" unique_id=969696898]
+[node name="FrontInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/FacePanelInsetLayer" unique_id=2079304978]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.512)
 material_override = SubResource("StandardMaterial3D_5fmxa")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_6pghb")
 
-[node name="LeftInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/FacePanelInsetLayer" unique_id=731246614]
+[node name="LeftInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/FacePanelInsetLayer" unique_id=928268120]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.512, 0, 0)
 material_override = SubResource("StandardMaterial3D_sws2a")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_oa4eu")
 
-[node name="RightInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/FacePanelInsetLayer" unique_id=644607440]
+[node name="RightInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/FacePanelInsetLayer" unique_id=1318995752]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.512, 0, 0)
 material_override = SubResource("StandardMaterial3D_sws2a")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_3flj1")
 
-[node name="FacePanelGlowLayer" type="Node3D" parent="DiceRow/RoundedDice_05" unique_id=584032436]
+[node name="FacePanelGlowLayer" type="Node3D" parent="DiceRow/RoundedDice_05" unique_id=704569711]
 
-[node name="TopPanelGlowBorder_01" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/FacePanelGlowLayer" unique_id=726994368]
+[node name="TopPanelGlowBorder_01" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/FacePanelGlowLayer" unique_id=2045630427]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.532, -0.355)
 material_override = SubResource("StandardMaterial3D_qy4jm")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_wbto1")
 
-[node name="TopPanelGlowBorder_02" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/FacePanelGlowLayer" unique_id=710478092]
+[node name="TopPanelGlowBorder_02" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/FacePanelGlowLayer" unique_id=1236389441]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.532, 0.355)
 material_override = SubResource("StandardMaterial3D_qy4jm")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_hm4cv")
 
-[node name="TopPanelGlowBorder_03" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/FacePanelGlowLayer" unique_id=1166205037]
+[node name="TopPanelGlowBorder_03" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/FacePanelGlowLayer" unique_id=968944039]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.355, 0.532, 0)
 material_override = SubResource("StandardMaterial3D_qy4jm")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_546jt")
 
-[node name="TopPanelGlowBorder_04" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/FacePanelGlowLayer" unique_id=1091338725]
+[node name="TopPanelGlowBorder_04" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/FacePanelGlowLayer" unique_id=1506912347]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.355, 0.532, 0)
 material_override = SubResource("StandardMaterial3D_qy4jm")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_qmyjc")
 
-[node name="FrontPanelGlowBorder_05" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/FacePanelGlowLayer" unique_id=1376728034]
+[node name="FrontPanelGlowBorder_05" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/FacePanelGlowLayer" unique_id=132942685]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.355, 0.532)
 material_override = SubResource("StandardMaterial3D_qy4jm")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_k6381")
 
-[node name="FrontPanelGlowBorder_06" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/FacePanelGlowLayer" unique_id=1449680316]
+[node name="FrontPanelGlowBorder_06" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/FacePanelGlowLayer" unique_id=1073797260]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.355, 0.532)
 material_override = SubResource("StandardMaterial3D_qy4jm")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_nkbgx")
 
-[node name="FrontPanelGlowBorder_07" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/FacePanelGlowLayer" unique_id=385596507]
+[node name="FrontPanelGlowBorder_07" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/FacePanelGlowLayer" unique_id=370143807]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.355, 0, 0.532)
 material_override = SubResource("StandardMaterial3D_qy4jm")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_imc83")
 
-[node name="FrontPanelGlowBorder_08" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/FacePanelGlowLayer" unique_id=1766742706]
+[node name="FrontPanelGlowBorder_08" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/FacePanelGlowLayer" unique_id=1205283474]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.355, 0, 0.532)
 material_override = SubResource("StandardMaterial3D_qy4jm")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_eghrp")
 
-[node name="DigitAndDecalLayer" type="Node3D" parent="DiceRow/RoundedDice_05" unique_id=1712194201]
+[node name="DigitAndDecalLayer" type="Node3D" parent="DiceRow/RoundedDice_05" unique_id=1057540350]
 
-[node name="TopDigitGlow" type="Label3D" parent="DiceRow/RoundedDice_05/DigitAndDecalLayer" unique_id=97447326]
+[node name="TopDigitGlow" type="Label3D" parent="DiceRow/RoundedDice_05/DigitAndDecalLayer" unique_id=1515967188]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0.55, 0)
 pixel_size = 0.0047
-modulate = Color(1.65, 1.584, 1.1880001, 1)
+modulate = Color(1.5852937, 1.565883, 1.5011766, 1)
 outline_modulate = Color(0.03, 0.04, 0.08, 0.78)
 text = "1"
 font_size = 96
 outline_size = 10
 
-[node name="FrontStarGlowDecal_02" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/DigitAndDecalLayer" unique_id=1875675323]
+[node name="FrontStarGlowDecal_02" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/DigitAndDecalLayer" unique_id=2112085130]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.546)
 material_override = SubResource("StandardMaterial3D_8frgl")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_w7lp3")
 
-[node name="FrontStarGlowDecal_03" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/DigitAndDecalLayer" unique_id=1021514192]
+[node name="FrontStarGlowDecal_03" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/DigitAndDecalLayer" unique_id=1427614039]
 transform = Transform3D(0.70710677, -0.70710677, 0, 0.70710677, 0.70710677, 0, 0, 0, 1, 0, 0, 0.546)
 material_override = SubResource("StandardMaterial3D_8frgl")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_10ujr")
 
-[node name="FrontStarGlowDecal_04" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/DigitAndDecalLayer" unique_id=1494707235]
+[node name="FrontStarGlowDecal_04" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/DigitAndDecalLayer" unique_id=528025408]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, 0, 0.546)
 material_override = SubResource("StandardMaterial3D_8frgl")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_e4ggw")
 
-[node name="FrontStarGlowDecal_05" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/DigitAndDecalLayer" unique_id=1578853888]
+[node name="FrontStarGlowDecal_05" type="MeshInstance3D" parent="DiceRow/RoundedDice_05/DigitAndDecalLayer" unique_id=1905140131]
 transform = Transform3D(-0.70710677, -0.70710677, 0, 0.70710677, -0.70710677, 0, 0, 0, 1, 0, 0, 0.546)
 material_override = SubResource("StandardMaterial3D_8frgl")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_5y14d")
 
-[node name="RoundedDice_06" type="Node3D" parent="DiceRow" unique_id=1759586940]
+[node name="RoundedDice_06" type="Node3D" parent="DiceRow" unique_id=264943205]
 transform = Transform3D(0.7637069, -0.043007202, 0.15264986, 0.013362768, 0.7655526, 0.14883101, -0.1580286, -0.143107, 0.7502981, 1.95, 0.43, 0.155)
 
-[node name="BodyMaterialLayer" type="Node3D" parent="DiceRow/RoundedDice_06" unique_id=1608230460]
+[node name="BodyMaterialLayer" type="Node3D" parent="DiceRow/RoundedDice_06" unique_id=832960650]
 
-[node name="RoundedDiceMesh" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/BodyMaterialLayer" unique_id=1728226525]
+[node name="RoundedDiceMesh" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/BodyMaterialLayer" unique_id=1315552581]
 material_override = ExtResource("10_3p4pj")
 mesh = ExtResource("6_fp8gi")
 
-[node name="FacePanelInsetLayer" type="Node3D" parent="DiceRow/RoundedDice_06" unique_id=258716535]
+[node name="FacePanelInsetLayer" type="Node3D" parent="DiceRow/RoundedDice_06" unique_id=78944376]
 
-[node name="TopInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/FacePanelInsetLayer" unique_id=1810731341]
+[node name="TopInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/FacePanelInsetLayer" unique_id=1428519873]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.512, 0)
 material_override = SubResource("StandardMaterial3D_ohn0r")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_t58hd")
 
-[node name="FrontInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/FacePanelInsetLayer" unique_id=4153358]
+[node name="FrontInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/FacePanelInsetLayer" unique_id=1994322388]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.512)
 material_override = SubResource("StandardMaterial3D_ohn0r")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_2p8na")
 
-[node name="LeftInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/FacePanelInsetLayer" unique_id=2069901620]
+[node name="LeftInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/FacePanelInsetLayer" unique_id=1079177017]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.512, 0, 0)
 material_override = SubResource("StandardMaterial3D_h5i7t")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_dxmjy")
 
-[node name="RightInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/FacePanelInsetLayer" unique_id=394130631]
+[node name="RightInsetPanel" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/FacePanelInsetLayer" unique_id=1120759999]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.512, 0, 0)
 material_override = SubResource("StandardMaterial3D_h5i7t")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_yuvi6")
 
-[node name="FacePanelGlowLayer" type="Node3D" parent="DiceRow/RoundedDice_06" unique_id=1584347519]
+[node name="FacePanelGlowLayer" type="Node3D" parent="DiceRow/RoundedDice_06" unique_id=1101627592]
 
-[node name="TopPanelGlowBorder_01" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/FacePanelGlowLayer" unique_id=1784104926]
+[node name="TopPanelGlowBorder_01" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/FacePanelGlowLayer" unique_id=9453041]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.532, -0.355)
 material_override = SubResource("StandardMaterial3D_qoo23")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_gontl")
 
-[node name="TopPanelGlowBorder_02" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/FacePanelGlowLayer" unique_id=605999611]
+[node name="TopPanelGlowBorder_02" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/FacePanelGlowLayer" unique_id=808106690]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.532, 0.355)
 material_override = SubResource("StandardMaterial3D_qoo23")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_8f2wy")
 
-[node name="TopPanelGlowBorder_03" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/FacePanelGlowLayer" unique_id=1268868576]
+[node name="TopPanelGlowBorder_03" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/FacePanelGlowLayer" unique_id=1438871065]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.355, 0.532, 0)
 material_override = SubResource("StandardMaterial3D_qoo23")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_p5lgg")
 
-[node name="TopPanelGlowBorder_04" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/FacePanelGlowLayer" unique_id=976586377]
+[node name="TopPanelGlowBorder_04" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/FacePanelGlowLayer" unique_id=1507763622]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.355, 0.532, 0)
 material_override = SubResource("StandardMaterial3D_qoo23")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_mkeq3")
 
-[node name="FrontPanelGlowBorder_05" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/FacePanelGlowLayer" unique_id=1352030660]
+[node name="FrontPanelGlowBorder_05" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/FacePanelGlowLayer" unique_id=1283533358]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.355, 0.532)
 material_override = SubResource("StandardMaterial3D_qoo23")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_vq2tt")
 
-[node name="FrontPanelGlowBorder_06" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/FacePanelGlowLayer" unique_id=738388681]
+[node name="FrontPanelGlowBorder_06" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/FacePanelGlowLayer" unique_id=2052219650]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.355, 0.532)
 material_override = SubResource("StandardMaterial3D_qoo23")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_gcb14")
 
-[node name="FrontPanelGlowBorder_07" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/FacePanelGlowLayer" unique_id=920588263]
+[node name="FrontPanelGlowBorder_07" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/FacePanelGlowLayer" unique_id=1123455759]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.355, 0, 0.532)
 material_override = SubResource("StandardMaterial3D_qoo23")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_4brdg")
 
-[node name="FrontPanelGlowBorder_08" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/FacePanelGlowLayer" unique_id=1898985707]
+[node name="FrontPanelGlowBorder_08" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/FacePanelGlowLayer" unique_id=582815117]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.355, 0, 0.532)
 material_override = SubResource("StandardMaterial3D_qoo23")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_o868y")
 
-[node name="DigitAndDecalLayer" type="Node3D" parent="DiceRow/RoundedDice_06" unique_id=361085302]
+[node name="DigitAndDecalLayer" type="Node3D" parent="DiceRow/RoundedDice_06" unique_id=1758918394]
 
-[node name="TopDigitGlow" type="Label3D" parent="DiceRow/RoundedDice_06/DigitAndDecalLayer" unique_id=742703339]
+[node name="TopDigitGlow" type="Label3D" parent="DiceRow/RoundedDice_06/DigitAndDecalLayer" unique_id=1541269691]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0.55, 0)
 pixel_size = 0.0047
 modulate = Color(1.617, 1.65, 1.65, 1)
@@ -2362,58 +2362,58 @@ text = "6"
 font_size = 96
 outline_size = 10
 
-[node name="FrontStarGlowDecal_02" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/DigitAndDecalLayer" unique_id=868587611]
+[node name="FrontStarGlowDecal_02" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/DigitAndDecalLayer" unique_id=1719361117]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.546)
 material_override = SubResource("StandardMaterial3D_b0umf")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_lch0k")
 
-[node name="FrontStarGlowDecal_03" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/DigitAndDecalLayer" unique_id=1621669120]
+[node name="FrontStarGlowDecal_03" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/DigitAndDecalLayer" unique_id=438945610]
 transform = Transform3D(0.70710677, -0.70710677, 0, 0.70710677, 0.70710677, 0, 0, 0, 1, 0, 0, 0.546)
 material_override = SubResource("StandardMaterial3D_b0umf")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_nthq7")
 
-[node name="FrontStarGlowDecal_04" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/DigitAndDecalLayer" unique_id=909054476]
+[node name="FrontStarGlowDecal_04" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/DigitAndDecalLayer" unique_id=2127266073]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, 0, 0.546)
 material_override = SubResource("StandardMaterial3D_b0umf")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_4hbgm")
 
-[node name="FrontStarGlowDecal_05" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/DigitAndDecalLayer" unique_id=717176824]
+[node name="FrontStarGlowDecal_05" type="MeshInstance3D" parent="DiceRow/RoundedDice_06/DigitAndDecalLayer" unique_id=1284815805]
 transform = Transform3D(-0.70710677, -0.70710677, 0, 0.70710677, -0.70710677, 0, 0, 0, 1, 0, 0, 0.546)
 material_override = SubResource("StandardMaterial3D_b0umf")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_wqsom")
 
-[node name="LightingRig" type="Node3D" parent="." unique_id=1137220215]
+[node name="LightingRig" type="Node3D" parent="." unique_id=1222708439]
 
-[node name="WarmKeyLight" type="DirectionalLight3D" parent="LightingRig" unique_id=1866458749]
+[node name="WarmKeyLight" type="DirectionalLight3D" parent="LightingRig" unique_id=1323484800]
 transform = Transform3D(0.809017, -0.42987892, 0.40086856, 0, 0.6819984, 0.7313537, -0.58778524, -0.5916776, 0.5517483, 0, 0, 0)
-light_color = Color(1, 0.84, 0.62, 1)
-light_energy = 2.5
+light_color = Color(1, 0.949, 0.839, 1)
+light_energy = 1.9
 light_specular = 0.72
 shadow_enabled = true
 
-[node name="BlueFillLight" type="OmniLight3D" parent="LightingRig" unique_id=1746957495]
+[node name="BlueFillLight" type="OmniLight3D" parent="LightingRig" unique_id=1905677598]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.7, 2.15, 3)
-light_color = Color(0.28, 0.56, 1, 1)
-light_energy = 0.82
+light_color = Color(0.722, 0.843, 1, 1)
+light_energy = 0.53
 light_specular = 0.32
 omni_range = 8.2
 omni_attenuation = 0.68
 
-[node name="WarmRimLight" type="OmniLight3D" parent="LightingRig" unique_id=845711347]
+[node name="WarmRimLight" type="OmniLight3D" parent="LightingRig" unique_id=1361488212]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.7, 2.55, -2.65)
-light_color = Color(1, 0.62, 0.26, 1)
-light_energy = 0.96
+light_color = Color(1, 0.973, 0.918, 1)
+light_energy = 0.38
 light_specular = 0.62
 omni_range = 7.6
 omni_attenuation = 0.62
 
-[node name="DiceEmissionHelperLights" type="Node3D" parent="LightingRig" unique_id=1681797893]
+[node name="DiceEmissionHelperLights" type="Node3D" parent="LightingRig" unique_id=1710303399]
 
-[node name="DiceEmissionHelper_01" type="OmniLight3D" parent="LightingRig/DiceEmissionHelperLights" unique_id=1064087212]
+[node name="DiceEmissionHelper_01" type="OmniLight3D" parent="LightingRig/DiceEmissionHelperLights" unique_id=1545940282]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.95, 0.87, 0.14999999)
 light_color = Color(0.1, 0.48, 1, 1)
 light_energy = 0.045
@@ -2421,7 +2421,7 @@ light_specular = 0.12
 omni_range = 1.22
 omni_attenuation = 1.18
 
-[node name="DiceEmissionHelper_02" type="OmniLight3D" parent="LightingRig/DiceEmissionHelperLights" unique_id=1182200891]
+[node name="DiceEmissionHelper_02" type="OmniLight3D" parent="LightingRig/DiceEmissionHelperLights" unique_id=1281753672]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.17, 0.87, 0.185)
 light_color = Color(0.7, 0.2, 1, 1)
 light_energy = 0.045
@@ -2429,7 +2429,7 @@ light_specular = 0.12
 omni_range = 1.22
 omni_attenuation = 1.18
 
-[node name="DiceEmissionHelper_03" type="OmniLight3D" parent="LightingRig/DiceEmissionHelperLights" unique_id=911144377]
+[node name="DiceEmissionHelper_03" type="OmniLight3D" parent="LightingRig/DiceEmissionHelperLights" unique_id=263502573]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.39, 0.87, 0.14999999)
 light_color = Color(0.06, 0.92, 0.88, 1)
 light_energy = 0.045
@@ -2437,7 +2437,7 @@ light_specular = 0.12
 omni_range = 1.22
 omni_attenuation = 1.18
 
-[node name="DiceEmissionHelper_04" type="OmniLight3D" parent="LightingRig/DiceEmissionHelperLights" unique_id=929000783]
+[node name="DiceEmissionHelper_04" type="OmniLight3D" parent="LightingRig/DiceEmissionHelperLights" unique_id=1495361016]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.39, 0.87, 0.185)
 light_color = Color(0.7, 0.2, 1, 1)
 light_energy = 0.045
@@ -2445,15 +2445,15 @@ light_specular = 0.12
 omni_range = 1.22
 omni_attenuation = 1.18
 
-[node name="DiceEmissionHelper_05" type="OmniLight3D" parent="LightingRig/DiceEmissionHelperLights" unique_id=1343206914]
+[node name="DiceEmissionHelper_05" type="OmniLight3D" parent="LightingRig/DiceEmissionHelperLights" unique_id=1678382336]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.17, 0.87, 0.14999999)
-light_color = Color(1, 0.6, 0.14, 1)
+light_color = Color(0.960784, 0.94902, 0.909804, 1)
 light_energy = 0.045
 light_specular = 0.12
 omni_range = 1.22
 omni_attenuation = 1.18
 
-[node name="DiceEmissionHelper_06" type="OmniLight3D" parent="LightingRig/DiceEmissionHelperLights" unique_id=1195222736]
+[node name="DiceEmissionHelper_06" type="OmniLight3D" parent="LightingRig/DiceEmissionHelperLights" unique_id=1556057969]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.95, 0.87, 0.185)
 light_color = Color(0.5, 0.74, 1, 1)
 light_energy = 0.045
@@ -2461,51 +2461,51 @@ light_specular = 0.12
 omni_range = 1.22
 omni_attenuation = 1.18
 
-[node name="FakeContactShadowPlanes" type="Node3D" parent="LightingRig" unique_id=906146218]
+[node name="FakeContactShadowPlanes" type="Node3D" parent="LightingRig" unique_id=933135944]
 
-[node name="FakeContactShadow_01" type="MeshInstance3D" parent="LightingRig/FakeContactShadowPlanes" unique_id=1295337970]
+[node name="FakeContactShadow_01" type="MeshInstance3D" parent="LightingRig/FakeContactShadowPlanes" unique_id=1059227189]
 transform = Transform3D(0.9800666, 0, -0.19866933, 0, 1, 0, 0.19866933, 0, 0.9800666, -1.95, 0.036, 0.14999999)
 material_override = SubResource("StandardMaterial3D_pp0nc")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_b51po")
 
-[node name="FakeContactShadow_02" type="MeshInstance3D" parent="LightingRig/FakeContactShadowPlanes" unique_id=463494913]
+[node name="FakeContactShadow_02" type="MeshInstance3D" parent="LightingRig/FakeContactShadowPlanes" unique_id=41900301]
 transform = Transform3D(0.9950042, 0, -0.09983342, 0, 1, 0, 0.09983342, 0, 0.9950042, -1.17, 0.036, 0.185)
 material_override = SubResource("StandardMaterial3D_pp0nc")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_lc2qc")
 
-[node name="FakeContactShadow_03" type="MeshInstance3D" parent="LightingRig/FakeContactShadowPlanes" unique_id=349907530]
+[node name="FakeContactShadow_03" type="MeshInstance3D" parent="LightingRig/FakeContactShadowPlanes" unique_id=1005209798]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.39, 0.036, 0.14999999)
 material_override = SubResource("StandardMaterial3D_pp0nc")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_kpxrl")
 
-[node name="FakeContactShadow_04" type="MeshInstance3D" parent="LightingRig/FakeContactShadowPlanes" unique_id=878344106]
+[node name="FakeContactShadow_04" type="MeshInstance3D" parent="LightingRig/FakeContactShadowPlanes" unique_id=1743418229]
 transform = Transform3D(0.9950042, 0, 0.09983342, 0, 1, 0, -0.09983342, 0, 0.9950042, 0.39, 0.036, 0.185)
 material_override = SubResource("StandardMaterial3D_pp0nc")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_h1uwc")
 
-[node name="FakeContactShadow_05" type="MeshInstance3D" parent="LightingRig/FakeContactShadowPlanes" unique_id=57296961]
+[node name="FakeContactShadow_05" type="MeshInstance3D" parent="LightingRig/FakeContactShadowPlanes" unique_id=1065975935]
 transform = Transform3D(0.9800666, 0, 0.19866933, 0, 1, 0, -0.19866933, 0, 0.9800666, 1.17, 0.036, 0.14999999)
 material_override = SubResource("StandardMaterial3D_pp0nc")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_ivrby")
 
-[node name="FakeContactShadow_06" type="MeshInstance3D" parent="LightingRig/FakeContactShadowPlanes" unique_id=923003564]
+[node name="FakeContactShadow_06" type="MeshInstance3D" parent="LightingRig/FakeContactShadowPlanes" unique_id=652117912]
 transform = Transform3D(0.9553365, 0, 0.29552022, 0, 1, 0, -0.29552022, 0, 0.9553365, 1.95, 0.036, 0.185)
 material_override = SubResource("StandardMaterial3D_pp0nc")
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_x8hqp")
 
-[node name="VA_Camera3D" type="Camera3D" parent="." unique_id=1765211794]
+[node name="VA_Camera3D" type="Camera3D" parent="." unique_id=690461316]
 transform = Transform3D(1, 0, 0, 0, 0.7939617, 0.6079678, 0, -0.6079678, 0.7939617, 0, 5.65, 6.95)
 fov = 34.0
 far = 80.0
 
-[node name="VA_CameraMarkers" type="Node3D" parent="." unique_id=1611887779]
+[node name="VA_CameraMarkers" type="Node3D" parent="." unique_id=1246385233]
 
-[node name="battle_star_dice_full" type="Marker3D" parent="VA_CameraMarkers" unique_id=1910790035]
+[node name="battle_star_dice_full" type="Marker3D" parent="VA_CameraMarkers" unique_id=1994928105]
 transform = Transform3D(1, 0, 0, 0, 0.7939617, 0.6079678, 0, -0.6079678, 0.7939617, 0, 5.65, 6.95)
 metadata/va_target = Vector3(0, 0.42, 0.12)

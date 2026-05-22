@@ -22,6 +22,7 @@ const REPRO_MATERIAL_PATHS := {
 const EXPECTED_VISUAL_LAYER_ROLES := [
 	"body",
 	"face_marker",
+	"face_albedo_texture",
 	"state_overlay",
 	"contact_shadow",
 ]
@@ -90,9 +91,11 @@ func _check_default_screen_dice() -> bool:
 		var expected_id := str(EXPECTED_DEFAULT_MATERIAL_IDS[index])
 		var expected_material_path := str(REPRO_MATERIAL_PATHS[expected_id])
 		ok = _check("die %d uses %s material id" % [index + 1, expected_id], row != null and str(row.get("material_id", "")) == expected_id) and ok
-		ok = _check("die %d uses repro material resource" % [index + 1], row != null and str(row.get("body_material_resource_path", "")) == expected_material_path) and ok
+		ok = _check("die %d keeps repro material source" % [index + 1], row != null and str(row.get("body_material_source_path", "")) == expected_material_path) and ok
 		ok = _check("die %d uses repro shader" % [index + 1], row != null and str(row.get("body_material_shader_path", "")) == REPRO_SHADER_PATH) and ok
 		ok = _check("die %d exposes shader face detail" % [index + 1], row != null and float(row.get("body_material_face_detail_strength", 0.0)) > 0.0) and ok
+		ok = _check("die %d feeds face albedo texture to shader" % [index + 1], row != null and float(row.get("body_material_face_layer_enabled", 0.0)) > 0.5) and ok
+		ok = _check("die %d outputs six-face albedo atlas" % [index + 1], row != null and bool(row.get("face_albedo_texture_exists", false)) and row.get("face_albedo_texture_size") == Vector2i(384, 256)) and ok
 		ok = _check("die %d uses rounded d6 mesh" % [index + 1], row != null and str(row.get("body_mesh_resource_path", "")) == ROUNDED_MESH_PATH) and ok
 		var layer_roles: Dictionary = row.get("visual_layer_roles", {}) if row != null else {}
 		for role in EXPECTED_VISUAL_LAYER_ROLES:
@@ -100,10 +103,9 @@ func _check_default_screen_dice() -> bool:
 		ok = _check("die %d matches material inspector without edge/rim frame layer" % [index + 1], row != null and not bool(row.get("edge_rim_layer_exists", true)) and int(row.get("edge_rim_bar_count", -1)) == 0) and ok
 		ok = _check("die %d keeps state outside body material" % [index + 1], row != null and bool(row.get("state_overlay_layer_exists", false)) and bool(row.get("selection_frame_visible", false)) == bool(row.get("selected", false))) and ok
 		ok = _check("die %d matches material inspector without square face texture panels" % [index + 1], row != null and not bool(row.get("face_texture_layer_exists", true)) and int(row.get("face_texture_panel_count", -1)) == 0) and ok
-		ok = _check("die %d face marker layer owns six labels" % [index + 1], row != null and int(row.get("face_marker_label_count", 0)) == 6) and ok
-		ok = _check("die %d has six centered face labels" % [index + 1], row != null and int(row.get("face_label_count", 0)) == 6 and bool(row.get("face_label_centered", false))) and ok
-		ok = _check("die %d face labels are double-sided" % [index + 1], row != null and bool(row.get("face_label_double_sided", false))) and ok
-		ok = _check("die %d face labels clear rounded mesh" % [index + 1], row != null and float(row.get("face_label_min_surface_offset", 0.0)) >= 0.030) and ok
+		ok = _check("die %d no longer owns floating face labels" % [index + 1], row != null and int(row.get("face_marker_label_count", -1)) == 0 and int(row.get("face_label_count", -1)) == 0) and ok
+		ok = _check("die %d has no visible face Label3D numbers" % [index + 1], row != null and not bool(row.get("face_label_nodes_visible", true))) and ok
+		ok = _check("die %d records independent face layer data" % [index + 1], _has_six_face_layer_rows(row)) and ok
 	screen.queue_free()
 	return ok
 
@@ -115,6 +117,22 @@ func _camera_keeps_default_tuning(snapshot: Dictionary) -> bool:
 	return is_equal_approx(fov, 38.0) \
 		and position.distance_to(Vector3(0.0, 18.5, 1.0)) <= 0.001 \
 		and look_at.distance_to(Vector3(0.0, 0.72, -0.04)) <= 0.001
+
+
+func _has_six_face_layer_rows(row: Dictionary) -> bool:
+	var system := row.get("face_layer_system", {}) as Dictionary
+	var faces := system.get("faces", []) as Array
+	if faces.size() != 6:
+		return false
+	for face_value in faces:
+		var face := face_value as Dictionary
+		if face.is_empty():
+			return false
+		var layers := face.get("layers", {}) as Dictionary
+		var number_layer := layers.get("number_layer", {}) as Dictionary
+		if not bool(number_layer.get("has_texture", false)):
+			return false
+	return true
 
 
 func _check(label: String, passed: bool) -> bool:

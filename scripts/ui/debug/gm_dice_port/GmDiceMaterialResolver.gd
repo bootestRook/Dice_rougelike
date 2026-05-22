@@ -9,7 +9,10 @@ const RoundedDiceMeshFactory := preload("res://scripts/ui/debug/RoundedDiceMeshF
 const STANDARD_D6_MESH_PATH := "res://assets/models/dice/standard_d6_mesh.tres"
 const ROUNDED_DICE_BASE_GLB_PATH := "res://assets/models/dice/rounded_dice_base.glb"
 const ROUNDED_D6_MESH_PATH := "res://assets/models/dice/rounded_d6_mesh.tres"
+const PREVIEW_ROUNDED_D6_MESH_PATH := "res://assets/models/dice/preview_rounded_d6_body_mesh.tres"
 const REPRO_DICE_SHADER_PATH := "res://assets/shaders/dice/repro_glow_dice.gdshader"
+const LAYERED_BODY_SHADER_PATH := "res://assets/shaders/dice/dice_layered_body.gdshader"
+const FACE_DIGIT_COLOR := Color(0.960784, 0.949020, 0.909804, 1.0)
 const MATERIAL_RESOURCE_PATHS := {
 	GmDiceDefinition.MATERIAL_REPRO_BLUE: "res://assets/materials/dice/repro_blue_dice.tres",
 	GmDiceDefinition.MATERIAL_REPRO_PURPLE: "res://assets/materials/dice/repro_purple_dice.tres",
@@ -64,8 +67,8 @@ static func load_body_mesh(_material_id: StringName = GmDiceDefinition.MATERIAL_
 
 
 static func preview_mesh_path() -> String:
-	if ResourceLoader.exists(ROUNDED_DICE_BASE_GLB_PATH):
-		return ROUNDED_DICE_BASE_GLB_PATH
+	if ResourceLoader.exists(PREVIEW_ROUNDED_D6_MESH_PATH):
+		return PREVIEW_ROUNDED_D6_MESH_PATH
 	if ResourceLoader.exists(ROUNDED_D6_MESH_PATH):
 		return ROUNDED_D6_MESH_PATH
 	return ""
@@ -116,11 +119,24 @@ static func make_body_material(body_color: Color, material_id: StringName) -> Ma
 	return make_standard_fallback_material(body_color, normalized_id)
 
 
-static func make_body_material_instance(body_color: Color, material_id: StringName) -> Material:
+static func make_body_material_instance(
+	body_color: Color,
+	material_id: StringName,
+	face_albedo_texture: Texture2D = null,
+	face_layer_enabled := false
+) -> Material:
 	var material := make_body_material(body_color, material_id)
 	if material == null:
 		return null
-	return material.duplicate(true) as Material
+	var instance := material.duplicate(true) as Material
+	if face_layer_enabled and instance is BaseMaterial3D:
+		instance = _make_layered_body_material_from_base(instance as BaseMaterial3D, body_color, material_id)
+	_apply_face_layer_texture(instance, face_albedo_texture, face_layer_enabled)
+	return instance
+
+
+static func apply_face_layer_texture(material: Material, face_albedo_texture: Texture2D, enabled := true) -> void:
+	_apply_face_layer_texture(material, face_albedo_texture, enabled)
 
 
 static func make_edge_rim_material(material_id: StringName, fallback_color: Color = Color(0.80, 0.94, 1.00, 1.0)) -> StandardMaterial3D:
@@ -145,12 +161,16 @@ static func edge_rim_color(material_id: StringName, fallback_color: Color = Colo
 			return Color(0.92, 0.56, 1.00, 1.0)
 		GmDiceDefinition.MATERIAL_REPRO_CYAN:
 			return Color(0.62, 1.00, 0.96, 1.0)
-		GmDiceDefinition.MATERIAL_REPRO_GOLD, GmDiceDefinition.MATERIAL_GOLD:
-			return Color(1.00, 0.91, 0.46, 1.0)
+		GmDiceDefinition.MATERIAL_REPRO_GOLD:
+			return Color(1.0, 0.973, 0.918, 1.0)
+		GmDiceDefinition.MATERIAL_GOLD:
+			return Color(0.96, 0.82, 0.36, 1.0)
 		GmDiceDefinition.MATERIAL_REPRO_SILVERWHITE, GmDiceDefinition.MATERIAL_CRYSTAL:
 			return Color(0.96, 1.00, 1.00, 1.0)
-		GmDiceDefinition.MATERIAL_IRON, GmDiceDefinition.MATERIAL_BRONZE:
+		GmDiceDefinition.MATERIAL_IRON:
 			return Color(0.95, 0.84, 0.66, 1.0)
+		GmDiceDefinition.MATERIAL_BRONZE:
+			return Color(0.78, 0.54, 0.30, 1.0)
 		GmDiceDefinition.MATERIAL_GLASS:
 			return Color(0.82, 1.00, 1.00, 1.0)
 		_:
@@ -255,18 +275,57 @@ static func make_standard_fallback_material(body_color: Color, material_id: Stri
 	return material
 
 
+static func _make_layered_body_material_from_base(base_material: BaseMaterial3D, body_color: Color, material_id: StringName) -> Material:
+	if not ResourceLoader.exists(LAYERED_BODY_SHADER_PATH):
+		return base_material
+	var shader := load(LAYERED_BODY_SHADER_PATH) as Shader
+	if shader == null:
+		return base_material
+	var material := ShaderMaterial.new()
+	var normalized_id := GmDiceDefinition.normalize_material_id(material_id)
+	material.resource_name = "gm_%s_layered_body" % str(normalized_id)
+	material.shader = shader
+	material.render_priority = base_material.render_priority
+
+	var base_albedo = base_material.get("albedo_color")
+	material.set_shader_parameter("base_albedo", base_albedo if base_albedo is Color else body_color)
+	_set_shader_texture_parameter(material, "albedo_texture", base_material.get("albedo_texture"), "albedo_texture_enabled")
+	_set_shader_texture_parameter(material, "normal_texture", base_material.get("normal_texture"), "normal_texture_enabled")
+	_set_shader_texture_parameter(material, "orm_texture", base_material.get("orm_texture"), "orm_texture_enabled")
+	_set_shader_texture_parameter(material, "emission_texture", base_material.get("emission_texture"), "emission_texture_enabled")
+	_set_shader_texture_parameter(material, "height_texture", base_material.get("heightmap_texture"), "height_texture_enabled")
+
+	var emission = base_material.get("emission")
+	material.set_shader_parameter("emission_color", emission if emission is Color else Color.BLACK)
+	material.set_shader_parameter("emission_energy", float(base_material.get("emission_energy_multiplier")) if base_material.get("emission_energy_multiplier") != null else 0.0)
+	material.set_shader_parameter("heightmap_scale", float(base_material.get("heightmap_scale")) if base_material.get("heightmap_scale") != null else 0.0)
+	material.set_shader_parameter("metallic_value", float(base_material.get("metallic")) if base_material.get("metallic") != null else 0.0)
+	material.set_shader_parameter("roughness_value", float(base_material.get("roughness")) if base_material.get("roughness") != null else 0.55)
+	return material
+
+
+static func _set_shader_texture_parameter(material: ShaderMaterial, texture_parameter: String, value, enabled_parameter: String) -> void:
+	if value is Texture2D:
+		material.set_shader_parameter(texture_parameter, value)
+		material.set_shader_parameter(enabled_parameter, 1.0)
+	else:
+		material.set_shader_parameter(enabled_parameter, 0.0)
+
+
+static func _apply_face_layer_texture(material: Material, face_albedo_texture: Texture2D, enabled := true) -> void:
+	var shader_material := material as ShaderMaterial
+	if shader_material == null or shader_material.shader == null:
+		return
+	if not shader_material.shader.code.contains("face_albedo_texture"):
+		return
+	if face_albedo_texture != null:
+		shader_material.set_shader_parameter("face_albedo_texture", face_albedo_texture)
+	shader_material.set_shader_parameter("face_layer_enabled", 1.0 if enabled and face_albedo_texture != null else 0.0)
+	shader_material.set_shader_parameter("face_layer_strength", 1.0)
+
+
 static func face_label_color(material_id: StringName, fallback_color: Color = Color(0.12, 0.14, 0.18)) -> Color:
-	match GmDiceDefinition.normalize_material_id(material_id):
-		GmDiceDefinition.MATERIAL_REPRO_GOLD, GmDiceDefinition.MATERIAL_GOLD:
-			return Color(1.00, 0.96, 0.74, 1.0)
-		GmDiceDefinition.MATERIAL_REPRO_PURPLE:
-			return Color(0.98, 0.88, 1.00, 1.0)
-		GmDiceDefinition.MATERIAL_REPRO_CYAN:
-			return Color(0.78, 1.00, 0.96, 1.0)
-		GmDiceDefinition.MATERIAL_REPRO_BLUE, GmDiceDefinition.MATERIAL_REPRO_SILVERWHITE, GmDiceDefinition.MATERIAL_CRYSTAL:
-			return Color(0.86, 0.95, 1.00, 1.0)
-		_:
-			return fallback_color
+	return FACE_DIGIT_COLOR
 
 
 static func face_label_outline_color(material_id: StringName) -> Color:

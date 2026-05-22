@@ -1,14 +1,14 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://ix3tnfvx4kev"]
 
-[ext_resource type="Script" path="res://scripts/ui/MainPrototypeView.gd" id="1_main"]
-[ext_resource type="Resource" path="res://scenes/main/resources/MainMenuArtConfig.tres" id="2_menu_art"]
+[ext_resource type="Script" uid="uid://cejbt5e00qeqy" path="res://scripts/ui/MainPrototypeView.gd" id="1_main"]
 
-[node name="Main" type="Control"]
+[node name="Main" type="Control" unique_id=240993058]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = -7.0
+offset_bottom = -7.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_main")
-menu_art_config = ExtResource("2_menu_art")

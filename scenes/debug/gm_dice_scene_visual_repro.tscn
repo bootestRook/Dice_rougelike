@@ -950,11 +950,11 @@ _surfaces = [{
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ywbtk"]
 resource_name = "showcase_gold_edge_rim_layer"
-albedo_color = Color(0.58, 0.5278, 0.276, 1)
-roughness = 0.42
+albedo_color = Color(0.58, 0.56434, 0.55079997, 1)
+roughness = 0.1
 emission_enabled = true
-emission = Color(1, 0.91, 0.46, 1)
-emission_energy_multiplier = 0.058
+emission = Color(1, 0.973, 0.918, 1)
+emission_energy_multiplier = 0.072
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_mgkok"]
 top_radius = 0.04
@@ -1089,11 +1089,11 @@ radial_segments = 12
 rings = 6
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mntkm"]
-albedo_color = Color(0.77040005, 0.51640004, 0.14840001, 1)
-metallic = 0.261
-roughness = 0.38
+albedo_color = Color(0.9260393, 0.8697284, 0.7279855, 1)
+metallic = 0.3
+roughness = 0.24
 emission_enabled = true
-emission = Color(0.62, 0.56420004, 0.2852, 1)
+emission = Color(0.62, 0.60326, 0.56916, 1)
 emission_energy_multiplier = 0.035
 
 [sub_resource type="BoxMesh" id="BoxMesh_toku4"]
@@ -1103,11 +1103,11 @@ size = Vector3(0.67, 0.014, 0.67)
 size = Vector3(0.67, 0.67, 0.014)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_r6w3m"]
-albedo_color = Color(0.60451204, 0.406068, 0.117408, 1)
-metallic = 0.261
-roughness = 0.38
+albedo_color = Color(0.7259106, 0.6818909, 0.5711335, 1)
+metallic = 0.3
+roughness = 0.24
 emission_enabled = true
-emission = Color(0.49600002, 0.45136002, 0.22816001, 1)
+emission = Color(0.49600002, 0.48260802, 0.455328, 1)
 emission_energy_multiplier = 0.035
 
 [sub_resource type="BoxMesh" id="BoxMesh_c32sr"]
@@ -1118,7 +1118,7 @@ size = Vector3(0.014, 0.67, 0.67)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gray5"]
 shading_mode = 0
-albedo_color = Color(1, 0.91, 0.46, 1)
+albedo_color = Color(1, 0.973, 0.918, 1)
 
 [sub_resource type="BoxMesh" id="BoxMesh_qen8d"]
 size = Vector3(0.72, 0.02, 0.02)
@@ -1146,7 +1146,7 @@ size = Vector3(0.02, 0.72, 0.02)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hutyo"]
 shading_mode = 0
-albedo_color = Color(1, 0.96, 0.72, 1)
+albedo_color = Color(0.960784, 0.94902, 0.909804, 1)
 
 [sub_resource type="BoxMesh" id="BoxMesh_rj4jm"]
 size = Vector3(0.3, 0.02, 0.012)
@@ -1408,52 +1408,52 @@ _surfaces = [{
 "vertex_data": PackedByteArray("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8yrUPgAAAAC9HYy9NnCiPAAAAABSFSu7RzPVPgAAAAD7i2C9Eg2jPAAAAAAYeQC7KAHWPgAAAADwnii9PX2jPAAAAABLc6u6X5TWPgAAAABTB+G8lcCjPAAAAADPiiu6w+zWPgAAAAAwJmG8CtejPAAAAABSuLSiPQrXPgAAAADrMe2k/3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/v/9///8AAP+//3///wAA/7//f///AAD/vw==")
 }]
 
-[node name="GmDiceSceneVisualRepro" type="Node3D" unique_id=12934476]
+[node name="GmDiceSceneVisualRepro" type="Node3D" unique_id=768072755]
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=115710029]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1972108303]
 environment = ExtResource("1_k1u57")
 
-[node name="StarAstrologyDisc" type="Node3D" parent="." unique_id=284014798 instance=ExtResource("2_vmpa6")]
+[node name="StarAstrologyDisc" type="Node3D" parent="." unique_id=557883566 instance=ExtResource("2_vmpa6")]
 
-[node name="LitAstrologyDiscTop" type="MeshInstance3D" parent="StarAstrologyDisc" unique_id=1942625157]
+[node name="LitAstrologyDiscTop" type="MeshInstance3D" parent="StarAstrologyDisc" unique_id=1369418650]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.012, 0)
 material_override = ExtResource("3_0yfnm")
 mesh = SubResource("ArrayMesh_ljn6m")
 
-[node name="LitAstrologyDiscSide" type="MeshInstance3D" parent="StarAstrologyDisc" unique_id=809341292]
+[node name="LitAstrologyDiscSide" type="MeshInstance3D" parent="StarAstrologyDisc" unique_id=234977348]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.14, 0)
 material_override = ExtResource("4_qth40")
 mesh = SubResource("CylinderMesh_26r1p")
 
-[node name="KeyLight" type="DirectionalLight3D" parent="." unique_id=249915628]
+[node name="KeyLight" type="DirectionalLight3D" parent="." unique_id=153618144]
 transform = Transform3D(0.7880108, -0.4575257, 0.41195792, 0, 0.66913056, 0.74314487, -0.6156615, -0.58560616, 0.5272821, 0, 0, 0)
-light_color = Color(1, 0.86, 0.66, 1)
-light_energy = 2.65
+light_color = Color(1, 0.949, 0.839, 1)
+light_energy = 1.9
 light_specular = 0.64
 shadow_enabled = true
 
-[node name="CoolFillLight" type="OmniLight3D" parent="." unique_id=2054143461]
+[node name="CoolFillLight" type="OmniLight3D" parent="." unique_id=1129426758]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.8, 2.2, 3.2)
-light_color = Color(0.32, 0.62, 1, 1)
-light_energy = 0.86
+light_color = Color(0.722, 0.843, 1, 1)
+light_energy = 0.53
 light_specular = 0.28
 omni_range = 8.6
 
-[node name="CyanRimLight" type="OmniLight3D" parent="." unique_id=1814432895]
+[node name="CyanRimLight" type="OmniLight3D" parent="." unique_id=1852638222]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.6, 2.4, -2.8)
-light_color = Color(0.16, 0.92, 1, 1)
-light_energy = 1.05
+light_color = Color(1, 0.973, 0.918, 1)
+light_energy = 0.38
 light_specular = 0.52
 omni_range = 7.4
 
-[node name="WarmGoldBounceLight" type="OmniLight3D" parent="." unique_id=140078626]
+[node name="WarmGoldBounceLight" type="OmniLight3D" parent="." unique_id=449858417]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, 3.6)
 light_color = Color(1, 0.63, 0.24, 1)
 light_energy = 0.72
 light_specular = 0.4
 omni_range = 5.6
 
-[node name="SoftTopKeyLight" type="OmniLight3D" parent="." unique_id=176816506]
+[node name="SoftTopKeyLight" type="OmniLight3D" parent="." unique_id=426807963]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 7.8, 1.5)
 light_color = Color(1, 0.9, 0.72, 1)
 light_energy = 1.18
@@ -1462,7 +1462,7 @@ omni_range = 15.5
 omni_attenuation = 0.62
 metadata/visual_light_role = "soft_key_top"
 
-[node name="CoolTableBounceLight" type="OmniLight3D" parent="." unique_id=1102895059]
+[node name="CoolTableBounceLight" type="OmniLight3D" parent="." unique_id=1879991248]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.5, 1.18, 1.75)
 light_color = Color(0.26, 0.52, 1, 1)
 light_energy = 0.58
@@ -1471,7 +1471,7 @@ omni_range = 11.2
 omni_attenuation = 0.72
 metadata/visual_light_role = "cool_table_bounce"
 
-[node name="WarmGoldEdgeKickerLight" type="OmniLight3D" parent="." unique_id=709752570]
+[node name="WarmGoldEdgeKickerLight" type="OmniLight3D" parent="." unique_id=1106548337]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.3, 2.6, 3.2)
 light_color = Color(1, 0.66, 0.28, 1)
 light_energy = 0.78
@@ -1480,7 +1480,7 @@ omni_range = 9.6
 omni_attenuation = 0.68
 metadata/visual_light_role = "warm_gold_edge_kicker"
 
-[node name="LocalGlintHighlightLight" type="OmniLight3D" parent="." unique_id=153114426]
+[node name="LocalGlintHighlightLight" type="OmniLight3D" parent="." unique_id=208626350]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.1, 2.2, 2)
 light_color = Color(0.84, 0.96, 1, 1)
 light_energy = 0.62
@@ -1489,7 +1489,7 @@ omni_range = 5.2
 omni_attenuation = 0.56
 metadata/visual_light_role = "local_glint_highlight"
 
-[node name="ReflectionReferenceLight" type="OmniLight3D" parent="." unique_id=183242610]
+[node name="ReflectionReferenceLight" type="OmniLight3D" parent="." unique_id=1178122512]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 3.8, -2.8)
 light_color = Color(0.92, 0.98, 1, 1)
 light_energy = 0.34
@@ -1498,250 +1498,250 @@ omni_range = 8.8
 omni_attenuation = 0.6
 metadata/visual_light_role = "reflection_reference"
 
-[node name="GlossReflectionProbe" type="ReflectionProbe" parent="." unique_id=1956842261]
+[node name="GlossReflectionProbe" type="ReflectionProbe" parent="." unique_id=1217833782]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.85, 0.1)
-intensity = 0.66
+intensity = 0.95
 max_distance = 12.0
 size = Vector3(9.4, 4.8, 7.2)
 origin_offset = Vector3(0, 0.14, 0)
 box_projection = true
 
-[node name="PreviewCamera" type="Camera3D" parent="." unique_id=1578428009]
+[node name="PreviewCamera" type="Camera3D" parent="." unique_id=1686157343]
 transform = Transform3D(1, 0, 0, 0, 0.79146284, 0.6112173, 0, -0.6112173, 0.79146284, 0, 5.65, 6.95)
 current = true
 fov = 34.0
 far = 80.0
 
-[node name="RoundedD6_01" type="Node3D" parent="." unique_id=1026202451]
+[node name="RoundedD6_01" type="Node3D" parent="." unique_id=1425574788]
 transform = Transform3D(0.73156756, -0.011087068, -0.20563556, 0.052040882, 0.74421936, 0.14501484, 0.19925025, -0.15367053, 0.71713644, -1.95, 0.43, 0.12)
 
-[node name="BodyMaterialLayer" type="Node3D" parent="RoundedD6_01" unique_id=112659390]
+[node name="BodyMaterialLayer" type="Node3D" parent="RoundedD6_01" unique_id=2105435946]
 
-[node name="DiceMesh" type="MeshInstance3D" parent="RoundedD6_01/BodyMaterialLayer" unique_id=1721825022]
+[node name="DiceMesh" type="MeshInstance3D" parent="RoundedD6_01/BodyMaterialLayer" unique_id=639863508]
 material_override = ExtResource("5_44c8w")
 mesh = ExtResource("6_5eugr")
 
-[node name="EdgeRimGlowLayer" type="Node3D" parent="RoundedD6_01" unique_id=182260769]
+[node name="EdgeRimGlowLayer" type="Node3D" parent="RoundedD6_01" unique_id=719791321]
 
-[node name="EdgeBevelRail_01" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=1430515981]
+[node name="EdgeBevelRail_01" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=278984266]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, -0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_o42w6")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_rw3wj")
 
-[node name="EdgeBevelRail_02" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=1364717112]
+[node name="EdgeBevelRail_02" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=533984950]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, -0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_o42w6")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_ve641")
 
-[node name="EdgeBevelRail_03" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=597308340]
+[node name="EdgeBevelRail_03" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=175840650]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, 0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_o42w6")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_ksidr")
 
-[node name="EdgeBevelRail_04" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=1735089803]
+[node name="EdgeBevelRail_04" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=1698027414]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, 0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_o42w6")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_o4k1w")
 
-[node name="EdgeBevelRail_05" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=1776260992]
+[node name="EdgeBevelRail_05" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=1835739044]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, 0, -0.486)
 material_override = SubResource("StandardMaterial3D_o42w6")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_gnagl")
 
-[node name="EdgeBevelRail_06" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=1661515839]
+[node name="EdgeBevelRail_06" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=553175965]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, 0, 0.486)
 material_override = SubResource("StandardMaterial3D_o42w6")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_qmxhj")
 
-[node name="EdgeBevelRail_07" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=295585322]
+[node name="EdgeBevelRail_07" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=1339806199]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, 0, -0.486)
 material_override = SubResource("StandardMaterial3D_o42w6")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_kktfq")
 
-[node name="EdgeBevelRail_08" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=1577108723]
+[node name="EdgeBevelRail_08" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=1780667705]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, 0, 0.486)
 material_override = SubResource("StandardMaterial3D_o42w6")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_quawu")
 
-[node name="EdgeBevelRail_09" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=1511125171]
+[node name="EdgeBevelRail_09" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=1944075542]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, -0.486, -0.486, 0)
 material_override = SubResource("StandardMaterial3D_o42w6")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_w4lb7")
 
-[node name="EdgeBevelRail_10" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=1256274527]
+[node name="EdgeBevelRail_10" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=1486205405]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, -0.486, 0.486, 0)
 material_override = SubResource("StandardMaterial3D_o42w6")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_dpn0n")
 
-[node name="EdgeBevelRail_11" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=471256253]
+[node name="EdgeBevelRail_11" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=1806538972]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0.486, -0.486, 0)
 material_override = SubResource("StandardMaterial3D_o42w6")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_gmo77")
 
-[node name="EdgeBevelRail_12" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=1359080252]
+[node name="EdgeBevelRail_12" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=1692274958]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0.486, 0.486, 0)
 material_override = SubResource("StandardMaterial3D_o42w6")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_mcq73")
 
-[node name="EdgeCornerBevelCap_13" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=1215320594]
+[node name="EdgeCornerBevelCap_13" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=1719128332]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, -0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_o42w6")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_ikhhf")
 
-[node name="EdgeCornerBevelCap_14" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=1199370245]
+[node name="EdgeCornerBevelCap_14" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=612282922]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, -0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_o42w6")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_31f0v")
 
-[node name="EdgeCornerBevelCap_15" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=90257032]
+[node name="EdgeCornerBevelCap_15" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=487794523]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, 0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_o42w6")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_2uq7u")
 
-[node name="EdgeCornerBevelCap_16" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=445748846]
+[node name="EdgeCornerBevelCap_16" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=1129978097]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, 0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_o42w6")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_nafus")
 
-[node name="EdgeCornerBevelCap_17" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=391348182]
+[node name="EdgeCornerBevelCap_17" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=1595341217]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, -0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_o42w6")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_3bnj6")
 
-[node name="EdgeCornerBevelCap_18" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=1401483986]
+[node name="EdgeCornerBevelCap_18" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=1619763410]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, -0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_o42w6")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_btkj6")
 
-[node name="EdgeCornerBevelCap_19" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=1577723666]
+[node name="EdgeCornerBevelCap_19" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=1258104099]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, 0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_o42w6")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_d06aj")
 
-[node name="EdgeCornerBevelCap_20" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=601438945]
+[node name="EdgeCornerBevelCap_20" type="MeshInstance3D" parent="RoundedD6_01/EdgeRimGlowLayer" unique_id=1413404677]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, 0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_o42w6")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_y0nn2")
 
-[node name="FaceMarkerLayer" type="Node3D" parent="RoundedD6_01" unique_id=607748674]
+[node name="FaceMarkerLayer" type="Node3D" parent="RoundedD6_01" unique_id=1191765933]
 
-[node name="TopFaceFill" type="MeshInstance3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=932795350]
+[node name="TopFaceFill" type="MeshInstance3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=1327444976]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.522, 0)
 material_override = SubResource("StandardMaterial3D_pyqcx")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_30x0o")
 
-[node name="FrontFaceFill" type="MeshInstance3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=1962111261]
+[node name="FrontFaceFill" type="MeshInstance3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=810892431]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.522)
 material_override = SubResource("StandardMaterial3D_pyqcx")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_u8h5w")
 
-[node name="SideFaceFill_L" type="MeshInstance3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=1246762368]
+[node name="SideFaceFill_L" type="MeshInstance3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=981462409]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.522, 0, 0)
 material_override = SubResource("StandardMaterial3D_4f03k")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_hqltw")
 
-[node name="SideFaceFill_R" type="MeshInstance3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=465924467]
+[node name="SideFaceFill_R" type="MeshInstance3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=1207995248]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.522, 0, 0)
 material_override = SubResource("StandardMaterial3D_4f03k")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_domh6")
 
-[node name="TopFacePanel_05" type="MeshInstance3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=1059311198]
+[node name="TopFacePanel_05" type="MeshInstance3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=986855149]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.526, -0.36)
 material_override = SubResource("StandardMaterial3D_gf250")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_l3glh")
 
-[node name="TopFacePanel_06" type="MeshInstance3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=325468469]
+[node name="TopFacePanel_06" type="MeshInstance3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=755335481]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.526, 0.36)
 material_override = SubResource("StandardMaterial3D_gf250")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_lniwh")
 
-[node name="TopFacePanel_07" type="MeshInstance3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=1968507085]
+[node name="TopFacePanel_07" type="MeshInstance3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=2088794953]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.36, 0.526, 0)
 material_override = SubResource("StandardMaterial3D_gf250")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_u6h2g")
 
-[node name="TopFacePanel_08" type="MeshInstance3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=1899735537]
+[node name="TopFacePanel_08" type="MeshInstance3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=708216855]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.36, 0.526, 0)
 material_override = SubResource("StandardMaterial3D_gf250")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_naayn")
 
-[node name="FrontFacePanel_09" type="MeshInstance3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=2068078056]
+[node name="FrontFacePanel_09" type="MeshInstance3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=1780900807]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.36, 0.526)
 material_override = SubResource("StandardMaterial3D_gf250")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_chf70")
 
-[node name="FrontFacePanel_10" type="MeshInstance3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=127495501]
+[node name="FrontFacePanel_10" type="MeshInstance3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=1803925931]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.36, 0.526)
 material_override = SubResource("StandardMaterial3D_gf250")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_15pud")
 
-[node name="FrontFacePanel_11" type="MeshInstance3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=934257846]
+[node name="FrontFacePanel_11" type="MeshInstance3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=1579700194]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.36, 0, 0.526)
 material_override = SubResource("StandardMaterial3D_gf250")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_pse4a")
 
-[node name="FrontFacePanel_12" type="MeshInstance3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=649300125]
+[node name="FrontFacePanel_12" type="MeshInstance3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=185011010]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.36, 0, 0.526)
 material_override = SubResource("StandardMaterial3D_gf250")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_nbngi")
 
-[node name="FrontStarEmblem_13" type="MeshInstance3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=1500361304]
+[node name="FrontStarEmblem_13" type="MeshInstance3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=737064385]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.543)
 material_override = SubResource("StandardMaterial3D_ty6t3")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_1no4r")
 
-[node name="FrontStarEmblem_14" type="MeshInstance3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=787673337]
+[node name="FrontStarEmblem_14" type="MeshInstance3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=532507885]
 transform = Transform3D(0.70710677, -0.70710677, 0, 0.70710677, 0.70710677, 0, 0, 0, 1, 0, 0, 0.543)
 material_override = SubResource("StandardMaterial3D_ty6t3")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_xf1id")
 
-[node name="FrontStarEmblem_15" type="MeshInstance3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=1443197002]
+[node name="FrontStarEmblem_15" type="MeshInstance3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=1555856595]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, 0, 0.543)
 material_override = SubResource("StandardMaterial3D_ty6t3")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_km41d")
 
-[node name="FrontStarEmblem_16" type="MeshInstance3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=1849970618]
+[node name="FrontStarEmblem_16" type="MeshInstance3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=1600390143]
 transform = Transform3D(-0.70710677, -0.70710677, 0, 0.70710677, -0.70710677, 0, 0, 0, 1, 0, 0, 0.543)
 material_override = SubResource("StandardMaterial3D_ty6t3")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_vhmsq")
 
-[node name="FaceTop" type="Label3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=50545386]
+[node name="FaceTop" type="Label3D" parent="RoundedD6_01/FaceMarkerLayer" unique_id=177477865]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0.544, 0)
 pixel_size = 0.0047
 modulate = Color(0.86, 0.95, 1, 1)
@@ -1750,246 +1750,246 @@ text = "4"
 font_size = 96
 outline_size = 10
 
-[node name="StateOverlayLayer" type="Node3D" parent="RoundedD6_01" unique_id=1081233195]
+[node name="StateOverlayLayer" type="Node3D" parent="RoundedD6_01" unique_id=2085718054]
 visible = false
 
-[node name="ContactShadowLayer" type="Node3D" parent="RoundedD6_01" unique_id=1303702879]
+[node name="ContactShadowLayer" type="Node3D" parent="RoundedD6_01" unique_id=1324262245]
 
-[node name="SoftContactShadow" type="MeshInstance3D" parent="RoundedD6_01/ContactShadowLayer" unique_id=1782778605]
+[node name="SoftContactShadow" type="MeshInstance3D" parent="RoundedD6_01/ContactShadowLayer" unique_id=1845241993]
 transform = Transform3D(1.05, 0, 0, 0, 1, 0, 0, 0, 0.54, 0, -0.505, 0.02)
 material_override = SubResource("StandardMaterial3D_f0tvk")
 mesh = SubResource("ArrayMesh_aqk34")
 
-[node name="RoundedD6_02" type="Node3D" parent="." unique_id=1189978047]
+[node name="RoundedD6_02" type="Node3D" parent="." unique_id=989617642]
 transform = Transform3D(0.74771523, -0.006193921, -0.13595438, 0.032541662, 0.7453266, 0.14501484, 0.13214764, -0.14849208, 0.73354423, -1.17, 0.43, 0.155)
 
-[node name="BodyMaterialLayer" type="Node3D" parent="RoundedD6_02" unique_id=1505357838]
+[node name="BodyMaterialLayer" type="Node3D" parent="RoundedD6_02" unique_id=1900774702]
 
-[node name="DiceMesh" type="MeshInstance3D" parent="RoundedD6_02/BodyMaterialLayer" unique_id=1606866147]
+[node name="DiceMesh" type="MeshInstance3D" parent="RoundedD6_02/BodyMaterialLayer" unique_id=1390614552]
 material_override = ExtResource("7_6hsnt")
 mesh = ExtResource("6_5eugr")
 
-[node name="EdgeRimGlowLayer" type="Node3D" parent="RoundedD6_02" unique_id=741427547]
+[node name="EdgeRimGlowLayer" type="Node3D" parent="RoundedD6_02" unique_id=1800867919]
 
-[node name="EdgeBevelRail_01" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=729291948]
+[node name="EdgeBevelRail_01" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=1308875260]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, -0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_p00f5")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_ra6qq")
 
-[node name="EdgeBevelRail_02" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=1261177804]
+[node name="EdgeBevelRail_02" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=1073838539]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, -0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_p00f5")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_un0et")
 
-[node name="EdgeBevelRail_03" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=378402668]
+[node name="EdgeBevelRail_03" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=1630410459]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, 0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_p00f5")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_rkf2v")
 
-[node name="EdgeBevelRail_04" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=629864169]
+[node name="EdgeBevelRail_04" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=1680000639]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, 0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_p00f5")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_fgygr")
 
-[node name="EdgeBevelRail_05" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=2035793877]
+[node name="EdgeBevelRail_05" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=1177067587]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, 0, -0.486)
 material_override = SubResource("StandardMaterial3D_p00f5")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_3lop0")
 
-[node name="EdgeBevelRail_06" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=1208902305]
+[node name="EdgeBevelRail_06" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=590963247]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, 0, 0.486)
 material_override = SubResource("StandardMaterial3D_p00f5")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_ebin3")
 
-[node name="EdgeBevelRail_07" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=1293575547]
+[node name="EdgeBevelRail_07" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=1992526757]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, 0, -0.486)
 material_override = SubResource("StandardMaterial3D_p00f5")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_obvc5")
 
-[node name="EdgeBevelRail_08" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=86332821]
+[node name="EdgeBevelRail_08" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=1906192173]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, 0, 0.486)
 material_override = SubResource("StandardMaterial3D_p00f5")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_jaord")
 
-[node name="EdgeBevelRail_09" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=643256702]
+[node name="EdgeBevelRail_09" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=971968043]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, -0.486, -0.486, 0)
 material_override = SubResource("StandardMaterial3D_p00f5")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_r3xey")
 
-[node name="EdgeBevelRail_10" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=444887765]
+[node name="EdgeBevelRail_10" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=1265081479]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, -0.486, 0.486, 0)
 material_override = SubResource("StandardMaterial3D_p00f5")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_oy760")
 
-[node name="EdgeBevelRail_11" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=1178067442]
+[node name="EdgeBevelRail_11" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=2005411923]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0.486, -0.486, 0)
 material_override = SubResource("StandardMaterial3D_p00f5")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_ifkt7")
 
-[node name="EdgeBevelRail_12" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=708194251]
+[node name="EdgeBevelRail_12" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=557709177]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0.486, 0.486, 0)
 material_override = SubResource("StandardMaterial3D_p00f5")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_fe1hn")
 
-[node name="EdgeCornerBevelCap_13" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=2016839481]
+[node name="EdgeCornerBevelCap_13" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=1970647325]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, -0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_p00f5")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_7w6pa")
 
-[node name="EdgeCornerBevelCap_14" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=478631281]
+[node name="EdgeCornerBevelCap_14" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=391693006]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, -0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_p00f5")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_ap30u")
 
-[node name="EdgeCornerBevelCap_15" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=1435307843]
+[node name="EdgeCornerBevelCap_15" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=2070337882]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, 0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_p00f5")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_6ce5q")
 
-[node name="EdgeCornerBevelCap_16" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=687372593]
+[node name="EdgeCornerBevelCap_16" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=1233500321]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, 0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_p00f5")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_n43em")
 
-[node name="EdgeCornerBevelCap_17" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=1934086669]
+[node name="EdgeCornerBevelCap_17" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=888615384]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, -0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_p00f5")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_2ynei")
 
-[node name="EdgeCornerBevelCap_18" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=1779467398]
+[node name="EdgeCornerBevelCap_18" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=883196038]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, -0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_p00f5")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_ourdc")
 
-[node name="EdgeCornerBevelCap_19" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=670124373]
+[node name="EdgeCornerBevelCap_19" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=1674344002]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, 0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_p00f5")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_gj04h")
 
-[node name="EdgeCornerBevelCap_20" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=934062701]
+[node name="EdgeCornerBevelCap_20" type="MeshInstance3D" parent="RoundedD6_02/EdgeRimGlowLayer" unique_id=1036929092]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, 0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_p00f5")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_67x2q")
 
-[node name="FaceMarkerLayer" type="Node3D" parent="RoundedD6_02" unique_id=890237028]
+[node name="FaceMarkerLayer" type="Node3D" parent="RoundedD6_02" unique_id=778005318]
 
-[node name="TopFaceFill" type="MeshInstance3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=325828236]
+[node name="TopFaceFill" type="MeshInstance3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=809013811]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.522, 0)
 material_override = SubResource("StandardMaterial3D_4jrll")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_doetg")
 
-[node name="FrontFaceFill" type="MeshInstance3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=326274178]
+[node name="FrontFaceFill" type="MeshInstance3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=1248418422]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.522)
 material_override = SubResource("StandardMaterial3D_4jrll")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_qxvn0")
 
-[node name="SideFaceFill_L" type="MeshInstance3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=1166492617]
+[node name="SideFaceFill_L" type="MeshInstance3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=2017893487]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.522, 0, 0)
 material_override = SubResource("StandardMaterial3D_rhmd1")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_x5uce")
 
-[node name="SideFaceFill_R" type="MeshInstance3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=804945895]
+[node name="SideFaceFill_R" type="MeshInstance3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=1042814230]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.522, 0, 0)
 material_override = SubResource("StandardMaterial3D_rhmd1")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_m6h4u")
 
-[node name="TopFacePanel_05" type="MeshInstance3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=1176951629]
+[node name="TopFacePanel_05" type="MeshInstance3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=591510329]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.526, -0.36)
 material_override = SubResource("StandardMaterial3D_lrlc6")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_e7erp")
 
-[node name="TopFacePanel_06" type="MeshInstance3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=1676053795]
+[node name="TopFacePanel_06" type="MeshInstance3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=214565178]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.526, 0.36)
 material_override = SubResource("StandardMaterial3D_lrlc6")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_yvejx")
 
-[node name="TopFacePanel_07" type="MeshInstance3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=741277102]
+[node name="TopFacePanel_07" type="MeshInstance3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=381723792]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.36, 0.526, 0)
 material_override = SubResource("StandardMaterial3D_lrlc6")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_5oq2n")
 
-[node name="TopFacePanel_08" type="MeshInstance3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=1376360864]
+[node name="TopFacePanel_08" type="MeshInstance3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=685810124]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.36, 0.526, 0)
 material_override = SubResource("StandardMaterial3D_lrlc6")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_7g6ns")
 
-[node name="FrontFacePanel_09" type="MeshInstance3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=975029968]
+[node name="FrontFacePanel_09" type="MeshInstance3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=180197726]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.36, 0.526)
 material_override = SubResource("StandardMaterial3D_lrlc6")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_a8nkl")
 
-[node name="FrontFacePanel_10" type="MeshInstance3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=456624178]
+[node name="FrontFacePanel_10" type="MeshInstance3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=1241298012]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.36, 0.526)
 material_override = SubResource("StandardMaterial3D_lrlc6")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_ctufv")
 
-[node name="FrontFacePanel_11" type="MeshInstance3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=949418471]
+[node name="FrontFacePanel_11" type="MeshInstance3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=1811993248]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.36, 0, 0.526)
 material_override = SubResource("StandardMaterial3D_lrlc6")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_h1s2t")
 
-[node name="FrontFacePanel_12" type="MeshInstance3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=646521383]
+[node name="FrontFacePanel_12" type="MeshInstance3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=1659681643]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.36, 0, 0.526)
 material_override = SubResource("StandardMaterial3D_lrlc6")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_oyx54")
 
-[node name="FrontStarEmblem_13" type="MeshInstance3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=313531344]
+[node name="FrontStarEmblem_13" type="MeshInstance3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=1827307682]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.543)
 material_override = SubResource("StandardMaterial3D_2vk3c")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_dvg34")
 
-[node name="FrontStarEmblem_14" type="MeshInstance3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=356506493]
+[node name="FrontStarEmblem_14" type="MeshInstance3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=1406131661]
 transform = Transform3D(0.70710677, -0.70710677, 0, 0.70710677, 0.70710677, 0, 0, 0, 1, 0, 0, 0.543)
 material_override = SubResource("StandardMaterial3D_2vk3c")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_uq4e4")
 
-[node name="FrontStarEmblem_15" type="MeshInstance3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=1583889945]
+[node name="FrontStarEmblem_15" type="MeshInstance3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=1539478482]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, 0, 0.543)
 material_override = SubResource("StandardMaterial3D_2vk3c")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_4r8ks")
 
-[node name="FrontStarEmblem_16" type="MeshInstance3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=751480346]
+[node name="FrontStarEmblem_16" type="MeshInstance3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=1216917435]
 transform = Transform3D(-0.70710677, -0.70710677, 0, 0.70710677, -0.70710677, 0, 0, 0, 1, 0, 0, 0.543)
 material_override = SubResource("StandardMaterial3D_2vk3c")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_klih6")
 
-[node name="FaceTop" type="Label3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=174680466]
+[node name="FaceTop" type="Label3D" parent="RoundedD6_02/FaceMarkerLayer" unique_id=2118173187]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0.544, 0)
 pixel_size = 0.0047
 modulate = Color(0.98, 0.88, 1, 1)
@@ -1998,246 +1998,246 @@ text = "3"
 font_size = 96
 outline_size = 10
 
-[node name="StateOverlayLayer" type="Node3D" parent="RoundedD6_02" unique_id=2129509700]
+[node name="StateOverlayLayer" type="Node3D" parent="RoundedD6_02" unique_id=1397662319]
 visible = false
 
-[node name="ContactShadowLayer" type="Node3D" parent="RoundedD6_02" unique_id=456945004]
+[node name="ContactShadowLayer" type="Node3D" parent="RoundedD6_02" unique_id=195400429]
 
-[node name="SoftContactShadow" type="MeshInstance3D" parent="RoundedD6_02/ContactShadowLayer" unique_id=1372342315]
+[node name="SoftContactShadow" type="MeshInstance3D" parent="RoundedD6_02/ContactShadowLayer" unique_id=1883832872]
 transform = Transform3D(1.05, 0, 0, 0, 1, 0, 0, 0, 0.54, 0, -0.505, 0.02)
 material_override = SubResource("StandardMaterial3D_whjfu")
 mesh = SubResource("ArrayMesh_7j0iv")
 
-[node name="RoundedD6_03" type="Node3D" parent="." unique_id=598024879]
+[node name="RoundedD6_03" type="Node3D" parent="." unique_id=1014024124]
 transform = Transform3D(0.75721323, -0.0005764068, -0.06502137, 0.013020134, 0.74592304, 0.14501484, 0.063707046, -0.14559703, 0.74319774, -0.39, 0.43, 0.12)
 
-[node name="BodyMaterialLayer" type="Node3D" parent="RoundedD6_03" unique_id=2129345430]
+[node name="BodyMaterialLayer" type="Node3D" parent="RoundedD6_03" unique_id=1870281035]
 
-[node name="DiceMesh" type="MeshInstance3D" parent="RoundedD6_03/BodyMaterialLayer" unique_id=1439070469]
+[node name="DiceMesh" type="MeshInstance3D" parent="RoundedD6_03/BodyMaterialLayer" unique_id=1867313017]
 material_override = ExtResource("8_odon0")
 mesh = ExtResource("6_5eugr")
 
-[node name="EdgeRimGlowLayer" type="Node3D" parent="RoundedD6_03" unique_id=645166935]
+[node name="EdgeRimGlowLayer" type="Node3D" parent="RoundedD6_03" unique_id=785140480]
 
-[node name="EdgeBevelRail_01" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=765753310]
+[node name="EdgeBevelRail_01" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=1941153551]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, -0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_8b12x")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_564rs")
 
-[node name="EdgeBevelRail_02" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=1234723481]
+[node name="EdgeBevelRail_02" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=105503919]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, -0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_8b12x")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_mlbbc")
 
-[node name="EdgeBevelRail_03" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=1336105419]
+[node name="EdgeBevelRail_03" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=854920563]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, 0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_8b12x")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_x38q3")
 
-[node name="EdgeBevelRail_04" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=1002280847]
+[node name="EdgeBevelRail_04" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=1580730139]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, 0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_8b12x")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_74ojl")
 
-[node name="EdgeBevelRail_05" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=350615719]
+[node name="EdgeBevelRail_05" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=917152045]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, 0, -0.486)
 material_override = SubResource("StandardMaterial3D_8b12x")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_qlqga")
 
-[node name="EdgeBevelRail_06" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=441992084]
+[node name="EdgeBevelRail_06" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=691171459]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, 0, 0.486)
 material_override = SubResource("StandardMaterial3D_8b12x")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_qyfdn")
 
-[node name="EdgeBevelRail_07" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=595548175]
+[node name="EdgeBevelRail_07" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=1265366593]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, 0, -0.486)
 material_override = SubResource("StandardMaterial3D_8b12x")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_s4rbe")
 
-[node name="EdgeBevelRail_08" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=1343214675]
+[node name="EdgeBevelRail_08" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=1950483975]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, 0, 0.486)
 material_override = SubResource("StandardMaterial3D_8b12x")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_glsik")
 
-[node name="EdgeBevelRail_09" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=1187970693]
+[node name="EdgeBevelRail_09" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=2085401172]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, -0.486, -0.486, 0)
 material_override = SubResource("StandardMaterial3D_8b12x")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_2s2ql")
 
-[node name="EdgeBevelRail_10" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=1815994849]
+[node name="EdgeBevelRail_10" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=552598530]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, -0.486, 0.486, 0)
 material_override = SubResource("StandardMaterial3D_8b12x")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_i7g26")
 
-[node name="EdgeBevelRail_11" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=22958514]
+[node name="EdgeBevelRail_11" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=1987421490]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0.486, -0.486, 0)
 material_override = SubResource("StandardMaterial3D_8b12x")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_lkyt4")
 
-[node name="EdgeBevelRail_12" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=701662881]
+[node name="EdgeBevelRail_12" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=829325992]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0.486, 0.486, 0)
 material_override = SubResource("StandardMaterial3D_8b12x")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_sefgc")
 
-[node name="EdgeCornerBevelCap_13" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=1152448018]
+[node name="EdgeCornerBevelCap_13" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=1482750232]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, -0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_8b12x")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_fesbc")
 
-[node name="EdgeCornerBevelCap_14" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=1177830054]
+[node name="EdgeCornerBevelCap_14" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=888717090]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, -0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_8b12x")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_0vs1c")
 
-[node name="EdgeCornerBevelCap_15" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=607461700]
+[node name="EdgeCornerBevelCap_15" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=1118186815]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, 0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_8b12x")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_f6sp5")
 
-[node name="EdgeCornerBevelCap_16" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=247718975]
+[node name="EdgeCornerBevelCap_16" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=647159573]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, 0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_8b12x")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_vofi6")
 
-[node name="EdgeCornerBevelCap_17" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=1423244801]
+[node name="EdgeCornerBevelCap_17" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=1314599130]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, -0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_8b12x")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_uyaq4")
 
-[node name="EdgeCornerBevelCap_18" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=876368639]
+[node name="EdgeCornerBevelCap_18" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=508894436]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, -0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_8b12x")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_bnwie")
 
-[node name="EdgeCornerBevelCap_19" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=2109060761]
+[node name="EdgeCornerBevelCap_19" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=1674236227]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, 0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_8b12x")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_shhpv")
 
-[node name="EdgeCornerBevelCap_20" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=920771959]
+[node name="EdgeCornerBevelCap_20" type="MeshInstance3D" parent="RoundedD6_03/EdgeRimGlowLayer" unique_id=1056790946]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, 0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_8b12x")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_csepf")
 
-[node name="FaceMarkerLayer" type="Node3D" parent="RoundedD6_03" unique_id=1149620422]
+[node name="FaceMarkerLayer" type="Node3D" parent="RoundedD6_03" unique_id=1302107888]
 
-[node name="TopFaceFill" type="MeshInstance3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=700811490]
+[node name="TopFaceFill" type="MeshInstance3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=1624207804]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.522, 0)
 material_override = SubResource("StandardMaterial3D_dclij")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_u06fs")
 
-[node name="FrontFaceFill" type="MeshInstance3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=1586750464]
+[node name="FrontFaceFill" type="MeshInstance3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=272237707]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.522)
 material_override = SubResource("StandardMaterial3D_dclij")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_7ms04")
 
-[node name="SideFaceFill_L" type="MeshInstance3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=1771981054]
+[node name="SideFaceFill_L" type="MeshInstance3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=1461042128]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.522, 0, 0)
 material_override = SubResource("StandardMaterial3D_qtli1")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_2sxju")
 
-[node name="SideFaceFill_R" type="MeshInstance3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=253252614]
+[node name="SideFaceFill_R" type="MeshInstance3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=1909211900]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.522, 0, 0)
 material_override = SubResource("StandardMaterial3D_qtli1")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_8uoo3")
 
-[node name="TopFacePanel_05" type="MeshInstance3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=498869941]
+[node name="TopFacePanel_05" type="MeshInstance3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=1889210435]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.526, -0.36)
 material_override = SubResource("StandardMaterial3D_6vx6m")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_dvhob")
 
-[node name="TopFacePanel_06" type="MeshInstance3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=661407099]
+[node name="TopFacePanel_06" type="MeshInstance3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=1812621960]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.526, 0.36)
 material_override = SubResource("StandardMaterial3D_6vx6m")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_fq50e")
 
-[node name="TopFacePanel_07" type="MeshInstance3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=489032575]
+[node name="TopFacePanel_07" type="MeshInstance3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=985899107]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.36, 0.526, 0)
 material_override = SubResource("StandardMaterial3D_6vx6m")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_nconr")
 
-[node name="TopFacePanel_08" type="MeshInstance3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=1019518889]
+[node name="TopFacePanel_08" type="MeshInstance3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=595798240]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.36, 0.526, 0)
 material_override = SubResource("StandardMaterial3D_6vx6m")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_c8aub")
 
-[node name="FrontFacePanel_09" type="MeshInstance3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=1582318344]
+[node name="FrontFacePanel_09" type="MeshInstance3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=523178171]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.36, 0.526)
 material_override = SubResource("StandardMaterial3D_6vx6m")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_qvg1c")
 
-[node name="FrontFacePanel_10" type="MeshInstance3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=1773845667]
+[node name="FrontFacePanel_10" type="MeshInstance3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=633453334]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.36, 0.526)
 material_override = SubResource("StandardMaterial3D_6vx6m")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_5np12")
 
-[node name="FrontFacePanel_11" type="MeshInstance3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=521932561]
+[node name="FrontFacePanel_11" type="MeshInstance3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=736829455]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.36, 0, 0.526)
 material_override = SubResource("StandardMaterial3D_6vx6m")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_gengo")
 
-[node name="FrontFacePanel_12" type="MeshInstance3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=553850298]
+[node name="FrontFacePanel_12" type="MeshInstance3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=865649509]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.36, 0, 0.526)
 material_override = SubResource("StandardMaterial3D_6vx6m")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_78des")
 
-[node name="FrontStarEmblem_13" type="MeshInstance3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=31469991]
+[node name="FrontStarEmblem_13" type="MeshInstance3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=528988914]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.543)
 material_override = SubResource("StandardMaterial3D_btv55")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_s7y8v")
 
-[node name="FrontStarEmblem_14" type="MeshInstance3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=1878398227]
+[node name="FrontStarEmblem_14" type="MeshInstance3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=149330049]
 transform = Transform3D(0.70710677, -0.70710677, 0, 0.70710677, 0.70710677, 0, 0, 0, 1, 0, 0, 0.543)
 material_override = SubResource("StandardMaterial3D_btv55")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_iswy0")
 
-[node name="FrontStarEmblem_15" type="MeshInstance3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=258470968]
+[node name="FrontStarEmblem_15" type="MeshInstance3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=521509385]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, 0, 0.543)
 material_override = SubResource("StandardMaterial3D_btv55")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_u0av6")
 
-[node name="FrontStarEmblem_16" type="MeshInstance3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=1957428458]
+[node name="FrontStarEmblem_16" type="MeshInstance3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=1561862820]
 transform = Transform3D(-0.70710677, -0.70710677, 0, 0.70710677, -0.70710677, 0, 0, 0, 1, 0, 0, 0.543)
 material_override = SubResource("StandardMaterial3D_btv55")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_kpye5")
 
-[node name="FaceTop" type="Label3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=1071763173]
+[node name="FaceTop" type="Label3D" parent="RoundedD6_03/FaceMarkerLayer" unique_id=593137238]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0.544, 0)
 pixel_size = 0.0047
 modulate = Color(0.8, 1, 0.96, 1)
@@ -2246,246 +2246,246 @@ text = "3"
 font_size = 96
 outline_size = 10
 
-[node name="StateOverlayLayer" type="Node3D" parent="RoundedD6_03" unique_id=338295516]
+[node name="StateOverlayLayer" type="Node3D" parent="RoundedD6_03" unique_id=10305951]
 visible = false
 
-[node name="ContactShadowLayer" type="Node3D" parent="RoundedD6_03" unique_id=1871837114]
+[node name="ContactShadowLayer" type="Node3D" parent="RoundedD6_03" unique_id=1196276598]
 
-[node name="SoftContactShadow" type="MeshInstance3D" parent="RoundedD6_03/ContactShadowLayer" unique_id=753070506]
+[node name="SoftContactShadow" type="MeshInstance3D" parent="RoundedD6_03/ContactShadowLayer" unique_id=2095037795]
 transform = Transform3D(1.05, 0, 0, 0, 1, 0, 0, 0, 0.54, 0, -0.505, 0.02)
 material_override = SubResource("StandardMaterial3D_vqc31")
 mesh = SubResource("ArrayMesh_o3hvh")
 
-[node name="RoundedD6_04" type="Node3D" parent="." unique_id=133508492]
+[node name="RoundedD6_04" type="Node3D" parent="." unique_id=1408152938]
 transform = Transform3D(0.75803155, -0.054275293, 0.0065103155, 0.052040882, 0.74421936, 0.14501484, -0.016731348, -0.14419344, 0.7460082, 0.39, 0.43, 0.155)
 
-[node name="BodyMaterialLayer" type="Node3D" parent="RoundedD6_04" unique_id=2096153459]
+[node name="BodyMaterialLayer" type="Node3D" parent="RoundedD6_04" unique_id=1693375487]
 
-[node name="DiceMesh" type="MeshInstance3D" parent="RoundedD6_04/BodyMaterialLayer" unique_id=1216126863]
+[node name="DiceMesh" type="MeshInstance3D" parent="RoundedD6_04/BodyMaterialLayer" unique_id=1681881087]
 material_override = ExtResource("7_6hsnt")
 mesh = ExtResource("6_5eugr")
 
-[node name="EdgeRimGlowLayer" type="Node3D" parent="RoundedD6_04" unique_id=1297856001]
+[node name="EdgeRimGlowLayer" type="Node3D" parent="RoundedD6_04" unique_id=1367824910]
 
-[node name="EdgeBevelRail_01" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=501648766]
+[node name="EdgeBevelRail_01" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=1324678562]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, -0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_vgoxw")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_ntokk")
 
-[node name="EdgeBevelRail_02" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=1103892563]
+[node name="EdgeBevelRail_02" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=1025159673]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, -0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_vgoxw")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_x8fgp")
 
-[node name="EdgeBevelRail_03" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=993350990]
+[node name="EdgeBevelRail_03" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=923964984]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, 0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_vgoxw")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_7lmmb")
 
-[node name="EdgeBevelRail_04" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=2014137409]
+[node name="EdgeBevelRail_04" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=1592801491]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, 0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_vgoxw")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_l4heo")
 
-[node name="EdgeBevelRail_05" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=714860207]
+[node name="EdgeBevelRail_05" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=1198051688]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, 0, -0.486)
 material_override = SubResource("StandardMaterial3D_vgoxw")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_pk17t")
 
-[node name="EdgeBevelRail_06" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=2001703699]
+[node name="EdgeBevelRail_06" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=1604704508]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, 0, 0.486)
 material_override = SubResource("StandardMaterial3D_vgoxw")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_h4ek5")
 
-[node name="EdgeBevelRail_07" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=773621028]
+[node name="EdgeBevelRail_07" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=25135948]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, 0, -0.486)
 material_override = SubResource("StandardMaterial3D_vgoxw")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_0ndgv")
 
-[node name="EdgeBevelRail_08" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=703719591]
+[node name="EdgeBevelRail_08" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=2058995689]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, 0, 0.486)
 material_override = SubResource("StandardMaterial3D_vgoxw")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_af8an")
 
-[node name="EdgeBevelRail_09" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=1243755642]
+[node name="EdgeBevelRail_09" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=1529544373]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, -0.486, -0.486, 0)
 material_override = SubResource("StandardMaterial3D_vgoxw")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_psnva")
 
-[node name="EdgeBevelRail_10" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=1063611912]
+[node name="EdgeBevelRail_10" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=1173142759]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, -0.486, 0.486, 0)
 material_override = SubResource("StandardMaterial3D_vgoxw")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_1whfl")
 
-[node name="EdgeBevelRail_11" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=233161122]
+[node name="EdgeBevelRail_11" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=1900221412]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0.486, -0.486, 0)
 material_override = SubResource("StandardMaterial3D_vgoxw")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_077d7")
 
-[node name="EdgeBevelRail_12" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=2139772828]
+[node name="EdgeBevelRail_12" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=1386873839]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0.486, 0.486, 0)
 material_override = SubResource("StandardMaterial3D_vgoxw")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_kan0i")
 
-[node name="EdgeCornerBevelCap_13" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=8081332]
+[node name="EdgeCornerBevelCap_13" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=717859816]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, -0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_vgoxw")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_7i571")
 
-[node name="EdgeCornerBevelCap_14" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=31929954]
+[node name="EdgeCornerBevelCap_14" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=1580690728]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, -0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_vgoxw")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_mfsku")
 
-[node name="EdgeCornerBevelCap_15" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=1114801597]
+[node name="EdgeCornerBevelCap_15" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=1299102622]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, 0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_vgoxw")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_abpf7")
 
-[node name="EdgeCornerBevelCap_16" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=1423029609]
+[node name="EdgeCornerBevelCap_16" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=944728173]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, 0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_vgoxw")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_1k0g7")
 
-[node name="EdgeCornerBevelCap_17" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=156305056]
+[node name="EdgeCornerBevelCap_17" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=836537627]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, -0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_vgoxw")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_ngvhh")
 
-[node name="EdgeCornerBevelCap_18" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=1966615627]
+[node name="EdgeCornerBevelCap_18" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=693937509]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, -0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_vgoxw")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_2g58r")
 
-[node name="EdgeCornerBevelCap_19" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=1177763755]
+[node name="EdgeCornerBevelCap_19" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=1215897798]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, 0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_vgoxw")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_7otv1")
 
-[node name="EdgeCornerBevelCap_20" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=993605651]
+[node name="EdgeCornerBevelCap_20" type="MeshInstance3D" parent="RoundedD6_04/EdgeRimGlowLayer" unique_id=1226130329]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, 0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_vgoxw")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_7qhpa")
 
-[node name="FaceMarkerLayer" type="Node3D" parent="RoundedD6_04" unique_id=1795763148]
+[node name="FaceMarkerLayer" type="Node3D" parent="RoundedD6_04" unique_id=1097880963]
 
-[node name="TopFaceFill" type="MeshInstance3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=633078703]
+[node name="TopFaceFill" type="MeshInstance3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=732107063]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.522, 0)
 material_override = SubResource("StandardMaterial3D_tcwp2")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_y02kt")
 
-[node name="FrontFaceFill" type="MeshInstance3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=755736845]
+[node name="FrontFaceFill" type="MeshInstance3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=46981973]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.522)
 material_override = SubResource("StandardMaterial3D_tcwp2")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_aw2r4")
 
-[node name="SideFaceFill_L" type="MeshInstance3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=1824025318]
+[node name="SideFaceFill_L" type="MeshInstance3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=987513661]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.522, 0, 0)
 material_override = SubResource("StandardMaterial3D_vdrt5")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_fi04f")
 
-[node name="SideFaceFill_R" type="MeshInstance3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=2057289608]
+[node name="SideFaceFill_R" type="MeshInstance3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=458007072]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.522, 0, 0)
 material_override = SubResource("StandardMaterial3D_vdrt5")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_qwd0i")
 
-[node name="TopFacePanel_05" type="MeshInstance3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=1552386848]
+[node name="TopFacePanel_05" type="MeshInstance3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=1547208125]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.526, -0.36)
 material_override = SubResource("StandardMaterial3D_ids43")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_swibj")
 
-[node name="TopFacePanel_06" type="MeshInstance3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=290624524]
+[node name="TopFacePanel_06" type="MeshInstance3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=2064939096]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.526, 0.36)
 material_override = SubResource("StandardMaterial3D_ids43")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_d8q7i")
 
-[node name="TopFacePanel_07" type="MeshInstance3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=982514666]
+[node name="TopFacePanel_07" type="MeshInstance3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=900763788]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.36, 0.526, 0)
 material_override = SubResource("StandardMaterial3D_ids43")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_ir2vj")
 
-[node name="TopFacePanel_08" type="MeshInstance3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=1219395611]
+[node name="TopFacePanel_08" type="MeshInstance3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=1592152285]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.36, 0.526, 0)
 material_override = SubResource("StandardMaterial3D_ids43")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_bdwkb")
 
-[node name="FrontFacePanel_09" type="MeshInstance3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=37301]
+[node name="FrontFacePanel_09" type="MeshInstance3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=1652225706]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.36, 0.526)
 material_override = SubResource("StandardMaterial3D_ids43")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_h464w")
 
-[node name="FrontFacePanel_10" type="MeshInstance3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=397655308]
+[node name="FrontFacePanel_10" type="MeshInstance3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=38458228]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.36, 0.526)
 material_override = SubResource("StandardMaterial3D_ids43")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_7fsk2")
 
-[node name="FrontFacePanel_11" type="MeshInstance3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=599759542]
+[node name="FrontFacePanel_11" type="MeshInstance3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=1891296896]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.36, 0, 0.526)
 material_override = SubResource("StandardMaterial3D_ids43")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_273o4")
 
-[node name="FrontFacePanel_12" type="MeshInstance3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=1369714773]
+[node name="FrontFacePanel_12" type="MeshInstance3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=330467604]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.36, 0, 0.526)
 material_override = SubResource("StandardMaterial3D_ids43")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_v6lcx")
 
-[node name="FrontStarEmblem_13" type="MeshInstance3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=183124836]
+[node name="FrontStarEmblem_13" type="MeshInstance3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=222594035]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.543)
 material_override = SubResource("StandardMaterial3D_ua22p")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_ftqmf")
 
-[node name="FrontStarEmblem_14" type="MeshInstance3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=1751659836]
+[node name="FrontStarEmblem_14" type="MeshInstance3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=701830193]
 transform = Transform3D(0.70710677, -0.70710677, 0, 0.70710677, 0.70710677, 0, 0, 0, 1, 0, 0, 0.543)
 material_override = SubResource("StandardMaterial3D_ua22p")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_kctrb")
 
-[node name="FrontStarEmblem_15" type="MeshInstance3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=883003425]
+[node name="FrontStarEmblem_15" type="MeshInstance3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=347300560]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, 0, 0.543)
 material_override = SubResource("StandardMaterial3D_ua22p")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_g0frb")
 
-[node name="FrontStarEmblem_16" type="MeshInstance3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=835371485]
+[node name="FrontStarEmblem_16" type="MeshInstance3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=828503200]
 transform = Transform3D(-0.70710677, -0.70710677, 0, 0.70710677, -0.70710677, 0, 0, 0, 1, 0, 0, 0.543)
 material_override = SubResource("StandardMaterial3D_ua22p")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_wdk3c")
 
-[node name="FaceTop" type="Label3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=473795600]
+[node name="FaceTop" type="Label3D" parent="RoundedD6_04/FaceMarkerLayer" unique_id=207211717]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0.544, 0)
 pixel_size = 0.0047
 modulate = Color(0.98, 0.88, 1, 1)
@@ -2494,494 +2494,494 @@ text = "4"
 font_size = 96
 outline_size = 10
 
-[node name="StateOverlayLayer" type="Node3D" parent="RoundedD6_04" unique_id=899722667]
+[node name="StateOverlayLayer" type="Node3D" parent="RoundedD6_04" unique_id=1854702727]
 visible = false
 
-[node name="ContactShadowLayer" type="Node3D" parent="RoundedD6_04" unique_id=1492892844]
+[node name="ContactShadowLayer" type="Node3D" parent="RoundedD6_04" unique_id=211404136]
 
-[node name="SoftContactShadow" type="MeshInstance3D" parent="RoundedD6_04/ContactShadowLayer" unique_id=514888566]
+[node name="SoftContactShadow" type="MeshInstance3D" parent="RoundedD6_04/ContactShadowLayer" unique_id=92530692]
 transform = Transform3D(1.05, 0, 0, 0, 1, 0, 0, 0, 0.54, 0, -0.505, 0.02)
 material_override = SubResource("StandardMaterial3D_f6mvo")
 mesh = SubResource("ArrayMesh_puukp")
 
-[node name="RoundedD6_05" type="Node3D" parent="." unique_id=302599706]
+[node name="RoundedD6_05" type="Node3D" parent="." unique_id=1324938379]
 transform = Transform3D(0.75445604, -0.04811288, 0.07798206, 0.032541662, 0.7453266, 0.14501484, -0.08565683, -0.14061797, 0.7419498, 1.17, 0.43, 0.12)
 
-[node name="BodyMaterialLayer" type="Node3D" parent="RoundedD6_05" unique_id=1736255509]
+[node name="BodyMaterialLayer" type="Node3D" parent="RoundedD6_05" unique_id=1210575314]
 
-[node name="DiceMesh" type="MeshInstance3D" parent="RoundedD6_05/BodyMaterialLayer" unique_id=716857668]
+[node name="DiceMesh" type="MeshInstance3D" parent="RoundedD6_05/BodyMaterialLayer" unique_id=172285568]
 material_override = ExtResource("9_bseme")
 mesh = ExtResource("6_5eugr")
 
-[node name="EdgeRimGlowLayer" type="Node3D" parent="RoundedD6_05" unique_id=1800068727]
+[node name="EdgeRimGlowLayer" type="Node3D" parent="RoundedD6_05" unique_id=873985529]
 
-[node name="EdgeBevelRail_01" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=49938526]
+[node name="EdgeBevelRail_01" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=1786756492]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, -0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_ywbtk")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_mgkok")
 
-[node name="EdgeBevelRail_02" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=715947650]
+[node name="EdgeBevelRail_02" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=1909155801]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, -0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_ywbtk")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_u4t2y")
 
-[node name="EdgeBevelRail_03" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=666773825]
+[node name="EdgeBevelRail_03" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=1211498424]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, 0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_ywbtk")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_bqvh6")
 
-[node name="EdgeBevelRail_04" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=1958175649]
+[node name="EdgeBevelRail_04" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=1575729551]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, 0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_ywbtk")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_dxcmr")
 
-[node name="EdgeBevelRail_05" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=1123798734]
+[node name="EdgeBevelRail_05" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=703193864]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, 0, -0.486)
 material_override = SubResource("StandardMaterial3D_ywbtk")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_b5f7g")
 
-[node name="EdgeBevelRail_06" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=1107660843]
+[node name="EdgeBevelRail_06" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=766021107]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, 0, 0.486)
 material_override = SubResource("StandardMaterial3D_ywbtk")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_trmcj")
 
-[node name="EdgeBevelRail_07" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=883575315]
+[node name="EdgeBevelRail_07" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=43120676]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, 0, -0.486)
 material_override = SubResource("StandardMaterial3D_ywbtk")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_uqy46")
 
-[node name="EdgeBevelRail_08" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=458401564]
+[node name="EdgeBevelRail_08" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=2134244415]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, 0, 0.486)
 material_override = SubResource("StandardMaterial3D_ywbtk")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_n7ocs")
 
-[node name="EdgeBevelRail_09" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=445077921]
+[node name="EdgeBevelRail_09" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=873374397]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, -0.486, -0.486, 0)
 material_override = SubResource("StandardMaterial3D_ywbtk")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_2m0b5")
 
-[node name="EdgeBevelRail_10" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=272581509]
+[node name="EdgeBevelRail_10" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=1937116204]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, -0.486, 0.486, 0)
 material_override = SubResource("StandardMaterial3D_ywbtk")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_hxpil")
 
-[node name="EdgeBevelRail_11" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=1707961231]
+[node name="EdgeBevelRail_11" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=574521012]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0.486, -0.486, 0)
 material_override = SubResource("StandardMaterial3D_ywbtk")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_4ij14")
 
-[node name="EdgeBevelRail_12" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=1583319526]
+[node name="EdgeBevelRail_12" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=290628939]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0.486, 0.486, 0)
 material_override = SubResource("StandardMaterial3D_ywbtk")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_of44t")
 
-[node name="EdgeCornerBevelCap_13" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=2044546496]
+[node name="EdgeCornerBevelCap_13" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=999448583]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, -0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_ywbtk")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_v5o1n")
 
-[node name="EdgeCornerBevelCap_14" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=1802588916]
+[node name="EdgeCornerBevelCap_14" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=677918767]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, -0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_ywbtk")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_m030j")
 
-[node name="EdgeCornerBevelCap_15" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=1863440186]
+[node name="EdgeCornerBevelCap_15" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=556146373]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, 0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_ywbtk")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_or7rq")
 
-[node name="EdgeCornerBevelCap_16" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=2006817469]
+[node name="EdgeCornerBevelCap_16" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=1554971431]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, 0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_ywbtk")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_itfoh")
 
-[node name="EdgeCornerBevelCap_17" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=273422073]
+[node name="EdgeCornerBevelCap_17" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=74838948]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, -0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_ywbtk")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_46gc6")
 
-[node name="EdgeCornerBevelCap_18" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=1568303684]
+[node name="EdgeCornerBevelCap_18" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=171980402]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, -0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_ywbtk")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_3bwps")
 
-[node name="EdgeCornerBevelCap_19" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=42638159]
+[node name="EdgeCornerBevelCap_19" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=1675853444]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, 0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_ywbtk")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_8ltta")
 
-[node name="EdgeCornerBevelCap_20" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=496462670]
+[node name="EdgeCornerBevelCap_20" type="MeshInstance3D" parent="RoundedD6_05/EdgeRimGlowLayer" unique_id=1244388751]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, 0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_ywbtk")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_3ftw0")
 
-[node name="FaceMarkerLayer" type="Node3D" parent="RoundedD6_05" unique_id=1488305740]
+[node name="FaceMarkerLayer" type="Node3D" parent="RoundedD6_05" unique_id=743539374]
 
-[node name="TopFaceFill" type="MeshInstance3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=1306056992]
+[node name="TopFaceFill" type="MeshInstance3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=88051803]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.522, 0)
 material_override = SubResource("StandardMaterial3D_mntkm")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_toku4")
 
-[node name="FrontFaceFill" type="MeshInstance3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=671166363]
+[node name="FrontFaceFill" type="MeshInstance3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=1078985998]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.522)
 material_override = SubResource("StandardMaterial3D_mntkm")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_trv2r")
 
-[node name="SideFaceFill_L" type="MeshInstance3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=2013841773]
+[node name="SideFaceFill_L" type="MeshInstance3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=41076350]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.522, 0, 0)
 material_override = SubResource("StandardMaterial3D_r6w3m")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_c32sr")
 
-[node name="SideFaceFill_R" type="MeshInstance3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=1365188354]
+[node name="SideFaceFill_R" type="MeshInstance3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=740106512]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.522, 0, 0)
 material_override = SubResource("StandardMaterial3D_r6w3m")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_ttffj")
 
-[node name="TopFacePanel_05" type="MeshInstance3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=344479155]
+[node name="TopFacePanel_05" type="MeshInstance3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=1555858591]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.526, -0.36)
 material_override = SubResource("StandardMaterial3D_gray5")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_qen8d")
 
-[node name="TopFacePanel_06" type="MeshInstance3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=561143382]
+[node name="TopFacePanel_06" type="MeshInstance3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=1375115147]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.526, 0.36)
 material_override = SubResource("StandardMaterial3D_gray5")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_l35cd")
 
-[node name="TopFacePanel_07" type="MeshInstance3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=1584859650]
+[node name="TopFacePanel_07" type="MeshInstance3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=1296708336]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.36, 0.526, 0)
 material_override = SubResource("StandardMaterial3D_gray5")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_ebsfc")
 
-[node name="TopFacePanel_08" type="MeshInstance3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=410127879]
+[node name="TopFacePanel_08" type="MeshInstance3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=1504343483]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.36, 0.526, 0)
 material_override = SubResource("StandardMaterial3D_gray5")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_a4a4v")
 
-[node name="FrontFacePanel_09" type="MeshInstance3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=683126689]
+[node name="FrontFacePanel_09" type="MeshInstance3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=806330130]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.36, 0.526)
 material_override = SubResource("StandardMaterial3D_gray5")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_3hk8g")
 
-[node name="FrontFacePanel_10" type="MeshInstance3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=238921378]
+[node name="FrontFacePanel_10" type="MeshInstance3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=2088229498]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.36, 0.526)
 material_override = SubResource("StandardMaterial3D_gray5")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_6hemb")
 
-[node name="FrontFacePanel_11" type="MeshInstance3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=1700064782]
+[node name="FrontFacePanel_11" type="MeshInstance3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=1272509470]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.36, 0, 0.526)
 material_override = SubResource("StandardMaterial3D_gray5")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_m06fn")
 
-[node name="FrontFacePanel_12" type="MeshInstance3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=1459634545]
+[node name="FrontFacePanel_12" type="MeshInstance3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=1778525592]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.36, 0, 0.526)
 material_override = SubResource("StandardMaterial3D_gray5")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_3mavp")
 
-[node name="FrontStarEmblem_13" type="MeshInstance3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=590015697]
+[node name="FrontStarEmblem_13" type="MeshInstance3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=64806515]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.543)
 material_override = SubResource("StandardMaterial3D_hutyo")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_rj4jm")
 
-[node name="FrontStarEmblem_14" type="MeshInstance3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=1393680179]
+[node name="FrontStarEmblem_14" type="MeshInstance3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=1344975393]
 transform = Transform3D(0.70710677, -0.70710677, 0, 0.70710677, 0.70710677, 0, 0, 0, 1, 0, 0, 0.543)
 material_override = SubResource("StandardMaterial3D_hutyo")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_4tnoi")
 
-[node name="FrontStarEmblem_15" type="MeshInstance3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=612495056]
+[node name="FrontStarEmblem_15" type="MeshInstance3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=1806515802]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, 0, 0.543)
 material_override = SubResource("StandardMaterial3D_hutyo")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_c3xv1")
 
-[node name="FrontStarEmblem_16" type="MeshInstance3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=1276027606]
+[node name="FrontStarEmblem_16" type="MeshInstance3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=40392703]
 transform = Transform3D(-0.70710677, -0.70710677, 0, 0.70710677, -0.70710677, 0, 0, 0, 1, 0, 0, 0.543)
 material_override = SubResource("StandardMaterial3D_hutyo")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_s2st5")
 
-[node name="FaceTop" type="Label3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=1169124103]
+[node name="FaceTop" type="Label3D" parent="RoundedD6_05/FaceMarkerLayer" unique_id=1097589372]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0.544, 0)
 pixel_size = 0.0047
-modulate = Color(1, 0.96, 0.72, 1)
+modulate = Color(0.960784, 0.94902, 0.909804, 1)
 outline_modulate = Color(0.03, 0.04, 0.08, 0.74)
 text = "1"
 font_size = 96
 outline_size = 10
 
-[node name="StateOverlayLayer" type="Node3D" parent="RoundedD6_05" unique_id=847465939]
+[node name="StateOverlayLayer" type="Node3D" parent="RoundedD6_05" unique_id=1833298755]
 visible = false
 
-[node name="ContactShadowLayer" type="Node3D" parent="RoundedD6_05" unique_id=198280777]
+[node name="ContactShadowLayer" type="Node3D" parent="RoundedD6_05" unique_id=941472750]
 
-[node name="SoftContactShadow" type="MeshInstance3D" parent="RoundedD6_05/ContactShadowLayer" unique_id=1173759994]
+[node name="SoftContactShadow" type="MeshInstance3D" parent="RoundedD6_05/ContactShadowLayer" unique_id=2113854924]
 transform = Transform3D(1.05, 0, 0, 0, 1, 0, 0, 0, 0.54, 0, -0.505, 0.02)
 material_override = SubResource("StandardMaterial3D_yidqi")
 mesh = SubResource("ArrayMesh_e8bbq")
 
-[node name="RoundedD6_06" type="Node3D" parent="." unique_id=274300149]
+[node name="RoundedD6_06" type="Node3D" parent="." unique_id=871172617]
 transform = Transform3D(0.7441247, -0.041904453, 0.14873578, 0.013020134, 0.74592304, 0.14501484, -0.15397659, -0.13943759, 0.73105973, 1.95, 0.43, 0.155)
 
-[node name="BodyMaterialLayer" type="Node3D" parent="RoundedD6_06" unique_id=1753658441]
+[node name="BodyMaterialLayer" type="Node3D" parent="RoundedD6_06" unique_id=829678338]
 
-[node name="DiceMesh" type="MeshInstance3D" parent="RoundedD6_06/BodyMaterialLayer" unique_id=1916657154]
+[node name="DiceMesh" type="MeshInstance3D" parent="RoundedD6_06/BodyMaterialLayer" unique_id=229933054]
 material_override = ExtResource("10_dvw65")
 mesh = ExtResource("6_5eugr")
 
-[node name="EdgeRimGlowLayer" type="Node3D" parent="RoundedD6_06" unique_id=1002643523]
+[node name="EdgeRimGlowLayer" type="Node3D" parent="RoundedD6_06" unique_id=1759443128]
 
-[node name="EdgeBevelRail_01" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=846081132]
+[node name="EdgeBevelRail_01" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=2046435896]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, -0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_ef1l4")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_6dab4")
 
-[node name="EdgeBevelRail_02" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=1685940279]
+[node name="EdgeBevelRail_02" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=1583148862]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, -0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_ef1l4")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_5lmp1")
 
-[node name="EdgeBevelRail_03" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=1502850833]
+[node name="EdgeBevelRail_03" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=17291502]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, 0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_ef1l4")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_avbsu")
 
-[node name="EdgeBevelRail_04" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=2051799484]
+[node name="EdgeBevelRail_04" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=1695457531]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, 0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_ef1l4")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_wrnu0")
 
-[node name="EdgeBevelRail_05" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=114571531]
+[node name="EdgeBevelRail_05" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=653003257]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, 0, -0.486)
 material_override = SubResource("StandardMaterial3D_ef1l4")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_827de")
 
-[node name="EdgeBevelRail_06" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=773422473]
+[node name="EdgeBevelRail_06" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=842543582]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, 0, 0.486)
 material_override = SubResource("StandardMaterial3D_ef1l4")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_3uk1t")
 
-[node name="EdgeBevelRail_07" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=1859079829]
+[node name="EdgeBevelRail_07" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=1078577599]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, 0, -0.486)
 material_override = SubResource("StandardMaterial3D_ef1l4")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_05pef")
 
-[node name="EdgeBevelRail_08" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=1227747105]
+[node name="EdgeBevelRail_08" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=610342647]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, 0, 0.486)
 material_override = SubResource("StandardMaterial3D_ef1l4")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_p8mqj")
 
-[node name="EdgeBevelRail_09" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=980032547]
+[node name="EdgeBevelRail_09" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=1252292892]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, -0.486, -0.486, 0)
 material_override = SubResource("StandardMaterial3D_ef1l4")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_5o3hv")
 
-[node name="EdgeBevelRail_10" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=1732173713]
+[node name="EdgeBevelRail_10" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=666521206]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, -0.486, 0.486, 0)
 material_override = SubResource("StandardMaterial3D_ef1l4")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_7yuik")
 
-[node name="EdgeBevelRail_11" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=701200344]
+[node name="EdgeBevelRail_11" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=1779721101]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0.486, -0.486, 0)
 material_override = SubResource("StandardMaterial3D_ef1l4")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_xtnwq")
 
-[node name="EdgeBevelRail_12" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=368653229]
+[node name="EdgeBevelRail_12" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=347021073]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0.486, 0.486, 0)
 material_override = SubResource("StandardMaterial3D_ef1l4")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_nckns")
 
-[node name="EdgeCornerBevelCap_13" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=1021373082]
+[node name="EdgeCornerBevelCap_13" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=1815819303]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, -0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_ef1l4")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_ejvxn")
 
-[node name="EdgeCornerBevelCap_14" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=392667684]
+[node name="EdgeCornerBevelCap_14" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=926253197]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, -0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_ef1l4")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_dl0bq")
 
-[node name="EdgeCornerBevelCap_15" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=1852397126]
+[node name="EdgeCornerBevelCap_15" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=699473459]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, 0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_ef1l4")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_7ikch")
 
-[node name="EdgeCornerBevelCap_16" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=741672544]
+[node name="EdgeCornerBevelCap_16" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=585528624]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.486, 0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_ef1l4")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_ewmxf")
 
-[node name="EdgeCornerBevelCap_17" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=1887107747]
+[node name="EdgeCornerBevelCap_17" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=1940662873]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, -0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_ef1l4")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_r88uk")
 
-[node name="EdgeCornerBevelCap_18" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=616234938]
+[node name="EdgeCornerBevelCap_18" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=1429993916]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, -0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_ef1l4")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_rtkay")
 
-[node name="EdgeCornerBevelCap_19" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=2604200]
+[node name="EdgeCornerBevelCap_19" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=1121409867]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, 0.486, -0.486)
 material_override = SubResource("StandardMaterial3D_ef1l4")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_rvgbl")
 
-[node name="EdgeCornerBevelCap_20" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=1721707550]
+[node name="EdgeCornerBevelCap_20" type="MeshInstance3D" parent="RoundedD6_06/EdgeRimGlowLayer" unique_id=167319338]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.486, 0.486, 0.486)
 material_override = SubResource("StandardMaterial3D_ef1l4")
 cast_shadow = 0
 mesh = SubResource("SphereMesh_ggmen")
 
-[node name="FaceMarkerLayer" type="Node3D" parent="RoundedD6_06" unique_id=1615112348]
+[node name="FaceMarkerLayer" type="Node3D" parent="RoundedD6_06" unique_id=833401946]
 
-[node name="TopFaceFill" type="MeshInstance3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=2073769958]
+[node name="TopFaceFill" type="MeshInstance3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=118749207]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.522, 0)
 material_override = SubResource("StandardMaterial3D_8sdbt")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_cor3t")
 
-[node name="FrontFaceFill" type="MeshInstance3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=1625553739]
+[node name="FrontFaceFill" type="MeshInstance3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=818576537]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.522)
 material_override = SubResource("StandardMaterial3D_8sdbt")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_l0tm0")
 
-[node name="SideFaceFill_L" type="MeshInstance3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=1267998949]
+[node name="SideFaceFill_L" type="MeshInstance3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=1196100274]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.522, 0, 0)
 material_override = SubResource("StandardMaterial3D_xql72")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_iuhqs")
 
-[node name="SideFaceFill_R" type="MeshInstance3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=1688279126]
+[node name="SideFaceFill_R" type="MeshInstance3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=831152034]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.522, 0, 0)
 material_override = SubResource("StandardMaterial3D_xql72")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_btxbs")
 
-[node name="TopFacePanel_05" type="MeshInstance3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=449845040]
+[node name="TopFacePanel_05" type="MeshInstance3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=1110519313]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.526, -0.36)
 material_override = SubResource("StandardMaterial3D_q2008")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_mdoqx")
 
-[node name="TopFacePanel_06" type="MeshInstance3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=1835952699]
+[node name="TopFacePanel_06" type="MeshInstance3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=626721936]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.526, 0.36)
 material_override = SubResource("StandardMaterial3D_q2008")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_o0u1q")
 
-[node name="TopFacePanel_07" type="MeshInstance3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=1868874955]
+[node name="TopFacePanel_07" type="MeshInstance3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=681222007]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.36, 0.526, 0)
 material_override = SubResource("StandardMaterial3D_q2008")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_hbb4x")
 
-[node name="TopFacePanel_08" type="MeshInstance3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=644282772]
+[node name="TopFacePanel_08" type="MeshInstance3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=2010486003]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.36, 0.526, 0)
 material_override = SubResource("StandardMaterial3D_q2008")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_fy1sv")
 
-[node name="FrontFacePanel_09" type="MeshInstance3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=128814529]
+[node name="FrontFacePanel_09" type="MeshInstance3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=1032923454]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.36, 0.526)
 material_override = SubResource("StandardMaterial3D_q2008")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_eoiy2")
 
-[node name="FrontFacePanel_10" type="MeshInstance3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=1522687582]
+[node name="FrontFacePanel_10" type="MeshInstance3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=548709904]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.36, 0.526)
 material_override = SubResource("StandardMaterial3D_q2008")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_lyxct")
 
-[node name="FrontFacePanel_11" type="MeshInstance3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=1000005747]
+[node name="FrontFacePanel_11" type="MeshInstance3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=816323638]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.36, 0, 0.526)
 material_override = SubResource("StandardMaterial3D_q2008")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_xgry2")
 
-[node name="FrontFacePanel_12" type="MeshInstance3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=1619121368]
+[node name="FrontFacePanel_12" type="MeshInstance3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=1428687220]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.36, 0, 0.526)
 material_override = SubResource("StandardMaterial3D_q2008")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_8g236")
 
-[node name="FrontStarEmblem_13" type="MeshInstance3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=1441891895]
+[node name="FrontStarEmblem_13" type="MeshInstance3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=1736852918]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.543)
 material_override = SubResource("StandardMaterial3D_5j1v3")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_p6oa1")
 
-[node name="FrontStarEmblem_14" type="MeshInstance3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=1750856898]
+[node name="FrontStarEmblem_14" type="MeshInstance3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=1126162676]
 transform = Transform3D(0.70710677, -0.70710677, 0, 0.70710677, 0.70710677, 0, 0, 0, 1, 0, 0, 0.543)
 material_override = SubResource("StandardMaterial3D_5j1v3")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_tijtm")
 
-[node name="FrontStarEmblem_15" type="MeshInstance3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=45275065]
+[node name="FrontStarEmblem_15" type="MeshInstance3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=572000602]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, 0, 0.543)
 material_override = SubResource("StandardMaterial3D_5j1v3")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_c752b")
 
-[node name="FrontStarEmblem_16" type="MeshInstance3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=1533265162]
+[node name="FrontStarEmblem_16" type="MeshInstance3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=1843063688]
 transform = Transform3D(-0.70710677, -0.70710677, 0, 0.70710677, -0.70710677, 0, 0, 0, 1, 0, 0, 0.543)
 material_override = SubResource("StandardMaterial3D_5j1v3")
 cast_shadow = 0
 mesh = SubResource("BoxMesh_dqnmx")
 
-[node name="FaceTop" type="Label3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=1371032116]
+[node name="FaceTop" type="Label3D" parent="RoundedD6_06/FaceMarkerLayer" unique_id=688752966]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0.544, 0)
 pixel_size = 0.0047
 modulate = Color(0.96, 0.98, 1, 1)
@@ -2990,43 +2990,43 @@ text = "6"
 font_size = 96
 outline_size = 10
 
-[node name="StateOverlayLayer" type="Node3D" parent="RoundedD6_06" unique_id=993784075]
+[node name="StateOverlayLayer" type="Node3D" parent="RoundedD6_06" unique_id=1751971553]
 visible = false
 
-[node name="ContactShadowLayer" type="Node3D" parent="RoundedD6_06" unique_id=1739177596]
+[node name="ContactShadowLayer" type="Node3D" parent="RoundedD6_06" unique_id=263372764]
 
-[node name="SoftContactShadow" type="MeshInstance3D" parent="RoundedD6_06/ContactShadowLayer" unique_id=912950195]
+[node name="SoftContactShadow" type="MeshInstance3D" parent="RoundedD6_06/ContactShadowLayer" unique_id=2136649509]
 transform = Transform3D(1.05, 0, 0, 0, 1, 0, 0, 0, 0.54, 0, -0.505, 0.02)
 material_override = SubResource("StandardMaterial3D_kbc5o")
 mesh = SubResource("ArrayMesh_c4yco")
 
-[node name="VA_Camera3D" type="Camera3D" parent="." unique_id=469907151]
+[node name="VA_Camera3D" type="Camera3D" parent="." unique_id=1521473984]
 transform = Transform3D(1, 0, 0, 0, 0.7950842, 0.6064991, 0, -0.6064991, 0.7950842, 0, 5.65, 6.95)
 fov = 34.0
 far = 80.0
 
-[node name="VA_CameraMarkers" type="Node3D" parent="." unique_id=1798491738]
+[node name="VA_CameraMarkers" type="Node3D" parent="." unique_id=1096198832]
 
-[node name="dice_shader_basic" type="Marker3D" parent="VA_CameraMarkers" unique_id=1678539811]
+[node name="dice_shader_basic" type="Marker3D" parent="VA_CameraMarkers" unique_id=1339424254]
 transform = Transform3D(1, 0, 0, 0, 0.7950842, 0.6064991, 0, -0.6064991, 0.7950842, 0, 5.65, 6.95)
 metadata/va_target = Vector3(0, 0.44, 0.12)
 
-[node name="table_shader_basic" type="Marker3D" parent="VA_CameraMarkers" unique_id=637397619]
+[node name="table_shader_basic" type="Marker3D" parent="VA_CameraMarkers" unique_id=302876181]
 transform = Transform3D(1, 0, 0, 0, 0.5265435, 0.8501482, 0, -0.8501482, 0.5265435, 0, 7.8, 4.8)
 metadata/va_target = Vector3(0, 0.05, 0)
 
-[node name="light_effect_basic" type="Marker3D" parent="VA_CameraMarkers" unique_id=284629184]
+[node name="light_effect_basic" type="Marker3D" parent="VA_CameraMarkers" unique_id=1628034550]
 transform = Transform3D(0.8380822, -0.21084215, 0.5031539, 0, 0.92229754, 0.38648054, -0.545544, -0.32390246, 0.77296114, 3.6, 3.2, 5.4)
 metadata/va_target = Vector3(0.15, 0.55, 0.1)
 
-[node name="battle_star_dice_repro_full" type="Marker3D" parent="VA_CameraMarkers" unique_id=2022104863]
+[node name="battle_star_dice_repro_full" type="Marker3D" parent="VA_CameraMarkers" unique_id=1268050743]
 transform = Transform3D(1, 0, 0, 0, 0.7939617, 0.6079678, 0, -0.6079678, 0.7939617, 0, 5.65, 6.95)
 metadata/va_target = Vector3(0, 0.42, 0.12)
 
-[node name="VA_WatermarkLayer" type="CanvasLayer" parent="." unique_id=791411418]
+[node name="VA_WatermarkLayer" type="CanvasLayer" parent="." unique_id=2128510056]
 layer = 128
 
-[node name="VA_WatermarkLabel" type="Label" parent="VA_WatermarkLayer" unique_id=930525230]
+[node name="VA_WatermarkLabel" type="Label" parent="VA_WatermarkLayer" unique_id=1884654932]
 offset_left = 18.0
 offset_top = 16.0
 offset_right = 720.0
@@ -3037,4 +3037,4 @@ theme_override_colors/font_outline_color = Color(0.01, 0.015, 0.03, 0.92)
 theme_override_constants/outline_size = 4
 text = "VA pending"
 
-[node name="VA_ShaderLightAcceptanceRunner" type="Node" parent="." unique_id=1335070261]
+[node name="VA_ShaderLightAcceptanceRunner" type="Node" parent="." unique_id=1178224033]

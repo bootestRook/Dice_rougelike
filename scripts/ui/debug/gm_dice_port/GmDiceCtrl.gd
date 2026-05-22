@@ -13,6 +13,7 @@ signal selection_requested(dice)
 
 
 const GmDiceMaterialResolver = preload("res://scripts/ui/debug/gm_dice_port/GmDiceMaterialResolver.gd")
+const DiceFaceLayerSystem = preload("res://scripts/ui/dice_face_layers/DiceFaceLayerSystem.gd")
 
 const FACE_ROTATIONS_DEG := [
 	Vector3(0.0, 0.0, 0.0),
@@ -115,6 +116,8 @@ var _face_marker_layer: Node3D = null
 var _face_texture_layer: Node3D = null
 var _state_overlay_layer: Node3D = null
 var _contact_shadow_layer: Node3D = null
+var _face_layer_system: DiceFaceLayerSystem = null
+var _face_albedo_texture: Texture2D = null
 var _hover_shadow: MeshInstance3D = null
 var _shadow_material: StandardMaterial3D = null
 var _selection_frame: Node3D = null
@@ -207,6 +210,7 @@ func build_visuals(body_color: Color, mark_color: Color) -> void:
 	_body_layer.name = "BodyMaterialLayer"
 	inner_dice.add_child(_body_layer)
 
+	_rebuild_face_layers()
 	_body_material = _make_body_material(body_color, GmDiceDefinition.MATERIAL_STANDARD)
 
 	_body_mesh = MeshInstance3D.new()
@@ -254,17 +258,7 @@ func build_visuals(body_color: Color, mark_color: Color) -> void:
 	select_area.input_event.connect(_on_select_area_input_event)
 	add_child(select_area)
 
-	number_label = Label3D.new()
-	number_label.name = "NumberLabel"
-	number_label.text = ""
-	number_label.visible = false
-	number_label.position = Vector3(0.0, DIE_SIZE * 0.92, 0.0)
-	number_label.font_size = 64
-	number_label.pixel_size = 0.012
-	number_label.modulate = Color(1.0, 0.98, 0.82)
-	number_label.outline_size = 12
-	number_label.outline_modulate = Color(0.03, 0.03, 0.04)
-	add_child(number_label)
+	number_label = null
 	_build_hover_shadow()
 	_build_selection_frame()
 
@@ -815,13 +809,19 @@ func get_debug_snapshot() -> Dictionary:
 		"face_value": config.get_actual_face_one() if config != null else 0,
 		"material_id": str(config.material_id) if config != null else "",
 		"material_name": config.get_material_name() if config != null else "",
+		"body_material_source_path": _pipeline_body_material_path(GmDiceDefinition.normalize_material_id(config.material_id)) if config != null else "",
 		"body_material_resource_path": _body_mesh.material_override.resource_path if _body_mesh != null and _body_mesh.material_override != null else "",
 		"body_material_shader_path": _body_material_shader_path(),
 		"body_material_face_detail_strength": _body_material_shader_float("face_detail_strength"),
 		"body_material_edge_line_strength": _body_material_shader_float("edge_line_strength"),
+		"body_material_face_layer_enabled": _body_material_shader_float("face_layer_enabled"),
+		"body_material_face_layer_strength": _body_material_shader_float("face_layer_strength"),
 		"body_mesh_resource_path": _body_mesh.mesh.resource_path if _body_mesh != null and _body_mesh.mesh != null else "",
 		"face_pips": config.get_face_pips() if config != null else [],
 		"face_labels": config.get_face_labels() if config != null else [],
+		"face_layer_system": _face_layer_system.to_dictionary() if _face_layer_system != null else {},
+		"face_albedo_texture_size": _face_albedo_texture_size(),
+		"face_albedo_texture_exists": _face_albedo_texture != null,
 		"visual_layer_roles": _visual_layer_roles_snapshot(),
 		"body_layer_exists": _body_layer != null,
 		"edge_rim_layer_exists": _edge_rim_layer != null,
@@ -837,6 +837,7 @@ func get_debug_snapshot() -> Dictionary:
 		"state_overlay_layer_exists": _state_overlay_layer != null,
 		"contact_shadow_layer_exists": _contact_shadow_layer != null,
 		"face_label_count": _face_labels.size(),
+		"face_label_nodes_visible": _face_label_nodes_visible(),
 		"face_label_centered": _face_labels_are_centered(),
 		"face_label_double_sided": _face_labels_are_double_sided(),
 		"face_label_min_surface_offset": _face_label_min_surface_offset(),
@@ -928,10 +929,20 @@ func _visual_layer_roles_snapshot() -> Dictionary:
 	return {
 		"body": _body_layer != null and _body_mesh != null and _body_mesh.mesh != null,
 		"edge_rim": _edge_rim_layer != null and _edge_rim_bar_count() > 0 and _edge_rim_material != null,
-		"face_marker": _face_marker_layer != null and _face_texture_panel_count() == 0 and _face_labels.size() == 6,
+		"face_marker": _face_marker_layer != null and _face_texture_panel_count() == 0 and _face_layer_system != null,
+		"face_albedo_texture": _face_albedo_texture != null and _body_material_shader_float("face_layer_enabled") > 0.5,
 		"state_overlay": _state_overlay_layer != null and _selection_frame != null,
 		"contact_shadow": _contact_shadow_layer != null and _hover_shadow != null,
 	}
+
+
+func _face_albedo_texture_size() -> Vector2i:
+	if _face_albedo_texture == null:
+		return Vector2i.ZERO
+	var image := _face_albedo_texture.get_image()
+	if image == null:
+		return Vector2i.ZERO
+	return Vector2i(image.get_width(), image.get_height())
 
 
 func _edge_rim_material_emission_energy() -> float:
@@ -963,6 +974,8 @@ func _face_texture_panel_count() -> int:
 
 
 func _face_labels_are_centered() -> bool:
+	if _face_labels.is_empty():
+		return true
 	for label in _face_labels:
 		if label == null:
 			return false
@@ -974,10 +987,19 @@ func _face_labels_are_centered() -> bool:
 
 
 func _face_labels_are_double_sided() -> bool:
+	if _face_labels.is_empty():
+		return true
 	for label in _face_labels:
 		if label == null or not label.double_sided:
 			return false
 	return true
+
+
+func _face_label_nodes_visible() -> bool:
+	for label in _face_labels:
+		if label != null and label.visible:
+			return true
+	return false
 
 
 func _face_label_min_surface_offset() -> float:
@@ -1344,6 +1366,7 @@ func _apply_config_visuals() -> void:
 	var material_id := GmDiceDefinition.MATERIAL_STANDARD
 	if config != null:
 		material_id = GmDiceDefinition.normalize_material_id(config.material_id)
+	_rebuild_face_layers()
 	_body_material = _make_body_material(_base_body_color, material_id)
 	if _body_mesh != null:
 		_body_mesh.material_override = _body_material
@@ -1352,7 +1375,7 @@ func _apply_config_visuals() -> void:
 
 
 func _make_body_material(body_color: Color, material_id: StringName) -> Material:
-	return GmDiceMaterialResolver.make_body_material(body_color, material_id)
+	return GmDiceMaterialResolver.make_body_material_instance(body_color, material_id, _face_albedo_texture, true)
 
 
 func _apply_body_mesh(material_id: StringName) -> void:
@@ -1577,17 +1600,7 @@ func _make_face_texture_border_material(material_id: StringName) -> StandardMate
 
 
 func _face_label_color_for_material(material_id: StringName) -> Color:
-	match GmDiceDefinition.normalize_material_id(material_id):
-		GmDiceDefinition.MATERIAL_REPRO_GOLD, GmDiceDefinition.MATERIAL_GOLD:
-			return Color(1.00, 0.96, 0.74, 1.0)
-		GmDiceDefinition.MATERIAL_REPRO_PURPLE:
-			return Color(0.98, 0.88, 1.00, 1.0)
-		GmDiceDefinition.MATERIAL_REPRO_CYAN:
-			return Color(0.78, 1.00, 0.96, 1.0)
-		GmDiceDefinition.MATERIAL_REPRO_BLUE, GmDiceDefinition.MATERIAL_REPRO_SILVERWHITE, GmDiceDefinition.MATERIAL_CRYSTAL:
-			return Color(0.86, 0.95, 1.00, 1.0)
-		_:
-			return _mark_color
+	return Color(0.960784, 0.949020, 0.909804, 1.0)
 
 
 func _face_label_outline_color_for_material(material_id: StringName) -> Color:
@@ -1650,44 +1663,48 @@ func _on_select_area_input_event(_camera: Node, event: InputEvent, _event_positi
 
 func _create_face_labels(parent: Node3D, mark_color: Color) -> void:
 	_face_labels.clear()
-	var face_offset := DIE_HALF + FACE_LABEL_SURFACE_OFFSET
-	var face_rows := [
-		{"name": "Face1", "position": Vector3(0.0, face_offset, 0.0), "rotation": Vector3(-PI * 0.5, 0.0, 0.0)},
-		{"name": "Face6", "position": Vector3(0.0, -face_offset, 0.0), "rotation": Vector3(PI * 0.5, 0.0, 0.0)},
-		{"name": "Face2", "position": Vector3(0.0, 0.0, -face_offset), "rotation": Vector3(0.0, PI, 0.0)},
-		{"name": "Face5", "position": Vector3(0.0, 0.0, face_offset), "rotation": Vector3(0.0, 0.0, 0.0)},
-		{"name": "Face3", "position": Vector3(face_offset, 0.0, 0.0), "rotation": Vector3(0.0, PI * 0.5, 0.0)},
-		{"name": "Face4", "position": Vector3(-face_offset, 0.0, 0.0), "rotation": Vector3(0.0, -PI * 0.5, 0.0)},
-	]
-	for index in range(face_rows.size()):
-		var row: Dictionary = face_rows[index]
-		var label := Label3D.new()
-		label.name = str(row["name"])
-		label.text = str(index + 1)
-		label.position = row["position"]
-		label.rotation = row["rotation"]
-		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		label.double_sided = true
-		label.no_depth_test = false
-		label.shaded = false
-		label.font_size = FACE_LABEL_FONT_SIZE
-		label.pixel_size = FACE_LABEL_PIXEL_SIZE
-		label.outline_size = 10
-		label.outline_modulate = Color(0.03, 0.04, 0.08, 0.76)
-		label.modulate = mark_color
-		parent.add_child(label)
-		_face_labels.append(label)
+	if parent != null:
+		parent.set_meta("face_marker_source", "DiceFaceLayerSystem")
+		parent.set_meta("legacy_label3d_display", false)
+	_rebuild_face_layers()
 
 
 func _update_face_labels() -> void:
-	for index in range(_face_labels.size()):
-		var label := _face_labels[index]
-		if config != null and index < config.run_faces.size():
-			var face = config.run_faces[index]
-			label.text = str(face.label)
-		else:
-			label.text = str(index + 1)
+	_rebuild_face_layers()
+	if _body_material != null:
+		GmDiceMaterialResolver.apply_face_layer_texture(_body_material, _face_albedo_texture, true)
+
+
+func _rebuild_face_layers() -> void:
+	var material_id := GmDiceDefinition.MATERIAL_STANDARD
+	if config != null:
+		material_id = GmDiceDefinition.normalize_material_id(config.material_id)
+	var rows: Array = []
+	if config != null and not config.run_faces.is_empty():
+		for face in config.run_faces:
+			rows.append(_face_layer_row_from_config_face(face))
+	else:
+		for value in range(1, 7):
+			rows.append({"label": str(value), "mark_id": &"none"})
+	_face_layer_system = DiceFaceLayerSystem.from_face_rows(rows, {
+		"number_color": _face_label_color_for_material(material_id),
+		"enable_numbers": true,
+		"enable_marks": true,
+	})
+	_face_albedo_texture = _face_layer_system.get_face_albedo_texture()
+
+
+func _face_layer_row_from_config_face(face) -> Dictionary:
+	if face == null:
+		return {"label": "", "mark_id": &"none"}
+	var row := {
+		"label": str(face.get("label")) if face.get("label") != null else "",
+		"mark_id": StringName(str(face.get("mark_id"))) if face.get("mark_id") != null else &"none",
+	}
+	var layer_set = face.get("layer_set")
+	if layer_set != null:
+		row["layer_set"] = layer_set
+	return row
 
 
 func _hover_presentation_basis(face_index: int) -> Basis:

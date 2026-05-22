@@ -68,22 +68,28 @@ STAGE_EXTRA_STARS: list[Tuple[float, float, float, float]] = [
 MATERIALS: Dict[str, Dict[str, object]] = {
     "bronze": {
         "texture_dir": ROOT / "assets" / "textures" / "dice" / "bronze",
-        "base": (0.56, 0.33, 0.16, 1.0),
+        "base": (0.545098, 0.352941, 0.168627, 1.0),
         "dark": (0.30, 0.17, 0.08, 1.0),
-        "edge": (0.82, 0.52, 0.28, 1.0),
-        "accent": (0.13, 0.36, 0.27, 1.0),
-        "metallic": 0.82,
-        "roughness": 0.72,
+        "edge": (0.72, 0.47, 0.24, 1.0),
+        "accent": (0.12, 0.30, 0.23, 1.0),
+        "metallic": 0.92,
+        "roughness": 0.42,
+        "roughness_body": 0.42,
+        "roughness_panel": 0.46,
+        "roughness_edge": 0.30,
         "normal_strength": 3.5,
     },
     "gold": {
         "texture_dir": ROOT / "assets" / "textures" / "dice" / "gold",
-        "base": (0.96, 0.68, 0.24, 1.0),
-        "dark": (0.50, 0.31, 0.11, 1.0),
-        "edge": (1.0, 0.86, 0.38, 1.0),
-        "accent": (0.84, 0.46, 0.12, 1.0),
-        "metallic": 0.93,
-        "roughness": 0.56,
+        "base": (0.850980, 0.713725, 0.227451, 1.0),
+        "dark": (0.48, 0.35, 0.09, 1.0),
+        "edge": (1.0, 0.88, 0.38, 1.0),
+        "accent": (0.93, 0.66, 0.16, 1.0),
+        "metallic": 0.97,
+        "roughness": 0.24,
+        "roughness_body": 0.24,
+        "roughness_panel": 0.30,
+        "roughness_edge": 0.14,
         "normal_strength": 2.9,
     },
     "crystal": {
@@ -578,6 +584,8 @@ def sample_surface(material_id: str, spec: Dict[str, object], x: int, y: int, h:
     noise_low = fbm((x * 0.012 + seed[0], y * 0.012 + seed[1]))
     noise_high = fbm((x * 0.055 + seed[0] * 1.7, y * 0.055 + seed[1] * 1.7))
     edge = edge_mask(uv)
+    center_distance = max(abs(uv[0] - 0.5), abs(uv[1] - 0.5))
+    panel = 1.0 - smoothstep(0.30, 0.48, center_distance)
     scratch = scratch_mask(material_id, uv, x, y)
     crack = crack_mask(material_id, uv, x, y)
 
@@ -599,15 +607,18 @@ def sample_surface(material_id: str, spec: Dict[str, object], x: int, y: int, h:
         color = lerp_color(color, spec["accent"], clamp(flow * 0.42 + crack * 0.30, 0.0, 0.70))
         color = (color[0], color[1], color[2], 0.46 + edge * 0.14)
 
-    roughness = float(spec["roughness"])
+    roughness_body = float(spec.get("roughness_body", spec["roughness"]))
+    roughness_panel = float(spec.get("roughness_panel", roughness_body))
+    roughness_edge = float(spec.get("roughness_edge", roughness_body))
+    roughness = lerp(lerp(roughness_body, roughness_panel, panel), roughness_edge, edge)
     metallic = float(spec["metallic"])
     ao = clamp(0.92 - scratch * 0.08 - crack * 0.14)
     if material_id == "bronze":
-        roughness = clamp(roughness + patina * 0.12 + scratch * 0.08 - edge * 0.08, 0.48, 0.90)
-        metallic = clamp(metallic - patina * 0.16 - dirt * 0.04, 0.58, 0.88)
+        roughness = clamp(roughness + patina * 0.055 + scratch * 0.035, 0.24, 0.58)
+        metallic = clamp(metallic - patina * 0.13 - dirt * 0.025, 0.72, 0.94)
     elif material_id == "gold":
-        roughness = clamp(roughness + dirt * 0.12 + scratch * 0.08 - edge * 0.10, 0.38, 0.76)
-        metallic = clamp(metallic - dirt * 0.06 - scratch * 0.04 - edge * 0.02, 0.82, 0.97)
+        roughness = clamp(roughness + dirt * 0.045 + scratch * 0.025, 0.12, 0.38)
+        metallic = clamp(metallic - dirt * 0.025 - scratch * 0.018, 0.90, 0.99)
     else:
         roughness = clamp(roughness + crack * 0.18, 0.04, 0.46)
         metallic = 0.0

@@ -3,7 +3,7 @@ class_name DebugGmDiceMaterialInspectorSmokeTest
 
 
 const GmDiceDefinition = preload("res://scripts/ui/debug/gm_dice_port/GmDiceDefinition.gd")
-const ROUNDED_D6_MESH_PATH := "res://assets/models/dice/rounded_d6_mesh.tres"
+const PREVIEW_BODY_MESH_PATH := "res://assets/models/dice/preview_rounded_d6_body_mesh.tres"
 
 
 func _init() -> void:
@@ -52,7 +52,7 @@ func _init() -> void:
 		all_passed = _check("inspector lists every GM material option", _has_all_expected_materials(material_rows)) and all_passed
 		all_passed = _check("inspector exposes material resource/programmatic metadata", _material_rows_have_metadata(material_rows)) and all_passed
 		all_passed = _check("cabinet cards exist for all material rows", _all_cards_exist(material_rows)) and all_passed
-		all_passed = _check("cabinet previews use material pipeline mesh", _all_card_previews_use_pipeline_mesh(material_rows)) and all_passed
+		all_passed = _check("cabinet previews use preview-only repaired mesh", _all_card_previews_use_preview_mesh(material_rows)) and all_passed
 		all_passed = _check("cabinet previews are independent instances", _preview_instance_ids_are_unique(material_rows)) and all_passed
 		all_passed = _check("inspector uses neutral gray background", _is_neutral_gray_color(snapshot.get("background_color", Color.BLACK))) and all_passed
 		all_passed = _check("visible inspector text has no forbidden internal terms", not _contains_forbidden_visible_text(inspector)) and all_passed
@@ -72,7 +72,7 @@ func _init() -> void:
 		all_passed = _check("popup modal blocks cabinet input", bool(popup_snapshot.get("popup", {}).get("has_modal_backdrop", false)) and bool(popup_snapshot.get("popup", {}).get("popup_layer_blocking", false))) and all_passed
 		all_passed = _check("popup backdrop is neutral gray", _is_neutral_gray_color(popup_snapshot.get("popup", {}).get("modal_backdrop_color", Color.BLACK))) and all_passed
 		all_passed = _check("popup preview is independent from cabinet preview", _popup_preview_is_independent(popup_snapshot, gold_card_before)) and all_passed
-		all_passed = _check("popup preview uses rounded dice mesh", str(popup_snapshot.get("popup", {}).get("preview", {}).get("mesh_resource_path", "")) == ROUNDED_D6_MESH_PATH) and all_passed
+		all_passed = _check("popup preview uses preview-only repaired mesh", str(popup_snapshot.get("popup", {}).get("preview", {}).get("mesh_resource_path", "")) == PREVIEW_BODY_MESH_PATH) and all_passed
 		all_passed = _check("popup visible text has no forbidden internal terms", popup != null and not _contains_forbidden_visible_text(popup)) and all_passed
 
 		if popup != null:
@@ -163,12 +163,12 @@ func _all_cards_exist(rows: Array) -> bool:
 	return true
 
 
-func _all_card_previews_use_pipeline_mesh(rows: Array) -> bool:
+func _all_card_previews_use_preview_mesh(rows: Array) -> bool:
 	for row in rows:
 		if not (row is Dictionary):
 			return false
 		var preview := (row as Dictionary).get("preview", {}) as Dictionary
-		if str(preview.get("mesh_resource_path", "")) != ROUNDED_D6_MESH_PATH:
+		if str(preview.get("mesh_resource_path", "")) != PREVIEW_BODY_MESH_PATH:
 			return false
 	return true
 

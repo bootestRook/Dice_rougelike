@@ -8,7 +8,7 @@
 
 [resource]
 resource_name = "gold_dice"
-albedo_color = Color(0.96, 0.68, 0.24, 1)
+albedo_color = Color(0.85098, 0.713725, 0.227451, 1)
 albedo_texture = ExtResource("1_whgqp")
 orm_texture = ExtResource("5_1oujm")
 emission_enabled = true

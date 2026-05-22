@@ -20,13 +20,16 @@ const MATERIALS := {
 		"material_path": "res://assets/materials/dice/bronze_dice.tres",
 		"texture_dir": "res://assets/textures/dice/bronze",
 		"scene_path": "res://assets/scenes/preview/bronze_dice_preview.tscn",
-		"base": Color(0.56, 0.33, 0.16, 1.0),
+		"base": Color(0.545098, 0.352941, 0.168627, 1.0),
 		"dark": Color(0.30, 0.17, 0.08, 1.0),
-		"edge": Color(0.82, 0.52, 0.28, 1.0),
-		"accent": Color(0.13, 0.36, 0.27, 1.0),
+		"edge": Color(0.72, 0.47, 0.24, 1.0),
+		"accent": Color(0.12, 0.30, 0.23, 1.0),
 		"pip": Color(0.055, 0.030, 0.018, 1.0),
-		"metallic": 0.82,
-		"roughness": 0.72,
+		"metallic": 0.92,
+		"roughness": 0.42,
+		"roughness_body": 0.42,
+		"roughness_panel": 0.46,
+		"roughness_edge": 0.30,
 		"normal_strength": 3.5,
 	},
 	"gold": {
@@ -34,13 +37,16 @@ const MATERIALS := {
 		"material_path": "res://assets/materials/dice/gold_dice.tres",
 		"texture_dir": "res://assets/textures/dice/gold",
 		"scene_path": "res://assets/scenes/preview/gold_dice_preview.tscn",
-		"base": Color(0.96, 0.68, 0.24, 1.0),
-		"dark": Color(0.50, 0.31, 0.11, 1.0),
+		"base": Color(0.850980, 0.713725, 0.227451, 1.0),
+		"dark": Color(0.48, 0.35, 0.09, 1.0),
 		"edge": Color(1.0, 0.86, 0.38, 1.0),
-		"accent": Color(0.84, 0.46, 0.12, 1.0),
+		"accent": Color(0.93, 0.66, 0.16, 1.0),
 		"pip": Color(0.095, 0.055, 0.014, 1.0),
-		"metallic": 0.93,
-		"roughness": 0.56,
+		"metallic": 0.97,
+		"roughness": 0.24,
+		"roughness_body": 0.24,
+		"roughness_panel": 0.30,
+		"roughness_edge": 0.14,
 		"normal_strength": 2.9,
 	},
 	"crystal": {
@@ -217,6 +223,8 @@ func _sample_surface(material_id: String, spec: Dictionary, x: int, y: int) -> D
 	var pip := _pip_mask(face_value, uv)
 	var pip_rim := _pip_rim(face_value, uv)
 	var edge := _edge_mask(uv)
+	var center_distance := maxf(absf(uv.x - 0.5), absf(uv.y - 0.5))
+	var panel := 1.0 - smoothstep(0.30, 0.48, center_distance)
 	var scratch := _scratch_mask(material_id, uv, x, y)
 	var crack := _crack_mask(material_id, uv, x, y)
 	var patina := 0.0
@@ -242,14 +250,18 @@ func _sample_surface(material_id: String, spec: Dictionary, x: int, y: int) -> D
 		color.a = 0.46 + edge * 0.14 + pip * 0.12
 
 	var height_value := _height_value(material_id, spec, x, y)
-	var roughness := float(spec["roughness"])
+	var roughness_body := float(spec.get("roughness_body", spec["roughness"]))
+	var roughness_panel := float(spec.get("roughness_panel", roughness_body))
+	var roughness_edge := float(spec.get("roughness_edge", roughness_body))
+	var roughness := lerpf(lerpf(roughness_body, roughness_panel, panel), roughness_edge, edge)
 	var metallic := float(spec["metallic"])
 	var ao := clampf(0.92 - pip * 0.34 - scratch * 0.08 - crack * 0.14, 0.0, 1.0)
 	if material_id == "bronze":
-		roughness = clampf(roughness + patina * 0.20 + scratch * 0.12 - edge * 0.16, 0.12, 1.0)
-		metallic = clampf(metallic - patina * 0.34, 0.0, 1.0)
+		roughness = clampf(roughness + patina * 0.055 + scratch * 0.035, 0.24, 0.58)
+		metallic = clampf(metallic - patina * 0.13 - antique_dirt * 0.025, 0.72, 0.94)
 	elif material_id == "gold":
-		roughness = clampf(roughness + antique_dirt * 0.16 + scratch * 0.12 - edge * 0.18, 0.10, 0.88)
+		roughness = clampf(roughness + antique_dirt * 0.045 + scratch * 0.025, 0.12, 0.38)
+		metallic = clampf(metallic - antique_dirt * 0.025 - scratch * 0.018, 0.90, 0.99)
 	else:
 		roughness = clampf(roughness + crack * 0.18 + pip * 0.10, 0.04, 0.46)
 		metallic = 0.0

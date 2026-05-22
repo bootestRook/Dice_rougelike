@@ -11,6 +11,12 @@ const MATERIAL_DIR := "res://assets/materials/dice/battle_star"
 const SHADER_PATH := "res://assets/shaders/dice/battle_star_dice_full.gdshader"
 const CAPTURE_RUNNER_PATH := "res://tests_or_debug/visual_acceptance/shader_light/tools/battle_star_dice_full_capture_runner.gd"
 const ROUNDED_MESH_FACTORY_PATH := "res://scripts/ui/debug/RoundedDiceMeshFactory.gd"
+const COLOR_EPS := 0.006
+const STAR_GOLD_COLOR := Color(0.909804, 0.847059, 0.686275, 1.0)
+const DIGIT_COLOR := Color(0.960784, 0.949020, 0.909804, 1.0)
+const KEY_LIGHT_COLOR := Color(1.0, 0.949, 0.839, 1.0)
+const FILL_LIGHT_COLOR := Color(0.722, 0.843, 1.0, 1.0)
+const RIM_LIGHT_COLOR := Color(1.0, 0.973, 0.918, 1.0)
 
 
 func _init() -> void:
@@ -80,6 +86,12 @@ func _check_materials() -> bool:
 		ok = _check("material %s has emission energy" % material_id, float(material.get_shader_parameter("emission_energy")) > 0.0) and ok
 		ok = _check("material %s has emission mask power" % material_id, float(material.get_shader_parameter("emission_mask_power")) > 0.0) and ok
 		ok = _check("material %s has fake normal detail" % material_id, float(material.get_shader_parameter("fake_normal_strength")) > 0.0) and ok
+		if material_id == "gold":
+			ok = _check_color("star gold battle material is champagne gold", material.get_shader_parameter("base_albedo") as Color, STAR_GOLD_COLOR) and ok
+			ok = _check_color("star gold battle digit emission is warm ivory", material.get_shader_parameter("emission_color") as Color, DIGIT_COLOR) and ok
+			ok = _check("star gold battle material metallic is 0.96", is_equal_approx(float(material.get_shader_parameter("metallic_value")), 0.96)) and ok
+			ok = _check("star gold battle material body roughness is 0.18", is_equal_approx(float(material.get_shader_parameter("roughness_value")), 0.18)) and ok
+			ok = _check("star gold battle material digit energy is 0.5", is_equal_approx(float(material.get_shader_parameter("emission_energy")), 0.50)) and ok
 	return ok
 
 
@@ -106,8 +118,31 @@ func _check_scene() -> bool:
 	ok = _check("scene has no Control UI nodes", _count_nodes_by_class(root_node, "Control") == 0) and ok
 	ok = _check("scene has no physics body nodes", _count_nodes_by_class(root_node, "RigidBody3D") == 0 and _count_nodes_by_class(root_node, "StaticBody3D") == 0 and _count_nodes_by_class(root_node, "CollisionShape3D") == 0) and ok
 	ok = _check("scene has no BoxMesh resources", _count_meshes_by_class(root_node, "BoxMesh") == 0) and ok
+	ok = _check_material_quality_lighting(root_node) and ok
 	ok = _check_body_meshes(root_node) and ok
 	root_node.free()
+	return ok
+
+
+func _check_material_quality_lighting(root_node: Node) -> bool:
+	var ok := true
+	var key := _find_node(root_node, "WarmKeyLight") as Light3D
+	var fill := _find_node(root_node, "BlueFillLight") as Light3D
+	var rim := _find_node(root_node, "WarmRimLight") as Light3D
+	var probe := _find_node(root_node, "DiceGlossReflectionProbe")
+	var world_environment := _find_node(root_node, "WorldEnvironment") as WorldEnvironment
+	ok = _check("scene reflection probe exists for metal evaluation", probe != null) and ok
+	if probe != null:
+		ok = _check("scene reflection probe intensity is boosted", float(probe.get("intensity")) >= 0.90) and ok
+	ok = _check("scene key light color is warm", key != null and _color_close(key.light_color, KEY_LIGHT_COLOR)) and ok
+	ok = _check("scene fill light color is cool blue", fill != null and _color_close(fill.light_color, FILL_LIGHT_COLOR)) and ok
+	ok = _check("scene rim light color is warm ivory", rim != null and _color_close(rim.light_color, RIM_LIGHT_COLOR)) and ok
+	if key != null and fill != null and rim != null:
+		ok = _check("scene fill/key ratio is about 0.28", absf(fill.light_energy / key.light_energy - 0.28) <= 0.025) and ok
+		ok = _check("scene rim/key ratio is about 0.20", absf(rim.light_energy / key.light_energy - 0.20) <= 0.025) and ok
+	if world_environment != null and world_environment.environment != null:
+		var background := world_environment.environment.background_color
+		ok = _check("scene background is deep blue-gray, not pure black", background.r > 0.04 and background.r < 0.16 and background.b > background.r and background.b < 0.20) and ok
 	return ok
 
 
@@ -293,3 +328,14 @@ func _check(label: String, passed: bool) -> bool:
 	if not passed:
 		push_error(label)
 	return passed
+
+
+func _check_color(label: String, actual: Color, expected: Color) -> bool:
+	return _check(label, _color_close(actual, expected))
+
+
+func _color_close(actual: Color, expected: Color) -> bool:
+	return absf(actual.r - expected.r) <= COLOR_EPS \
+		and absf(actual.g - expected.g) <= COLOR_EPS \
+		and absf(actual.b - expected.b) <= COLOR_EPS \
+		and absf(actual.a - expected.a) <= COLOR_EPS

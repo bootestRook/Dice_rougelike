@@ -128,7 +128,7 @@ func _add_reflection_probe(root: Node3D) -> void:
 	probe.position = Vector3(0.0, 1.75, 0.12)
 	_set_existing(probe, ["size"], Vector3(7.4, 3.2, 5.4))
 	_set_existing(probe, ["origin_offset"], Vector3(0.0, 0.18, 0.0))
-	_set_existing(probe, ["intensity"], 0.58)
+	_set_existing(probe, ["intensity"], 0.95)
 	_set_existing(probe, ["max_distance"], 10.0)
 	_set_existing(probe, ["box_projection"], true)
 	_set_existing(probe, ["enable_shadows"], false)

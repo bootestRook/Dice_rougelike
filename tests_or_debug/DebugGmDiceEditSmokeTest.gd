@@ -143,7 +143,8 @@ func _dice_material_name(snapshot: Dictionary, index: int) -> String:
 
 func _dice_body_material_path(snapshot: Dictionary, index: int) -> String:
 	var row := _dice_row(snapshot, index)
-	return str(row.get("body_material_resource_path", ""))
+	var source_path := str(row.get("body_material_source_path", ""))
+	return source_path if not source_path.is_empty() else str(row.get("body_material_resource_path", ""))
 
 
 func _dice_body_mesh_path(snapshot: Dictionary, index: int) -> String:
@@ -186,7 +187,12 @@ func _all_dice_body_material_path(snapshot: Dictionary, material_path: String) -
 	if dice_rows.is_empty():
 		return false
 	for row in dice_rows:
-		if not (row is Dictionary) or str((row as Dictionary).get("body_material_resource_path", "")) != material_path:
+		if not (row is Dictionary):
+			return false
+		var dict := row as Dictionary
+		var source_path := str(dict.get("body_material_source_path", ""))
+		var resolved_path := source_path if not source_path.is_empty() else str(dict.get("body_material_resource_path", ""))
+		if resolved_path != material_path:
 			return false
 	return true
 

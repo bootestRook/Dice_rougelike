@@ -1,24 +1,24 @@
-[gd_resource type="Resource" script_class="MapStageArtConfig" load_steps=20 format=3]
+[gd_resource type="Resource" script_class="MapStageArtConfig" format=3 uid="uid://fp71h3br6egm"]
 
-[ext_resource type="Script" path="res://scripts/ui/map/resources/MapStageArtConfig.gd" id="1_config"]
-[ext_resource type="Texture2D" path="res://assets/ui/map/map.png" id="2_map"]
-[ext_resource type="Texture2D" path="res://assets/ui/map/map_path_tile_placeholder.png" id="3_path"]
-[ext_resource type="Texture2D" path="res://assets/ui/map/node_start_generated.png" id="4_start"]
-[ext_resource type="Texture2D" path="res://assets/ui/map/node_battle_generated.png" id="5_battle"]
-[ext_resource type="Texture2D" path="res://assets/ui/map/node_boss_generated.png" id="5_boss"]
-[ext_resource type="Texture2D" path="res://assets/ui/map/node_elite_generated.png" id="5_elite"]
-[ext_resource type="Texture2D" path="res://assets/ui/map/node_shop_generated.png" id="6_shop"]
-[ext_resource type="Texture2D" path="res://assets/ui/map/node_forge_generated.png" id="7_forge"]
-[ext_resource type="Texture2D" path="res://assets/ui/map/node_reward_generated.png" id="8_reward"]
-[ext_resource type="Texture2D" path="res://assets/ui/map/node_penalty_generated.png" id="9_penalty"]
-[ext_resource type="Texture2D" path="res://assets/ui/map/node_event_generated.png" id="10_event"]
-[ext_resource type="Texture2D" path="res://assets/ui/map/node_rest_generated.png" id="10_rest"]
-[ext_resource type="Texture2D" path="res://assets/ui/map/player_marker_placeholder.png" id="11_marker"]
-[ext_resource type="Texture2D" path="res://assets/ui/map/map_button_placeholder.png" id="12_button"]
-[ext_resource type="Texture2D" path="res://assets/ui/map/map_button_hover_placeholder.png" id="13_button_hover"]
-[ext_resource type="Texture2D" path="res://assets/ui/map/map_button_pressed_placeholder.png" id="14_button_pressed"]
-[ext_resource type="Texture2D" path="res://assets/ui/map/map_dice_panel_placeholder.png" id="15_dice_panel"]
-[ext_resource type="Texture2D" path="res://assets/ui/map/map_tabletop_neon_comic.png" id="16_tabletop"]
+[ext_resource type="Script" uid="uid://saxk8fuwexgr" path="res://scripts/ui/map/resources/MapStageArtConfig.gd" id="1_config"]
+[ext_resource type="Texture2D" uid="uid://disnnf26oa1m2" path="res://assets/ui/map/map.png" id="2_map"]
+[ext_resource type="Texture2D" uid="uid://crcgd2lid2ot1" path="res://assets/ui/map/map_path_tile_placeholder.png" id="3_path"]
+[ext_resource type="Texture2D" uid="uid://bx8l8pt81ttao" path="res://assets/ui/map/node_start_generated.png" id="4_start"]
+[ext_resource type="Texture2D" uid="uid://cr252eia2fa7m" path="res://assets/ui/map/node_battle_generated.png" id="5_battle"]
+[ext_resource type="Texture2D" uid="uid://c21s7kanhwvja" path="res://assets/ui/map/node_boss_generated.png" id="5_boss"]
+[ext_resource type="Texture2D" uid="uid://8y6xbnbslafd" path="res://assets/ui/map/node_elite_generated.png" id="5_elite"]
+[ext_resource type="Texture2D" uid="uid://cyflxwsbp3i42" path="res://assets/ui/map/node_shop_generated.png" id="6_shop"]
+[ext_resource type="Texture2D" uid="uid://oxim2kmel0lk" path="res://assets/ui/map/node_forge_generated.png" id="7_forge"]
+[ext_resource type="Texture2D" uid="uid://dwcmsc5x3qml" path="res://assets/ui/map/node_reward_generated.png" id="8_reward"]
+[ext_resource type="Texture2D" uid="uid://rg2k8dl50tpg" path="res://assets/ui/map/node_penalty_generated.png" id="9_penalty"]
+[ext_resource type="Texture2D" uid="uid://6ekwsiu8da8t" path="res://assets/ui/map/node_event_generated.png" id="10_event"]
+[ext_resource type="Texture2D" uid="uid://dkiorjbasc0ul" path="res://assets/ui/map/node_rest_generated.png" id="10_rest"]
+[ext_resource type="Texture2D" uid="uid://c7p26qsvff7k3" path="res://assets/ui/map/player_marker_placeholder.png" id="11_marker"]
+[ext_resource type="Texture2D" uid="uid://bagpbrqmkor24" path="res://assets/ui/map/map_button_placeholder.png" id="12_button"]
+[ext_resource type="Texture2D" uid="uid://vwyvju4dn84" path="res://assets/ui/map/map_button_hover_placeholder.png" id="13_button_hover"]
+[ext_resource type="Texture2D" uid="uid://bm8r8awsma4yk" path="res://assets/ui/map/map_button_pressed_placeholder.png" id="14_button_pressed"]
+[ext_resource type="Texture2D" uid="uid://db37k3ripwjsb" path="res://assets/ui/map/map_dice_panel_placeholder.png" id="15_dice_panel"]
+[ext_resource type="Texture2D" uid="uid://4qprdtn435l1" path="res://assets/ui/map/map_tabletop_neon_comic.png" id="16_tabletop"]
 
 [resource]
 script = ExtResource("1_config")
@@ -28,7 +28,6 @@ path_floor_texture = ExtResource("3_path")
 center_panel_texture = ExtResource("15_dice_panel")
 map_stage_skin_texture = ExtResource("2_map")
 battle_stage_skin_texture = ExtResource("2_map")
-use_3d_tabletop = true
 tabletop_board_texture = ExtResource("16_tabletop")
 start_node_texture = ExtResource("4_start")
 battle_node_texture = ExtResource("5_battle")
@@ -45,12 +44,4 @@ button_normal_texture = ExtResource("12_button")
 button_hover_texture = ExtResource("13_button_hover")
 button_pressed_texture = ExtResource("14_button_pressed")
 button_disabled_texture = ExtResource("12_button")
-board_raise_duration = 0.85
-board_lower_duration = 0.55
 board_margin = -24.0
-node_font_size = 20
-show_node_text_labels = true
-node_label_size = Vector2(94, 40)
-node_label_offset = Vector2(5, 64)
-node_label_text_color = Color(1, 0.9, 0.45, 1)
-node_label_background_color = Color(0.01, 0.11, 0.12, 0.96)

@@ -9,10 +9,10 @@ static func create_environment(postprocess_enabled: bool) -> Environment:
 	var env := Environment.new()
 	env.resource_name = "battle_star_dice_full_environment"
 	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color(0.020, 0.036, 0.100, 1.0)
+	env.background_color = Color(0.095, 0.115, 0.140, 1.0)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.24, 0.32, 0.56, 1.0)
-	env.ambient_light_energy = 0.34
+	env.ambient_light_color = Color(0.32, 0.36, 0.40, 1.0)
+	env.ambient_light_energy = 0.56
 	_set_existing(env, ["ambient_light_sky_contribution"], 0.12)
 	_set_existing(env, ["reflected_light_source"], 0)
 	_set_postprocess(env, postprocess_enabled)
@@ -57,8 +57,8 @@ static func _add_warm_key_light(parent: Node3D) -> void:
 	var key := DirectionalLight3D.new()
 	key.name = "WarmKeyLight"
 	key.rotation_degrees = Vector3(-47.0, 36.0, 0.0)
-	key.light_color = Color(1.0, 0.84, 0.62, 1.0)
-	key.light_energy = 2.50
+	key.light_color = Color(1.0, 0.949, 0.839, 1.0)
+	key.light_energy = 1.90
 	key.light_specular = 0.72
 	key.shadow_enabled = true
 	parent.add_child(key)
@@ -68,8 +68,8 @@ static func _add_blue_fill_light(parent: Node3D) -> void:
 	var fill := OmniLight3D.new()
 	fill.name = "BlueFillLight"
 	fill.position = Vector3(-3.7, 2.15, 3.0)
-	fill.light_color = Color(0.28, 0.56, 1.0, 1.0)
-	fill.light_energy = 0.82
+	fill.light_color = Color(0.722, 0.843, 1.0, 1.0)
+	fill.light_energy = 0.53
 	fill.light_specular = 0.32
 	fill.omni_range = 8.2
 	fill.omni_attenuation = 0.68
@@ -80,8 +80,8 @@ static func _add_warm_rim_light(parent: Node3D) -> void:
 	var rim := OmniLight3D.new()
 	rim.name = "WarmRimLight"
 	rim.position = Vector3(3.7, 2.55, -2.65)
-	rim.light_color = Color(1.0, 0.62, 0.26, 1.0)
-	rim.light_energy = 0.96
+	rim.light_color = Color(1.0, 0.973, 0.918, 1.0)
+	rim.light_energy = 0.38
 	rim.light_specular = 0.62
 	rim.omni_range = 7.6
 	rim.omni_attenuation = 0.62
