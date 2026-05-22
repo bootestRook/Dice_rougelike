@@ -24,6 +24,12 @@ const MATERIAL_RESOURCE_PATHS := {
 	GmDiceDefinition.MATERIAL_CRYSTAL: "res://assets/materials/dice/crystal_dice.tres",
 }
 
+static var _body_material_cache := {}
+static var _body_mesh_cache: Mesh = null
+static var _preview_mesh_cache: Mesh = null
+static var _repro_shader_cache: Shader = null
+static var _layered_body_shader_cache: Shader = null
+
 
 static func get_material_rows() -> Array[Dictionary]:
 	var rows: Array[Dictionary] = []
@@ -51,19 +57,29 @@ static func load_body_material(material_id: StringName) -> Material:
 	var path := material_resource_path(material_id)
 	if path.is_empty() or not ResourceLoader.exists(path):
 		return null
-	return load(path) as Material
+	if _body_material_cache.has(path):
+		return _body_material_cache[path] as Material
+	var material := load(path) as Material
+	if material != null:
+		_body_material_cache[path] = material
+	return material
 
 
 static func load_body_mesh(_material_id: StringName = GmDiceDefinition.MATERIAL_STANDARD) -> Mesh:
+	if _body_mesh_cache != null:
+		return _body_mesh_cache
 	if ResourceLoader.exists(ROUNDED_DICE_BASE_GLB_PATH):
 		var glb_mesh := _load_first_mesh_from_scene(ROUNDED_DICE_BASE_GLB_PATH)
 		if glb_mesh != null:
-			return glb_mesh
+			_body_mesh_cache = glb_mesh
+			return _body_mesh_cache
 	if ResourceLoader.exists(ROUNDED_D6_MESH_PATH):
-		return load(ROUNDED_D6_MESH_PATH) as Mesh
-	return RoundedDiceMeshFactory.create_rounded_cube({
+		_body_mesh_cache = load(ROUNDED_D6_MESH_PATH) as Mesh
+		return _body_mesh_cache
+	_body_mesh_cache = RoundedDiceMeshFactory.create_rounded_cube({
 		"resource_name": "rounded_d6_mesh_runtime_fallback",
 	})
+	return _body_mesh_cache
 
 
 static func preview_mesh_path() -> String:
@@ -75,16 +91,21 @@ static func preview_mesh_path() -> String:
 
 
 static func load_preview_mesh(_material_id: StringName = GmDiceDefinition.MATERIAL_STANDARD) -> Mesh:
+	if _preview_mesh_cache != null:
+		return _preview_mesh_cache
 	var path := preview_mesh_path()
 	if path.is_empty():
-		return RoundedDiceMeshFactory.create_rounded_cube({
+		_preview_mesh_cache = RoundedDiceMeshFactory.create_rounded_cube({
 			"resource_name": "rounded_d6_preview_runtime_fallback",
 		})
+		return _preview_mesh_cache
 	if path.ends_with(".glb"):
 		var glb_mesh := _load_first_mesh_from_scene(path)
 		if glb_mesh != null:
-			return glb_mesh
-	return load(path) as Mesh
+			_preview_mesh_cache = glb_mesh
+			return _preview_mesh_cache
+	_preview_mesh_cache = load(path) as Mesh
+	return _preview_mesh_cache
 
 
 static func _load_first_mesh_from_scene(path: String) -> Mesh:
@@ -194,7 +215,7 @@ static func edge_rim_energy(material_id: StringName) -> float:
 static func make_programmatic_body_material(body_color: Color, material_id: StringName) -> Material:
 	if not ResourceLoader.exists(REPRO_DICE_SHADER_PATH):
 		return null
-	var shader := load(REPRO_DICE_SHADER_PATH) as Shader
+	var shader := _load_repro_shader()
 	if shader == null:
 		return null
 
@@ -278,7 +299,7 @@ static func make_standard_fallback_material(body_color: Color, material_id: Stri
 static func _make_layered_body_material_from_base(base_material: BaseMaterial3D, body_color: Color, material_id: StringName) -> Material:
 	if not ResourceLoader.exists(LAYERED_BODY_SHADER_PATH):
 		return base_material
-	var shader := load(LAYERED_BODY_SHADER_PATH) as Shader
+	var shader := _load_layered_body_shader()
 	if shader == null:
 		return base_material
 	var material := ShaderMaterial.new()
@@ -302,6 +323,20 @@ static func _make_layered_body_material_from_base(base_material: BaseMaterial3D,
 	material.set_shader_parameter("metallic_value", float(base_material.get("metallic")) if base_material.get("metallic") != null else 0.0)
 	material.set_shader_parameter("roughness_value", float(base_material.get("roughness")) if base_material.get("roughness") != null else 0.55)
 	return material
+
+
+static func _load_repro_shader() -> Shader:
+	if _repro_shader_cache != null:
+		return _repro_shader_cache
+	_repro_shader_cache = load(REPRO_DICE_SHADER_PATH) as Shader
+	return _repro_shader_cache
+
+
+static func _load_layered_body_shader() -> Shader:
+	if _layered_body_shader_cache != null:
+		return _layered_body_shader_cache
+	_layered_body_shader_cache = load(LAYERED_BODY_SHADER_PATH) as Shader
+	return _layered_body_shader_cache
 
 
 static func _set_shader_texture_parameter(material: ShaderMaterial, texture_parameter: String, value, enabled_parameter: String) -> void:

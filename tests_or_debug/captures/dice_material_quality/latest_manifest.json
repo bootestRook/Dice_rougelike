@@ -113,9 +113,9 @@
 			"mesh_resource_path": "res://assets/models/dice/preview_rounded_d6_body_mesh.tres"
 		}
 	],
-	"output": "E:/project/godot/Dice_rougelike/tests_or_debug/captures/dice_material_quality/dice_face_layer_system_after.png",
+	"output": "E:/project/godot/Dice_rougelike/tests_or_debug/captures/dice_material_quality/face_layer_cache_optimization_after.png",
 	"requested_lighting": "preview_lighting_rig",
-	"stage": "dice_face_layer_system_after",
+	"stage": "face_layer_cache_optimization_after",
 	"window_borderless": true,
 	"window_position": "(311, 117)",
 	"window_size": "(1680, 720)"

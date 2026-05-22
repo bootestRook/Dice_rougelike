@@ -279,7 +279,6 @@ func init_dice(instance: GmDiceInstance, skip_init_app := false) -> void:
 	_restore_physics_collision()
 	set_selected(false)
 	_apply_config_visuals()
-	_update_face_labels()
 	change_inner_by_value(0.0)
 	show_number(not skip_init_app)
 	_update_hover_shadow()
@@ -792,7 +791,6 @@ func show_number(show := true) -> void:
 
 func refresh_from_config() -> void:
 	_apply_config_visuals()
-	_update_face_labels()
 	if config != null:
 		config.set_face_index(config.value)
 	if not is_rolling and not is_returning_to_ready and inner_dice != null:
@@ -1666,7 +1664,6 @@ func _create_face_labels(parent: Node3D, mark_color: Color) -> void:
 	if parent != null:
 		parent.set_meta("face_marker_source", "DiceFaceLayerSystem")
 		parent.set_meta("legacy_label3d_display", false)
-	_rebuild_face_layers()
 
 
 func _update_face_labels() -> void:

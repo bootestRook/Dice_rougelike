@@ -38,6 +38,11 @@ const DIGIT_SEGMENTS := {
 	"9": ["a", "b", "c", "d", "f", "g"],
 }
 
+static var _number_texture_cache := {}
+static var _mark_texture_cache := {}
+static var _source_image_cache := {}
+static var _face_albedo_texture_cache := {}
+
 var face_count: int = DEFAULT_FACE_COUNT
 var cell_size: int = DEFAULT_CELL_SIZE
 var face_sets: Array[DiceFaceLayerSet] = []
@@ -45,6 +50,7 @@ var face_albedo_texture: Texture2D = null
 var normal_mask_texture: Texture2D = null
 var height_mask_texture: Texture2D = null
 var roughness_mask_texture: Texture2D = null
+var _face_albedo_cache_key := ""
 
 
 func _init(p_face_count: int = DEFAULT_FACE_COUNT, p_cell_size: int = DEFAULT_CELL_SIZE) -> void:
@@ -81,11 +87,17 @@ static func make_mark_layer(mark_id: StringName, order: int = 30) -> DiceFaceLay
 
 
 static func make_number_texture(label: String, size: int = DEFAULT_CELL_SIZE) -> Texture2D:
+	var cache_key := "%d:%s" % [size, label.strip_edges()]
+	if _number_texture_cache.has(cache_key):
+		return _number_texture_cache[cache_key] as Texture2D
 	var image := Image.create(size, size, false, Image.FORMAT_RGBA8)
 	image.fill(Color(1.0, 1.0, 1.0, 0.0))
 	var text := label.strip_edges()
 	if text.is_empty():
-		return ImageTexture.create_from_image(image)
+		var empty_texture := ImageTexture.create_from_image(image)
+		_number_texture_cache[cache_key] = empty_texture
+		_source_image_cache[empty_texture.get_instance_id()] = image
+		return empty_texture
 	var chars: Array[String] = []
 	for index in range(text.length()):
 		var ch := text.substr(index, 1)
@@ -103,13 +115,19 @@ static func make_number_texture(label: String, size: int = DEFAULT_CELL_SIZE) ->
 			Vector2(digit_width * 0.92, 0.78)
 		)
 		_draw_digit(image, chars[index], rect)
-	return ImageTexture.create_from_image(image)
+	var texture := ImageTexture.create_from_image(image)
+	_number_texture_cache[cache_key] = texture
+	_source_image_cache[texture.get_instance_id()] = image
+	return texture
 
 
 static func make_mark_texture(mark_id: StringName, size: int = DEFAULT_CELL_SIZE) -> Texture2D:
+	var normalized := _normalized_mark_id(mark_id)
+	var cache_key := "%d:%s" % [size, str(normalized)]
+	if _mark_texture_cache.has(cache_key):
+		return _mark_texture_cache[cache_key] as Texture2D
 	var image := Image.create(size, size, false, Image.FORMAT_RGBA8)
 	image.fill(Color(1.0, 1.0, 1.0, 0.0))
-	var normalized := _normalized_mark_id(mark_id)
 	for y in range(size):
 		for x in range(size):
 			var uv := Vector2((float(x) + 0.5) / float(size), (float(y) + 0.5) / float(size))
@@ -135,7 +153,10 @@ static func make_mark_texture(mark_id: StringName, size: int = DEFAULT_CELL_SIZE
 					alpha = 0.0
 			if alpha > 0.0:
 				image.set_pixel(x, y, Color(1.0, 1.0, 1.0, clampf(alpha, 0.0, 1.0)))
-	return ImageTexture.create_from_image(image)
+	var texture := ImageTexture.create_from_image(image)
+	_mark_texture_cache[cache_key] = texture
+	_source_image_cache[texture.get_instance_id()] = image
+	return texture
 
 
 static func mark_color(mark_id: StringName) -> Color:
@@ -146,6 +167,14 @@ func configure_from_face_rows(face_rows: Array, options: Dictionary = {}) -> voi
 	var number_color: Color = options.get("number_color", NUMBER_COLOR)
 	var enable_numbers := bool(options.get("enable_numbers", true))
 	var enable_marks := bool(options.get("enable_marks", true))
+	var cacheable := true
+	var cache_parts: Array[String] = [
+		"cell=%d" % cell_size,
+		"faces=%d" % face_sets.size(),
+		"numbers=%s" % str(enable_numbers),
+		"marks=%s" % str(enable_marks),
+		"color=%s" % number_color.to_html(true),
+	]
 	for index in range(face_sets.size()):
 		var label := str(index + 1)
 		var mark_id := &"none"
@@ -163,12 +192,17 @@ func configure_from_face_rows(face_rows: Array, options: Dictionary = {}) -> voi
 					mark_id = StringName(str(row.get("mark_id")))
 				if row.get("layer_set") != null:
 					existing_set = row.get("layer_set") as DiceFaceLayerSet
+		if existing_set != null:
+			cacheable = false
+		cache_parts.append("%d:%s:%s" % [index, label, str(mark_id)])
 		var layer_set := existing_set.clone() if existing_set != null else DiceFaceLayerSet.new()
 		if enable_numbers and layer_set.number_layer == null:
 			layer_set.number_layer = make_number_layer(label, number_color)
 		if enable_marks and layer_set.mark_layer == null and not _is_empty_mark(mark_id):
 			layer_set.mark_layer = make_mark_layer(mark_id)
 		face_sets[index] = layer_set
+	_face_albedo_cache_key = "|".join(cache_parts) if cacheable else ""
+	face_albedo_texture = null
 
 
 func set_face_layer(face_index: int, role: StringName, layer: DiceFaceLayer) -> void:
@@ -176,6 +210,8 @@ func set_face_layer(face_index: int, role: StringName, layer: DiceFaceLayer) -> 
 		push_warning("DiceFaceLayerSystem.set_face_layer face_index out of range: %d" % face_index)
 		return
 	face_sets[face_index].set_layer(role, layer)
+	_face_albedo_cache_key = ""
+	face_albedo_texture = null
 
 
 func get_face_layer(face_index: int, role: StringName) -> DiceFaceLayer:
@@ -185,8 +221,14 @@ func get_face_layer(face_index: int, role: StringName) -> DiceFaceLayer:
 
 
 func bake_face_albedo_texture() -> Texture2D:
+	if not _face_albedo_cache_key.is_empty() and _face_albedo_texture_cache.has(_face_albedo_cache_key):
+		face_albedo_texture = _face_albedo_texture_cache[_face_albedo_cache_key] as Texture2D
+		return face_albedo_texture
 	var image := bake_face_albedo_image()
 	face_albedo_texture = ImageTexture.create_from_image(image)
+	if not _face_albedo_cache_key.is_empty():
+		_face_albedo_texture_cache[_face_albedo_cache_key] = face_albedo_texture
+		_source_image_cache[face_albedo_texture.get_instance_id()] = image
 	return face_albedo_texture
 
 
@@ -351,9 +393,16 @@ func _is_valid_face_index(face_index: int) -> bool:
 static func _image_from_texture(texture: Texture2D) -> Image:
 	if texture == null:
 		return null
+	var instance_id := texture.get_instance_id()
+	if _source_image_cache.has(instance_id):
+		return _source_image_cache[instance_id] as Image
 	var image := texture.get_image()
 	if image == null:
 		return null
+	if image.get_format() != Image.FORMAT_RGBA8:
+		image = image.duplicate()
+		image.convert(Image.FORMAT_RGBA8)
+	_source_image_cache[instance_id] = image
 	return image
 
 
