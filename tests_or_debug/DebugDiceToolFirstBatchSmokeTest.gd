@@ -20,6 +20,7 @@ func _init() -> void:
 
 	var all_passed := true
 	all_passed = _check_catalog_data() and all_passed
+	all_passed = _check_all_catalog_rarity_distribution() and all_passed
 	all_passed = _check_pip_helpers() and all_passed
 	all_passed = _check_short_straight_rule() and all_passed
 	all_passed = _check_stone_seed() and all_passed
@@ -58,6 +59,46 @@ func _check_catalog_data() -> bool:
 	for id in DiceToolCatalog.FIRST_BATCH_IDS:
 		passed = passed and ids.has(id)
 	return _check("first batch has 50 formal Chinese dice tool defs without forbidden old terms", passed)
+
+
+func _check_all_catalog_rarity_distribution() -> bool:
+	var expected_counts := {
+		&"common": 40,
+		&"uncommon": 33,
+		&"rare": 60,
+		&"epic": 10,
+		&"legendary": 7,
+	}
+	var actual_counts := {
+		&"common": 0,
+		&"uncommon": 0,
+		&"rare": 0,
+		&"epic": 0,
+		&"legendary": 0,
+	}
+	var passed := DiceToolCatalog.get_all_ids().size() == 150
+	for id in DiceToolCatalog.get_all_ids():
+		var tool_def = DiceToolCatalog.get_def(id)
+		if tool_def == null:
+			passed = false
+			continue
+		var rarity := StringName(str(tool_def.rarity))
+		actual_counts[rarity] = int(actual_counts.get(rarity, 0)) + 1
+	for rarity in expected_counts.keys():
+		passed = passed and int(actual_counts.get(rarity, -1)) == int(expected_counts[rarity])
+
+	var sample_expectations := {
+		DiceToolCatalog.TOOL_EMPTY_SLOT_XMULT: &"rare",
+		DiceToolCatalog.TOOL_SHORT_STRAIGHT_RULE: &"rare",
+		DiceToolCatalog.TOOL_UNSTABLE_X3: &"epic",
+		DiceToolCatalog.TOOL_RIGHT_COPY_BLUEPRINT: &"legendary",
+		DiceToolCatalog.TOOL_LEFT_COPY_BRAINSTORM: &"legendary",
+		DiceToolCatalog.TOOL_REROLL_PLUS_ONE: &"uncommon",
+	}
+	for id in sample_expectations.keys():
+		var sample_def = DiceToolCatalog.get_def(StringName(str(id)))
+		passed = passed and sample_def != null and sample_def.rarity == sample_expectations[id]
+	return _check("all 150 dice tools follow planned five-tier rarity distribution", passed)
 
 
 func _check_pip_helpers() -> bool:

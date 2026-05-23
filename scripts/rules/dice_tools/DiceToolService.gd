@@ -220,7 +220,7 @@ func apply_score_tools(context: ScoreContext, result: ScoreResult, trace = null,
 			DiceToolCatalog.TOOL_SKIP_PACK_MULT:
 				var skipped_count := _permanent_counter(tool, &"skipped_pack_count", 0)
 				if skipped_count > 0:
-					_add_mult(result, trace, tool, skipped_count * 3, "已跳过补充包 %d 个，+%d 倍率。" % [skipped_count, skipped_count * 3])
+					_add_mult(result, trace, tool, skipped_count * 3, "已跳过骰包 %d 个，+%d 倍率。" % [skipped_count, skipped_count * 3])
 			DiceToolCatalog.TOOL_MAD_GROWTH:
 				var madness_charge := _permanent_counter(tool, &"madness_charge", 0)
 				_multiply_xmult(result, trace, tool, 1 + int(floor(float(madness_charge) / 2.0)), "狂乱计数 %d，终倍率 ×%d。" % [madness_charge, 1 + int(floor(float(madness_charge) / 2.0))])
@@ -267,7 +267,7 @@ func apply_score_tools(context: ScoreContext, result: ScoreResult, trace = null,
 			DiceToolCatalog.TOOL_SHOP_REROLL_MULT:
 				var shop_rerolls := _permanent_counter(tool, &"shop_reroll_count", 0)
 				if shop_rerolls > 0:
-					_add_mult(result, trace, tool, shop_rerolls * 2, "商店刷新计数 %d，+%d 倍率。" % [shop_rerolls, shop_rerolls * 2])
+					_add_mult(result, trace, tool, shop_rerolls * 2, "骰商铺刷新计数 %d，+%d 倍率。" % [shop_rerolls, shop_rerolls * 2])
 			DiceToolCatalog.TOOL_DECAY_POPCORN:
 				var popcorn_mult := _permanent_counter(tool, &"popcorn_mult", 20)
 				if popcorn_mult > 0:
@@ -793,7 +793,7 @@ func on_booster_pack_skipped(run_state, pack_id: StringName = &"") -> Array[Stri
 		if tool != null and tool.tool_id == DiceToolCatalog.TOOL_SKIP_PACK_MULT:
 			var next_value := _permanent_counter(tool, &"skipped_pack_count", 0) + 1
 			tool.permanent_counters["skipped_pack_count"] = next_value
-			logs.append("[骰具] %s：跳过补充包，跳包计数 +1 至 %d。" % [_tool_name(tool), next_value])
+			logs.append("[骰具] %s：跳过骰包，跳包计数 +1 至 %d。" % [_tool_name(tool), next_value])
 	return logs
 
 
@@ -810,7 +810,7 @@ func on_booster_pack_opened(run_state, pack_id: StringName = &"") -> Array[Strin
 			continue
 		var item_id := reward_generator.roll_random_formal_forge_item()
 		if run_state.add_item_to_inventory_or_pending(item_id):
-			logs.append("[骰具] %s：打开补充包，生成 %s。" % [_tool_name(tool), ForgeItemCatalog.display_name_for_id(item_id)])
+			logs.append("[骰具] %s：打开骰包，生成 %s。" % [_tool_name(tool), ForgeItemCatalog.display_name_for_id(item_id)])
 	return logs
 
 
@@ -820,7 +820,7 @@ func on_shop_rerolled(run_state) -> Array[String]:
 		if tool != null and tool.tool_id == DiceToolCatalog.TOOL_SHOP_REROLL_MULT:
 			var next_value := _permanent_counter(tool, &"shop_reroll_count", 0) + 1
 			tool.permanent_counters["shop_reroll_count"] = next_value
-			logs.append("[骰具] %s：商店刷新计数 +1 至 %d。" % [_tool_name(tool), next_value])
+			logs.append("[骰具] %s：骰商铺刷新计数 +1 至 %d。" % [_tool_name(tool), next_value])
 	return logs
 
 
@@ -945,9 +945,9 @@ func on_shop_phase_end(run_state) -> Array[String]:
 			continue
 		var copied_name := _copy_random_held_forge_or_upgrade_item(run_state)
 		if copied_name != "":
-			logs.append("[骰具] %s：商店阶段结束，复制道具：%s。" % [_tool_name(tool), copied_name])
+			logs.append("[骰具] %s：骰商铺阶段结束，复制道具：%s。" % [_tool_name(tool), copied_name])
 		else:
-			logs.append("[骰具] %s：商店阶段结束，没有可复制道具或道具槽位不足。" % [_tool_name(tool)])
+			logs.append("[骰具] %s：骰商铺阶段结束，没有可复制道具或道具槽位不足。" % [_tool_name(tool)])
 	return logs
 
 

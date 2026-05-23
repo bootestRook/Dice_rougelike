@@ -12,6 +12,8 @@ const RollService = preload("res://scripts/rules/roll/RollService.gd")
 
 
 const MAP_MOVEMENT_DICE_COUNT := 2
+const STARTING_COINS := 9999
+const FIRST_CIRCLE_FIRST_SHOP_INDEX := 15
 
 signal flow_state_changed(state_id: StringName)
 signal run_started(run_state: RunState)
@@ -44,9 +46,13 @@ var map_last_path: Array[int] = []
 var map_last_refresh_path_index: int = -1
 var map_last_stopped_by_boss: bool = false
 var map_pending_battle: bool = false
+var map_pending_shop: bool = false
+var map_pending_reward: bool = false
+var map_pending_event: bool = false
 var map_roll_count: int = 0
 var map_refresh_count: int = 0
 var map_rng := RandomNumberGenerator.new()
+var reward_origin_node_type: StringName = &""
 
 
 func set_flow_state(state_id: StringName) -> void:
@@ -57,7 +63,9 @@ func set_flow_state(state_id: StringName) -> void:
 func start_new_run() -> void:
 	run_state = RunState.new()
 	run_state.setup_new_run()
+	run_state.coins = STARTING_COINS
 	_reset_demo_map()
+	reward_origin_node_type = &""
 	set_flow_state(&"map")
 	run_started.emit(run_state)
 	run_state_changed.emit(run_state)
@@ -73,6 +81,9 @@ func start_next_battle() -> void:
 	if _is_battle_map_node_type(_current_map_node_type()):
 		run_state.set_current_encounter_node_type(_current_map_node_type())
 	map_pending_battle = false
+	map_pending_shop = false
+	map_pending_reward = false
+	map_pending_event = false
 	set_flow_state(&"battle")
 	map_state_changed.emit(get_map_state())
 	battle_requested.emit(run_state)
@@ -83,6 +94,8 @@ func on_battle_won() -> void:
 		push_warning("GameFlowController.on_battle_won without run_state.")
 		return
 
+	_apply_long_term_victory_economy()
+
 	if run_state.is_final_battle():
 		run_state.mark_run_won()
 		set_flow_state(&"run_victory")
@@ -90,11 +103,35 @@ func on_battle_won() -> void:
 		run_result_requested.emit(run_state)
 		return
 
-	var choices := reward_generator.generate_forge_piece_choices(run_state, 3)
+	var reward_choice_count: int = maxi(1, 3 + int(run_state.battle_reward_choice_bonus))
+	var choices := reward_generator.generate_battle_reward_choices(run_state, reward_choice_count)
+	reward_origin_node_type = run_state.current_encounter_node_type
 	run_state.last_reward_choices = choices
 	set_flow_state(&"reward")
 	run_state_changed.emit(run_state)
 	reward_requested.emit(choices)
+
+
+func _apply_long_term_victory_economy() -> void:
+	if run_state == null:
+		return
+	if bool(run_state.interest_enabled):
+		var interest := mini(max(0, int(run_state.interest_cap)), int(floor(float(max(0, run_state.coins)) / 5.0)))
+		if interest > 0:
+			run_state.add_coins(interest, &"long_term_interest")
+			run_state.record_shop_log("[长期解锁] 利息本金：战斗胜利后获得 %d 金币利息。" % [interest], {
+				"kind": &"long_term_economy",
+				"source": &"interest",
+				"coins": interest,
+			})
+	if bool(run_state.money_tree_enabled):
+		var gain := 4 if run_state.coins >= 25 else 2
+		run_state.add_coins(gain, &"long_term_money_tree")
+		run_state.record_shop_log("[长期解锁] 摇钱树：战斗胜利后获得 %d 金币。" % [gain], {
+			"kind": &"long_term_economy",
+			"source": &"money_tree",
+			"coins": gain,
+		})
 
 
 func on_battle_lost() -> void:
@@ -121,6 +158,7 @@ func choose_reward(reward) -> void:
 	if run_state.apply_combo_upgrade_piece(piece):
 		run_state.last_reward_choices.clear()
 		run_state.pending_forge_piece = null
+		reward_origin_node_type = &""
 		run_state.advance_battle()
 		run_state_changed.emit(run_state)
 		return_to_map_after_battle()
@@ -141,9 +179,8 @@ func _choose_direct_item_reward(reward) -> bool:
 		return false
 	run_state.last_reward_choices.clear()
 	run_state.pending_forge_piece = null
-	run_state.advance_battle()
 	run_state_changed.emit(run_state)
-	return_to_map_after_battle()
+	_complete_current_reward_origin()
 	return true
 
 
@@ -163,6 +200,25 @@ func _reward_item_id(reward) -> StringName:
 			return &""
 		return StringName(str(raw_id))
 	return &""
+
+
+func _complete_current_reward_origin() -> void:
+	var origin := reward_origin_node_type
+	reward_origin_node_type = &""
+	if origin == &"reward" or origin == &"event":
+		_mark_current_map_node_cleared()
+		map_pending_reward = false
+		map_pending_event = false
+		map_pending_battle = false
+		map_pending_shop = false
+		map_last_path.clear()
+		map_last_stopped_by_boss = false
+		set_flow_state(&"map")
+		map_state_changed.emit(get_map_state())
+		map_requested.emit(get_map_state())
+		return
+	run_state.advance_battle()
+	return_to_map_after_battle()
 
 
 func install_pending_piece(die_index: int, face_index: int) -> bool:
@@ -190,6 +246,7 @@ func install_pending_piece(die_index: int, face_index: int) -> bool:
 	run_state.record_installed_piece(piece, die_index, face_index)
 	run_state.pending_forge_piece = null
 	run_state.last_reward_choices.clear()
+	reward_origin_node_type = &""
 	run_state.advance_battle()
 	run_state_changed.emit(run_state)
 	return_to_map_after_battle()
@@ -236,15 +293,94 @@ func enter_forge() -> void:
 	set_flow_state(&"forge")
 
 
-func enter_shop() -> Dictionary:
+func enter_shop(options: Dictionary = {}) -> Dictionary:
 	if run_state == null:
 		start_new_run()
 		return {}
-	var shop_state := shop_service.generate_shop(run_state)
+	var generation_options := options.duplicate(true)
+	if _current_node_is_first_circle_first_shop():
+		generation_options["first_circle_first_shop"] = true
+	var shop_state := shop_service.generate_shop(run_state, generation_options)
 	set_flow_state(&"shop")
 	run_state_changed.emit(run_state)
 	shop_requested.emit(shop_state)
 	return shop_state
+
+
+func request_enter_shop_from_map() -> bool:
+	if current_state_id != &"map":
+		return false
+	if _current_map_node_type() != &"shop":
+		return false
+	if _current_map_node_is_cleared():
+		map_pending_shop = false
+		map_state_changed.emit(get_map_state())
+		return false
+	map_pending_shop = false
+	enter_shop()
+	return true
+
+
+func request_enter_reward_from_map() -> bool:
+	if current_state_id != &"map":
+		return false
+	if _current_map_node_type() != &"reward":
+		return false
+	if _current_map_node_is_cleared():
+		map_pending_reward = false
+		map_state_changed.emit(get_map_state())
+		return false
+	return _enter_direct_reward_from_map(&"reward")
+
+
+func request_enter_event_from_map() -> bool:
+	if current_state_id != &"map":
+		return false
+	if _current_map_node_type() != &"event":
+		return false
+	if _current_map_node_is_cleared():
+		map_pending_event = false
+		map_state_changed.emit(get_map_state())
+		return false
+	return _enter_direct_reward_from_map(&"event")
+
+
+func _enter_direct_reward_from_map(node_type: StringName) -> bool:
+	if run_state == null:
+		return false
+	var reward_choice_count: int = maxi(1, 3 + int(run_state.battle_reward_choice_bonus))
+	var choices := reward_generator.generate_special_event_choices(reward_choice_count) if node_type == &"event" else reward_generator.generate_map_reward_node_choices(reward_choice_count)
+	if choices.is_empty():
+		return false
+	reward_origin_node_type = node_type
+	map_pending_reward = false
+	map_pending_event = false
+	run_state.last_reward_choices = choices
+	run_state.pending_forge_piece = null
+	set_flow_state(&"reward")
+	run_state_changed.emit(run_state)
+	map_state_changed.emit(get_map_state())
+	reward_requested.emit(choices)
+	return true
+
+
+func leave_shop() -> Dictionary:
+	if run_state == null:
+		return {"success": false, "message": "缺少本局状态"}
+	if current_state_id != &"shop":
+		return {"success": false, "message": "当前不在骰商铺。"}
+	if not run_state.pending_booster_resolution.is_empty():
+		return {"success": false, "message": "请先处理已打开的骰包"}
+	var result := shop_service.end_shop_phase(run_state)
+	_mark_current_map_node_cleared()
+	map_pending_shop = false
+	map_last_path.clear()
+	map_last_stopped_by_boss = false
+	set_flow_state(&"map")
+	run_state_changed.emit(run_state)
+	map_state_changed.emit(get_map_state())
+	map_requested.emit(get_map_state())
+	return result
 
 
 func reroll_shop_random_items() -> Dictionary:
@@ -267,6 +403,16 @@ func purchase_shop_offer_by_slot(slot_group: StringName, index: int = 0) -> Dict
 	return result
 
 
+func sell_shop_relic_by_index(index: int) -> Dictionary:
+	if run_state == null:
+		return {"success": false, "message": "缺少本局状态"}
+	var result := shop_service.sell_relic_by_index(run_state, index)
+	run_state_changed.emit(run_state)
+	if bool(result.get("success", false)):
+		shop_requested.emit(run_state.current_shop_state)
+	return result
+
+
 func get_map_state() -> Dictionary:
 	return {
 		"phase": current_state_id,
@@ -280,6 +426,9 @@ func get_map_state() -> Dictionary:
 		"last_refresh_path_index": map_last_refresh_path_index,
 		"stopped_by_boss": map_last_stopped_by_boss,
 		"pending_battle": map_pending_battle,
+		"pending_shop": map_pending_shop,
+		"pending_reward": map_pending_reward,
+		"pending_event": map_pending_event,
 		"pending_boss_battle": _is_boss_map_node_type(_current_map_node_type()),
 		"roll_count": map_roll_count,
 		"refresh_count": map_refresh_count,
@@ -383,7 +532,12 @@ func _apply_map_movement_rolls(rolled_indices: Array[int], rolls: Array[int], fa
 	if run_state != null:
 		run_state.record_map_movement_action()
 		run_state_changed.emit(run_state)
-	map_pending_battle = _is_battle_map_node_type(_current_map_node_type())
+	var current_type := _current_map_node_type()
+	var current_node_cleared := _current_map_node_is_cleared()
+	map_pending_battle = _is_battle_map_node_type(current_type) and not current_node_cleared
+	map_pending_shop = current_type == &"shop" and not current_node_cleared
+	map_pending_reward = current_type == &"reward" and not current_node_cleared
+	map_pending_event = current_type == &"event" and not current_node_cleared
 	map_state_changed.emit(get_map_state())
 	return {
 		"success": true,
@@ -398,6 +552,9 @@ func _apply_map_movement_rolls(rolled_indices: Array[int], rolls: Array[int], fa
 		"refresh_path_index": map_last_refresh_path_index,
 		"current_node": _current_map_node_for_view(),
 		"pending_battle": map_pending_battle,
+		"pending_shop": map_pending_shop,
+		"pending_reward": map_pending_reward,
+		"pending_event": map_pending_event,
 		"pending_boss_battle": _is_boss_map_node_type(_current_map_node_type()),
 		"state": get_map_state(),
 	}
@@ -433,6 +590,9 @@ func return_to_map_after_battle() -> void:
 
 	_mark_current_map_node_cleared()
 	map_pending_battle = false
+	map_pending_shop = false
+	map_pending_reward = false
+	map_pending_event = false
 	map_last_path.clear()
 	map_last_stopped_by_boss = false
 	set_flow_state(&"map")
@@ -463,6 +623,9 @@ func _reset_demo_map() -> void:
 	map_last_refresh_path_index = -1
 	map_last_stopped_by_boss = false
 	map_pending_battle = false
+	map_pending_shop = false
+	map_pending_reward = false
+	map_pending_event = false
 	map_roll_count = 0
 	map_refresh_count = 0
 
@@ -496,6 +659,29 @@ func _current_map_node_type() -> StringName:
 		return &"start"
 	var node := map_nodes[wrapi(map_position_index, 0, map_nodes.size())]
 	return StringName(str(node.get("node_type", "start")))
+
+
+func _current_map_node_is_cleared() -> bool:
+	if map_nodes.is_empty():
+		return false
+	var node := map_nodes[wrapi(map_position_index, 0, map_nodes.size())]
+	return bool(node.get("is_cleared", false))
+
+
+func _current_node_is_first_circle_first_shop() -> bool:
+	if run_state == null or run_state.get_circle_number() != 1:
+		return false
+	if _current_map_node_type() != &"shop":
+		return false
+	return map_position_index == _first_shop_index_in_current_map_ring()
+
+
+func _first_shop_index_in_current_map_ring() -> int:
+	for index in range(map_nodes.size()):
+		var node := map_nodes[index]
+		if StringName(str(node.get("node_type", ""))) == &"shop":
+			return index
+	return -1
 
 
 func _mark_current_map_node_cleared() -> void:
@@ -615,6 +801,9 @@ func _path_hits_boss(path: Array[int]) -> bool:
 func _return_to_start_after_boss_battle() -> void:
 	map_position_index = _start_map_index()
 	map_pending_battle = false
+	map_pending_shop = false
+	map_pending_reward = false
+	map_pending_event = false
 	map_last_roll = 0
 	map_last_rolls.clear()
 	map_last_roll_face_indices.clear()
@@ -658,8 +847,32 @@ func _generate_map_types_for_refresh(refresh_index: int) -> Array[StringName]:
 
 func _generate_first_circle_map_types(refresh_index: int) -> Array[StringName]:
 	var result: Array[StringName] = [&"start"]
-	for _index in range(_map_middle_node_count(refresh_index)):
+	var counts := _map_node_counts_for_refresh(refresh_index)
+	var shop_count: int = maxi(0, int(counts.get(&"shop", 0)))
+	var non_shop_bag: Array[StringName] = []
+	for type_id in counts.keys():
+		if StringName(str(type_id)) == &"shop":
+			continue
+		for _index in range(int(counts[type_id])):
+			non_shop_bag.append(StringName(str(type_id)))
+	var early_count: int = mini(maxi(0, FIRST_CIRCLE_FIRST_SHOP_INDEX - 1), non_shop_bag.size())
+	var arranged_non_shop: Array[StringName] = _arrange_map_node_bag(non_shop_bag)
+	for _index in range(early_count):
+		result.append(arranged_non_shop.pop_front())
+	while result.size() < FIRST_CIRCLE_FIRST_SHOP_INDEX:
 		result.append(&"battle")
+	if shop_count > 0:
+		result.append(&"shop")
+		shop_count -= 1
+	var late_bag: Array[StringName] = arranged_non_shop
+	for _index in range(shop_count):
+		late_bag.append(&"shop")
+	var arranged_late: Array[StringName] = _arrange_map_node_bag(late_bag)
+	result.append_array(arranged_late)
+	while result.size() < _map_middle_node_count(refresh_index) + 1:
+		result.append(&"battle")
+	if result.size() > _map_middle_node_count(refresh_index) + 1:
+		result.resize(_map_middle_node_count(refresh_index) + 1)
 	result.append(&"boss")
 	return result
 

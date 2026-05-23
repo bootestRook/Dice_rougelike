@@ -1,6 +1,9 @@
 extends SceneTree
 
 
+const ForgePieceDef = preload("res://scripts/data_defs/ForgePieceDef.gd")
+
+
 var battle_screen: Node = null
 var stage: Node = null
 var controller = null
@@ -37,6 +40,13 @@ func _init() -> void:
 			all_passed = _check("unselected_hold_keeps_display_order", _last_unselected_hold_targets_follow_order([selected_die_index], organized_order)) and all_passed
 			all_passed = _check("3D 重投后保留整理顺序", _same_int_order(_display_order(), organized_order)) and all_passed
 			all_passed = _check("3D 重投后位置仍按整理顺序", _same_int_order(_visual_order(), organized_order)) and all_passed
+
+			battle_screen.call("begin_reward_install", _make_debug_piece())
+			await process_frame
+			var natural_order := _natural_order()
+			all_passed = _check("begin_reward_install restores natural display order", _same_int_order(_display_order(), natural_order)) and all_passed
+			all_passed = _check("begin_reward_install restores natural visual order", _same_int_order(_visual_order(), natural_order)) and all_passed
+			all_passed = _check("begin_reward_install restores natural ready slots", _ready_slots_match_order(natural_order)) and all_passed
 
 	if battle_screen != null:
 		battle_screen.queue_free()
@@ -88,6 +98,25 @@ func _visual_order() -> Array[int]:
 	if stage == null or not stage.has_method("get_visual_die_order_left_to_right"):
 		return []
 	return stage.call("get_visual_die_order_left_to_right")
+
+
+func _natural_order() -> Array[int]:
+	var order: Array[int] = []
+	var state = stage.get("current_state") if stage != null else null
+	if state == null:
+		return order
+	for die_data in state.dice_results:
+		if die_data != null:
+			order.append(int(die_data.die_index))
+	return order
+
+
+func _make_debug_piece() -> ForgePieceDef:
+	var piece := ForgePieceDef.new()
+	piece.id = &"debug_reset_order_piece"
+	piece.display_name = "调试铸骰件"
+	piece.description = "用于安装顺序测试"
+	return piece
 
 
 func _ready_slots_match_order(order: Array[int]) -> bool:

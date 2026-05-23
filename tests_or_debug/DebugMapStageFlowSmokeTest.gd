@@ -4,6 +4,8 @@ class_name DebugMapStageFlowSmokeTest
 
 const GameFlowController = preload("res://scripts/runtime/GameFlowController.gd")
 const MapStageViewScript = preload("res://scripts/ui/map/MapStageView.gd")
+const BoosterPackCatalog = preload("res://scripts/rules/shop/BoosterPackCatalog.gd")
+const ShopOfferDef = preload("res://scripts/data_defs/ShopOfferDef.gd")
 
 
 func _init() -> void:
@@ -16,6 +18,8 @@ func _init() -> void:
 	var main_start_passed := await _check_main_start_enters_map()
 	all_passed = main_start_passed and all_passed
 	all_passed = await _check_roll_button_accepts_button_rect_click() and all_passed
+	all_passed = await _check_map_view_can_enter_shop_node() and all_passed
+	all_passed = _check_first_circle_first_shop_context() and all_passed
 
 	var flow := GameFlowController.new()
 	root.add_child(flow)
@@ -33,7 +37,7 @@ func _init() -> void:
 	all_passed = _check("map view has backdrop texture resource", _texture_exists(map_view, "MapBackdropTexture")) and all_passed
 	all_passed = _check("map view has player marker resource", _texture_exists(map_view, "PlayerMarker")) and all_passed
 	all_passed = _check("map view builds 32 route nodes", _count_nodes_by_prefix(map_view, "MapNode_") == 32) and all_passed
-	all_passed = _check("map first circle shows battle nodes before boss", _first_circle_map_is_battle_only(flow.get_map_state().get("nodes", []))) and all_passed
+	all_passed = _check("map first circle keeps shops out before grid 15", _first_circle_shop_placement_is_protected(flow.get_map_state().get("nodes", []))) and all_passed
 	all_passed = _check("map art config has all node textures", _has_all_node_textures(map_view)) and all_passed
 	all_passed = _check("map rest node uses generated texture", _rest_node_uses_generated_texture(map_view)) and all_passed
 	all_passed = _check("map 3D node text labels are readable", _node_label_is_readable(map_view)) and all_passed
@@ -169,6 +173,84 @@ func _check_main_start_enters_map() -> bool:
 	return passed
 
 
+func _check_map_view_can_enter_shop_node() -> bool:
+	var flow := GameFlowController.new()
+	root.add_child(flow)
+	flow.start_new_run()
+	if flow.map_nodes.size() < 2:
+		flow.queue_free()
+		return _check("map shop entry has enough nodes", false)
+	flow.map_nodes[1]["node_type"] = &"shop"
+	flow.map_position_index = 0
+
+	var map_view = MapStageViewScript.new()
+	map_view.setup(flow, flow.get_map_state())
+	root.add_child(map_view)
+	await process_frame
+	await process_frame
+	if map_view.has_method("play_raise"):
+		await map_view.call("play_raise")
+
+	var movement_result := flow.apply_prepared_map_movement_roll([0], [1], [0])
+	await process_frame
+
+	var snapshot: Dictionary = map_view.call("automation_get_snapshot")
+	var all_passed := true
+	all_passed = _check("map movement can stop on shop node", bool(movement_result.get("success", false)) and bool(snapshot.get("pending_shop", false))) and all_passed
+	all_passed = _check("shop node shows enter action button", bool(snapshot.get("enter_battle_button_visible", false)) and not bool(snapshot.get("enter_battle_button_disabled", true))) and all_passed
+	map_view.call("_on_enter_battle_pressed")
+	await process_frame
+	all_passed = _check("enter shop from map switches to shop phase", flow.current_state_id == &"shop" and not flow.get_run_state().current_shop_state.is_empty()) and all_passed
+	var leave_result := flow.leave_shop()
+	await process_frame
+	var returned_state := flow.get_map_state()
+	var returned_nodes: Array = returned_state.get("nodes", [])
+	var shop_node_cleared := returned_nodes.size() > 1 and bool(Dictionary(returned_nodes[1]).get("is_cleared", false))
+	all_passed = _check("leave shop returns to map and clears shop node", bool(leave_result.get("success", false)) and flow.current_state_id == &"map" and shop_node_cleared) and all_passed
+	var reenter_result := flow.request_enter_shop_from_map()
+	all_passed = _check("cleared shop node cannot be entered again in the same map ring", not reenter_result and flow.current_state_id == &"map") and all_passed
+
+	map_view.queue_free()
+	flow.queue_free()
+	await process_frame
+	return all_passed
+
+
+func _check_first_circle_first_shop_context() -> bool:
+	var flow := GameFlowController.new()
+	root.add_child(flow)
+	flow.start_new_run()
+	var nodes: Array = flow.get_map_state().get("nodes", [])
+	var first_shop_index := -1
+	for index in range(nodes.size()):
+		if StringName(str(nodes[index].get("node_type", ""))) == &"shop":
+			first_shop_index = index
+			break
+	flow.map_position_index = first_shop_index
+	var entered := flow.request_enter_shop_from_map()
+	var shop_state: Dictionary = flow.get_run_state().current_shop_state
+	var booster_slots: Array = shop_state.get("booster_slots", [])
+	var has_basic_pack := false
+	var no_mega_pack := true
+	for offer in booster_slots:
+		var pack_offer := offer as ShopOfferDef
+		if pack_offer == null:
+			no_mega_pack = false
+			continue
+		has_basic_pack = has_basic_pack or BoosterPackCatalog.is_basic_pack(pack_offer.payload_id)
+		no_mega_pack = no_mega_pack and not BoosterPackCatalog.is_mega_pack(pack_offer.payload_id)
+	var passed := (
+		first_shop_index == GameFlowController.FIRST_CIRCLE_FIRST_SHOP_INDEX
+		and entered
+		and bool(shop_state.get("first_circle_first_shop_protection", false))
+		and int(shop_state.get("reroll_cost", -1)) == 5
+		and has_basic_pack
+		and no_mega_pack
+	)
+	flow.queue_free()
+	return _check("first circle first shop enters protected shop generation", passed)
+
+
 func _check_roll_button_accepts_button_rect_click() -> bool:
 	var flow := GameFlowController.new()
 	root.add_child(flow)
@@ -284,7 +366,7 @@ func _check_sidebar_base_score_waits_for_map_stop(flow: GameFlowController, map_
 func _check_main_enter_battle_removes_map_overlay(main_view: Node, flow: GameFlowController, map_stage: Control) -> bool:
 	if main_view == null or flow == null or map_stage == null:
 		return _check("battle transition remove setup exists", false)
-	flow.map_position_index = 1
+	flow.map_position_index = maxi(0, flow.map_nodes.size() - 1)
 	flow.map_state_changed.emit(flow.get_map_state())
 	await process_frame
 	var requested := flow.request_enter_battle_from_map()
@@ -512,17 +594,23 @@ func _node_type_at(flow: GameFlowController, index: int) -> StringName:
 	return StringName(str(nodes[index].get("node_type", "")))
 
 
-func _first_circle_map_is_battle_only(nodes: Array) -> bool:
+func _first_circle_shop_placement_is_protected(nodes: Array) -> bool:
 	if nodes.size() != 32:
 		return false
 	if StringName(str(nodes[0].get("node_type", ""))) != &"start":
 		return false
 	if StringName(str(nodes[nodes.size() - 1].get("node_type", ""))) != &"boss":
 		return false
+	var shop_count := 0
 	for index in range(1, nodes.size() - 1):
-		if StringName(str(nodes[index].get("node_type", ""))) != &"battle":
+		var node_type := StringName(str(nodes[index].get("node_type", "")))
+		if index < GameFlowController.FIRST_CIRCLE_FIRST_SHOP_INDEX and node_type == &"shop":
 			return false
-	return true
+		if node_type == &"shop":
+			shop_count += 1
+			if shop_count == 1 and index != GameFlowController.FIRST_CIRCLE_FIRST_SHOP_INDEX:
+				return false
+	return shop_count == 3
 
 
 func _player_marker_is_centered(map_view) -> bool:

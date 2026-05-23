@@ -8,14 +8,14 @@ const RichTextHighlighter = preload("res://scripts/ui/RichTextHighlighter.gd")
 
 
 var game_flow_controller: GameFlowController = null
-var choices: Array[ForgePieceDef] = []
+var choices: Array = []
 
 
 func setup(new_game_flow_controller: GameFlowController, new_choices: Array) -> void:
 	game_flow_controller = new_game_flow_controller
 	choices.clear()
 	for choice in new_choices:
-		if choice is ForgePieceDef:
+		if choice != null:
 			choices.append(choice)
 
 
@@ -56,7 +56,7 @@ func _build_view() -> void:
 		root.add_child(_make_text_label(str(TranslationServer.translate(&"AUTO.TEXT.E7B22B2652B2")), 16, Color(0.9, 0.82, 0.78)))
 
 
-func _make_choice_card(piece: ForgePieceDef) -> Control:
+func _make_choice_card(choice) -> Control:
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = Vector2(260, 280)
 
@@ -64,27 +64,59 @@ func _make_choice_card(piece: ForgePieceDef) -> Control:
 	box.add_theme_constant_override("separation", 10)
 	panel.add_child(box)
 
-	box.add_child(_make_text_label(piece.get_display_name(), 20, Color(0.96, 0.88, 0.62)))
-	box.add_child(_make_rich_text_label(piece.get_description(), 15, Color(0.88, 0.88, 0.82)))
-	box.add_child(_make_text_label(str(TranslationServer.translate(&"AUTO.TEXT.6DB5DF72B910")) % [piece.get_rarity_display_name()], 14, Color(0.72, 0.82, 0.92)))
-	box.add_child(_make_text_label(str(TranslationServer.translate(&"AUTO.TEXT.ABAAFC3C7A71")) % [piece.get_tags_display_text()], 14, Color(0.78, 0.88, 0.72)))
+	box.add_child(_make_text_label(_choice_display_name(choice), 20, Color(0.96, 0.88, 0.62)))
+	box.add_child(_make_rich_text_label(_choice_description(choice), 15, Color(0.88, 0.88, 0.82)))
+	var meta_text := _choice_meta_text(choice)
+	if meta_text != "":
+		box.add_child(_make_text_label(meta_text, 14, Color(0.72, 0.82, 0.92)))
 
-	var operations_label := _make_rich_text_label(piece.get_effect_text(), 14, Color(0.84, 0.84, 0.78))
+	var operations_label := _make_rich_text_label(_choice_effect_text(choice), 14, Color(0.84, 0.84, 0.78))
 	operations_label.custom_minimum_size = Vector2(0, 90)
 	box.add_child(operations_label)
 
 	var choose_button := Button.new()
 	choose_button.text = str(TranslationServer.translate(&"AUTO.TEXT.70B208202CE5"))
 	choose_button.custom_minimum_size = Vector2(0, 38)
-	choose_button.pressed.connect(_on_choice_pressed.bind(piece))
+	choose_button.pressed.connect(_on_choice_pressed.bind(choice))
 	box.add_child(choose_button)
 	return panel
 
 
-func _on_choice_pressed(piece: ForgePieceDef) -> void:
+func _on_choice_pressed(choice) -> void:
 	if game_flow_controller == null:
 		return
-	game_flow_controller.choose_reward(piece)
+	game_flow_controller.choose_reward(choice)
+
+
+func _choice_display_name(choice) -> String:
+	var object := choice as Object
+	if object != null and object.has_method("get_display_name"):
+		return str(object.call("get_display_name"))
+	return str(choice)
+
+
+func _choice_description(choice) -> String:
+	var object := choice as Object
+	if object != null and object.has_method("get_description"):
+		return str(object.call("get_description"))
+	return ""
+
+
+func _choice_effect_text(choice) -> String:
+	var object := choice as Object
+	if object != null and object.has_method("get_effect_text"):
+		return str(object.call("get_effect_text"))
+	return ""
+
+
+func _choice_meta_text(choice) -> String:
+	var object := choice as Object
+	var lines := PackedStringArray()
+	if object != null and object.has_method("get_rarity_display_name"):
+		lines.append(str(TranslationServer.translate(&"AUTO.TEXT.6DB5DF72B910")) % [object.call("get_rarity_display_name")])
+	if object != null and object.has_method("get_tags_display_text"):
+		lines.append(str(TranslationServer.translate(&"AUTO.TEXT.ABAAFC3C7A71")) % [object.call("get_tags_display_text")])
+	return "\n".join(lines)
 
 
 func _make_text_label(text: String, font_size: int, color: Color) -> Label:

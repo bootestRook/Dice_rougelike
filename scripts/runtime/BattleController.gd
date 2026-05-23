@@ -83,6 +83,8 @@ func start_battle(config: BattleConfig = null, run_state: RunState = null) -> vo
 
 	if run_state != null:
 		run_state.ensure_starting_dice()
+		run_state.observatory_used_this_battle = false
+		run_state.first_score_echo_used_this_battle = false
 		if not run_state.dice.is_empty():
 			battle_start_log_texts = dice_tool_service.apply_battle_start_effects(run_state, active_config)
 			dice = run_state.dice
@@ -267,6 +269,7 @@ func commit_pending_resolution() -> void:
 		result = ScoreResult.new()
 		result.final_score = trace.hand_score_final
 
+	_apply_long_term_resolution_bonuses(trace, result)
 	battle_state.total_score += trace.hand_score_final
 	battle_state.hands_played += 1
 	_apply_pending_score_events(result)
@@ -762,6 +765,45 @@ func _append_pending_mark_logs_to_trace(trace: ResolutionTrace, result: ScoreRes
 				trace.log_lines.append(text)
 
 
+func _apply_long_term_resolution_bonuses(trace: ResolutionTrace, result: ScoreResult) -> void:
+	if run_state == null or battle_state == null or trace == null or result == null:
+		return
+	var score: int = max(0, int(trace.hand_score_final))
+	if score <= 0:
+		return
+
+	if bool(run_state.observatory_enabled) and not bool(run_state.observatory_used_this_battle):
+		var most_combo: StringName = run_state.get_most_scored_combo_id() if run_state.has_method("get_most_scored_combo_id") else &""
+		var current_combo: StringName = result.primary_combo
+		if current_combo == &"":
+			current_combo = result.combo_id
+		current_combo = ComboUpgradeCatalog.normalize_combo_id(current_combo)
+		if most_combo != &"" and current_combo == most_combo:
+			var bonus := int(ceil(float(score) * 0.5))
+			score += bonus
+			run_state.observatory_used_this_battle = true
+			_append_long_term_score_log(trace, result, "随身观测站：本局最常结算主骰型首次结算，额外获得 %d 战力。" % [bonus])
+
+	if bool(run_state.first_score_echo_enabled) and not bool(run_state.first_score_echo_used_this_battle) and battle_state.hands_played == 0:
+		var echo_bonus := int(ceil(float(score) * 0.5))
+		score += echo_bonus
+		run_state.first_score_echo_used_this_battle = true
+		_append_long_term_score_log(trace, result, "双重追加结算：每场战斗第一次结算额外获得 %d 战力。" % [echo_bonus])
+
+	trace.hand_score_final = score
+	result.final_score = score
+
+
+func _append_long_term_score_log(trace: ResolutionTrace, result: ScoreResult, text: String) -> void:
+	if text == "":
+		return
+	var entry := BattleLogEntry.new(&"LOG.DICE_TOOL", {"text": "[长期解锁] %s" % [text]}, &"long_term_unlock")
+	result.add_log(entry)
+	var resolved_text := entry.get_text()
+	if resolved_text != "" and trace != null and not trace.log_lines.has(resolved_text):
+		trace.log_lines.append(resolved_text)
+
+
 func _apply_pending_score_events(result: ScoreResult) -> void:
 	if result == null or run_state == null:
 		return
@@ -849,9 +891,24 @@ func _mark_battle_finished(victory: bool, result: ScoreResult) -> void:
 	battle_state.victory = victory
 	battle_state.battle_finished = true
 	if run_state != null:
+		_apply_unused_reroll_gold(victory, result)
 		dice_tool_service.apply_battle_end_effects(run_state, result)
 	if battle_state.config.is_boss_battle:
 		_remove_white_marks_after_boss_battle(result)
+
+
+func _apply_unused_reroll_gold(victory: bool, result: ScoreResult) -> void:
+	if not victory or run_state == null or not bool(run_state.unused_reroll_gold_enabled):
+		return
+	var gain := mini(5, int(floor(float(_rerolls_left()) / 2.0)))
+	if gain <= 0:
+		return
+	run_state.add_coins(gain, &"long_term_unused_reroll_gold")
+	if result != null:
+		result.coins_delta += gain
+		result.add_log(BattleLogEntry.new(&"LOG.DICE_TOOL", {
+			"text": "[长期解锁] 重投回收：战斗结束剩余重投折算，获得 %d 金币。" % [gain],
+		}, &"long_term_unlock"))
 
 
 func _emit_battle_finished() -> void:

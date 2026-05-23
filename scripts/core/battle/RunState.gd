@@ -58,7 +58,7 @@ var installed_tools: Array[DiceToolState] = []
 var dice_tool_capacity: int = DEFAULT_DICE_TOOL_CAPACITY
 var battle_index: int = 0
 var current_battle: BattleState = null
-var last_reward_choices: Array[ForgePieceDef] = []
+var last_reward_choices: Array = []
 var pending_forge_piece: ForgePieceDef = null
 var max_circles: int = 8
 var current_circle_index: int = 0
@@ -85,14 +85,47 @@ var best_hand_score: int = 0
 var coins: int = 0
 var shop_reroll_base_cost: int = 5
 var shop_reroll_count_this_shop: int = 0
+var shop_non_unlock_purchase_count_this_shop: int = 0
 var shop_random_item_slot_bonus: int = 0
 var shop_booster_slot_bonus: int = 0
+var shop_random_item_discount: float = 0.0
+var first_non_unlock_purchase_discount: float = 0.0
+var first_reroll_free: bool = false
+var shop_face_items_enabled: bool = false
+var shop_advanced_face_display_slots: int = 0
+var shop_forge_item_weight_multiplier: float = 1.0
+var shop_combo_upgrade_weight_multiplier: float = 1.0
+var shop_face_pack_weight_multiplier: float = 1.0
+var shop_combo_pack_weight_multiplier: float = 1.0
+var advanced_face_pack_rewards_enabled: bool = false
+var forge_item_discount: float = 0.0
+var combo_upgrade_discount: float = 0.0
 var current_shop_state: Dictionary = {}
 var pending_booster_resolution: Dictionary = {}
 var shop_logs: Array[Dictionary] = []
 var long_term_unlocks: Dictionary = {}
 var long_term_unlock_effect_totals: Dictionary = {}
 var battle_rerolls_per_hand_delta: int = 0
+var face_pack_extra_candidates: int = 0
+var advanced_ornament_weight_multiplier: float = 1.0
+var forge_service_pack_enabled: bool = false
+var forge_pack_extra_candidates: int = 0
+var combo_pack_extra_candidates: int = 0
+var combo_pack_include_most_played: bool = false
+var observatory_enabled: bool = false
+var observatory_used_this_battle: bool = false
+var first_score_echo_enabled: bool = false
+var first_score_echo_used_this_battle: bool = false
+var unused_reroll_gold_enabled: bool = false
+var interest_enabled: bool = false
+var interest_cap: int = 0
+var money_tree_enabled: bool = false
+var contract_tool_slots: int = 0
+var loop_first_battles_danger_reduction_count: int = 0
+var danger_action_count_reduction: int = 0
+var boss_danger_action_count_reduction: int = 0
+var free_boss_rule_reroll_per_loop: int = 0
+var boss_rule_choice_count: int = 1
 var long_term_boss_rule_grace_per_battle: int = 0
 var installed_piece_count: int = 0
 var installed_piece_history: Array[Dictionary] = []
@@ -111,6 +144,7 @@ var starting_total_face_count: int = 0
 var skipped_battle_node_count: int = 0
 var battle_rounds_available_delta: int = 0
 var max_scored_faces_per_round_delta: int = 0
+var battle_reward_choice_bonus: int = 0
 var pending_dice_tool_face_copy: Dictionary = {}
 var foundry_logs: Array[Dictionary] = []
 
@@ -145,14 +179,47 @@ func setup_new_run() -> void:
 	coins = 0
 	shop_reroll_base_cost = 5
 	shop_reroll_count_this_shop = 0
+	shop_non_unlock_purchase_count_this_shop = 0
 	shop_random_item_slot_bonus = 0
 	shop_booster_slot_bonus = 0
+	shop_random_item_discount = 0.0
+	first_non_unlock_purchase_discount = 0.0
+	first_reroll_free = false
+	shop_face_items_enabled = false
+	shop_advanced_face_display_slots = 0
+	shop_forge_item_weight_multiplier = 1.0
+	shop_combo_upgrade_weight_multiplier = 1.0
+	shop_face_pack_weight_multiplier = 1.0
+	shop_combo_pack_weight_multiplier = 1.0
+	advanced_face_pack_rewards_enabled = false
+	forge_item_discount = 0.0
+	combo_upgrade_discount = 0.0
 	current_shop_state.clear()
 	pending_booster_resolution.clear()
 	shop_logs.clear()
 	long_term_unlocks.clear()
 	long_term_unlock_effect_totals.clear()
 	battle_rerolls_per_hand_delta = 0
+	face_pack_extra_candidates = 0
+	advanced_ornament_weight_multiplier = 1.0
+	forge_service_pack_enabled = false
+	forge_pack_extra_candidates = 0
+	combo_pack_extra_candidates = 0
+	combo_pack_include_most_played = false
+	observatory_enabled = false
+	observatory_used_this_battle = false
+	first_score_echo_enabled = false
+	first_score_echo_used_this_battle = false
+	unused_reroll_gold_enabled = false
+	interest_enabled = false
+	interest_cap = 0
+	money_tree_enabled = false
+	contract_tool_slots = 0
+	loop_first_battles_danger_reduction_count = 0
+	danger_action_count_reduction = 0
+	boss_danger_action_count_reduction = 0
+	free_boss_rule_reroll_per_loop = 0
+	boss_rule_choice_count = 1
 	long_term_boss_rule_grace_per_battle = 0
 	installed_piece_count = 0
 	installed_piece_history.clear()
@@ -171,6 +238,7 @@ func setup_new_run() -> void:
 	skipped_battle_node_count = 0
 	battle_rounds_available_delta = 0
 	max_scored_faces_per_round_delta = 0
+	battle_reward_choice_bonus = 0
 	pending_dice_tool_face_copy.clear()
 	foundry_logs.clear()
 	create_default_loadout()
@@ -260,6 +328,25 @@ func get_danger_bonus_percent(action_count: int = -1) -> int:
 	return int(DANGER_BONUS_PERCENTS[index])
 
 
+func get_effective_danger_action_count(node_type: StringName = &"", action_count: int = -1) -> int:
+	var resolved_count := current_circle_action_count if action_count < 0 else action_count
+	var resolved_type := current_encounter_node_type if node_type == &"" else normalized_encounter_node_type(node_type)
+	var reduction := 0
+	if resolved_type == ENCOUNTER_BOSS:
+		reduction += max(0, boss_danger_action_count_reduction)
+	elif loop_first_battles_danger_reduction_count > 0 and resolved_count <= loop_first_battles_danger_reduction_count:
+		reduction += max(0, danger_action_count_reduction)
+	return max(0, resolved_count - reduction)
+
+
+func get_danger_bonus_percent_for_node(node_type: StringName = &"", action_count: int = -1) -> int:
+	return get_danger_bonus_percent(get_effective_danger_action_count(node_type, action_count))
+
+
+func get_danger_multiplier_for_node(node_type: StringName = &"", action_count: int = -1) -> float:
+	return 1.0 + float(get_danger_bonus_percent_for_node(node_type, action_count)) / 100.0
+
+
 func get_danger_multiplier(action_count: int = -1) -> float:
 	return 1.0 + float(get_danger_bonus_percent(action_count)) / 100.0
 
@@ -271,8 +358,9 @@ func get_encounter_type_multiplier(node_type: StringName = &"") -> float:
 
 func get_target_score(node_type: StringName = &"") -> int:
 	var base_score := get_current_circle_base_score()
-	var multiplier := get_encounter_type_multiplier(node_type)
-	var danger_multiplier := get_danger_multiplier()
+	var resolved_type := current_encounter_node_type if node_type == &"" else normalized_encounter_node_type(node_type)
+	var multiplier := get_encounter_type_multiplier(resolved_type)
+	var danger_multiplier := get_danger_multiplier_for_node(resolved_type)
 	return int(round(float(base_score) * multiplier * danger_multiplier))
 
 
@@ -284,8 +372,9 @@ func get_target_breakdown(node_type: StringName = &"") -> Dictionary:
 		"encounter_type": resolved_type,
 		"encounter_multiplier": get_encounter_type_multiplier(resolved_type),
 		"action_count": current_circle_action_count,
-		"danger_bonus_percent": get_danger_bonus_percent(),
-		"danger_multiplier": get_danger_multiplier(),
+		"effective_danger_action_count": get_effective_danger_action_count(resolved_type),
+		"danger_bonus_percent": get_danger_bonus_percent_for_node(resolved_type),
+		"danger_multiplier": get_danger_multiplier_for_node(resolved_type),
 		"target_score": get_target_score(resolved_type),
 	}
 
@@ -325,15 +414,40 @@ func add_coins(amount: int, _source: StringName = &"") -> void:
 
 
 func get_shop_reroll_cost() -> int:
-	return max(0, shop_reroll_base_cost + shop_reroll_count_this_shop)
+	return max(1, shop_reroll_base_cost + shop_reroll_count_this_shop)
 
 
 func get_shop_random_item_slot_count() -> int:
 	return max(0, 2 + shop_random_item_slot_bonus)
 
 
+func get_shop_relic_shelf_slot_count() -> int:
+	return get_shop_random_item_slot_count()
+
+
 func get_shop_booster_slot_count() -> int:
 	return max(0, 2 + shop_booster_slot_bonus)
+
+
+func get_most_scored_combo_id() -> StringName:
+	var best_combo: StringName = &""
+	var best_count := 0
+	for raw_id in combo_scored_counts.keys():
+		var combo_id := _normalized_combo_id(StringName(str(raw_id)))
+		var count := int(combo_scored_counts.get(raw_id, 0))
+		if combo_id != &"" and count > best_count:
+			best_combo = combo_id
+			best_count = count
+	if best_combo != &"":
+		return best_combo
+
+	for raw_id in combo_appearance_counts.keys():
+		var combo_id := _normalized_combo_id(StringName(str(raw_id)))
+		var count := int(combo_appearance_counts.get(raw_id, 0))
+		if combo_id != &"" and count > best_count:
+			best_combo = combo_id
+			best_count = count
+	return best_combo
 
 
 func has_long_term_unlock(unlock_id: StringName) -> bool:
@@ -390,7 +504,11 @@ func record_copyable_used_item_id(item_id: StringName) -> void:
 
 
 func has_free_dice_tool_slot() -> bool:
-	return get_non_negative_dice_tool_count() < max(0, dice_tool_capacity)
+	return get_non_negative_dice_tool_count() < max(0, dice_tool_capacity + contract_tool_slots)
+
+
+func get_free_dice_tool_slot_count() -> int:
+	return max(0, dice_tool_capacity + contract_tool_slots - get_non_negative_dice_tool_count())
 
 
 func get_non_negative_dice_tool_count() -> int:
@@ -403,7 +521,7 @@ func get_non_negative_dice_tool_count() -> int:
 
 
 func get_empty_regular_dice_tool_slot_count() -> int:
-	return max(0, dice_tool_capacity - get_non_negative_dice_tool_count())
+	return max(0, dice_tool_capacity - _regular_dice_tool_count())
 
 
 func get_min_allowed_coins() -> int:
@@ -417,8 +535,6 @@ func get_min_allowed_coins() -> int:
 
 func install_dice_tool_item_from_slot(slot_index: int) -> bool:
 	ensure_item_slots_from_legacy()
-	if not has_free_dice_tool_slot():
-		return false
 	if slot_index < 0 or slot_index >= item_slots.size():
 		return false
 	var item := item_slots[slot_index]
@@ -427,10 +543,42 @@ func install_dice_tool_item_from_slot(slot_index: int) -> bool:
 	var tool = DiceToolState.from_item_instance(item)
 	if tool == null:
 		return false
-	dice_tools.append(tool)
-	installed_tools = dice_tools
+	if not install_dice_tool_state(tool):
+		return false
 	consume_item_slot(slot_index)
 	return true
+
+
+func install_dice_tool_item_instance(item: ItemInstance) -> bool:
+	if item == null or item.item_type != ItemInstance.TYPE_DICE_TOOL:
+		return false
+	var tool = DiceToolState.from_item_instance(item)
+	if tool == null:
+		return false
+	return install_dice_tool_state(tool)
+
+
+func install_dice_tool_state(tool: DiceToolState) -> bool:
+	if tool == null or tool.tool_id == &"":
+		return false
+	var slot_type := _dice_tool_slot_type_for_install(tool.rarity)
+	if slot_type == &"":
+		return false
+	var installed_tool = tool.clone_without_combat_counters(true)
+	installed_tool.metadata["slot_type"] = slot_type
+	dice_tools.append(installed_tool)
+	installed_tools = dice_tools
+	return true
+
+
+func remove_dice_tool_at_index(slot_index: int):
+	_sync_installed_tools_alias()
+	if slot_index < 0 or slot_index >= dice_tools.size():
+		return null
+	var removed := dice_tools[slot_index]
+	dice_tools.remove_at(slot_index)
+	installed_tools = dice_tools
+	return removed
 
 
 func install_dice_tool_item(item_id: StringName) -> bool:
@@ -711,6 +859,36 @@ func record_shop_log(message: String, details: Dictionary = {}) -> void:
 		"details": details.duplicate(true),
 		"coins": coins,
 	})
+
+
+func _regular_dice_tool_count() -> int:
+	_sync_installed_tools_alias()
+	var count := 0
+	for tool in dice_tools:
+		if tool == null or tool.is_negative:
+			continue
+		if StringName(str(tool.metadata.get("slot_type", &"regular"))) != &"contract":
+			count += 1
+	return count
+
+
+func _contract_dice_tool_count() -> int:
+	_sync_installed_tools_alias()
+	var count := 0
+	for tool in dice_tools:
+		if tool != null and not tool.is_negative and StringName(str(tool.metadata.get("slot_type", &"regular"))) == &"contract":
+			count += 1
+	return count
+
+
+func _dice_tool_slot_type_for_install(rarity: StringName) -> StringName:
+	if _regular_dice_tool_count() < max(0, dice_tool_capacity):
+		return &"regular"
+	if _contract_dice_tool_count() >= max(0, contract_tool_slots):
+		return &""
+	if rarity == &"common" or rarity == &"uncommon":
+		return &"contract"
+	return &""
 
 
 func _sync_installed_tools_alias() -> void:

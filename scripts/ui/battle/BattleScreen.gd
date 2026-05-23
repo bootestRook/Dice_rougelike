@@ -12,6 +12,7 @@ const ResolutionTrace = preload("res://scripts/core/scoring/ResolutionTrace.gd")
 const ResolutionStep = preload("res://scripts/core/scoring/ResolutionStep.gd")
 const ComboEvaluator = preload("res://scripts/rules/combo/ComboEvaluator.gd")
 const ComboUpgradeItem = preload("res://scripts/rules/combo/ComboUpgradeItem.gd")
+const DiceToolCatalog = preload("res://scripts/rules/dice_tools/DiceToolCatalog.gd")
 const DiceToolService = preload("res://scripts/rules/dice_tools/DiceToolService.gd")
 const FaceState = preload("res://scripts/core/dice/FaceState.gd")
 const ForgePieceDef = preload("res://scripts/data_defs/ForgePieceDef.gd")
@@ -110,6 +111,7 @@ var pending_install_piece: ForgePieceDef = null
 var selected_install_die_index: int = -1
 var selected_install_face_index: int = -1
 var defer_initial_battle_start: bool = false
+var hud_refresh_queued: bool = false
 
 
 enum BattleUiState {
@@ -598,20 +600,20 @@ func _on_hand_started(_hand_index: int) -> void:
 
 
 func _on_dice_changed(_rolls: Array) -> void:
-	_refresh_hud()
+	_request_hud_refresh()
 
 
 func _on_rerolls_changed(_rerolls_left: int) -> void:
-	_refresh_hud()
+	_request_hud_refresh()
 
 
 func _on_score_changed(_total_score: int, _target_score: int) -> void:
-	_refresh_hud()
+	_request_hud_refresh()
 
 
 func _on_selection_changed(selected_count: int) -> void:
 	status_text = str(TranslationServer.translate(&"AUTO.TEXT.34EB0A73B9C4")) % [selected_count, controller.get_max_selected_dice() if controller != null else 0]
-	_refresh_hud()
+	_request_hud_refresh()
 
 
 func _on_hand_scored(result: ScoreResult) -> void:
@@ -642,12 +644,12 @@ func _on_battle_lost() -> void:
 
 
 func _on_phase_changed(_phase: int) -> void:
-	_refresh_hud()
+	_request_hud_refresh()
 
 
 func _on_score_preview_changed(result: ScoreResult) -> void:
 	current_preview_result = result
-	_refresh_hud()
+	_request_hud_refresh()
 
 
 func _on_info_pressed() -> void:
@@ -953,6 +955,7 @@ func show_reward_choices(choices: Array) -> void:
 	selected_install_face_index = -1
 	status_text = str(TranslationServer.translate(&"AUTO.TEXT.BD9FEA62A9DC"))
 	_hide_install_focus_overlay()
+	_reset_bench_display_order()
 	if scoring_area != null and scoring_area.has_method("show_reward_choices"):
 		scoring_area.show_reward_choices(choices)
 	if dice_bench_area != null:
@@ -975,6 +978,7 @@ func begin_reward_install(piece) -> void:
 	selected_install_die_index = -1
 	selected_install_face_index = -1
 	status_text = str(TranslationServer.translate(&"AUTO.TEXT.56B08BE6F8EA"))
+	_reset_bench_display_order()
 	if scoring_area != null and scoring_area.has_method("hide_reward_choices"):
 		scoring_area.hide_reward_choices()
 	if dice_bench_area != null:
@@ -1966,6 +1970,18 @@ func _clear_returning_resolution_state() -> void:
 		dice_bench_area.clear_hidden_die_indices()
 
 
+func _request_hud_refresh() -> void:
+	if hud_refresh_queued:
+		return
+	hud_refresh_queued = true
+	call_deferred("_flush_hud_refresh")
+
+
+func _flush_hud_refresh() -> void:
+	hud_refresh_queued = false
+	_refresh_hud()
+
+
 func _refresh_hud() -> void:
 	if left_sidebar == null or top_inventory_bar == null or scoring_area == null or dice_bench_area == null:
 		return
@@ -2027,6 +2043,7 @@ func _build_hud_state() -> BattleHudState:
 		state.circle_base_score = run_state.get_current_circle_adjusted_base_score(_circle_base_action_count_for_display())
 		state.danger_bonus_percent = run_state.get_danger_bonus_percent()
 		state.circle_action_count = run_state.current_circle_action_count
+		state.relic_capacity = max(run_state.dice_tools.size(), run_state.dice_tool_capacity + run_state.contract_tool_slots)
 		state.item_capacity = run_state.item_slot_capacity
 
 	if controller == null:
@@ -2137,6 +2154,20 @@ func _set_die_data_to_max_face(die_data: DieViewData) -> void:
 func _build_relic_slots() -> Array[SlotViewData]:
 	var slots: Array[SlotViewData] = []
 	if run_state == null:
+		return slots
+
+	for tool in run_state.dice_tools:
+		if tool == null:
+			continue
+		var tool_id := StringName(str(tool.tool_id))
+		var slot_data = SlotViewData.new()
+		var display_name := tool.display_name if tool.display_name != "" else DiceToolCatalog.display_name_for_id(tool_id)
+		slot_data.setup_from_id(tool_id, display_name, tool_id)
+		var def := DiceToolCatalog.get_def(tool_id)
+		slot_data.tooltip = def.effect_text if def != null else display_name
+		slots.append(slot_data)
+
+	if not slots.is_empty():
 		return slots
 
 	for relic_id in run_state.relic_ids:
@@ -2612,34 +2643,15 @@ func _play_victory_reward_showcase() -> void:
 
 	is_battle_intro_playing = true
 	battle_intro_pending = false
-	battle_intro_dice_revealed = false
+	battle_intro_dice_revealed = true
 	battle_intro_die_indices = die_indices.duplicate()
 	status_text = str(TranslationServer.translate(&"AUTO.TEXT.BD9FEA62A9DC"))
-	if dice_bench_area != null and dice_bench_area.has_method("set_hidden_die_indices"):
-		dice_bench_area.set_hidden_die_indices(battle_intro_die_indices)
-	_refresh_hud()
-	await get_tree().process_frame
-	await get_tree().process_frame
-
-	var effects := _spawn_reroll_magic_effects(battle_intro_die_indices)
-	var reveal_wait: float = 0.32 if resolution_fast_mode else 0.58
-	await _create_battle_timer(reveal_wait).timeout
-
 	victory_reward_showcase_active = true
 	_reset_bench_display_order()
-	var reveal_fade_duration: float = 0.34 if resolution_fast_mode else 0.62
-	_begin_magic_reveal_fade(effects, reveal_fade_duration)
-	battle_intro_dice_revealed = true
 	if dice_bench_area != null and dice_bench_area.has_method("clear_hidden_die_indices"):
 		dice_bench_area.clear_hidden_die_indices()
 	_refresh_hud()
-
-	var fade_tail_wait: float = reveal_fade_duration + (0.04 if resolution_fast_mode else 0.08)
-	await _create_battle_timer(fade_tail_wait).timeout
-
-	for effect in effects:
-		if is_instance_valid(effect):
-			effect.queue_free()
+	await get_tree().process_frame
 	is_battle_intro_playing = false
 	battle_intro_dice_revealed = false
 	battle_intro_die_indices.clear()

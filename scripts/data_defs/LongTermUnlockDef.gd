@@ -16,6 +16,7 @@ var unlock_kind: StringName = &""
 var price_coins: int = 0
 var effect_type: StringName = &""
 var effect_value: int = 0
+var effect_params: Dictionary = {}
 var implementation_status: StringName = &"formal"
 var shop_pool_reserved: StringName = &"TBD"
 var drop_weight_reserved: StringName = &"TBD"
@@ -30,7 +31,8 @@ static func create(
 	new_price_coins: int,
 	new_effect_type: StringName,
 	new_effect_value: int,
-	new_notes: String = ""
+	new_notes: String = "",
+	new_effect_params: Dictionary = {}
 ):
 	var def = load("res://scripts/data_defs/LongTermUnlockDef.gd").new()
 	def.unlock_id = new_unlock_id
@@ -40,6 +42,7 @@ static func create(
 	def.price_coins = max(0, new_price_coins)
 	def.effect_type = new_effect_type
 	def.effect_value = new_effect_value
+	def.effect_params = new_effect_params.duplicate(true)
 	def.notes = new_notes
 	return def
 
@@ -53,6 +56,7 @@ func clone():
 	cloned.price_coins = price_coins
 	cloned.effect_type = effect_type
 	cloned.effect_value = effect_value
+	cloned.effect_params = effect_params.duplicate(true)
 	cloned.implementation_status = implementation_status
 	cloned.shop_pool_reserved = shop_pool_reserved
 	cloned.drop_weight_reserved = drop_weight_reserved

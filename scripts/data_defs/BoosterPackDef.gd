@@ -5,7 +5,7 @@ class_name BoosterPackDef
 const KIND_FACE := &"face"
 const KIND_FORGE := &"forge"
 const KIND_COMBO := &"combo"
-const KIND_TOOL := &"tool"
+const KIND_RELIC := &"relic"
 const KIND_FOUNDRY := &"foundry"
 
 

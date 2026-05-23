@@ -3,7 +3,9 @@ class_name DebugRewardPoolSmokeTest
 
 
 const ForgePieceDef = preload("res://scripts/data_defs/ForgePieceDef.gd")
+const DiceToolRewardChoice = preload("res://scripts/data_defs/DiceToolRewardChoice.gd")
 const RewardGenerator = preload("res://scripts/rules/reward/RewardGenerator.gd")
+const RunState = preload("res://scripts/core/battle/RunState.gd")
 
 
 const LEGACY_IDS := [
@@ -95,6 +97,7 @@ func _init() -> void:
 	all_passed = _check("composite rewards have visible Chinese text", _composite_rewards_have_visible_text(pool_sample)) and all_passed
 	all_passed = _check("reward catalog assigns five-tier rarity gates", _reward_rarity_gates_are_assigned(generator)) and all_passed
 	all_passed = _check("encounter reward rarity weights are applied", _encounter_reward_weights_are_applied(generator)) and all_passed
+	all_passed = _check("dice tool rewards are limited to elite boss reward and special nodes", _dice_tool_reward_sources_are_applied()) and all_passed
 
 	print("PASS: DebugRewardPoolSmokeTest" if all_passed else "FAIL: DebugRewardPoolSmokeTest")
 	print("--- DebugRewardPoolSmokeTest: end ---")
@@ -282,6 +285,70 @@ func _encounter_reward_weights_are_applied(generator: RewardGenerator) -> bool:
 		return false
 	if not _has_rarity(boss_pool, &"uncommon") or not _has_rarity(boss_pool, &"rare") or not _has_rarity(boss_pool, &"epic"):
 		return false
+	return true
+
+
+func _dice_tool_reward_sources_are_applied() -> bool:
+	var generator := RewardGenerator.new()
+	generator.rng.seed = 4201
+
+	var normal_run := RunState.new()
+	normal_run.setup_new_run()
+	normal_run.current_encounter_node_type = RunState.ENCOUNTER_BATTLE
+	var normal_choices := generator.generate_battle_reward_choices(normal_run, 3)
+
+	var elite_run := RunState.new()
+	elite_run.setup_new_run()
+	elite_run.current_encounter_node_type = RunState.ENCOUNTER_ELITE
+	var elite_choices := generator.generate_battle_reward_choices(elite_run, 3)
+
+	var boss_run := RunState.new()
+	boss_run.setup_new_run()
+	boss_run.current_encounter_node_type = RunState.ENCOUNTER_BOSS
+	var boss_choices := generator.generate_battle_reward_choices(boss_run, 3)
+
+	var event_choices := generator.generate_special_event_choices(3)
+	var reward_node_can_roll_tool := false
+	var reward_node_can_roll_without_tool := false
+	for seed_value in range(1, 200):
+		var seeded := RewardGenerator.new()
+		seeded.rng.seed = seed_value
+		var node_choices := seeded.generate_map_reward_node_choices(3)
+		if _has_dice_tool_choice(node_choices):
+			reward_node_can_roll_tool = true
+		else:
+			reward_node_can_roll_without_tool = true
+		if reward_node_can_roll_tool and reward_node_can_roll_without_tool:
+			break
+
+	return (
+		normal_choices.size() == 3
+		and not _has_dice_tool_choice(normal_choices)
+		and elite_choices.size() == 3
+		and _has_dice_tool_choice(elite_choices)
+		and boss_choices.size() == 3
+		and _has_dice_tool_choice(boss_choices)
+		and event_choices.size() == 3
+		and _has_dice_tool_choice(event_choices)
+		and reward_node_can_roll_tool
+		and reward_node_can_roll_without_tool
+		and _dice_tool_choices_say_item_then_use(elite_choices + boss_choices + event_choices)
+	)
+
+
+func _has_dice_tool_choice(choices: Array) -> bool:
+	for choice in choices:
+		if choice is DiceToolRewardChoice:
+			return true
+	return false
+
+
+func _dice_tool_choices_say_item_then_use(choices: Array) -> bool:
+	for choice in choices:
+		if choice is DiceToolRewardChoice:
+			var description := (choice as DiceToolRewardChoice).get_description()
+			if not description.contains("道具槽") or not description.contains("使用后"):
+				return false
 	return true
 
 

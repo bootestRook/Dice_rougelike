@@ -5,10 +5,12 @@ class_name RewardGenerator
 const ForgeOperationDef = preload("res://scripts/data_defs/ForgeOperationDef.gd")
 const ForgeItemDef = preload("res://scripts/data_defs/ForgeItemDef.gd")
 const ForgePieceDef = preload("res://scripts/data_defs/ForgePieceDef.gd")
+const DiceToolRewardChoice = preload("res://scripts/data_defs/DiceToolRewardChoice.gd")
 const LocKeys = preload("res://scripts/i18n/LocKeys.gd")
 const RunState = preload("res://scripts/core/battle/RunState.gd")
 const ComboUpgradeCatalog = preload("res://scripts/rules/combo/ComboUpgradeCatalog.gd")
 const ComboUpgradeItem = preload("res://scripts/rules/combo/ComboUpgradeItem.gd")
+const DiceToolCatalog = preload("res://scripts/rules/dice_tools/DiceToolCatalog.gd")
 const ForgeItemCatalog = preload("res://scripts/rules/forge/ForgeItemCatalog.gd")
 const FoundryServiceDef = preload("res://scripts/data_defs/FoundryServiceDef.gd")
 const FoundryServiceCatalog = preload("res://scripts/rules/forge/FoundryServiceCatalog.gd")
@@ -175,6 +177,38 @@ func generate_forge_piece_choices(run_state: RunState, count: int = 3) -> Array[
 	return generate_forge_choices_for_encounter(count, encounter_type, battle_index)
 
 
+func generate_battle_reward_choices(run_state: RunState, count: int = 3) -> Array:
+	var choices: Array = []
+	choices.append_array(generate_forge_piece_choices(run_state, count))
+	var encounter_type := RunState.ENCOUNTER_BATTLE
+	if run_state != null:
+		encounter_type = run_state.current_encounter_node_type
+	if encounter_type == RunState.ENCOUNTER_ELITE:
+		_replace_one_choice_with_dice_tool(choices, count, _elite_dice_tool_reward_pool(), "精英骰具奖励")
+	elif encounter_type == RunState.ENCOUNTER_BOSS:
+		_replace_one_choice_with_dice_tool(choices, count, _boss_dice_tool_reward_pool(), "首领骰具奖励")
+	return choices
+
+
+func generate_map_reward_node_choices(count: int = 3) -> Array:
+	var choices: Array = []
+	if rng.randf() < 0.25:
+		var dice_choice := _draw_dice_tool_reward_choice(_map_reward_dice_tool_pool(), "奖励节点骰具")
+		if dice_choice != null:
+			choices.append(dice_choice)
+	_fill_direct_forge_item_choices(choices, count)
+	return choices
+
+
+func generate_special_event_choices(count: int = 3) -> Array:
+	var choices: Array = []
+	var dice_choice := _draw_dice_tool_reward_choice(_special_event_dice_tool_pool(), "特殊奇遇骰具")
+	if dice_choice != null:
+		choices.append(dice_choice)
+	_fill_direct_forge_item_choices(choices, count)
+	return choices
+
+
 func generate_forge_item_choices(count: int = 3) -> Array[ForgeItemDef]:
 	var choices: Array[ForgeItemDef] = []
 	for id in _draw_unique_formal_forge_item_ids(ForgeItemCatalog.get_all_ids(), max(0, count)):
@@ -191,6 +225,80 @@ func generate_foundry_service_choices(count: int = 3) -> Array[FoundryServiceDef
 		if def != null:
 			choices.append(def)
 	return choices
+
+
+func _replace_one_choice_with_dice_tool(choices: Array, count: int, pool: Array, source_note: String) -> void:
+	var dice_choice := _draw_dice_tool_reward_choice(pool, source_note)
+	if dice_choice == null:
+		return
+	if choices.is_empty():
+		choices.append(dice_choice)
+		return
+	var replace_index: int = mini(maxi(0, count - 1), choices.size() - 1)
+	choices[replace_index] = dice_choice
+
+
+func _fill_direct_forge_item_choices(choices: Array, count: int) -> void:
+	var needed: int = maxi(0, count - choices.size())
+	if needed <= 0:
+		return
+	for item in generate_forge_item_choices(needed):
+		choices.append(item)
+
+
+func _elite_dice_tool_reward_pool() -> Array:
+	return _weighted_pool_from_item_data(DiceToolCatalog.get_special_dice_tool_item_pool(&"rare"), 100)
+
+
+func _boss_dice_tool_reward_pool() -> Array:
+	var pool := []
+	pool.append_array(_weighted_pool_from_item_data(DiceToolCatalog.get_special_dice_tool_item_pool(&"rare"), 55))
+	pool.append_array(_weighted_pool_from_item_data(DiceToolCatalog.get_special_dice_tool_item_pool(&"epic"), 30))
+	pool.append_array(_weighted_pool_from_item_data(DiceToolCatalog.get_legendary_dice_tool_item_pool(), 15))
+	return pool
+
+
+func _map_reward_dice_tool_pool() -> Array:
+	var pool := []
+	pool.append_array(_weighted_pool_from_item_data(DiceToolCatalog.get_generated_dice_tool_item_pool(&"common"), 55))
+	pool.append_array(_weighted_pool_from_item_data(DiceToolCatalog.get_generated_dice_tool_item_pool(&"uncommon"), 30))
+	pool.append_array(_weighted_pool_from_item_data(DiceToolCatalog.get_generated_dice_tool_item_pool(&"rare"), 12))
+	pool.append_array(_weighted_pool_from_item_data(DiceToolCatalog.get_special_dice_tool_item_pool(&"epic"), 3))
+	return pool
+
+
+func _special_event_dice_tool_pool() -> Array:
+	var pool := []
+	pool.append_array(_weighted_pool_from_item_data(DiceToolCatalog.get_special_dice_tool_item_pool(&"rare"), 55))
+	pool.append_array(_weighted_pool_from_item_data(DiceToolCatalog.get_special_dice_tool_item_pool(&"epic"), 35))
+	pool.append_array(_weighted_pool_from_item_data(DiceToolCatalog.get_legendary_dice_tool_item_pool(), 10))
+	return pool
+
+
+func _weighted_pool_from_item_data(source: Array, weight: int) -> Array:
+	var result := []
+	for data in source:
+		var entry := Dictionary(data).duplicate(true)
+		entry["weight"] = weight
+		result.append(entry)
+	return result
+
+
+func _draw_dice_tool_reward_choice(source: Array, source_note: String) -> DiceToolRewardChoice:
+	if source.is_empty():
+		return null
+	var total_weight := 0
+	for data in source:
+		total_weight += max(0, int(Dictionary(data).get("weight", 0)))
+	if total_weight <= 0:
+		return null
+	var roll := rng.randi_range(1, total_weight)
+	var cursor := 0
+	for data in source:
+		cursor += max(0, int(Dictionary(data).get("weight", 0)))
+		if roll <= cursor:
+			return DiceToolRewardChoice.from_tool_data(Dictionary(data), source_note)
+	return null
 
 
 func roll_random_forge_item(battle_index: int = 0) -> StringName:

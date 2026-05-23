@@ -63,6 +63,7 @@ var reward_overlay: Control = null
 var floating_layer: Control = null
 var marker_layer: Control = null
 var roster_signature := ""
+var face_state_signature := ""
 var display_die_order: Array[int] = []
 var hidden_die_indices: Array[int] = []
 var highlighted_die_indices: Array[int] = []
@@ -108,7 +109,10 @@ func render(state: BattleHudState) -> void:
 	if state == null:
 		return
 	_ensure_roster_for_state(state)
-	_sync_faces_from_state(state)
+	var next_face_signature := _face_state_signature(state)
+	if next_face_signature != face_state_signature:
+		face_state_signature = next_face_signature
+		_sync_faces_from_state(state)
 	_sync_selection_from_state(state)
 	_apply_transient_state()
 	_render_overlay_text(state)
@@ -244,6 +248,7 @@ func clear_hidden_die_indices() -> void:
 func clear_for_map_stage() -> void:
 	current_state = null
 	roster_signature = ""
+	face_state_signature = ""
 	display_die_order.clear()
 	hidden_die_indices.clear()
 	highlighted_die_indices.clear()
@@ -320,6 +325,8 @@ func reset_display_order() -> void:
 	display_die_order.clear()
 	if battle_mgr != null and battle_mgr.has_method("clear_display_die_order"):
 		battle_mgr.clear_display_die_order()
+	if battle_mgr != null and battle_mgr.has_method("apply_display_order_to_ready_positions"):
+		battle_mgr.apply_display_order_to_ready_positions()
 
 
 func show_resolution_dice(dice_data: Array[DieViewData], _transparent: bool = false) -> void:
@@ -627,6 +634,7 @@ func _ensure_roster_for_state(state: BattleHudState) -> void:
 	if next_signature == roster_signature and (next_signature != "" or not has_live_roster):
 		return
 	roster_signature = next_signature
+	face_state_signature = ""
 	display_die_order.clear()
 	if battle_mgr != null and battle_mgr.has_method("clear_display_die_order"):
 		battle_mgr.clear_display_die_order()
@@ -1115,6 +1123,16 @@ func _roster_signature(state: BattleHudState) -> String:
 		if die_data == null:
 			continue
 		parts.append("%d:%s:%d" % [die_data.die_index, str(die_data.die_id), die_data.face_count])
+	return "|".join(parts)
+
+
+func _face_state_signature(state: BattleHudState) -> String:
+	var parts := PackedStringArray()
+	for die_data in state.dice_results:
+		if die_data == null:
+			continue
+		var pip := die_data.current_face.pip if die_data.current_face != null else 0
+		parts.append("%d:%d:%d" % [die_data.die_index, die_data.current_face_index, pip])
 	return "|".join(parts)
 
 

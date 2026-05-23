@@ -3,6 +3,7 @@ class_name FoundryServiceCatalog
 
 
 const FoundryServiceDef = preload("res://scripts/data_defs/FoundryServiceDef.gd")
+const DiceToolCatalog = preload("res://scripts/rules/dice_tools/DiceToolCatalog.gd")
 
 
 const IMPLEMENTATION_FORMAL := &"formal"
@@ -83,43 +84,6 @@ const RARE_ORNAMENT_POOL := [
 	&"orn_poly",
 ]
 
-const RARE_DICE_TOOL_ITEM_POOL := [
-	{
-		"id": &"dice_tool_rare_chip_core",
-		"name": "稀有筹码核心",
-		"rarity": &"rare",
-		"sell_value": 24,
-	},
-	{
-		"id": &"dice_tool_rare_mult_core",
-		"name": "稀有倍率核心",
-		"rarity": &"rare",
-		"sell_value": 28,
-	},
-	{
-		"id": &"dice_tool_rare_gold_core",
-		"name": "稀有金流核心",
-		"rarity": &"rare",
-		"sell_value": 32,
-	},
-]
-
-const LEGENDARY_DICE_TOOL_ITEM_POOL := [
-	{
-		"id": &"dice_tool_legendary_sun_core",
-		"name": "传奇日冕核心",
-		"rarity": &"legendary",
-		"sell_value": 60,
-	},
-	{
-		"id": &"dice_tool_legendary_void_core",
-		"name": "传奇虚空核心",
-		"rarity": &"legendary",
-		"sell_value": 64,
-	},
-]
-
-
 static func get_all_defs() -> Array[FoundryServiceDef]:
 	return [
 		_make_def(FOUNDRY_HIGH_PIP_REFORGE, "高位回炉", "随机牺牲目标骰的一面，从 3 个高点普通候选面中选择 1 个覆盖。", TYPE_FACE_REFORGE, TARGET_DIE, false, "会随机牺牲 1 个现有骰面。", &"uncommon"),
@@ -182,11 +146,11 @@ static func get_rare_ornament_pool() -> Array[StringName]:
 
 
 static func get_rare_dice_tool_item_pool() -> Array:
-	return RARE_DICE_TOOL_ITEM_POOL.duplicate(true)
+	return DiceToolCatalog.get_special_dice_tool_item_pool(&"rare")
 
 
 static func get_legendary_dice_tool_item_pool() -> Array:
-	return LEGENDARY_DICE_TOOL_ITEM_POOL.duplicate(true)
+	return DiceToolCatalog.get_legendary_dice_tool_item_pool()
 
 
 static func _make_def(

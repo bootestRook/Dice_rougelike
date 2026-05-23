@@ -2,6 +2,8 @@ extends SceneTree
 
 
 const OUTPUT_DIR := "res://tests_or_debug/captures"
+const DiceToolCatalog = preload("res://scripts/rules/dice_tools/DiceToolCatalog.gd")
+const ItemInstance = preload("res://scripts/core/items/ItemInstance.gd")
 const RunState = preload("res://scripts/core/battle/RunState.gd")
 
 
@@ -17,11 +19,20 @@ func _init() -> void:
 
 	var scene := load("res://scenes/battle/BattleScreen.tscn")
 	var battle_screen = scene.instantiate()
-	if _has_arg("ornament"):
+	if _has_arg("ornament") or _has_arg("relic"):
 		var run_state := RunState.new()
 		run_state.setup_new_run()
-		run_state.dice[0].faces[0].ornament_id = &"orn_burst"
-		run_state.dice[0].faces[0].mark_id = &"red"
+		if _has_arg("ornament"):
+			run_state.dice[0].faces[0].ornament_id = &"orn_burst"
+			run_state.dice[0].faces[0].mark_id = &"red"
+		if _has_arg("relic"):
+			var item: ItemInstance = ItemInstance.create_dice_tool(
+				DiceToolCatalog.TOOL_BASIC_MULT,
+				DiceToolCatalog.display_name_for_id(DiceToolCatalog.TOOL_BASIC_MULT),
+				DiceToolCatalog.sell_value_for_rarity(&"common")
+			)
+			item.metadata["rarity"] = &"common"
+			run_state.install_dice_tool_item_instance(item)
 		battle_screen.setup(null, run_state)
 	root.add_child(battle_screen)
 

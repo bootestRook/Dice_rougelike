@@ -205,6 +205,9 @@ func automation_get_snapshot() -> Dictionary:
 		"last_rolled_dice_indices": map_state.get("last_rolled_dice_indices", []).duplicate(),
 		"selected_movement_dice_indices": selected_movement_dice_indices.duplicate(),
 		"pending_battle": bool(map_state.get("pending_battle", false)),
+		"pending_shop": bool(map_state.get("pending_shop", false)),
+		"pending_reward": bool(map_state.get("pending_reward", false)),
+		"pending_event": bool(map_state.get("pending_event", false)),
 		"circle": int(map_state.get("circle", 1)),
 		"circle_base_score": int(map_state.get("circle_base_score", 0)),
 		"circle_action_count": int(map_state.get("circle_action_count", 0)),
@@ -613,14 +616,20 @@ func _render_movement_dice() -> void:
 
 func _sync_movement_dice_stage_visibility() -> void:
 	var controls_visible := _movement_controls_visible()
+	var pending_action := (
+		bool(map_state.get("pending_battle", false))
+		or bool(map_state.get("pending_shop", false))
+		or bool(map_state.get("pending_reward", false))
+		or bool(map_state.get("pending_event", false))
+	)
 	if movement_dice_physics_view != null:
 		movement_dice_physics_view.visible = controls_visible
 	if circle_action_badge != null:
 		circle_action_badge.visible = controls_visible
 	if roll_button_wrapper != null:
-		roll_button_wrapper.visible = controls_visible and not bool(map_state.get("pending_battle", false))
+		roll_button_wrapper.visible = controls_visible and not pending_action
 	if enter_battle_button_wrapper != null:
-		enter_battle_button_wrapper.visible = controls_visible and bool(map_state.get("pending_battle", false))
+		enter_battle_button_wrapper.visible = controls_visible and pending_action
 
 
 func _movement_controls_visible() -> bool:
@@ -1145,20 +1154,28 @@ func _render_center_text() -> void:
 	next_node_label.text = "即将前往：%s" % [_next_hint_text()]
 	move_dice_label.text = "前进骰：已选择 %d / %d 颗正式战斗骰" % [selected_movement_dice_indices.size(), movement_dice.size()]
 	roll_result_label.text = _roll_result_text()
-	node_type_label.text = "节点类型：%s" % [_node_type_name(current_type)]
+	if current_type == &"shop" and bool(current_node.get("is_cleared", false)):
+		node_type_label.text = "节点类型：店铺已打烊"
+	else:
+		node_type_label.text = "节点类型：%s" % [_node_type_name(current_type)]
 	danger_label.text = _danger_text(current_type)
 
 	var pending_battle := bool(map_state.get("pending_battle", false))
+	var pending_shop := bool(map_state.get("pending_shop", false))
+	var pending_reward := bool(map_state.get("pending_reward", false))
+	var pending_event := bool(map_state.get("pending_event", false))
+	var pending_action := pending_battle or pending_shop or pending_reward or pending_event
 	var controls_visible := _movement_controls_visible()
-	roll_button_wrapper.visible = controls_visible and not pending_battle
-	enter_battle_button_wrapper.visible = controls_visible and pending_battle
+	roll_button_wrapper.visible = controls_visible and not pending_action
+	enter_battle_button_wrapper.visible = controls_visible and pending_action
 	if circle_action_badge != null:
 		circle_action_badge.visible = controls_visible
 	if roll_button != null:
-		roll_button.disabled = pending_battle or is_marker_animating or is_board_animating
+		roll_button.disabled = pending_action or is_marker_animating or is_board_animating
 	if enter_battle_button != null:
-		enter_battle_button.disabled = not pending_battle or is_marker_animating or is_board_animating
-	_set_texture_button_label(enter_battle_button_wrapper, "进入首领战" if current_type == &"boss" else "进入战斗")
+		enter_battle_button.disabled = not pending_action or is_marker_animating or is_board_animating
+	var action_label := "进入骰商铺" if pending_shop else ("领取奖励" if pending_reward else ("进入奇遇" if pending_event else ("进入首领战" if current_type == &"boss" else "进入战斗")))
+	_set_texture_button_label(enter_battle_button_wrapper, action_label)
 	_render_movement_dice()
 	_layout_roll_button()
 	_layout_enter_battle_button()
@@ -1219,6 +1236,15 @@ func _on_roll_pressed() -> void:
 
 func _on_enter_battle_pressed() -> void:
 	if game_flow_controller == null or is_marker_animating or is_board_animating:
+		return
+	if _current_node_type() == &"shop" and game_flow_controller.has_method("request_enter_shop_from_map"):
+		game_flow_controller.request_enter_shop_from_map()
+		return
+	if _current_node_type() == &"reward" and game_flow_controller.has_method("request_enter_reward_from_map"):
+		game_flow_controller.request_enter_reward_from_map()
+		return
+	if _current_node_type() == &"event" and game_flow_controller.has_method("request_enter_event_from_map"):
+		game_flow_controller.request_enter_event_from_map()
 		return
 	game_flow_controller.request_enter_battle_from_map()
 
@@ -1422,7 +1448,7 @@ func _node_short_name(node_type: StringName) -> String:
 		&"boss":
 			return "首领"
 		&"shop":
-			return "商店"
+			return "骰商铺"
 		&"forge":
 			return "铸骰"
 		&"reward":
@@ -1448,7 +1474,7 @@ func _node_type_name(node_type: StringName) -> String:
 		&"boss":
 			return "首领战"
 		&"shop":
-			return "商店"
+			return "骰商铺"
 		&"forge":
 			return "铸骰坊"
 		&"reward":

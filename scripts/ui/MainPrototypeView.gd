@@ -520,13 +520,26 @@ func _on_map_requested(map_state: Dictionary) -> void:
 
 
 func _on_reward_requested(choices: Array) -> void:
+	if _should_show_reward_as_standalone_screen():
+		_show_standalone_reward_screen(choices)
+		return
+
 	var existing_battle_screen := _current_battle_screen()
 	if existing_battle_screen != null and existing_battle_screen.has_method("show_reward_choices"):
 		current_view_id = &"battle_reward"
 		existing_battle_screen.call("show_reward_choices", choices)
 		return
 
+	_show_standalone_reward_screen(choices)
+
+
+func _should_show_reward_as_standalone_screen() -> bool:
+	return current_view_id == &"map" and map_stage_view != null and is_instance_valid(map_stage_view)
+
+
+func _show_standalone_reward_screen(choices: Array) -> void:
 	current_view_id = &"reward"
+	_discard_map_stage_view(true)
 	_clear_screen()
 	var reward_screen = load(REWARD_SCREEN_PATH).instantiate()
 	reward_screen.setup(game_flow_controller, choices)
@@ -879,12 +892,13 @@ func _automation_run_snapshot(state: RunState) -> Dictionary:
 		var choice = state.last_reward_choices[index]
 		if choice == null:
 			continue
+		var choice_object := choice as Object
 		rewards.append({
 			"index": index,
 			"id": str(choice.id),
-			"name": choice.get_display_name(),
-			"description": choice.get_description(),
-			"tags": choice.get_tags_display_text(),
+			"name": str(choice_object.call("get_display_name")) if choice_object != null and choice_object.has_method("get_display_name") else str(choice),
+			"description": str(choice_object.call("get_description")) if choice_object != null and choice_object.has_method("get_description") else "",
+			"tags": str(choice_object.call("get_tags_display_text")) if choice_object != null and choice_object.has_method("get_tags_display_text") else "",
 		})
 	return {
 		"battle": state.battle_index + 1,

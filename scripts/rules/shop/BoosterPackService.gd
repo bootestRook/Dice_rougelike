@@ -17,6 +17,8 @@ const ForgeItemService = preload("res://scripts/rules/forge/ForgeItemService.gd"
 const FoundryService = preload("res://scripts/rules/forge/FoundryService.gd")
 const FoundryServiceCatalog = preload("res://scripts/rules/forge/FoundryServiceCatalog.gd")
 const ItemInstance = preload("res://scripts/core/items/ItemInstance.gd")
+const ShopCatalog = preload("res://scripts/rules/shop/ShopCatalog.gd")
+const ShopOfferDef = preload("res://scripts/data_defs/ShopOfferDef.gd")
 
 
 const ALLOWED_COMBO_IDS := [
@@ -46,7 +48,7 @@ func _init() -> void:
 func open_pack(run_state, pack_id: StringName) -> Dictionary:
 	var pack_def := BoosterPackCatalog.get_def(pack_id)
 	if pack_def == null:
-		return {"success": false, "message": "补充包不存在"}
+		return {"success": false, "message": "骰包不存在"}
 
 	var candidates := generate_candidate_offers(run_state, pack_def)
 	var candidate_data := _offers_to_data(candidates)
@@ -63,7 +65,7 @@ func open_pack(run_state, pack_id: StringName) -> Dictionary:
 	if run_state != null:
 		run_state.pending_booster_resolution = pending
 
-	var message := "[补充包] 打开 %s。" % [pack_def.display_name]
+	var message := "[骰包] 打开 %s。" % [pack_def.display_name]
 	_record_log(run_state, message, {"kind": &"pack_open", "pack_id": pack_def.pack_id})
 	for tool_log in dice_tool_service.on_booster_pack_opened(run_state, pack_def.pack_id):
 		_record_log(run_state, tool_log, {"kind": &"dice_tool", "pack_id": pack_def.pack_id})
@@ -87,13 +89,13 @@ func generate_candidate_offers(run_state, pack_def_or_id) -> Array[BoosterOfferD
 	match pack_def.pack_kind:
 		BoosterPackDef.KIND_FACE:
 			face_offer_generator.rng.seed = rng.randi()
-			return face_offer_generator.generate_face_offers(run_state, pack_def.candidate_count)
+			return face_offer_generator.generate_face_offers(run_state, _candidate_count_for_pack(run_state, pack_def))
 		BoosterPackDef.KIND_FORGE:
 			return _generate_forge_offers(run_state, pack_def)
 		BoosterPackDef.KIND_COMBO:
-			return _generate_combo_offers(pack_def)
-		BoosterPackDef.KIND_TOOL:
-			return _generate_tool_offers(run_state, pack_def)
+			return _generate_combo_offers(run_state, pack_def)
+		BoosterPackDef.KIND_RELIC:
+			return _generate_relic_offers(run_state, pack_def)
 		BoosterPackDef.KIND_FOUNDRY:
 			return _generate_foundry_offers(run_state, pack_def)
 		_:
@@ -112,7 +114,7 @@ func select_pending_offer(run_state, offer_index: int, args: Dictionary = {}) ->
 		return {"success": false, "message": "缺少本局状态"}
 	var pending: Dictionary = run_state.pending_booster_resolution
 	if pending.is_empty():
-		return {"success": false, "message": "没有待处理的补充包"}
+		return {"success": false, "message": "没有待处理的骰包"}
 
 	var candidate_data: Array = pending.get("candidate_offers", [])
 	if offer_index < 0 or offer_index >= candidate_data.size():
@@ -171,12 +173,12 @@ func skip_pending_pack(run_state) -> Dictionary:
 		return {"success": false, "message": "缺少本局状态"}
 	var pending: Dictionary = run_state.pending_booster_resolution
 	if pending.is_empty():
-		return {"success": false, "message": "没有待处理的补充包"}
+		return {"success": false, "message": "没有待处理的骰包"}
 	var pack_id := StringName(str(pending.get("pack_id", &"")))
 	for tool_log in dice_tool_service.on_booster_pack_skipped(run_state, pack_id):
 		_record_log(run_state, tool_log, {"kind": &"dice_tool", "pack_id": pack_id})
 	run_state.pending_booster_resolution.clear()
-	return {"success": true, "message": "[补充包] 已跳过。"}
+	return {"success": true, "message": "[骰包] 已跳过。"}
 
 
 func close_completed_pack(run_state) -> Dictionary:
@@ -184,11 +186,11 @@ func close_completed_pack(run_state) -> Dictionary:
 		return {"success": false, "message": "缺少本局状态"}
 	var pending: Dictionary = run_state.pending_booster_resolution
 	if pending.is_empty():
-		return {"success": false, "message": "没有待处理的补充包"}
+		return {"success": false, "message": "没有待处理的骰包"}
 	if not bool(pending.get("completed", false)):
-		return {"success": false, "message": "补充包尚未完成选择"}
+		return {"success": false, "message": "骰包尚未完成选择"}
 	run_state.pending_booster_resolution.clear()
-	return {"success": true, "message": "[补充包] 已完成。"}
+	return {"success": true, "message": "[骰包] 已完成。"}
 
 
 func apply_booster_offer(run_state, offer_any, args: Dictionary = {}) -> Dictionary:
@@ -229,7 +231,7 @@ func apply_face_offer_to_target(run_state, face_offer: FaceOffer, die_index: int
 
 
 func _generate_forge_offers(run_state, pack_def: BoosterPackDef) -> Array[BoosterOfferDef]:
-	var ids := _draw_unique_ids(ForgeItemCatalog.get_forge_item_pack_pool_ids(), pack_def.candidate_count)
+	var ids := _draw_unique_ids(ForgeItemCatalog.get_forge_item_pack_pool_ids(), _candidate_count_for_pack(run_state, pack_def))
 	var result: Array[BoosterOfferDef] = []
 	for index in range(ids.size()):
 		var id := ids[index]
@@ -248,8 +250,16 @@ func _generate_forge_offers(run_state, pack_def: BoosterPackDef) -> Array[Booste
 	return result
 
 
-func _generate_combo_offers(pack_def: BoosterPackDef) -> Array[BoosterOfferDef]:
-	var ids := _draw_unique_ids(get_combo_candidate_pool(), pack_def.candidate_count)
+func _generate_combo_offers(run_state, pack_def: BoosterPackDef) -> Array[BoosterOfferDef]:
+	var candidate_count := _candidate_count_for_pack(run_state, pack_def)
+	var ids := _draw_unique_ids(get_combo_candidate_pool(), candidate_count)
+	if run_state != null and bool(run_state.combo_pack_include_most_played):
+		var preferred_id := _most_played_combo_id(run_state)
+		if preferred_id != &"" and get_combo_candidate_pool().has(preferred_id) and not ids.has(preferred_id):
+			if ids.size() < candidate_count:
+				ids.append(preferred_id)
+			elif not ids.is_empty():
+				ids[0] = preferred_id
 	var result: Array[BoosterOfferDef] = []
 	for index in range(ids.size()):
 		var combo_id := ids[index]
@@ -265,8 +275,11 @@ func _generate_combo_offers(pack_def: BoosterPackDef) -> Array[BoosterOfferDef]:
 	return result
 
 
-func _generate_tool_offers(run_state, pack_def: BoosterPackDef) -> Array[BoosterOfferDef]:
-	var items := _draw_unique_tool_items(DiceToolCatalog.get_item_pool_for_rarity(), pack_def.candidate_count)
+func _generate_relic_offers(run_state, pack_def: BoosterPackDef) -> Array[BoosterOfferDef]:
+	var items := _draw_weighted_unique_tool_items(
+		DiceToolCatalog.get_weighted_pack_item_pool(pack_def.pack_id),
+		_candidate_count_for_pack(run_state, pack_def)
+	)
 	var result: Array[BoosterOfferDef] = []
 	for index in range(items.size()):
 		var data: Dictionary = items[index]
@@ -279,17 +292,17 @@ func _generate_tool_offers(run_state, pack_def: BoosterPackDef) -> Array[Booster
 			id,
 			{
 				"rarity": StringName(str(data.get("rarity", &"common"))),
-				"sell_value": int(data.get("sell_value", 0)),
+				"sell_value": ShopCatalog.sell_price_for_payload(ShopOfferDef.PAYLOAD_DICE_TOOL_ITEM, id),
 			}
 		)
-		if _free_item_slots(run_state) <= 0:
-			offer.mark_disabled("道具槽位不足")
+		if _free_relic_slots(run_state) <= 0:
+			offer.mark_disabled("遗物槽位不足")
 		result.append(offer)
 	return result
 
 
 func _generate_foundry_offers(run_state, pack_def: BoosterPackDef) -> Array[BoosterOfferDef]:
-	var ids := _draw_unique_ids(FoundryServiceCatalog.get_all_ids(), pack_def.candidate_count)
+	var ids := _draw_unique_ids(FoundryServiceCatalog.get_all_ids(), _candidate_count_for_pack(run_state, pack_def))
 	var result: Array[BoosterOfferDef] = []
 	for index in range(ids.size()):
 		var id := ids[index]
@@ -316,7 +329,7 @@ func _apply_forge_offer(run_state, offer: BoosterOfferDef, args: Dictionary) -> 
 		_source_face_ref(args)
 	)
 	if bool(result.get("success", false)):
-		var message := "[补充包] 选择 铸骰件：%s，立即处理。" % [offer.display_name]
+		var message := "[骰包] 选择 铸骰件：%s，立即处理。" % [offer.display_name]
 		_record_log(run_state, message, {"kind": &"forge_item", "item_id": offer.payload_id})
 		result["message"] = message
 	return result
@@ -333,17 +346,17 @@ func _apply_combo_offer(run_state, offer: BoosterOfferDef) -> Dictionary:
 func _apply_tool_offer(run_state, offer: BoosterOfferDef) -> Dictionary:
 	if run_state == null:
 		return {"success": false, "message": "缺少本局状态"}
-	if run_state.get_free_item_slot_count() <= 0:
-		return {"success": false, "message": "道具槽位不足"}
+	if run_state.get_free_dice_tool_slot_count() <= 0:
+		return {"success": false, "message": "遗物槽位不足"}
 	var item: ItemInstance = ItemInstance.create_dice_tool(
 		offer.payload_id,
 		offer.display_name,
 		int(offer.payload_data.get("sell_value", 0))
 	)
 	item.metadata["rarity"] = StringName(str(offer.payload_data.get("rarity", &"common")))
-	if not run_state.add_item_instance_to_slots(item):
-		return {"success": false, "message": "道具槽位不足"}
-	var message := "[补充包] 选择 骰具：%s，生成骰具道具进入道具槽位。" % [offer.display_name]
+	if not run_state.install_dice_tool_item_instance(item):
+		return {"success": false, "message": "遗物槽位不足"}
+	var message := "[骰包] 选择 骰具遗物：%s，进入遗物栏。" % [offer.display_name]
 	_record_log(run_state, message, {"kind": &"dice_tool_item", "tool_id": offer.payload_id})
 	return {
 		"success": true,
@@ -355,10 +368,34 @@ func _apply_tool_offer(run_state, offer: BoosterOfferDef) -> Dictionary:
 func _apply_foundry_offer(run_state, offer: BoosterOfferDef, args: Dictionary) -> Dictionary:
 	var result := foundry_service.apply_service(run_state, offer.payload_id, args)
 	if bool(result.get("success", false)):
-		var message := "[补充包] 选择 工坊服务：%s，立即处理。" % [offer.display_name]
+		var message := "[骰包] 选择 工坊服务：%s，立即处理。" % [offer.display_name]
 		_record_log(run_state, message, {"kind": &"foundry_service", "service_id": offer.payload_id})
 		result["message"] = message
 	return result
+
+
+func _candidate_count_for_pack(run_state, pack_def: BoosterPackDef) -> int:
+	if pack_def == null:
+		return 0
+	var count: int = max(0, pack_def.candidate_count)
+	if run_state == null:
+		return count
+	match pack_def.pack_kind:
+		BoosterPackDef.KIND_FACE:
+			count += max(0, int(run_state.face_pack_extra_candidates))
+		BoosterPackDef.KIND_FORGE:
+			count += max(0, int(run_state.forge_pack_extra_candidates))
+		BoosterPackDef.KIND_COMBO:
+			count += max(0, int(run_state.combo_pack_extra_candidates))
+	return count
+
+
+func _most_played_combo_id(run_state) -> StringName:
+	if run_state == null:
+		return &""
+	if run_state.has_method("get_most_scored_combo_id"):
+		return run_state.get_most_scored_combo_id()
+	return &""
 
 
 func _pack_def_from_any(value) -> BoosterPackDef:
@@ -405,10 +442,38 @@ func _draw_unique_tool_items(source: Array, count: int) -> Array:
 	return result
 
 
+func _draw_weighted_unique_tool_items(source: Array, count: int) -> Array:
+	var pool := source.duplicate(true)
+	var result: Array = []
+	while result.size() < count and not pool.is_empty():
+		var total_weight := 0
+		for data in pool:
+			total_weight += max(0, int(Dictionary(data).get("weight", 0)))
+		if total_weight <= 0:
+			break
+		var roll := rng.randi_range(1, total_weight)
+		var cursor := 0
+		var selected_index := 0
+		for index in range(pool.size()):
+			cursor += max(0, int(Dictionary(pool[index]).get("weight", 0)))
+			if roll <= cursor:
+				selected_index = index
+				break
+		result.append(Dictionary(pool[selected_index]).duplicate(true))
+		pool.remove_at(selected_index)
+	return result
+
+
 func _free_item_slots(run_state) -> int:
 	if run_state == null:
 		return 0
 	return run_state.get_free_item_slot_count()
+
+
+func _free_relic_slots(run_state) -> int:
+	if run_state == null:
+		return 0
+	return run_state.get_free_dice_tool_slot_count()
 
 
 func _target_face_ref(args: Dictionary) -> Dictionary:

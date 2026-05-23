@@ -20,7 +20,7 @@ func use_from_pack(run_state, combo_id: StringName) -> Dictionary:
 		return {"success": false, "message": "主骰型升级失败"}
 
 	var after_level := before_level + 1
-	var message := "[补充包] 选择 主骰型升级：%s，%s等级 +1。" % [
+	var message := "[骰包] 选择 主骰型升级：%s，%s等级 +1。" % [
 		DisplayNames.combo_name(normalized_id),
 		DisplayNames.combo_name(normalized_id),
 	]

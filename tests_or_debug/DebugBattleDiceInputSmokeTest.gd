@@ -3,6 +3,7 @@ class_name DebugBattleDiceInputSmokeTest
 
 
 const BattleDiceStage3D = preload("res://scripts/ui/battle/components/BattleDiceStage3D.gd")
+const RerollMagicFx = preload("res://scripts/ui/battle/components/RerollMagicFx.gd")
 const EXPECTED_BATTLE_BACKGROUND_PATH := "res://assets/ui/map/map_tabletop_neon_comic.png"
 
 
@@ -84,6 +85,17 @@ func _init() -> void:
 		var after_reroll := _roll_signatures(battle_screen)
 		all_passed = _check("3D 重投只提交所选骰子结果", _only_index_may_change(before_reroll, after_reroll, picked_index)) and all_passed
 		all_passed = _check("3D 重投后显示面与 Controller 一致", _stage_faces_match_controller(stage, battle_screen)) and all_passed
+
+	var magic_spawned_during_victory_showcase := [false]
+	var node_added_callable := func(node: Node) -> void:
+		if node is RerollMagicFx:
+			magic_spawned_during_victory_showcase[0] = true
+	node_added.connect(node_added_callable)
+	await battle_screen.call("_play_victory_reward_showcase")
+	if node_added.is_connected(node_added_callable):
+		node_added.disconnect(node_added_callable)
+	all_passed = _check("Victory reward showcase does not spawn RerollMagicFx", not bool(magic_spawned_during_victory_showcase[0])) and all_passed
+	all_passed = _check("Victory reward showcase keeps dice visible", stage != null and not _stage_hides_all_dice(stage)) and all_passed
 
 	battle_screen.queue_free()
 	print("PASS: DebugBattleDiceInputSmokeTest" if all_passed else "FAIL: DebugBattleDiceInputSmokeTest")

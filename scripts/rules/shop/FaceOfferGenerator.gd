@@ -21,6 +21,12 @@ const ORDINARY_ORNAMENT_POOL := [
 	FaceState.ORN_LUCKY,
 ]
 
+const ADVANCED_ORNAMENT_POOL := [
+	FaceState.ORN_FOIL,
+	FaceState.ORN_HOLO,
+	FaceState.ORN_POLY,
+]
+
 const BASIC_MARK_POOL := [
 	FaceState.MARK_RED,
 	FaceState.MARK_BLUE,
@@ -76,7 +82,7 @@ func apply_to_target(run_state, face_offer: FaceOffer, die_index: int, face_inde
 	if face_offer.covers_mark():
 		face.mark_id = FaceState.normalize_mark_id(face_offer.mark_id)
 
-	var message := "[补充包] 骰面改造：将 %s 第 %d 面覆盖为 %d / %s / %s。" % [
+	var message := "[骰包] 骰面改造：将 %s 第 %d 面覆盖为 %d / %s / %s。" % [
 		_die_label(entry),
 		face_index + 1,
 		face.pip,
@@ -108,7 +114,7 @@ func _make_face_offer(run_state, index: int) -> FaceOffer:
 				pip
 			)
 		2:
-			var ornament_id := _draw_ordinary_ornament()
+			var ornament_id := _draw_ornament(run_state)
 			return FaceOffer.create(
 				StringName("face_offer_pip_orn_%d" % [index]),
 				"%d 点 / %s" % [pip, DisplayNames.ornament_name(ornament_id)],
@@ -117,7 +123,7 @@ func _make_face_offer(run_state, index: int) -> FaceOffer:
 				ornament_id
 			)
 		3:
-			var ornament_only := _draw_ordinary_ornament()
+			var ornament_only := _draw_ornament(run_state)
 			return FaceOffer.create(
 				StringName("face_offer_orn_%d" % [index]),
 				DisplayNames.ornament_name(ornament_only),
@@ -148,9 +154,21 @@ func _to_booster_offer(face_offer: FaceOffer, index: int) -> BoosterOfferDef:
 	)
 
 
-func _draw_ordinary_ornament() -> StringName:
-	var pool := ORDINARY_ORNAMENT_POOL
-	return pool[rng.randi_range(0, pool.size() - 1)]
+func _draw_ornament(run_state) -> StringName:
+	var weighted: Array[StringName] = []
+	for ornament_id in ORDINARY_ORNAMENT_POOL:
+		for _weight_index in range(4):
+			weighted.append(ornament_id)
+	var advanced_weight := 1
+	if run_state != null:
+		advanced_weight = max(1, int(round(float(run_state.advanced_ornament_weight_multiplier))))
+	if run_state == null or bool(run_state.advanced_face_pack_rewards_enabled) or advanced_weight > 1:
+		for ornament_id in ADVANCED_ORNAMENT_POOL:
+			for _weight_index in range(advanced_weight):
+				weighted.append(ornament_id)
+	if weighted.is_empty():
+		return FaceState.ORN_NONE
+	return weighted[rng.randi_range(0, weighted.size() - 1)]
 
 
 func _draw_legal_pip_seen_in_run(run_state) -> int:

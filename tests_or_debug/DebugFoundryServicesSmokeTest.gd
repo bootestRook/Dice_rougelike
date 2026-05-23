@@ -4,6 +4,7 @@ class_name DebugFoundryServicesSmokeTest
 
 const DieState = preload("res://scripts/core/dice/DieState.gd")
 const FaceState = preload("res://scripts/core/dice/FaceState.gd")
+const DiceToolCatalog = preload("res://scripts/rules/dice_tools/DiceToolCatalog.gd")
 const DiceToolState = preload("res://scripts/core/dice/DiceToolState.gd")
 const RunState = preload("res://scripts/core/battle/RunState.gd")
 const RewardGenerator = preload("res://scripts/rules/reward/RewardGenerator.gd")
@@ -27,6 +28,7 @@ func _init() -> void:
 	all_passed = _check_face_double_copy_legality() and all_passed
 	all_passed = _check_all_combo_upgrade_only_main_combos() and all_passed
 	all_passed = _check_item_slot_shortage() and all_passed
+	all_passed = _check_tool_pack_uses_real_catalog_ids() and all_passed
 	all_passed = _check_tool_clone_purge_copy_rules() and all_passed
 
 	print("PASS: DebugFoundryServicesSmokeTest" if all_passed else "FAIL: DebugFoundryServicesSmokeTest")
@@ -279,6 +281,30 @@ func _check_item_slot_shortage() -> bool:
 		and service.get_unavailable_reason(run_state, FoundryServiceCatalog.FOUNDRY_RARE_TOOL_PACK) == "道具槽位不足"
 	)
 	return _check("tool pack services are unavailable when item slots are full", passed)
+
+
+func _check_tool_pack_uses_real_catalog_ids() -> bool:
+	var service := FoundryService.new()
+	service.rng.seed = 2026
+	var rare_run := _make_foundry_run()
+	var rare_result := service.apply_service(rare_run, FoundryServiceCatalog.FOUNDRY_RARE_TOOL_PACK)
+	var legendary_run := _make_foundry_run()
+	var legendary_result := service.apply_service(legendary_run, FoundryServiceCatalog.FOUNDRY_LEGENDARY_TOOL_PACK)
+	var rare_id := rare_run.item_slots[0].item_id if rare_run.item_slots.size() > 0 else &""
+	var legendary_id := legendary_run.item_slots[0].item_id if legendary_run.item_slots.size() > 0 else &""
+	var rare_def := DiceToolCatalog.get_def(rare_id)
+	var legendary_def := DiceToolCatalog.get_def(legendary_id)
+	var passed := (
+		bool(rare_result.get("success", false))
+		and bool(legendary_result.get("success", false))
+		and rare_def != null
+		and legendary_def != null
+		and rare_def.rarity == &"rare"
+		and legendary_def.rarity == &"legendary"
+		and rare_run.item_slots.size() == 1
+		and legendary_run.item_slots.size() == 1
+	)
+	return _check("foundry dice tool packs generate real catalog dice-tool items", passed)
 
 
 func _check_tool_clone_purge_copy_rules() -> bool:

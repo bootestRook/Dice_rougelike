@@ -1,3 +1,73 @@
+# 骰商铺发现记录
+
+## 2026-05-23 第一圈商店保护发现
+- 第一圈地图生成旧实现曾把中间 30 个节点全部设为 `shop`，这会让玩家刚出出生点就频繁踩商店，和“出生点后 1-12 格禁止 shop、最早第 15 格出现 shop”的保护规则冲突。
+- 保护规则需要分两层处理：地图层负责首个 shop 的位置，商店层负责该 shop 的商品池；只改其中一层都会漏掉问题。
+- “第一圈第一个商店”不应靠 `RunState.current_circle_index` 单独判断，还需要确认当前地图节点就是本圈第一个 shop；否则普通调试入口或后续商店也会误套保护池。
+- 保护商店的刷新费应在当前店内固定走正常公式 `5 + reroll_count`，否则玩家可能通过当前店买到“刷新补贴 / 刷新过载”后立刻改变这个保护商店自身的刷新规则。
+- 地图截图需要完整主场景承载才能看到节点图标；单独实例化 `MapStageView` 只能验证 manifest，不适合作为最终视觉图。
+
+## 2026-05-23 购买遗物后顶部栏未同步发现
+- 商店遗物货架购买链路已经把骰具遗物实例安装到 `RunState.dice_tools`，不是旧的 `relic_ids` 字段。
+- 顶部战斗 HUD 的遗物栏仍由 `BattleScreen._build_relic_slots()` 从 `run_state.relic_ids` 构建，因此购买后底层状态已变化，但可见遗物栏仍显示空。
+- 遗物容量也不应在 HUD 侧固定沿用旧展示容量；应从 `RunState.dice_tool_capacity + RunState.contract_tool_slots` 读取，才能和商店“遗物槽位剩余”一致。
+- 修复方向是让商店、战斗 HUD、测试都以 `RunState.dice_tools` 作为骰具遗物的唯一运行时数据源，旧 `relic_ids` 仅保留为兼容回退。
+
+## 2026-05-23 商店骰包总表发现
+- 商店骰包最终只保留 9 个正式 ID：`pack_face_basic/large/mega`、`pack_combo_basic/large/mega`、`pack_relic_basic/large/mega`。
+- 旧 `pack_tool_*` 不再符合最终命名，虽然显示名仍是骰具包，但内部正式 ID 应改为遗物包 ID。
+- 遗物包的购买后效果不是进入普通道具槽，而是选择骰具遗物后直接进入遗物栏；因此购买前应检查遗物槽位，不应检查普通道具槽位。
+- 铸骰件包和工坊服务包继续不属于商店骰包目录。
+
+## 2026-05-23 长期解锁保留表发现
+- 最新保留表为 29 项，之前只有 ID 的 `unlock_battle_reward_extra_choice` 现在明确为“宽幅调色板”，效果是战斗胜利奖励候选数 +1。
+- 主型商人不再影响随机商品槽或主骰型升级件货架，改为商店骰包槽中主骰型包权重 ×2。
+- 骰面陈列不再直接出售骰面商品，改为商店骰包槽中骰面改造包权重 ×2。
+- 幻彩陈列不再创建高级骰面橱窗槽，改为让骰面改造包允许出现更高级骰面奖励。
+- 储物水晶和反物质槽需要在文案上区分：前者是道具槽位，后者是遗物槽位。
+
+## 2026-05-23 商店最终结构收窄发现
+- 最新口径把骰商铺固定为长期解锁 ×1、商店骰包 ×2、骰具遗物 ×2、刷新按钮、离开按钮。
+- 商店骰包目录应只保留骰面改造包、主骰型包、骰具包；铸骰件包和工坊服务包从商店骰包目录移除。
+- 原随机商品槽需要收窄为遗物货架，商品池只出骰具遗物；刷新按钮只替换遗物货架。
+- 商人服务槽和高级骰面橱窗不再属于最终商铺结构；长期解锁池也需要剔除对应不再产生当前局收益的商铺项。
+
+## 2026-05-23 遗物货架规则发现
+- 遗物货架不是道具货架：购买骰具遗物后必须直接进入 `RunState.dice_tools`，不占用 `item_slots`。
+- 满栏阻止应检查 `get_free_dice_tool_slot_count()`，提示固定为“遗物栏已满，请先出售一个遗物。”；道具槽满不再影响遗物货架购买。
+- 传说骰具遗物不能出现在普通骰商铺：除了遗物货架直接售卖，商铺内出售的骰具包也应过滤传说遗物，否则仍等价于普通商铺卖传说。
+- 当前 `DiceToolCatalog` 没有史诗骰具遗物；第 6–8 圈 2% 史诗权重会在无史诗池时回退到其他非传说池，等后续有史诗遗物数据后自动生效。
+- 商铺出售遗物需要走规则层统一入口，以便触发 `DiceToolService.on_tool_sold()`，否则双奖汽水、营火出售器等已有出售钩子会被绕过。
+- `CaptureShopScreenLayout.gd` 不能在 headless 模式下取 `root.get_texture()`；截图验收需要非 headless Godot，并加 `--quit-after` 防止截图失败时进程挂起。
+- 商铺卡片只写“购买后进入遗物栏 / 购买后打开”不足以支撑购买决策；需要在卡片正文直接展示骰具效果、骰包候选数、选择数和内容范围。
+- `purchase_offer_by_slot()` 最初只在长期解锁和遗物货架购买后清槽，骰包购买后虽然打开了候选包，但 `booster_slots` 原槽位仍保留旧 offer，导致玩家完成包选择后还能看到原骰包卡；骰包槽也需要购买成功即设为 `null`。
+
+## 2026-05-23 长期解锁总表发现
+- 当前 `LongTermUnlockCatalog` 只有 10 项旧长期解锁，需要替换为新总表。
+- `LongTermUnlockDef` 当前只支持 `effect_type + int effect_value`，无法表达折扣、布尔开关、权重倍率等复合效果；需要扩展为参数字典或用服务层按 ID 分发。
+- `RunState` 已有部分字段：`shop_random_item_slot_bonus`、`shop_booster_slot_bonus`、`shop_reroll_base_cost`、`item_slot_capacity`、`dice_tool_capacity`、`battle_rounds_available_delta`、`battle_rerolls_per_hand_delta`、`max_scored_faces_per_round_delta`，可直接映射部分新项。
+- 第 32 项缺完整规格，不应放入商铺池。
+- 已落地发现：完整 31 项可用；第 32 项 `unlock_battle_reward_extra_choice` 没有显示名、价格、类型和具体效果，保持不入池。
+- 工坊服务包此前默认在骰包池内；现在改为必须购买“工坊预兆”后才进入骰商铺骰包槽。
+- “骰面陈列”通过随机商品槽出售基础骰面改造商品并复用骰包候选处理；“幻彩陈列”通过额外高级骰面橱窗槽展示大型/豪华骰面改造包。
+- Boss 规则重拟/追溯当前以 `RunState` 参数形式保存，供后续 Boss 规则选择界面读取；危急值减免已接入目标分计算。
+
+## 待审查
+- 需要确认地图是否已有商店格子/节点类型。
+- 需要确认是否已有 Shop、Voucher、Pack、Service、Item 相关脚本或只存在奖励/铸骰件系统。
+- 需要确认主流程 `GameFlowController` 如何在 Battle / Reward / Forge / Map 间切换，以最小范围接入 Shop。
+
+## 2026-05-23 初步发现
+- 仓库已有 `scenes/shop/ShopScreen.tscn`、`scripts/ui/shop/ShopScreen.gd`、`scripts/rules/shop/ShopService.gd`、`ShopCatalog.gd`、`BoosterPackService.gd`，以及 `DebugShopPackSmokeTest.gd`。
+- `MainPrototypeView` 已监听 `GameFlowController.shop_requested` 并加载 `ShopScreen`。
+- 现有 Debug 测试已覆盖 2 个随机商品槽、2 个补充包槽、1 个长期解锁槽和刷新只改随机商品槽，但需要确认商人服务槽是否缺失、UI 文案是否需要从“商店/补充包”调整为“骰商铺/商店骰包”。
+
+## 2026-05-23 细化发现
+- `ShopService.generate_shop()` 当前只生成 `random_item_slots`、`booster_slots`、`long_term_unlock_slot`，缺少 `merchant_service_slot`。
+- `ShopScreen` 当前标题为“商店”，顺序为随机商品 -> 补充包 -> 长期解锁，缺少离开按钮。
+- `GameFlowController` 已有 `enter_shop()`，但地图落到 `shop` 节点后没有 pending shop 状态，也没有从地图进入商店/离开商店回地图的专用方法。
+- 商店截图脚本在 headless 模式会卡住取图；非 headless 运行可正常保存 PNG。
+
 # 战斗入场与操作按钮发现记录
 
 ## 2026-05-21 追加发现：地图前进骰仍是独立 D6
@@ -37,3 +107,11 @@
 - 正式战斗的实际链路是 `GmDiceViewport` 创建固定 2.5D 视口，`GmReadyMgr` 管准备位，`GmBattleMgr.roll_using_dices()` 投掷并在回位后暴露 face index / pip。
 - 修复方向：地图组件直接复用这三者，只保留两个 formal dice definition；地图移动提交 GM 物理骰实际落面，而不是提前生成结果再播放旧骰子动画。
 - 兼容点：GM target 原本只接受 pip，补充 `{face_index: ...}` 后可保留精确骰面请求，不影响原有 pip target 测试。
+# Resource cleanup findings 2026-05-23
+
+- Runtime reference scan found 124 image files under `assets/`.
+- 100 images are referenced by current runtime files in `project.godot`, `scenes/`, `scripts/`, or active `.tres/.tscn` assets.
+- Confirmed delete candidates: `assets/ui/map/node_*_placeholder.png` and `assets/ui/map/source/generated_node_icon_sheet_20260519.png`; their replacements are already wired through `scenes/map/resources/MapStageArtConfig.tres`.
+- Kept `assets/scenes/preview/preview_shots/*.png`: not runtime game dependencies, but material pipeline Debug tests and docs still depend on them.
+- No battle VFX frames in `assets/ui/battle/vfx` are unused: reroll frames are preloaded by `RerollMagicFx.gd`, and round intro textures are ext_resources in `RoundIntroBanner.tscn`.
+- After cleanup, the only runtime-unreferenced images left under `assets/` are material preview screenshots intentionally retained for pipeline validation.

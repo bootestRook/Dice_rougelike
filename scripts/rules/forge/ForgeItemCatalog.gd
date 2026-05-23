@@ -155,6 +155,10 @@ static func get_dice_tool_item_pool() -> Array:
 	return DiceToolCatalog.get_item_pool_for_rarity()
 
 
+static func get_generated_dice_tool_item_pool() -> Array:
+	return DiceToolCatalog.get_generated_dice_tool_item_pool()
+
+
 static func display_name_for_id(id: StringName) -> String:
 	var def := get_def(id)
 	if def != null:

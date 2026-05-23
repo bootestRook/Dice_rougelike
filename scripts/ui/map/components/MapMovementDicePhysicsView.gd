@@ -2017,7 +2017,7 @@ func _node_short_name(node_type: StringName) -> String:
 		&"boss":
 			return "首领"
 		&"shop":
-			return "商店"
+			return "骰商铺"
 		&"forge":
 			return "铸骰"
 		&"reward":

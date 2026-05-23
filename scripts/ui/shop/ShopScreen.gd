@@ -10,6 +10,8 @@ const ForgeItemCatalog = preload("res://scripts/rules/forge/ForgeItemCatalog.gd"
 const FoundryServiceCatalog = preload("res://scripts/rules/forge/FoundryServiceCatalog.gd")
 const GameFlowController = preload("res://scripts/runtime/GameFlowController.gd")
 const RunState = preload("res://scripts/core/battle/RunState.gd")
+const DisplayNames = preload("res://scripts/ui/DisplayNames.gd")
+const ShopCatalog = preload("res://scripts/rules/shop/ShopCatalog.gd")
 const ShopService = preload("res://scripts/rules/shop/ShopService.gd")
 const ShopOfferDef = preload("res://scripts/data_defs/ShopOfferDef.gd")
 
@@ -23,6 +25,7 @@ var root: VBoxContainer = null
 var booster_area: VBoxContainer = null
 var message_label: Label = null
 var last_message: String = ""
+var pending_sell_relic_index: int = -1
 
 
 func setup(new_game_flow_controller: GameFlowController, new_run_state: RunState, new_shop_state: Dictionary = {}) -> void:
@@ -48,19 +51,20 @@ func _build_view() -> void:
 	var margin := MarginContainer.new()
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	margin.add_theme_constant_override("margin_left", 28)
-	margin.add_theme_constant_override("margin_top", 24)
+	margin.add_theme_constant_override("margin_top", 20)
 	margin.add_theme_constant_override("margin_right", 28)
-	margin.add_theme_constant_override("margin_bottom", 24)
+	margin.add_theme_constant_override("margin_bottom", 20)
 	add_child(margin)
 
 	root = VBoxContainer.new()
-	root.add_theme_constant_override("separation", 16)
+	root.add_theme_constant_override("separation", 9)
 	margin.add_child(root)
 
 	root.add_child(_make_title_row())
-	root.add_child(_make_offer_section("随机商品槽", shop_state.get("random_item_slots", []), &"random_item_slots"))
-	root.add_child(_make_offer_section("补充包槽", shop_state.get("booster_slots", []), &"booster_slots"))
 	root.add_child(_make_single_offer_section("长期解锁槽", shop_state.get("long_term_unlock_slot", null), &"long_term_unlock_slot"))
+	root.add_child(_make_offer_section("商店骰包槽", shop_state.get("booster_slots", []), &"booster_slots"))
+	root.add_child(_make_offer_section("遗物货架", shop_state.get("relic_shelf_slots", []), &"relic_shelf_slots"))
+	root.add_child(_make_owned_relic_section())
 
 	booster_area = VBoxContainer.new()
 	booster_area.add_theme_constant_override("separation", 8)
@@ -78,9 +82,22 @@ func _make_title_row() -> Control:
 	row.add_theme_constant_override("separation", 18)
 	panel.add_child(row)
 
-	row.add_child(_make_label("商店", 28, Color(0.98, 0.92, 0.72)))
-	row.add_child(_make_label("金币：%d" % [run_state.coins if run_state != null else 0], 18, Color(0.92, 0.9, 0.84)))
-	row.add_child(_make_label("道具槽位剩余：%d" % [run_state.get_free_item_slot_count() if run_state != null else 0], 18, Color(0.78, 0.9, 0.82)))
+	var title_label := _make_label("骰商铺", 28, Color(0.98, 0.92, 0.72))
+	title_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	title_label.custom_minimum_size = Vector2(150, 40)
+	row.add_child(title_label)
+	var coin_label := _make_label("金币：%d" % [run_state.coins if run_state != null else 0], 18, Color(0.92, 0.9, 0.84))
+	coin_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	coin_label.custom_minimum_size = Vector2(110, 40)
+	row.add_child(coin_label)
+	var item_slot_label := _make_label("道具槽位剩余：%d" % [run_state.get_free_item_slot_count() if run_state != null else 0], 18, Color(0.78, 0.9, 0.82))
+	item_slot_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	item_slot_label.custom_minimum_size = Vector2(180, 40)
+	row.add_child(item_slot_label)
+	var relic_slot_label := _make_label("遗物槽位剩余：%d" % [run_state.get_free_dice_tool_slot_count() if run_state != null else 0], 18, Color(0.8, 0.86, 0.98))
+	relic_slot_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	relic_slot_label.custom_minimum_size = Vector2(180, 40)
+	row.add_child(relic_slot_label)
 
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -91,12 +108,19 @@ func _make_title_row() -> Control:
 	reroll_button.custom_minimum_size = Vector2(150, 40)
 	reroll_button.pressed.connect(_on_reroll_pressed)
 	row.add_child(reroll_button)
+
+	var leave_button := Button.new()
+	leave_button.text = "离开"
+	leave_button.disabled = run_state != null and not run_state.pending_booster_resolution.is_empty()
+	leave_button.custom_minimum_size = Vector2(120, 40)
+	leave_button.pressed.connect(_on_leave_pressed)
+	row.add_child(leave_button)
 	return panel
 
 
 func _make_offer_section(title: String, offers: Array, slot_group: StringName) -> Control:
 	var section := VBoxContainer.new()
-	section.add_theme_constant_override("separation", 8)
+	section.add_theme_constant_override("separation", 5)
 	section.add_child(_make_label(title, 20, Color(0.9, 0.88, 0.78)))
 
 	var row := HBoxContainer.new()
@@ -107,9 +131,56 @@ func _make_offer_section(title: String, offers: Array, slot_group: StringName) -
 	return section
 
 
+func _make_owned_relic_section() -> Control:
+	var section := VBoxContainer.new()
+	section.add_theme_constant_override("separation", 5)
+	section.add_child(_make_label("已拥有遗物", 20, Color(0.9, 0.88, 0.78)))
+
+	if run_state == null or run_state.dice_tools.is_empty():
+		section.add_child(_make_label("暂无已拥有遗物。", 14, Color(0.72, 0.76, 0.74)))
+		return section
+
+	var grid := GridContainer.new()
+	grid.columns = 4
+	grid.add_theme_constant_override("h_separation", 10)
+	grid.add_theme_constant_override("v_separation", 8)
+	section.add_child(grid)
+	for index in range(run_state.dice_tools.size()):
+		grid.add_child(_make_owned_relic_card(index))
+	return section
+
+
+func _make_owned_relic_card(index: int) -> Control:
+	var tool = run_state.dice_tools[index] if run_state != null and index >= 0 and index < run_state.dice_tools.size() else null
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size = Vector2(220, 112)
+
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 4)
+	panel.add_child(box)
+	if tool == null:
+		box.add_child(_make_label("空槽", 16, Color(0.72, 0.72, 0.68)))
+		return panel
+
+	var tool_id := StringName(str(tool.tool_id))
+	var rarity := StringName(str(tool.rarity))
+	var name: String = tool.display_name if tool.display_name != "" else ShopCatalog.display_name_for_payload(ShopOfferDef.PAYLOAD_DICE_TOOL_ITEM, tool_id)
+	var sell_price := ShopCatalog.sell_price_for_payload(ShopOfferDef.PAYLOAD_DICE_TOOL_ITEM, tool_id)
+	box.add_child(_make_label(name, 16, Color(0.98, 0.88, 0.62)))
+	box.add_child(_make_label("稀有度：%s" % [DisplayNames.rarity_name(rarity)], 13, Color(0.78, 0.86, 0.94)))
+	box.add_child(_make_label("出售：%d 金币" % [sell_price], 13, Color(0.88, 0.86, 0.8)))
+
+	var button := Button.new()
+	button.text = "确认出售" if pending_sell_relic_index == index else "出售"
+	button.custom_minimum_size = Vector2(0, 32)
+	button.pressed.connect(_on_sell_relic_pressed.bind(index))
+	box.add_child(button)
+	return panel
+
+
 func _make_single_offer_section(title: String, offer, slot_group: StringName) -> Control:
 	var section := VBoxContainer.new()
-	section.add_theme_constant_override("separation", 8)
+	section.add_theme_constant_override("separation", 5)
 	section.add_child(_make_label(title, 20, Color(0.9, 0.88, 0.78)))
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
@@ -121,11 +192,16 @@ func _make_single_offer_section(title: String, offer, slot_group: StringName) ->
 func _make_offer_card(offer_any, slot_group: StringName, index: int) -> Control:
 	var view_data := shop_service.get_offer_view_data(run_state, offer_any)
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(250, 180)
+	panel.custom_minimum_size = Vector2(250, 148)
 
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 6)
+	box.add_theme_constant_override("separation", 4)
 	panel.add_child(box)
+
+	if view_data.is_empty():
+		box.add_child(_make_label("已售罄", 18, Color(0.72, 0.72, 0.68)))
+		box.add_child(_make_label("该槽位本次商铺不再提供商品。", 14, Color(0.72, 0.76, 0.74)))
+		return panel
 
 	box.add_child(_make_label(str(view_data.get("name", "商品")), 18, Color(0.98, 0.88, 0.62)))
 	box.add_child(_make_label("价格：%d 金币" % [int(view_data.get("price", 0))], 14, Color(0.88, 0.86, 0.8)))
@@ -158,7 +234,7 @@ func _render_pending_booster() -> void:
 	var candidates: Array = pending.get("candidate_offers", [])
 	var selected: Array = pending.get("selected_offers", [])
 	var selected_indexes: Array = pending.get("selected_offer_indexes", [])
-	booster_area.add_child(_make_label("%s候选" % [str(pending.get("pack_name", "补充包"))], 20, Color(0.9, 0.88, 0.78)))
+	booster_area.add_child(_make_label("%s候选" % [str(pending.get("pack_name", "骰包"))], 20, Color(0.9, 0.88, 0.78)))
 	booster_area.add_child(_make_label("可选数量：%d    当前已选：%d" % [
 		int(pending.get("choose_count", 1)),
 		selected.size(),
@@ -366,6 +442,7 @@ func _render_complex_target_actions(target_mode: StringName, required_targets: i
 
 
 func _on_offer_pressed(slot_group: StringName, index: int) -> void:
+	pending_sell_relic_index = -1
 	if game_flow_controller != null:
 		var result := game_flow_controller.purchase_shop_offer_by_slot(slot_group, index)
 		_handle_purchase_result(result)
@@ -375,6 +452,7 @@ func _on_offer_pressed(slot_group: StringName, index: int) -> void:
 
 
 func _on_reroll_pressed() -> void:
+	pending_sell_relic_index = -1
 	var result := {}
 	if game_flow_controller != null:
 		result = game_flow_controller.reroll_shop_random_items()
@@ -386,6 +464,42 @@ func _on_reroll_pressed() -> void:
 		_build_view()
 		return
 	_set_message(str(result.get("message", "刷新失败")))
+
+
+func _on_sell_relic_pressed(index: int) -> void:
+	if run_state == null:
+		_set_message("缺少本局状态")
+		return
+	if pending_sell_relic_index != index:
+		pending_sell_relic_index = index
+		var tool = run_state.dice_tools[index] if index >= 0 and index < run_state.dice_tools.size() else null
+		var name: String = tool.display_name if tool != null and tool.display_name != "" else "该遗物"
+		last_message = "再次点击确认出售：%s。" % [name]
+		_build_view()
+		return
+
+	var result := {}
+	if game_flow_controller != null and game_flow_controller.has_method("sell_shop_relic_by_index"):
+		result = game_flow_controller.sell_shop_relic_by_index(index)
+	else:
+		result = shop_service.sell_relic_by_index(run_state, index)
+	pending_sell_relic_index = -1
+	last_message = str(result.get("message", "出售失败"))
+	if run_state != null:
+		shop_state = run_state.current_shop_state.duplicate(true)
+	_build_view()
+
+
+func _on_leave_pressed() -> void:
+	if run_state != null and not run_state.pending_booster_resolution.is_empty():
+		_set_message("请先处理已打开的骰包")
+		return
+	if game_flow_controller != null and game_flow_controller.has_method("leave_shop"):
+		var result: Dictionary = game_flow_controller.leave_shop()
+		if not bool(result.get("success", false)):
+			_set_message(str(result.get("message", "暂时无法离开")))
+		return
+	_set_message("已离开骰商铺")
 
 
 func _on_booster_candidate_pressed(index: int) -> void:

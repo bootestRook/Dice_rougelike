@@ -9,7 +9,7 @@ const LongTermUnlockDef = preload("res://scripts/data_defs/LongTermUnlockDef.gd"
 static func get_available_shop_unlock_ids(run_state) -> Array[StringName]:
 	var result: Array[StringName] = []
 	for unlock_id in LongTermUnlockCatalog.get_shop_pool_ids():
-		if run_state != null and run_state.has_method("has_long_term_unlock") and run_state.has_long_term_unlock(unlock_id):
+		if get_unlock_unavailable_reason(run_state, unlock_id) != "":
 			continue
 		result.append(unlock_id)
 	return result
@@ -29,10 +29,13 @@ static func get_unlock_unavailable_reason(run_state, unlock_id: StringName) -> S
 		return "缺少本局状态"
 	if unlock_id == &"":
 		return "长期解锁项无效"
-	if LongTermUnlockCatalog.get_def(unlock_id) == null:
+	var def := LongTermUnlockCatalog.get_def(unlock_id)
+	if def == null:
 		return "长期解锁项不存在"
 	if run_state.has_method("has_long_term_unlock") and run_state.has_long_term_unlock(unlock_id):
 		return "该长期解锁已获得"
+	if not _unlock_has_current_run_benefit(run_state, def):
+		return "该长期解锁当前局暂无收益"
 	return ""
 
 
@@ -48,6 +51,7 @@ static func view_data_for_unlock(unlock_id: StringName) -> Dictionary:
 		"price_coins": def.price_coins,
 		"effect_type": def.effect_type,
 		"effect_value": def.effect_value,
+		"effect_params": def.effect_params.duplicate(true),
 	}
 
 
@@ -60,7 +64,7 @@ func apply_unlock(run_state, unlock_id: StringName) -> Dictionary:
 	run_state.long_term_unlocks[unlock_id] = true
 	_apply_effect(run_state, def)
 
-	var message := "[商店] 购买 长期解锁：%s，立即生效。" % [def.get_display_name()]
+	var message := "[骰商铺] 购买长期解锁：%s，立刻生效。" % [def.get_display_name()]
 	if run_state.has_method("record_shop_log"):
 		run_state.record_shop_log(message, {
 			"kind": &"long_term_unlock",
@@ -97,30 +101,117 @@ func _apply_effect(run_state, def: LongTermUnlockDef) -> void:
 		run_state.add_long_term_unlock_effect(def.effect_type, def.effect_value)
 
 	match def.effect_type:
-		LongTermUnlockCatalog.EFFECT_ITEM_SLOT_BONUS:
-			run_state.item_slot_capacity = max(0, run_state.item_slot_capacity + def.effect_value)
-		LongTermUnlockCatalog.EFFECT_DICE_TOOL_SLOT_BONUS:
-			run_state.dice_tool_capacity = max(0, run_state.dice_tool_capacity + def.effect_value)
-		LongTermUnlockCatalog.EFFECT_SHOP_REROLL_BASE_DELTA:
-			run_state.shop_reroll_base_cost = max(1, run_state.shop_reroll_base_cost + def.effect_value)
-			if not run_state.current_shop_state.is_empty():
-				run_state.current_shop_state["reroll_cost"] = run_state.get_shop_reroll_cost()
 		LongTermUnlockCatalog.EFFECT_SHOP_RANDOM_ITEM_SLOT_BONUS:
 			run_state.shop_random_item_slot_bonus = max(0, run_state.shop_random_item_slot_bonus + def.effect_value)
 		LongTermUnlockCatalog.EFFECT_SHOP_BOOSTER_SLOT_BONUS:
 			run_state.shop_booster_slot_bonus = max(0, run_state.shop_booster_slot_bonus + def.effect_value)
+		LongTermUnlockCatalog.EFFECT_RANDOM_ITEM_DISCOUNT:
+			run_state.shop_random_item_discount = clampf(run_state.shop_random_item_discount + _percent(def.effect_value), 0.0, 0.95)
+		LongTermUnlockCatalog.EFFECT_FIRST_NON_UNLOCK_PURCHASE_DISCOUNT:
+			run_state.first_non_unlock_purchase_discount = max(run_state.first_non_unlock_purchase_discount, _percent(def.effect_value))
+		LongTermUnlockCatalog.EFFECT_FACE_PACK_EXTRA_CANDIDATES:
+			run_state.face_pack_extra_candidates = max(0, run_state.face_pack_extra_candidates + def.effect_value)
+		LongTermUnlockCatalog.EFFECT_ADVANCED_ORNAMENT_WEIGHT_MULTIPLIER:
+			run_state.advanced_ornament_weight_multiplier = max(1.0, run_state.advanced_ornament_weight_multiplier * float(max(1, def.effect_value)))
+		LongTermUnlockCatalog.EFFECT_SHOP_REROLL_BASE_DELTA:
+			run_state.shop_reroll_base_cost = max(1, run_state.shop_reroll_base_cost + def.effect_value)
+			_update_current_shop_reroll_cost(run_state)
+		LongTermUnlockCatalog.EFFECT_FIRST_REROLL_FREE:
+			run_state.first_reroll_free = true
+			if not run_state.current_shop_state.is_empty():
+				run_state.current_shop_state["free_rerolls"] = int(run_state.current_shop_state.get("free_rerolls", 0)) + 1
+				_update_current_shop_reroll_cost(run_state)
+		LongTermUnlockCatalog.EFFECT_ITEM_SLOT_BONUS:
+			run_state.item_slot_capacity = max(0, run_state.item_slot_capacity + def.effect_value)
+		LongTermUnlockCatalog.EFFECT_COMBO_PACK_INCLUDE_MOST_PLAYED:
+			run_state.combo_pack_include_most_played = true
+		LongTermUnlockCatalog.EFFECT_OBSERVATORY_ENABLED:
+			run_state.observatory_enabled = true
 		LongTermUnlockCatalog.EFFECT_BATTLE_HAND_BONUS:
 			run_state.battle_rounds_available_delta = max(0, run_state.battle_rounds_available_delta + def.effect_value)
+		LongTermUnlockCatalog.EFFECT_FIRST_SCORE_ECHO_ENABLED:
+			run_state.first_score_echo_enabled = true
 		LongTermUnlockCatalog.EFFECT_BATTLE_REROLL_BONUS:
 			run_state.battle_rerolls_per_hand_delta = max(0, run_state.battle_rerolls_per_hand_delta + def.effect_value)
+		LongTermUnlockCatalog.EFFECT_UNUSED_REROLL_GOLD_ENABLED:
+			run_state.unused_reroll_gold_enabled = true
+		LongTermUnlockCatalog.EFFECT_COMBO_UPGRADE_SHOP_UPGRADE:
+			run_state.combo_pack_extra_candidates = max(0, run_state.combo_pack_extra_candidates + max(1, def.effect_value))
+		LongTermUnlockCatalog.EFFECT_COMBO_PACK_WEIGHT_MULTIPLIER:
+			run_state.shop_combo_pack_weight_multiplier = max(1.0, run_state.shop_combo_pack_weight_multiplier * float(max(1, def.effect_value)))
+		LongTermUnlockCatalog.EFFECT_INTEREST_CAP:
+			run_state.interest_enabled = true
+			run_state.interest_cap = max(run_state.interest_cap, def.effect_value)
+		LongTermUnlockCatalog.EFFECT_MONEY_TREE_ENABLED:
+			run_state.money_tree_enabled = true
+		LongTermUnlockCatalog.EFFECT_CONTRACT_TOOL_SLOT_BONUS:
+			run_state.contract_tool_slots = max(0, run_state.contract_tool_slots + def.effect_value)
+		LongTermUnlockCatalog.EFFECT_DICE_TOOL_SLOT_BONUS:
+			run_state.dice_tool_capacity = max(0, run_state.dice_tool_capacity + def.effect_value)
+		LongTermUnlockCatalog.EFFECT_FACE_PACK_WEIGHT_MULTIPLIER:
+			run_state.shop_face_pack_weight_multiplier = max(1.0, run_state.shop_face_pack_weight_multiplier * float(max(1, def.effect_value)))
+		LongTermUnlockCatalog.EFFECT_ADVANCED_FACE_PACK_REWARDS_ENABLED:
+			run_state.advanced_face_pack_rewards_enabled = true
+		LongTermUnlockCatalog.EFFECT_EARLY_BATTLE_DANGER_REDUCE:
+			run_state.loop_first_battles_danger_reduction_count = max(run_state.loop_first_battles_danger_reduction_count, 2)
+			run_state.danger_action_count_reduction = max(run_state.danger_action_count_reduction, def.effect_value)
+		LongTermUnlockCatalog.EFFECT_BOSS_DANGER_REDUCE:
+			run_state.boss_danger_action_count_reduction = max(0, run_state.boss_danger_action_count_reduction + def.effect_value)
+		LongTermUnlockCatalog.EFFECT_BOSS_RULE_FREE_REROLL:
+			run_state.free_boss_rule_reroll_per_loop = max(run_state.free_boss_rule_reroll_per_loop, def.effect_value)
+		LongTermUnlockCatalog.EFFECT_BOSS_RULE_CHOICE:
+			run_state.boss_rule_choice_count = max(run_state.boss_rule_choice_count, def.effect_value)
 		LongTermUnlockCatalog.EFFECT_SCORE_SLOT_BONUS:
 			run_state.max_scored_faces_per_round_delta = max(0, run_state.max_scored_faces_per_round_delta + def.effect_value)
-		LongTermUnlockCatalog.EFFECT_COIN_GAIN:
-			run_state.add_coins(def.effect_value, def.unlock_id)
-		LongTermUnlockCatalog.EFFECT_BOSS_RULE_GRACE:
-			run_state.long_term_boss_rule_grace_per_battle = max(0, run_state.long_term_boss_rule_grace_per_battle + def.effect_value)
+		LongTermUnlockCatalog.EFFECT_BATTLE_REWARD_CHOICE_BONUS:
+			run_state.battle_reward_choice_bonus = max(0, run_state.battle_reward_choice_bonus + def.effect_value)
 		_:
 			pass
+
+
+static func _unlock_has_current_run_benefit(run_state, def: LongTermUnlockDef) -> bool:
+	if run_state == null or def == null:
+		return false
+	match def.effect_type:
+		LongTermUnlockCatalog.EFFECT_FIRST_REROLL_FREE:
+			return not bool(run_state.first_reroll_free)
+		LongTermUnlockCatalog.EFFECT_COMBO_PACK_INCLUDE_MOST_PLAYED:
+			return not bool(run_state.combo_pack_include_most_played)
+		LongTermUnlockCatalog.EFFECT_OBSERVATORY_ENABLED:
+			return not bool(run_state.observatory_enabled)
+		LongTermUnlockCatalog.EFFECT_FIRST_SCORE_ECHO_ENABLED:
+			return not bool(run_state.first_score_echo_enabled)
+		LongTermUnlockCatalog.EFFECT_UNUSED_REROLL_GOLD_ENABLED:
+			return not bool(run_state.unused_reroll_gold_enabled)
+		LongTermUnlockCatalog.EFFECT_INTEREST_CAP:
+			return not bool(run_state.interest_enabled) or int(run_state.interest_cap) < def.effect_value
+		LongTermUnlockCatalog.EFFECT_MONEY_TREE_ENABLED:
+			return not bool(run_state.money_tree_enabled)
+		LongTermUnlockCatalog.EFFECT_ADVANCED_FACE_PACK_REWARDS_ENABLED:
+			return not bool(run_state.advanced_face_pack_rewards_enabled)
+		LongTermUnlockCatalog.EFFECT_BOSS_RULE_FREE_REROLL:
+			return int(run_state.free_boss_rule_reroll_per_loop) < def.effect_value
+		LongTermUnlockCatalog.EFFECT_BOSS_RULE_CHOICE:
+			return int(run_state.boss_rule_choice_count) < def.effect_value
+		_:
+			return true
+
+
+static func _update_current_shop_reroll_cost(run_state) -> void:
+	if run_state == null or run_state.current_shop_state.is_empty():
+		return
+	if bool(run_state.current_shop_state.get("first_circle_first_shop_protection", false)):
+		run_state.current_shop_state["free_rerolls"] = 0
+		run_state.current_shop_state["reroll_cost"] = max(1, 5 + int(run_state.shop_reroll_count_this_shop))
+		return
+	if int(run_state.current_shop_state.get("free_rerolls", 0)) > 0:
+		run_state.current_shop_state["reroll_cost"] = 0
+	else:
+		run_state.current_shop_state["reroll_cost"] = run_state.get_shop_reroll_cost()
+
+
+static func _percent(value: int) -> float:
+	return max(0.0, float(value) / 100.0)
 
 
 static func _is_boss_battle_state(battle_state) -> bool:

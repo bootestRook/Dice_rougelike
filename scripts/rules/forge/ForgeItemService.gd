@@ -368,7 +368,7 @@ func _apply_pip_reroll(run_state: RunState, def: ForgeItemDef, target_faces: Arr
 
 
 func _generate_dice_tool_pack(run_state: RunState, result: Dictionary) -> void:
-	var pool := ForgeItemCatalog.get_dice_tool_item_pool()
+	var pool := ForgeItemCatalog.get_generated_dice_tool_item_pool()
 	if pool.is_empty():
 		result["message"] = str(TranslationServer.translate(&"AUTO.TEXT.F2B83B1B98D0"))
 		return

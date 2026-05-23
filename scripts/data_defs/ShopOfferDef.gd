@@ -9,6 +9,7 @@ const KIND_LONG_TERM_UNLOCK := &"long_term_unlock"
 const PAYLOAD_FORGE_ITEM := &"forge_item"
 const PAYLOAD_DICE_TOOL_ITEM := &"dice_tool_item"
 const PAYLOAD_COMBO_UPGRADE_ITEM := &"combo_upgrade_item"
+const PAYLOAD_FACE_SHOP_ITEM := &"face_shop_item"
 const PAYLOAD_BOOSTER_PACK := &"booster_pack"
 const PAYLOAD_LONG_TERM_UNLOCK := &"long_term_unlock"
 

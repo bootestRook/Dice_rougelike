@@ -287,8 +287,8 @@
 			"hover_shadow_visible": true,
 			"idle_anchor_position": "(-0.53, 7.5, 0.08)",
 			"idle_drift_active": false,
-			"idle_drift_direction": -1.0,
-			"idle_drift_duration": 1.89623737335205,
+			"idle_drift_direction": 1.0,
+			"idle_drift_duration": 1.73870515823364,
 			"idle_drift_offset": 0.0,
 			"idle_drift_tuning": {
 				"max_distance": 0.0,
@@ -643,8 +643,8 @@
 			"hover_shadow_visible": true,
 			"idle_anchor_position": "(0.53, 7.5, 0.08)",
 			"idle_drift_active": false,
-			"idle_drift_direction": 1.0,
-			"idle_drift_duration": 1.54174816608429,
+			"idle_drift_direction": -1.0,
+			"idle_drift_duration": 1.40339207649231,
 			"idle_drift_offset": 0.0,
 			"idle_drift_tuning": {
 				"max_distance": 0.0,

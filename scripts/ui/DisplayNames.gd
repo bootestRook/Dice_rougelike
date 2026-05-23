@@ -76,7 +76,7 @@ static func shop_offer_kind_name(id: StringName) -> String:
 		&"random_item":
 			return "随机商品"
 		&"booster_pack":
-			return "补充包"
+			return "骰包"
 		&"long_term_unlock":
 			return "长期解锁"
 		_:
@@ -92,7 +92,7 @@ static func shop_payload_kind_name(id: StringName) -> String:
 		&"combo_upgrade_item":
 			return "主骰型升级件"
 		&"booster_pack":
-			return "补充包"
+			return "骰包"
 		&"long_term_unlock":
 			return "长期解锁"
 		_:
