@@ -251,10 +251,14 @@ static func _uv_for_point(position: Vector3, normal: Vector3, settings: Dictiona
 	var dice_half := float(settings["dice_half"])
 	var local := Vector2.ZERO
 	match value:
-		1, 6:
+		1:
+			local = Vector2(dice_half - position.x, position.z + dice_half)
+		6:
 			local = Vector2(position.x + dice_half, position.z + dice_half)
-		2, 5:
+		2:
 			local = Vector2(position.x + dice_half, position.y + dice_half)
+		5:
+			local = Vector2(dice_half - position.x, position.y + dice_half)
 		3:
 			local = Vector2(dice_half - position.z, position.y + dice_half)
 		4:

@@ -81,8 +81,9 @@ func _init() -> void:
 	all_passed = _check("choices do not include cleanse", not _has_piece(choices, &"cleanse")) and all_passed
 	all_passed = _check("choices include direct power", _has_direct_power(generator, choices)) and all_passed
 	all_passed = _check("choices contain no legacy ids", not _has_any_piece(choices, LEGACY_IDS)) and all_passed
+	all_passed = _check("normal battle choices exclude zero-weight rarities", not _has_rarity(choices, &"epic") and not _has_rarity(choices, &"legendary")) and all_passed
 
-	var pool_sample := generator.generate_forge_choices(99, 2)
+	var pool_sample := generator._build_forge_piece_pool()
 	print("Pool sample: %s" % [_ids_text(pool_sample)])
 	all_passed = _check("pool sample has no duplicates", _choices_are_unique(pool_sample)) and all_passed
 	all_passed = _check("pool sample excludes cleanse", not _has_piece(pool_sample, &"cleanse")) and all_passed
@@ -92,6 +93,8 @@ func _init() -> void:
 	for expected_id in _expected_composite_ids():
 		all_passed = _check("pool contains %s" % [str(expected_id)], _has_piece(pool_sample, expected_id)) and all_passed
 	all_passed = _check("composite rewards have visible Chinese text", _composite_rewards_have_visible_text(pool_sample)) and all_passed
+	all_passed = _check("reward catalog assigns five-tier rarity gates", _reward_rarity_gates_are_assigned(generator)) and all_passed
+	all_passed = _check("encounter reward rarity weights are applied", _encounter_reward_weights_are_applied(generator)) and all_passed
 
 	print("PASS: DebugRewardPoolSmokeTest" if all_passed else "FAIL: DebugRewardPoolSmokeTest")
 	print("--- DebugRewardPoolSmokeTest: end ---")
@@ -124,6 +127,13 @@ func _find_piece(choices: Array[ForgePieceDef], id: StringName) -> ForgePieceDef
 func _has_any_piece(choices: Array[ForgePieceDef], ids: Array) -> bool:
 	for id in ids:
 		if _has_piece(choices, id):
+			return true
+	return false
+
+
+func _has_rarity(choices: Array[ForgePieceDef], rarity: StringName) -> bool:
+	for choice in choices:
+		if choice != null and choice.get_rarity() == rarity:
 			return true
 	return false
 
@@ -169,6 +179,115 @@ func _all_catalog_pieces_have_tags(generator: RewardGenerator) -> bool:
 	for id in catalog.keys():
 		var piece := catalog[id] as ForgePieceDef
 		if piece == null or piece.get_archetype_tags().is_empty():
+			return false
+	return true
+
+
+func _reward_rarity_gates_are_assigned(generator: RewardGenerator) -> bool:
+	var catalog := generator._build_piece_catalog()
+	var expected := {
+		&"pip_6": &"common",
+		&"ornament_wild": &"rare",
+		&"ornament_stone": &"uncommon",
+		&"ornament_foil": &"rare",
+		&"ornament_poly": &"epic",
+		&"mark_red": &"rare",
+		&"mark_blue": &"rare",
+		&"mark_purple": &"rare",
+		&"mark_gold": &"uncommon",
+		&"mark_white": &"rare",
+		&"red_4": &"epic",
+		&"red_5": &"epic",
+		&"red_6": &"epic",
+		&"blue_1": &"rare",
+		&"blue_5": &"rare",
+		&"blue_6": &"epic",
+		&"purple_1": &"rare",
+		&"purple_5": &"rare",
+		&"purple_6": &"epic",
+		&"gold_5": &"uncommon",
+		&"gold_6": &"rare",
+		&"burst_3": &"uncommon",
+		&"burst_4": &"rare",
+		&"burst_6": &"rare",
+		&"stay_6": &"rare",
+		&"cleanse": &"uncommon",
+		&"material_glass": &"uncommon",
+		&"material_steel": &"uncommon",
+		&"glass_1": &"uncommon",
+		&"upgrade_1": &"rare",
+		&"rune_six": &"uncommon",
+		&"rune_straight": &"rare",
+		&"rune_pair": &"uncommon",
+		&"rune_odd": &"common",
+		&"rune_even": &"common",
+		&"upgrade_combo_scatter": &"common",
+		&"upgrade_combo_pair": &"common",
+		&"upgrade_combo_two_pair": &"uncommon",
+		&"upgrade_combo_three_kind": &"uncommon",
+		&"upgrade_combo_full_house": &"uncommon",
+		&"upgrade_combo_four_kind": &"rare",
+		&"upgrade_combo_straight": &"rare",
+		&"upgrade_combo_five_kind": &"epic",
+	}
+	for id in expected.keys():
+		if not catalog.has(id):
+			return false
+		var piece := catalog[id] as ForgePieceDef
+		if piece == null or piece.get_rarity() != expected[id]:
+			return false
+	return true
+
+
+func _encounter_reward_weights_are_applied(generator: RewardGenerator) -> bool:
+	if not _weights_match(generator._rarity_weights_for_encounter(&"battle"), {
+		&"common": 72.0,
+		&"uncommon": 24.0,
+		&"rare": 4.0,
+		&"epic": 0.0,
+		&"legendary": 0.0,
+	}):
+		return false
+	if not _weights_match(generator._rarity_weights_for_encounter(&"elite"), {
+		&"common": 20.0,
+		&"uncommon": 45.0,
+		&"rare": 28.0,
+		&"epic": 7.0,
+		&"legendary": 0.0,
+	}):
+		return false
+	if not _weights_match(generator._rarity_weights_for_encounter(&"boss"), {
+		&"common": 0.0,
+		&"uncommon": 20.0,
+		&"rare": 45.0,
+		&"epic": 25.0,
+		&"legendary": 10.0,
+	}):
+		return false
+
+	var normal_pool := generator.generate_forge_choices_for_encounter(99, &"battle")
+	if not _has_rarity(normal_pool, &"common") or not _has_rarity(normal_pool, &"uncommon") or not _has_rarity(normal_pool, &"rare"):
+		return false
+	if _has_rarity(normal_pool, &"epic") or _has_rarity(normal_pool, &"legendary"):
+		return false
+
+	var elite_pool := generator.generate_forge_choices_for_encounter(99, &"elite")
+	if not _has_rarity(elite_pool, &"common") or not _has_rarity(elite_pool, &"uncommon") or not _has_rarity(elite_pool, &"rare") or not _has_rarity(elite_pool, &"epic"):
+		return false
+	if _has_rarity(elite_pool, &"legendary"):
+		return false
+
+	var boss_pool := generator.generate_forge_choices_for_encounter(99, &"boss")
+	if _has_rarity(boss_pool, &"common"):
+		return false
+	if not _has_rarity(boss_pool, &"uncommon") or not _has_rarity(boss_pool, &"rare") or not _has_rarity(boss_pool, &"epic"):
+		return false
+	return true
+
+
+func _weights_match(actual: Dictionary, expected: Dictionary) -> bool:
+	for rarity in expected.keys():
+		if not is_equal_approx(float(actual.get(rarity, -1.0)), float(expected[rarity])):
 			return false
 	return true
 

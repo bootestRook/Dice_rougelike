@@ -10,6 +10,7 @@ var target_type: StringName = &""
 var max_targets: int = 0
 var generated_count: int = 0
 var requires_item_slot: bool = false
+var rarity: StringName = &"common"
 var drop_pool_id: StringName = &"reserved"
 var drop_weight: float = -1.0
 var tags: Array[StringName] = []
@@ -27,6 +28,7 @@ func clone():
 	cloned.max_targets = max_targets
 	cloned.generated_count = generated_count
 	cloned.requires_item_slot = requires_item_slot
+	cloned.rarity = rarity
 	cloned.drop_pool_id = drop_pool_id
 	cloned.drop_weight = drop_weight
 	cloned.implementation_status = implementation_status

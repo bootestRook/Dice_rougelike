@@ -13,6 +13,7 @@ const GmDiceViewportScript = preload("res://scripts/ui/debug/gm_dice_port/GmDice
 const GmReadyMgrScript = preload("res://scripts/ui/debug/gm_dice_port/GmReadyMgr.gd")
 const GmBattleMgrScript = preload("res://scripts/ui/debug/gm_dice_port/GmBattleMgr.gd")
 const BATTLE_STAGE_BACKGROUND_TEXTURE = preload("res://assets/ui/map/map_tabletop_neon_comic.png")
+const FORMAL_BATTLE_DEFAULT_MATERIAL_ID := GmDiceDefinitionScript.MATERIAL_REPRO_LAPIS
 
 
 signal die_pressed(index: int)
@@ -555,8 +556,8 @@ func _build_action_buttons(parent: Control) -> void:
 func _apply_style() -> void:
 	if not is_node_ready():
 		return
+	add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	if style_config != null:
-		add_theme_stylebox_override("panel", style_config.get_panel_style())
 		for button in [reroll_button, organize_button, score_button]:
 			if button != null:
 				style_config.apply_button(button)
@@ -644,6 +645,7 @@ func _definition_from_die_data(die_data: DieViewData) -> GmDiceDefinition:
 	definition.id = die_data.die_id if die_data != null else &"formal_battle_die"
 	definition.display_name = "战斗骰子 %d" % [die_data.die_index + 1 if die_data != null else 1]
 	definition.description = "正式战斗 3D 骰子"
+	definition.material_id = FORMAL_BATTLE_DEFAULT_MATERIAL_ID
 	definition.faces.clear()
 	if die_data != null:
 		for face in die_data.faces:

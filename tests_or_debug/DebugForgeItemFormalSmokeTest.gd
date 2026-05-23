@@ -48,7 +48,39 @@ func _check_catalog() -> bool:
 		passed = passed and ids.has(id)
 	passed = passed and display_names.get(ForgeItemCatalog.FORGE_ECHO_COPY, "") == "回响铸模"
 	passed = passed and display_names.get(ForgeItemCatalog.FORGE_HIGH_REROLL, "") == "高点重铸片"
-	return _check("formal catalog has 21 forge items and reserved drop fields", passed)
+	passed = passed and _catalog_rarity_tiers_are_assigned()
+	return _check("formal catalog has 21 forge items, reserved drops, and rarity tiers", passed)
+
+
+func _catalog_rarity_tiers_are_assigned() -> bool:
+	var expected := {
+		ForgeItemCatalog.FORGE_CHIP_ORNAMENT: &"common",
+		ForgeItemCatalog.FORGE_MULT_ORNAMENT: &"common",
+		ForgeItemCatalog.FORGE_PIP_UP: &"common",
+		ForgeItemCatalog.FORGE_EVEN_REROLL: &"common",
+		ForgeItemCatalog.FORGE_ODD_REROLL: &"common",
+		ForgeItemCatalog.FORGE_LOW_REROLL: &"common",
+		ForgeItemCatalog.FORGE_HIGH_REROLL: &"uncommon",
+		ForgeItemCatalog.FORGE_LUCKY_ORNAMENT: &"uncommon",
+		ForgeItemCatalog.FORGE_STAY_ORNAMENT: &"uncommon",
+		ForgeItemCatalog.FORGE_BURST_ORNAMENT: &"uncommon",
+		ForgeItemCatalog.FORGE_GOLD_ORNAMENT: &"uncommon",
+		ForgeItemCatalog.FORGE_STONE_ORNAMENT: &"uncommon",
+		ForgeItemCatalog.FORGE_COIN_DOUBLER: &"uncommon",
+		ForgeItemCatalog.FORGE_TOOL_VALUE_CASH: &"rare",
+		ForgeItemCatalog.FORGE_WILD_ORNAMENT: &"rare",
+		ForgeItemCatalog.FORGE_COMBO_UPGRADE_PACK: &"rare",
+		ForgeItemCatalog.FORGE_RARE_ORNAMENT_ROLL: &"rare",
+		ForgeItemCatalog.FORGE_ITEM_PACK: &"rare",
+		ForgeItemCatalog.FORGE_TOOL_PACK: &"rare",
+		ForgeItemCatalog.FORGE_FACE_COPY: &"epic",
+		ForgeItemCatalog.FORGE_ECHO_COPY: &"epic",
+	}
+	for id in expected.keys():
+		var def := ForgeItemCatalog.get_def(id)
+		if def == null or def.rarity != expected[id]:
+			return false
+	return true
 
 
 func _check_legal_pips() -> bool:

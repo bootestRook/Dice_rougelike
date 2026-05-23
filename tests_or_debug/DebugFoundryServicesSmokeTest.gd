@@ -53,7 +53,35 @@ func _check_catalog_no_legacy() -> bool:
 	passed = passed and not ids.has(&"sp_sigil")
 	passed = passed and not ids.has(StringName("foundry_%s_randomize" % [removed_segment]))
 	passed = passed and FoundryServiceMigration.migrate_legacy_service_id(&"sp_sigil") == &""
-	return _check("formal foundry catalog excludes removed legacy services", passed)
+	passed = passed and _catalog_rarity_tiers_are_assigned()
+	return _check("formal foundry catalog excludes removed legacy services and assigns rarity tiers", passed)
+
+
+func _catalog_rarity_tiers_are_assigned() -> bool:
+	var expected := {
+		FoundryServiceCatalog.FOUNDRY_RANDOM_PIP_REFORGE: &"uncommon",
+		FoundryServiceCatalog.FOUNDRY_HIGH_PIP_REFORGE: &"uncommon",
+		FoundryServiceCatalog.FOUNDRY_SIX_PIP_REFORGE: &"rare",
+		FoundryServiceCatalog.FOUNDRY_GOLD_MARK: &"uncommon",
+		FoundryServiceCatalog.FOUNDRY_RED_MARK: &"rare",
+		FoundryServiceCatalog.FOUNDRY_BLUE_MARK: &"rare",
+		FoundryServiceCatalog.FOUNDRY_PURPLE_MARK: &"rare",
+		FoundryServiceCatalog.FOUNDRY_RARE_ORNAMENT: &"rare",
+		FoundryServiceCatalog.FOUNDRY_SAME_PIP_SYNC: &"rare",
+		FoundryServiceCatalog.FOUNDRY_BURN_FOR_COINS: &"uncommon",
+		FoundryServiceCatalog.FOUNDRY_RARE_TOOL_PACK: &"epic",
+		FoundryServiceCatalog.FOUNDRY_NEGATIVE_TOOL_SLOT: &"epic",
+		FoundryServiceCatalog.FOUNDRY_POLY_GAMBLE: &"epic",
+		FoundryServiceCatalog.FOUNDRY_TOOL_CLONE_PURGE: &"epic",
+		FoundryServiceCatalog.FOUNDRY_FACE_DOUBLE_COPY: &"legendary",
+		FoundryServiceCatalog.FOUNDRY_LEGENDARY_TOOL_PACK: &"legendary",
+		FoundryServiceCatalog.FOUNDRY_ALL_COMBO_UPGRADE: &"legendary",
+	}
+	for id in expected.keys():
+		var def := FoundryServiceCatalog.get_def(id)
+		if def == null or def.rarity != expected[id]:
+			return false
+	return true
 
 
 func _check_reward_generator_foundry_choices() -> bool:

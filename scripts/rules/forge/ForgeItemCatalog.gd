@@ -89,27 +89,27 @@ const RARE_ORNAMENT_IDS := [
 
 static func get_all_defs() -> Array[ForgeItemDef]:
 	return [
-		_make_def(FORGE_ECHO_COPY, str(TranslationServer.translate(&"AUTO.TEXT.4C71E4837BD8")), str(TranslationServer.translate(&"AUTO.TEXT.FB2DE85039C5")), EFFECT_ECHO_COPY, TARGET_NONE, 0, 1, true, [&"copy", &"generate"]),
-		_make_ornament_def(FORGE_LUCKY_ORNAMENT, str(TranslationServer.translate(&"AUTO.TEXT.321D0B6368EA")), str(TranslationServer.translate(&"AUTO.TEXT.35E4AB333428")), &"orn_lucky", 2, [&"ornament", &"lucky"]),
-		_make_def(FORGE_COMBO_UPGRADE_PACK, str(TranslationServer.translate(&"AUTO.TEXT.F1236349614D")), str(TranslationServer.translate(&"AUTO.TEXT.32B0EAAA1AD6")), EFFECT_COMBO_UPGRADE_PACK, TARGET_NONE, 0, 2, true, [&"generate", &"combo_upgrade"]),
+		_make_def(FORGE_ECHO_COPY, str(TranslationServer.translate(&"AUTO.TEXT.4C71E4837BD8")), str(TranslationServer.translate(&"AUTO.TEXT.FB2DE85039C5")), EFFECT_ECHO_COPY, TARGET_NONE, 0, 1, true, [&"copy", &"generate"], &"epic"),
+		_make_ornament_def(FORGE_LUCKY_ORNAMENT, str(TranslationServer.translate(&"AUTO.TEXT.321D0B6368EA")), str(TranslationServer.translate(&"AUTO.TEXT.35E4AB333428")), &"orn_lucky", 2, [&"ornament", &"lucky"], &"uncommon"),
+		_make_def(FORGE_COMBO_UPGRADE_PACK, str(TranslationServer.translate(&"AUTO.TEXT.F1236349614D")), str(TranslationServer.translate(&"AUTO.TEXT.32B0EAAA1AD6")), EFFECT_COMBO_UPGRADE_PACK, TARGET_NONE, 0, 2, true, [&"generate", &"combo_upgrade"], &"rare"),
 		_make_ornament_def(FORGE_MULT_ORNAMENT, str(TranslationServer.translate(&"AUTO.TEXT.173BD09E981C")), str(TranslationServer.translate(&"AUTO.TEXT.2C0D680889AC")), &"orn_mult", 2, [&"ornament", &"mult"]),
-		_make_def(FORGE_ITEM_PACK, str(TranslationServer.translate(&"AUTO.TEXT.B8FF1BD85267")), str(TranslationServer.translate(&"AUTO.TEXT.E55AE381E0BA")), EFFECT_FORGE_ITEM_PACK, TARGET_NONE, 0, 2, true, [&"generate", &"forge_item"]),
+		_make_def(FORGE_ITEM_PACK, str(TranslationServer.translate(&"AUTO.TEXT.B8FF1BD85267")), str(TranslationServer.translate(&"AUTO.TEXT.E55AE381E0BA")), EFFECT_FORGE_ITEM_PACK, TARGET_NONE, 0, 2, true, [&"generate", &"forge_item"], &"rare"),
 		_make_ornament_def(FORGE_CHIP_ORNAMENT, str(TranslationServer.translate(&"AUTO.TEXT.04E30DB10857")), str(TranslationServer.translate(&"AUTO.TEXT.22729A98C185")), &"orn_chip", 2, [&"ornament", &"chips"]),
-		_make_ornament_def(FORGE_WILD_ORNAMENT, str(TranslationServer.translate(&"AUTO.TEXT.604BB0C7A531")), str(TranslationServer.translate(&"AUTO.TEXT.1D11D52F2398")), &"orn_wild", 1, [&"ornament", &"wild"]),
-		_make_ornament_def(FORGE_STAY_ORNAMENT, str(TranslationServer.translate(&"AUTO.TEXT.92D099C18405")), str(TranslationServer.translate(&"AUTO.TEXT.AEF306CDBA53")), &"orn_stay", 1, [&"ornament", &"stay"]),
-		_make_ornament_def(FORGE_BURST_ORNAMENT, str(TranslationServer.translate(&"AUTO.TEXT.B51063C6E564")), str(TranslationServer.translate(&"AUTO.TEXT.64E8C5F4335A")), &"orn_burst", 1, [&"ornament", &"burst"]),
-		_make_def(FORGE_COIN_DOUBLER, str(TranslationServer.translate(&"AUTO.TEXT.1EDEC0EDA200")), str(TranslationServer.translate(&"AUTO.TEXT.C8A584D4E818")), EFFECT_COIN_DOUBLER, TARGET_NONE, 0, 0, false, [&"coins"]),
-		_make_def(FORGE_RARE_ORNAMENT_ROLL, str(TranslationServer.translate(&"AUTO.TEXT.2695C11DEAEA")), str(TranslationServer.translate(&"AUTO.TEXT.99C45E4A9A98")), EFFECT_RARE_ORNAMENT_ROLL, TARGET_FACES, 1, 0, false, [&"ornament", &"rare"]),
+		_make_ornament_def(FORGE_WILD_ORNAMENT, str(TranslationServer.translate(&"AUTO.TEXT.604BB0C7A531")), str(TranslationServer.translate(&"AUTO.TEXT.1D11D52F2398")), &"orn_wild", 1, [&"ornament", &"wild"], &"rare"),
+		_make_ornament_def(FORGE_STAY_ORNAMENT, str(TranslationServer.translate(&"AUTO.TEXT.92D099C18405")), str(TranslationServer.translate(&"AUTO.TEXT.AEF306CDBA53")), &"orn_stay", 1, [&"ornament", &"stay"], &"uncommon"),
+		_make_ornament_def(FORGE_BURST_ORNAMENT, str(TranslationServer.translate(&"AUTO.TEXT.B51063C6E564")), str(TranslationServer.translate(&"AUTO.TEXT.64E8C5F4335A")), &"orn_burst", 1, [&"ornament", &"burst"], &"uncommon"),
+		_make_def(FORGE_COIN_DOUBLER, str(TranslationServer.translate(&"AUTO.TEXT.1EDEC0EDA200")), str(TranslationServer.translate(&"AUTO.TEXT.C8A584D4E818")), EFFECT_COIN_DOUBLER, TARGET_NONE, 0, 0, false, [&"coins"], &"uncommon"),
+		_make_def(FORGE_RARE_ORNAMENT_ROLL, str(TranslationServer.translate(&"AUTO.TEXT.2695C11DEAEA")), str(TranslationServer.translate(&"AUTO.TEXT.99C45E4A9A98")), EFFECT_RARE_ORNAMENT_ROLL, TARGET_FACES, 1, 0, false, [&"ornament", &"rare"], &"rare"),
 		_make_def(FORGE_PIP_UP, str(TranslationServer.translate(&"AUTO.TEXT.9911BC4FBEEC")), str(TranslationServer.translate(&"AUTO.TEXT.10D2FEDBF8A1")), EFFECT_PIP_UP, TARGET_FACES, 2, 0, false, [&"pip"]),
-		_make_def(FORGE_FACE_COPY, str(TranslationServer.translate(&"AUTO.TEXT.0FA61CB1B30A")), str(TranslationServer.translate(&"AUTO.TEXT.CD0A30A4BB1E")), EFFECT_FACE_COPY, TARGET_FACE_PAIR, 1, 0, false, [&"copy"]),
-		_make_def(FORGE_TOOL_VALUE_CASH, str(TranslationServer.translate(&"AUTO.TEXT.434BA5C01C24")), str(TranslationServer.translate(&"AUTO.TEXT.2F18107B0CB9")), EFFECT_TOOL_VALUE_CASH, TARGET_NONE, 0, 0, false, [&"coins", &"dice_tool"]),
-		_make_ornament_def(FORGE_GOLD_ORNAMENT, str(TranslationServer.translate(&"AUTO.TEXT.093DDBA0EF5F")), str(TranslationServer.translate(&"AUTO.TEXT.0E84F9EF1AFF")), &"orn_gold", 1, [&"ornament", &"gold"]),
-		_make_ornament_def(FORGE_STONE_ORNAMENT, str(TranslationServer.translate(&"AUTO.TEXT.DF2D6C3AF8F4")), str(TranslationServer.translate(&"AUTO.TEXT.6BE7C15543DA")), &"orn_stone", 1, [&"ornament", &"stone"]),
+		_make_def(FORGE_FACE_COPY, str(TranslationServer.translate(&"AUTO.TEXT.0FA61CB1B30A")), str(TranslationServer.translate(&"AUTO.TEXT.CD0A30A4BB1E")), EFFECT_FACE_COPY, TARGET_FACE_PAIR, 1, 0, false, [&"copy"], &"epic"),
+		_make_def(FORGE_TOOL_VALUE_CASH, str(TranslationServer.translate(&"AUTO.TEXT.434BA5C01C24")), str(TranslationServer.translate(&"AUTO.TEXT.2F18107B0CB9")), EFFECT_TOOL_VALUE_CASH, TARGET_NONE, 0, 0, false, [&"coins", &"dice_tool"], &"rare"),
+		_make_ornament_def(FORGE_GOLD_ORNAMENT, str(TranslationServer.translate(&"AUTO.TEXT.093DDBA0EF5F")), str(TranslationServer.translate(&"AUTO.TEXT.0E84F9EF1AFF")), &"orn_gold", 1, [&"ornament", &"gold"], &"uncommon"),
+		_make_ornament_def(FORGE_STONE_ORNAMENT, str(TranslationServer.translate(&"AUTO.TEXT.DF2D6C3AF8F4")), str(TranslationServer.translate(&"AUTO.TEXT.6BE7C15543DA")), &"orn_stone", 1, [&"ornament", &"stone"], &"uncommon"),
 		_make_reroll_def(FORGE_EVEN_REROLL, str(TranslationServer.translate(&"AUTO.TEXT.183A039CC4B1")), str(TranslationServer.translate(&"AUTO.TEXT.95B010C66CFF")), &"even", [&"pip", &"even"]),
 		_make_reroll_def(FORGE_LOW_REROLL, str(TranslationServer.translate(&"AUTO.TEXT.6B6FB4EF372F")), str(TranslationServer.translate(&"AUTO.TEXT.2C105E1AA48C")), &"low", [&"pip", &"low"]),
 		_make_reroll_def(FORGE_ODD_REROLL, str(TranslationServer.translate(&"AUTO.TEXT.475454217E69")), str(TranslationServer.translate(&"AUTO.TEXT.45BF986F654F")), &"odd", [&"pip", &"odd"]),
-		_make_def(FORGE_TOOL_PACK, str(TranslationServer.translate(&"AUTO.TEXT.CD26A3E1462F")), str(TranslationServer.translate(&"AUTO.TEXT.9ED5A40576BA")), EFFECT_DICE_TOOL_PACK, TARGET_NONE, 0, 1, true, [&"generate", &"dice_tool"]),
-		_make_reroll_def(FORGE_HIGH_REROLL, str(TranslationServer.translate(&"AUTO.TEXT.3361B11E8B48")), str(TranslationServer.translate(&"AUTO.TEXT.3F474E4F22E5")), &"high", [&"pip", &"high"]),
+		_make_def(FORGE_TOOL_PACK, str(TranslationServer.translate(&"AUTO.TEXT.CD26A3E1462F")), str(TranslationServer.translate(&"AUTO.TEXT.9ED5A40576BA")), EFFECT_DICE_TOOL_PACK, TARGET_NONE, 0, 1, true, [&"generate", &"dice_tool"], &"rare"),
+		_make_reroll_def(FORGE_HIGH_REROLL, str(TranslationServer.translate(&"AUTO.TEXT.3361B11E8B48")), str(TranslationServer.translate(&"AUTO.TEXT.3F474E4F22E5")), &"high", [&"pip", &"high"], &"uncommon"),
 	]
 
 
@@ -171,9 +171,10 @@ static func _make_ornament_def(
 	description: String,
 	ornament_id: StringName,
 	max_targets: int,
-	tags: Array
+	tags: Array,
+	rarity: StringName = &"common"
 ) -> ForgeItemDef:
-	var def := _make_def(id, display_name, description, EFFECT_SET_ORNAMENT, TARGET_FACES, max_targets, 0, false, tags)
+	var def := _make_def(id, display_name, description, EFFECT_SET_ORNAMENT, TARGET_FACES, max_targets, 0, false, tags, rarity)
 	def.payload["ornament_id"] = ornament_id
 	return def
 
@@ -183,9 +184,10 @@ static func _make_reroll_def(
 	display_name: String,
 	description: String,
 	pip_pool_type: StringName,
-	tags: Array
+	tags: Array,
+	rarity: StringName = &"common"
 ) -> ForgeItemDef:
-	var def := _make_def(id, display_name, description, EFFECT_PIP_REROLL, TARGET_FACES, 3, 0, false, tags)
+	var def := _make_def(id, display_name, description, EFFECT_PIP_REROLL, TARGET_FACES, 3, 0, false, tags, rarity)
 	def.payload["pip_pool_type"] = pip_pool_type
 	return def
 
@@ -199,7 +201,8 @@ static func _make_def(
 	max_targets: int,
 	generated_count: int,
 	requires_item_slot: bool,
-	tags: Array
+	tags: Array,
+	rarity: StringName = &"common"
 ) -> ForgeItemDef:
 	var def := ForgeItemDef.new()
 	def.id = id
@@ -210,6 +213,7 @@ static func _make_def(
 	def.max_targets = max_targets
 	def.generated_count = generated_count
 	def.requires_item_slot = requires_item_slot
+	def.rarity = rarity
 	def.drop_pool_id = DROP_POOL_RESERVED
 	def.drop_weight = -1.0
 	def.implementation_status = &"formal"

@@ -484,7 +484,7 @@ func _straight_draw_count(unique_pips: Array[int]) -> int:
 
 
 func _choose_reward_and_advance(run_state: RunState, lines: PackedStringArray) -> Dictionary:
-	var choices := reward_generator.generate_forge_choices(3, run_state.battle_index)
+	var choices := reward_generator.generate_forge_piece_choices(run_state, 3)
 	run_state.last_reward_choices = choices
 	var battle_number := run_state.battle_index + 1
 	var best := {}

@@ -456,6 +456,7 @@ func _definition_from_die(die: DieState, index: int) -> GmDiceDefinition:
 	definition.id = die_id
 	definition.display_name = "地图前进骰 %d" % [index + 1]
 	definition.description = "地图阶段复用正式战斗 GM 骰子"
+	definition.material_id = GmDiceDefinitionScript.MATERIAL_REPRO_LAPIS
 	definition.faces.clear()
 	if die != null:
 		for face in die.faces:

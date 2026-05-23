@@ -38,6 +38,7 @@ func _check_rounded_body_mesh(mesh: ArrayMesh, label: String, require_shared_bou
 	ok = _check("%s has triangle indices" % label, indices.size() > 0 and indices.size() % 3 == 0) and ok
 	ok = _check("%s has normals for every vertex" % label, normals.size() == vertices.size()) and ok
 	ok = _check("%s has UVs for every vertex" % label, uvs.size() == vertices.size()) and ok
+	ok = _check("%s has non-mirrored face UV handedness" % label, _face_uv_contracts_match(vertices, normals, uvs)) and ok
 	ok = _check("%s point 3 UV faces outward without horizontal mirroring" % label, _point_three_uv_faces_outward(vertices, normals, uvs)) and ok
 	ok = _check("%s has dense bevel geometry" % label, vertices.size() >= 900) and ok
 	ok = _check("%s top edge has continuous bevel normals" % label, _top_edge_normal_bucket_count(normals) >= 4) and ok
@@ -55,6 +56,71 @@ func _check_rounded_body_mesh(mesh: ArrayMesh, label: String, require_shared_bou
 	var position_winding_errors := _position_front_face_winding_error_count(vertices, indices)
 	ok = _check("%s triangle winding matches exterior position" % label, position_winding_errors == 0) and ok
 	return ok
+
+
+func _face_uv_contracts_match(vertices: PackedVector3Array, normals: PackedVector3Array, uvs: PackedVector2Array) -> bool:
+	var contracts := [
+		{"label": "value 1", "normal": Vector3.UP, "up": Vector3.BACK, "right": Vector3.LEFT},
+		{"label": "value 6", "normal": Vector3.DOWN, "up": Vector3.BACK, "right": Vector3.RIGHT},
+		{"label": "value 2", "normal": Vector3.BACK, "up": Vector3.UP, "right": Vector3.RIGHT},
+		{"label": "value 5", "normal": Vector3.FORWARD, "up": Vector3.UP, "right": Vector3.LEFT},
+		{"label": "value 3", "normal": Vector3.RIGHT, "up": Vector3.UP, "right": Vector3.FORWARD},
+		{"label": "value 4", "normal": Vector3.LEFT, "up": Vector3.UP, "right": Vector3.BACK},
+	]
+	for contract in contracts:
+		if not _face_uv_axes_match(
+			vertices,
+			normals,
+			uvs,
+			contract["normal"] as Vector3,
+			contract["right"] as Vector3,
+			contract["up"] as Vector3
+		):
+			print("failed UV contract: %s" % str(contract["label"]))
+			return false
+	return true
+
+
+func _face_uv_axes_match(
+	vertices: PackedVector3Array,
+	normals: PackedVector3Array,
+	uvs: PackedVector2Array,
+	normal: Vector3,
+	expected_right: Vector3,
+	expected_up: Vector3
+) -> bool:
+	var right_high_u := 0.0
+	var right_low_u := 0.0
+	var right_high_count := 0
+	var right_low_count := 0
+	var up_high_v := 0.0
+	var up_low_v := 0.0
+	var up_high_count := 0
+	var up_low_count := 0
+	for i in range(vertices.size()):
+		if normals[i].dot(normal) < 0.99:
+			continue
+		var right_distance := vertices[i].dot(expected_right)
+		if right_distance > 0.20:
+			right_high_u += uvs[i].x
+			right_high_count += 1
+		elif right_distance < -0.20:
+			right_low_u += uvs[i].x
+			right_low_count += 1
+		var up_distance := vertices[i].dot(expected_up)
+		if up_distance > 0.20:
+			up_high_v += uvs[i].y
+			up_high_count += 1
+		elif up_distance < -0.20:
+			up_low_v += uvs[i].y
+			up_low_count += 1
+	if min(right_high_count, right_low_count, up_high_count, up_low_count) <= 0:
+		return false
+	right_high_u /= float(right_high_count)
+	right_low_u /= float(right_low_count)
+	up_high_v /= float(up_high_count)
+	up_low_v /= float(up_low_count)
+	return right_high_u > right_low_u + 0.04 and up_high_v < up_low_v - 0.04
 
 
 func _check_map_fallback_mesh() -> bool:

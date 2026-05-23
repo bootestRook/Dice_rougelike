@@ -90,7 +90,7 @@ func on_battle_won() -> void:
 		run_result_requested.emit(run_state)
 		return
 
-	var choices := reward_generator.generate_forge_choices(3, run_state.battle_index)
+	var choices := reward_generator.generate_forge_piece_choices(run_state, 3)
 	run_state.last_reward_choices = choices
 	set_flow_state(&"reward")
 	run_state_changed.emit(run_state)

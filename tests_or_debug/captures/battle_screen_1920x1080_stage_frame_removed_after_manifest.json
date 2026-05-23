@@ -1,0 +1,8 @@
+﻿{
+    "capture":  "battle_screen_1920x1080_stage_frame_removed_after",
+    "source_script":  "res://tests_or_debug/CaptureBattleScreenLayout.gd",
+    "command":  "\u0026 $env:GODOT_BIN --headless --rendering-method gl_compatibility --path . --script res://tests_or_debug/CaptureBattleScreenLayout.gd",
+    "output":  "G:/Dice_rougelike/tests_or_debug/captures/battle_screen_1920x1080_stage_frame_removed_after.png",
+    "note":  "Capture image was written before the script process timed out; process was stopped after timeout.",
+    "created_at":  "2026-05-23T14:36:17"
+}

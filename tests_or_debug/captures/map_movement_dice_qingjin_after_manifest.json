@@ -1,0 +1,730 @@
+{
+	"dice": [
+		{
+			"angular_speed": 0.0,
+			"body_layer_exists": true,
+			"body_material_edge_line_strength": 0.66,
+			"body_material_face_detail_strength": 1.12,
+			"body_material_face_layer_enabled": 1.0,
+			"body_material_face_layer_strength": 1.0,
+			"body_material_resource_path": "",
+			"body_material_shader_path": "res://assets/shaders/dice/repro_glow_dice.gdshader",
+			"body_material_source_path": "res://assets/materials/dice/repro_lapis_dice.tres",
+			"body_mesh_resource_path": "res://assets/models/dice/rounded_d6_mesh.tres",
+			"contact_shadow_layer_exists": true,
+			"edge_rim_alpha": 0.0,
+			"edge_rim_bar_count": 0,
+			"edge_rim_emission_energy": 0.0,
+			"edge_rim_is_full_shell": false,
+			"edge_rim_layer_exists": false,
+			"edge_rim_material_name": "",
+			"exit_progress": 0.0,
+			"exit_return_delay_seconds": 0.0,
+			"exit_return_progress": 0.0,
+			"exit_return_start_position": "(0.0, 0.0, 0.0)",
+			"exit_return_target_position": "(0.0, 0.0, 0.0)",
+			"exit_start_position": "(0.0, 0.0, 0.0)",
+			"exit_target_position": "(0.0, 0.0, 0.0)",
+			"exited": false,
+			"exiting": false,
+			"face_albedo_texture_exists": true,
+			"face_albedo_texture_size": "(384, 256)",
+			"face_index": 3,
+			"face_label_centered": true,
+			"face_label_count": 0,
+			"face_label_double_sided": true,
+			"face_label_min_surface_offset": 0.0,
+			"face_label_nodes_visible": false,
+			"face_labels": [
+				"1",
+				"2",
+				"3",
+				"4",
+				"5",
+				"6"
+			],
+			"face_layer_system": {
+				"atlas_size": "(384, 256)",
+				"cell_size": 128,
+				"face_count": 6,
+				"faces": [
+					{
+						"atlas_value": 1,
+						"face_index": 0,
+						"layers": {
+							"effect_layer": {
+
+							},
+							"mark_layer": {
+
+							},
+							"number_layer": {
+								"blend_mode": "normal",
+								"color": "(0.9608, 0.949, 0.9098, 1.0)",
+								"enabled": true,
+								"has_height_mask": false,
+								"has_normal_mask": false,
+								"has_roughness_mask": false,
+								"has_texture": true,
+								"opacity": 0.92,
+								"order": 10,
+								"rotation": 0.0,
+								"texture_path": "",
+								"uv_offset": "(0.0, 0.0)",
+								"uv_scale": "(0.72, 0.72)"
+							},
+							"ordered_roles": [
+								"number_layer"
+							],
+							"rarity_layer": {
+
+							},
+							"rune_layer": {
+
+							}
+						}
+					},
+					{
+						"atlas_value": 6,
+						"face_index": 1,
+						"layers": {
+							"effect_layer": {
+
+							},
+							"mark_layer": {
+
+							},
+							"number_layer": {
+								"blend_mode": "normal",
+								"color": "(0.9608, 0.949, 0.9098, 1.0)",
+								"enabled": true,
+								"has_height_mask": false,
+								"has_normal_mask": false,
+								"has_roughness_mask": false,
+								"has_texture": true,
+								"opacity": 0.92,
+								"order": 10,
+								"rotation": 0.0,
+								"texture_path": "",
+								"uv_offset": "(0.0, 0.0)",
+								"uv_scale": "(0.72, 0.72)"
+							},
+							"ordered_roles": [
+								"number_layer"
+							],
+							"rarity_layer": {
+
+							},
+							"rune_layer": {
+
+							}
+						}
+					},
+					{
+						"atlas_value": 5,
+						"face_index": 2,
+						"layers": {
+							"effect_layer": {
+
+							},
+							"mark_layer": {
+
+							},
+							"number_layer": {
+								"blend_mode": "normal",
+								"color": "(0.9608, 0.949, 0.9098, 1.0)",
+								"enabled": true,
+								"has_height_mask": false,
+								"has_normal_mask": false,
+								"has_roughness_mask": false,
+								"has_texture": true,
+								"opacity": 0.92,
+								"order": 10,
+								"rotation": 0.0,
+								"texture_path": "",
+								"uv_offset": "(0.0, 0.0)",
+								"uv_scale": "(0.72, 0.72)"
+							},
+							"ordered_roles": [
+								"number_layer"
+							],
+							"rarity_layer": {
+
+							},
+							"rune_layer": {
+
+							}
+						}
+					},
+					{
+						"atlas_value": 2,
+						"face_index": 3,
+						"layers": {
+							"effect_layer": {
+
+							},
+							"mark_layer": {
+
+							},
+							"number_layer": {
+								"blend_mode": "normal",
+								"color": "(0.9608, 0.949, 0.9098, 1.0)",
+								"enabled": true,
+								"has_height_mask": false,
+								"has_normal_mask": false,
+								"has_roughness_mask": false,
+								"has_texture": true,
+								"opacity": 0.92,
+								"order": 10,
+								"rotation": 0.0,
+								"texture_path": "",
+								"uv_offset": "(0.0, 0.0)",
+								"uv_scale": "(0.72, 0.72)"
+							},
+							"ordered_roles": [
+								"number_layer"
+							],
+							"rarity_layer": {
+
+							},
+							"rune_layer": {
+
+							}
+						}
+					},
+					{
+						"atlas_value": 3,
+						"face_index": 4,
+						"layers": {
+							"effect_layer": {
+
+							},
+							"mark_layer": {
+
+							},
+							"number_layer": {
+								"blend_mode": "normal",
+								"color": "(0.9608, 0.949, 0.9098, 1.0)",
+								"enabled": true,
+								"has_height_mask": false,
+								"has_normal_mask": false,
+								"has_roughness_mask": false,
+								"has_texture": true,
+								"opacity": 0.92,
+								"order": 10,
+								"rotation": 0.0,
+								"texture_path": "",
+								"uv_offset": "(0.0, 0.0)",
+								"uv_scale": "(0.72, 0.72)"
+							},
+							"ordered_roles": [
+								"number_layer"
+							],
+							"rarity_layer": {
+
+							},
+							"rune_layer": {
+
+							}
+						}
+					},
+					{
+						"atlas_value": 4,
+						"face_index": 5,
+						"layers": {
+							"effect_layer": {
+
+							},
+							"mark_layer": {
+
+							},
+							"number_layer": {
+								"blend_mode": "normal",
+								"color": "(0.9608, 0.949, 0.9098, 1.0)",
+								"enabled": true,
+								"has_height_mask": false,
+								"has_normal_mask": false,
+								"has_roughness_mask": false,
+								"has_texture": true,
+								"opacity": 0.92,
+								"order": 10,
+								"rotation": 0.0,
+								"texture_path": "",
+								"uv_offset": "(0.0, 0.0)",
+								"uv_scale": "(0.72, 0.72)"
+							},
+							"ordered_roles": [
+								"number_layer"
+							],
+							"rarity_layer": {
+
+							},
+							"rune_layer": {
+
+							}
+						}
+					}
+				],
+				"has_face_albedo_texture": true,
+				"has_height_mask_texture": false,
+				"has_normal_mask_texture": false,
+				"has_roughness_mask_texture": false
+			},
+			"face_marker_label_count": 0,
+			"face_marker_layer_exists": true,
+			"face_pips": [
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"face_texture_layer_exists": false,
+			"face_texture_panel_count": 0,
+			"face_value": 4,
+			"hover_shadow_position": "(-0.53, 0.028, 0.08)",
+			"hover_shadow_visible": true,
+			"idle_anchor_position": "(-0.53, 7.5, 0.08)",
+			"idle_drift_active": false,
+			"idle_drift_direction": -1.0,
+			"idle_drift_duration": 1.89623737335205,
+			"idle_drift_offset": 0.0,
+			"idle_drift_tuning": {
+				"max_distance": 0.0,
+				"max_seconds": 2.35,
+				"min_seconds": 1.15,
+				"speed": 0.0
+			},
+			"in_unselected_hold": false,
+			"last_settled_angular_speed": 0.0,
+			"last_settled_face_index": -1,
+			"last_settled_face_value": 0,
+			"last_settled_linear_speed": 0.0,
+			"last_settled_position": "(0.0, 0.0, 0.0)",
+			"last_settled_stable_frames": 0,
+			"last_throw_direction": "(0.0, -1.0, 0.0)",
+			"last_throw_origin_position": "(0.0, 0.0, 0.0)",
+			"last_throw_target_position": "(0.0, 0.0, 0.0)",
+			"last_throw_velocity": "(0.0, 0.0, 0.0)",
+			"linear_speed": 0.0,
+			"material_id": "repro_lapis",
+			"material_name": "青金骰胚",
+			"moving_to_unselected_hold": false,
+			"position": "(-0.53, 7.5, 0.08)",
+			"ready_return_curve_offset": 0.0,
+			"ready_return_progress": 0.0,
+			"ready_return_start_position": "(0.0, 0.0, 0.0)",
+			"ready_return_target_position": "(0.0, 0.0, 0.0)",
+			"returning_from_exit": false,
+			"returning_from_unselected_hold": false,
+			"returning_to_ready": false,
+			"rolling": false,
+			"rotation_degrees": "(0.0, 0.0, 0.0)",
+			"select_area_pickable": true,
+			"selected": true,
+			"selection_frame_visible": true,
+			"stable_frames": 0,
+			"state_overlay_layer_exists": true,
+			"throw_speed_tuning": {
+				"linear_speed_max": 12.0,
+				"linear_speed_min": 8.0
+			},
+			"throw_spin_tuning": {
+				"angular_speed_max": 9.5,
+				"angular_speed_min": 4.0,
+				"torque_max": 5.0,
+				"torque_min": 2.0
+			},
+			"unselected_hold_active": false,
+			"unselected_hold_collision_disabled": false,
+			"unselected_hold_progress": 0.0,
+			"unselected_hold_return_progress": 0.0,
+			"unselected_hold_return_start_position": "(0.0, 0.0, 0.0)",
+			"unselected_hold_return_target_position": "(0.0, 0.0, 0.0)",
+			"unselected_hold_start_position": "(0.0, 0.0, 0.0)",
+			"unselected_hold_target_position": "(0.0, 0.0, 0.0)",
+			"visual_layer_roles": {
+				"body": true,
+				"contact_shadow": true,
+				"edge_rim": false,
+				"face_albedo_texture": true,
+				"face_marker": true,
+				"state_overlay": true
+			},
+			"visual_top_face_index": 3,
+			"visual_top_face_value": 4,
+			"visual_top_text_alignment": 1.0
+		},
+		{
+			"angular_speed": 0.0,
+			"body_layer_exists": true,
+			"body_material_edge_line_strength": 0.66,
+			"body_material_face_detail_strength": 1.12,
+			"body_material_face_layer_enabled": 1.0,
+			"body_material_face_layer_strength": 1.0,
+			"body_material_resource_path": "",
+			"body_material_shader_path": "res://assets/shaders/dice/repro_glow_dice.gdshader",
+			"body_material_source_path": "res://assets/materials/dice/repro_lapis_dice.tres",
+			"body_mesh_resource_path": "res://assets/models/dice/rounded_d6_mesh.tres",
+			"contact_shadow_layer_exists": true,
+			"edge_rim_alpha": 0.0,
+			"edge_rim_bar_count": 0,
+			"edge_rim_emission_energy": 0.0,
+			"edge_rim_is_full_shell": false,
+			"edge_rim_layer_exists": false,
+			"edge_rim_material_name": "",
+			"exit_progress": 0.0,
+			"exit_return_delay_seconds": 0.0,
+			"exit_return_progress": 0.0,
+			"exit_return_start_position": "(0.0, 0.0, 0.0)",
+			"exit_return_target_position": "(0.0, 0.0, 0.0)",
+			"exit_start_position": "(0.0, 0.0, 0.0)",
+			"exit_target_position": "(0.0, 0.0, 0.0)",
+			"exited": false,
+			"exiting": false,
+			"face_albedo_texture_exists": true,
+			"face_albedo_texture_size": "(384, 256)",
+			"face_index": 1,
+			"face_label_centered": true,
+			"face_label_count": 0,
+			"face_label_double_sided": true,
+			"face_label_min_surface_offset": 0.0,
+			"face_label_nodes_visible": false,
+			"face_labels": [
+				"1",
+				"2",
+				"3",
+				"4",
+				"5",
+				"6"
+			],
+			"face_layer_system": {
+				"atlas_size": "(384, 256)",
+				"cell_size": 128,
+				"face_count": 6,
+				"faces": [
+					{
+						"atlas_value": 1,
+						"face_index": 0,
+						"layers": {
+							"effect_layer": {
+
+							},
+							"mark_layer": {
+
+							},
+							"number_layer": {
+								"blend_mode": "normal",
+								"color": "(0.9608, 0.949, 0.9098, 1.0)",
+								"enabled": true,
+								"has_height_mask": false,
+								"has_normal_mask": false,
+								"has_roughness_mask": false,
+								"has_texture": true,
+								"opacity": 0.92,
+								"order": 10,
+								"rotation": 0.0,
+								"texture_path": "",
+								"uv_offset": "(0.0, 0.0)",
+								"uv_scale": "(0.72, 0.72)"
+							},
+							"ordered_roles": [
+								"number_layer"
+							],
+							"rarity_layer": {
+
+							},
+							"rune_layer": {
+
+							}
+						}
+					},
+					{
+						"atlas_value": 6,
+						"face_index": 1,
+						"layers": {
+							"effect_layer": {
+
+							},
+							"mark_layer": {
+
+							},
+							"number_layer": {
+								"blend_mode": "normal",
+								"color": "(0.9608, 0.949, 0.9098, 1.0)",
+								"enabled": true,
+								"has_height_mask": false,
+								"has_normal_mask": false,
+								"has_roughness_mask": false,
+								"has_texture": true,
+								"opacity": 0.92,
+								"order": 10,
+								"rotation": 0.0,
+								"texture_path": "",
+								"uv_offset": "(0.0, 0.0)",
+								"uv_scale": "(0.72, 0.72)"
+							},
+							"ordered_roles": [
+								"number_layer"
+							],
+							"rarity_layer": {
+
+							},
+							"rune_layer": {
+
+							}
+						}
+					},
+					{
+						"atlas_value": 5,
+						"face_index": 2,
+						"layers": {
+							"effect_layer": {
+
+							},
+							"mark_layer": {
+
+							},
+							"number_layer": {
+								"blend_mode": "normal",
+								"color": "(0.9608, 0.949, 0.9098, 1.0)",
+								"enabled": true,
+								"has_height_mask": false,
+								"has_normal_mask": false,
+								"has_roughness_mask": false,
+								"has_texture": true,
+								"opacity": 0.92,
+								"order": 10,
+								"rotation": 0.0,
+								"texture_path": "",
+								"uv_offset": "(0.0, 0.0)",
+								"uv_scale": "(0.72, 0.72)"
+							},
+							"ordered_roles": [
+								"number_layer"
+							],
+							"rarity_layer": {
+
+							},
+							"rune_layer": {
+
+							}
+						}
+					},
+					{
+						"atlas_value": 2,
+						"face_index": 3,
+						"layers": {
+							"effect_layer": {
+
+							},
+							"mark_layer": {
+
+							},
+							"number_layer": {
+								"blend_mode": "normal",
+								"color": "(0.9608, 0.949, 0.9098, 1.0)",
+								"enabled": true,
+								"has_height_mask": false,
+								"has_normal_mask": false,
+								"has_roughness_mask": false,
+								"has_texture": true,
+								"opacity": 0.92,
+								"order": 10,
+								"rotation": 0.0,
+								"texture_path": "",
+								"uv_offset": "(0.0, 0.0)",
+								"uv_scale": "(0.72, 0.72)"
+							},
+							"ordered_roles": [
+								"number_layer"
+							],
+							"rarity_layer": {
+
+							},
+							"rune_layer": {
+
+							}
+						}
+					},
+					{
+						"atlas_value": 3,
+						"face_index": 4,
+						"layers": {
+							"effect_layer": {
+
+							},
+							"mark_layer": {
+
+							},
+							"number_layer": {
+								"blend_mode": "normal",
+								"color": "(0.9608, 0.949, 0.9098, 1.0)",
+								"enabled": true,
+								"has_height_mask": false,
+								"has_normal_mask": false,
+								"has_roughness_mask": false,
+								"has_texture": true,
+								"opacity": 0.92,
+								"order": 10,
+								"rotation": 0.0,
+								"texture_path": "",
+								"uv_offset": "(0.0, 0.0)",
+								"uv_scale": "(0.72, 0.72)"
+							},
+							"ordered_roles": [
+								"number_layer"
+							],
+							"rarity_layer": {
+
+							},
+							"rune_layer": {
+
+							}
+						}
+					},
+					{
+						"atlas_value": 4,
+						"face_index": 5,
+						"layers": {
+							"effect_layer": {
+
+							},
+							"mark_layer": {
+
+							},
+							"number_layer": {
+								"blend_mode": "normal",
+								"color": "(0.9608, 0.949, 0.9098, 1.0)",
+								"enabled": true,
+								"has_height_mask": false,
+								"has_normal_mask": false,
+								"has_roughness_mask": false,
+								"has_texture": true,
+								"opacity": 0.92,
+								"order": 10,
+								"rotation": 0.0,
+								"texture_path": "",
+								"uv_offset": "(0.0, 0.0)",
+								"uv_scale": "(0.72, 0.72)"
+							},
+							"ordered_roles": [
+								"number_layer"
+							],
+							"rarity_layer": {
+
+							},
+							"rune_layer": {
+
+							}
+						}
+					}
+				],
+				"has_face_albedo_texture": true,
+				"has_height_mask_texture": false,
+				"has_normal_mask_texture": false,
+				"has_roughness_mask_texture": false
+			},
+			"face_marker_label_count": 0,
+			"face_marker_layer_exists": true,
+			"face_pips": [
+				1,
+				2,
+				3,
+				4,
+				5,
+				6
+			],
+			"face_texture_layer_exists": false,
+			"face_texture_panel_count": 0,
+			"face_value": 2,
+			"hover_shadow_position": "(0.53, 0.028, 0.08)",
+			"hover_shadow_visible": true,
+			"idle_anchor_position": "(0.53, 7.5, 0.08)",
+			"idle_drift_active": false,
+			"idle_drift_direction": 1.0,
+			"idle_drift_duration": 1.54174816608429,
+			"idle_drift_offset": 0.0,
+			"idle_drift_tuning": {
+				"max_distance": 0.0,
+				"max_seconds": 2.35,
+				"min_seconds": 1.15,
+				"speed": 0.0
+			},
+			"in_unselected_hold": false,
+			"last_settled_angular_speed": 0.0,
+			"last_settled_face_index": -1,
+			"last_settled_face_value": 0,
+			"last_settled_linear_speed": 0.0,
+			"last_settled_position": "(0.0, 0.0, 0.0)",
+			"last_settled_stable_frames": 0,
+			"last_throw_direction": "(0.0, -1.0, 0.0)",
+			"last_throw_origin_position": "(0.0, 0.0, 0.0)",
+			"last_throw_target_position": "(0.0, 0.0, 0.0)",
+			"last_throw_velocity": "(0.0, 0.0, 0.0)",
+			"linear_speed": 0.0,
+			"material_id": "repro_lapis",
+			"material_name": "青金骰胚",
+			"moving_to_unselected_hold": false,
+			"position": "(0.53, 7.5, 0.08)",
+			"ready_return_curve_offset": 0.0,
+			"ready_return_progress": 0.0,
+			"ready_return_start_position": "(0.0, 0.0, 0.0)",
+			"ready_return_target_position": "(0.0, 0.0, 0.0)",
+			"returning_from_exit": false,
+			"returning_from_unselected_hold": false,
+			"returning_to_ready": false,
+			"rolling": false,
+			"rotation_degrees": "(0.0, 0.0, 0.0)",
+			"select_area_pickable": true,
+			"selected": true,
+			"selection_frame_visible": true,
+			"stable_frames": 0,
+			"state_overlay_layer_exists": true,
+			"throw_speed_tuning": {
+				"linear_speed_max": 12.0,
+				"linear_speed_min": 8.0
+			},
+			"throw_spin_tuning": {
+				"angular_speed_max": 9.5,
+				"angular_speed_min": 4.0,
+				"torque_max": 5.0,
+				"torque_min": 2.0
+			},
+			"unselected_hold_active": false,
+			"unselected_hold_collision_disabled": false,
+			"unselected_hold_progress": 0.0,
+			"unselected_hold_return_progress": 0.0,
+			"unselected_hold_return_start_position": "(0.0, 0.0, 0.0)",
+			"unselected_hold_return_target_position": "(0.0, 0.0, 0.0)",
+			"unselected_hold_start_position": "(0.0, 0.0, 0.0)",
+			"unselected_hold_target_position": "(0.0, 0.0, 0.0)",
+			"visual_layer_roles": {
+				"body": true,
+				"contact_shadow": true,
+				"edge_rim": false,
+				"face_albedo_texture": true,
+				"face_marker": true,
+				"state_overlay": true
+			},
+			"visual_top_face_index": 1,
+			"visual_top_face_value": 2,
+			"visual_top_text_alignment": 1.0
+		}
+	],
+	"display_face_indices": [
+		3,
+		1
+	],
+	"display_values": [
+		4,
+		2
+	],
+	"error": 0,
+	"output": "G:/Dice_rougelike/tests_or_debug/captures/map_movement_dice_qingjin_after.png",
+	"selected_indices": [
+		0,
+		1
+	]
+}

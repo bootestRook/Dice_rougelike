@@ -1726,7 +1726,8 @@ func _face_text_up_local(face_index: int) -> Vector3:
 		return (_face_labels[face_index] as Label3D).transform.basis.y.normalized()
 	match clampi(face_index, 0, 5):
 		0:
-			return Vector3.FORWARD
+			# RoundedDiceMeshFactory maps top/bottom face UVs with local +Z as the upright number direction.
+			return Vector3.BACK
 		1:
 			return Vector3.BACK
 		2:
@@ -1742,8 +1743,6 @@ func _face_text_up_local(face_index: int) -> Vector3:
 
 
 func _ready_text_up_world() -> Vector3:
-	var text_up: Vector3 = _face_text_up_local(0)
-	text_up = text_up - Vector3.UP * text_up.dot(Vector3.UP)
-	if text_up.length_squared() <= 0.001:
-		return Vector3.FORWARD
-	return text_up.normalized()
+	# The ready camera sees tabletop screen-up as local -Z; keep this target separate
+	# from each face's source UV direction.
+	return Vector3.FORWARD

@@ -122,23 +122,23 @@ const LEGENDARY_DICE_TOOL_ITEM_POOL := [
 
 static func get_all_defs() -> Array[FoundryServiceDef]:
 	return [
-		_make_def(FOUNDRY_HIGH_PIP_REFORGE, "高位回炉", "随机牺牲目标骰的一面，从 3 个高点普通候选面中选择 1 个覆盖。", TYPE_FACE_REFORGE, TARGET_DIE, false, "会随机牺牲 1 个现有骰面。"),
-		_make_def(FOUNDRY_SIX_PIP_REFORGE, "六点熔刻", "随机牺牲目标骰的一面，从 2 个六点普通候选面中选择 1 个覆盖。", TYPE_FACE_REFORGE, TARGET_DIE, false, "会随机牺牲 1 个现有骰面；仅 D6 / D8 可用。"),
-		_make_def(FOUNDRY_RANDOM_PIP_REFORGE, "数面回炉", "随机牺牲目标骰的一面，从 4 个合法点数普通候选面中选择 1 个覆盖。", TYPE_FACE_REFORGE, TARGET_DIE, false, "会随机牺牲 1 个现有骰面。"),
-		_make_def(FOUNDRY_GOLD_MARK, "金印压印", "将 1 个目标骰面的印记替换为金印。", TYPE_MARK_INSTALL, TARGET_FACE, false, "若目标已有印记，将替换现有印记。"),
-		_make_def(FOUNDRY_RARE_ORNAMENT, "稀饰灌注", "随机安装箔光、幻彩或多彩中的 1 个稀有面饰。", TYPE_RARE_ORNAMENT_INSTALL, TARGET_FACE, false, "会替换目标骰面的现有面饰。"),
-		_make_def(FOUNDRY_RARE_TOOL_PACK, "稀有骰具匣", "生成 1 个随机稀有骰具道具进入道具槽位，并清空当前金币。", TYPE_TOOL_ITEM_GENERATE, TARGET_NONE, true, "需要空道具槽位；金币变为 0。"),
-		_make_def(FOUNDRY_SAME_PIP_SYNC, "同点同调", "选择 2 到 5 个骰面，统一为共同合法随机点数，并清空面饰和印记。", TYPE_PIP_SYNC, TARGET_MULTI_FACES, false, "会清空所有目标骰面的面饰和印记。"),
-		_make_def(FOUNDRY_NEGATIVE_TOOL_SLOT, "负载扩槽", "随机将 1 个已安装且非负载骰具设为负载骰具，并清空当前金币。", TYPE_TOOL_SLOT, TARGET_NONE, false, "随机目标；金币变为 0。"),
-		_make_def(FOUNDRY_BURN_FOR_COINS, "熔毁换金", "随机重置 5 个现有骰面，获得 20 金币。", TYPE_ECONOMY, TARGET_NONE, false, "会随机重置 5 个骰面的点数、面饰和印记。"),
-		_make_def(FOUNDRY_TOOL_CLONE_PURGE, "骰具孤本复刻", "随机复制 1 个已安装骰具，并摧毁其他已安装骰具。", TYPE_TOOL_COPY, TARGET_NONE, false, "会摧毁来源与复制体之外的所有已安装骰具。"),
-		_make_def(FOUNDRY_RED_MARK, "红印压印", "将 1 个目标骰面的印记替换为红印。", TYPE_MARK_INSTALL, TARGET_FACE, false, "若目标已有印记，将替换现有印记。"),
-		_make_def(FOUNDRY_POLY_GAMBLE, "多彩孤注", "随机令目标骰的 1 个骰面获得多彩面饰，并清空同骰其他面饰。", TYPE_ORNAMENT_GAMBLE, TARGET_DIE, false, "会清空同一颗骰子其他骰面的面饰。"),
-		_make_def(FOUNDRY_BLUE_MARK, "蓝印压印", "将 1 个目标骰面的印记替换为蓝印。", TYPE_MARK_INSTALL, TARGET_FACE, false, "若目标已有印记，将替换现有印记。"),
-		_make_def(FOUNDRY_PURPLE_MARK, "紫印压印", "将 1 个目标骰面的印记替换为紫印。", TYPE_MARK_INSTALL, TARGET_FACE, false, "若目标已有印记，将替换现有印记。"),
-		_make_def(FOUNDRY_FACE_DOUBLE_COPY, "骰面双写", "将 1 个来源骰面的三槽位完整复制到 2 个合法目标骰面。", TYPE_FACE_COPY, TARGET_FACE_DOUBLE_COPY, false, "会覆盖两个目标骰面的点数、面饰和印记。"),
-		_make_def(FOUNDRY_LEGENDARY_TOOL_PACK, "传奇骰具匣", "生成 1 个随机传奇骰具道具进入道具槽位。", TYPE_TOOL_ITEM_GENERATE, TARGET_NONE, true, "需要空道具槽位。"),
-		_make_def(FOUNDRY_ALL_COMBO_UPGRADE, "全主骰型升阶", "8 个主骰型等级全部 +1。", TYPE_COMBO_UPGRADE, TARGET_NONE, false, "只升级主骰型等级。"),
+		_make_def(FOUNDRY_HIGH_PIP_REFORGE, "高位回炉", "随机牺牲目标骰的一面，从 3 个高点普通候选面中选择 1 个覆盖。", TYPE_FACE_REFORGE, TARGET_DIE, false, "会随机牺牲 1 个现有骰面。", &"uncommon"),
+		_make_def(FOUNDRY_SIX_PIP_REFORGE, "六点熔刻", "随机牺牲目标骰的一面，从 2 个六点普通候选面中选择 1 个覆盖。", TYPE_FACE_REFORGE, TARGET_DIE, false, "会随机牺牲 1 个现有骰面；仅 D6 / D8 可用。", &"rare"),
+		_make_def(FOUNDRY_RANDOM_PIP_REFORGE, "数面回炉", "随机牺牲目标骰的一面，从 4 个合法点数普通候选面中选择 1 个覆盖。", TYPE_FACE_REFORGE, TARGET_DIE, false, "会随机牺牲 1 个现有骰面。", &"uncommon"),
+		_make_def(FOUNDRY_GOLD_MARK, "金印压印", "将 1 个目标骰面的印记替换为金印。", TYPE_MARK_INSTALL, TARGET_FACE, false, "若目标已有印记，将替换现有印记。", &"uncommon"),
+		_make_def(FOUNDRY_RARE_ORNAMENT, "稀饰灌注", "随机安装箔光、幻彩或多彩中的 1 个稀有面饰。", TYPE_RARE_ORNAMENT_INSTALL, TARGET_FACE, false, "会替换目标骰面的现有面饰。", &"rare"),
+		_make_def(FOUNDRY_RARE_TOOL_PACK, "稀有骰具匣", "生成 1 个随机稀有骰具道具进入道具槽位，并清空当前金币。", TYPE_TOOL_ITEM_GENERATE, TARGET_NONE, true, "需要空道具槽位；金币变为 0。", &"epic"),
+		_make_def(FOUNDRY_SAME_PIP_SYNC, "同点同调", "选择 2 到 5 个骰面，统一为共同合法随机点数，并清空面饰和印记。", TYPE_PIP_SYNC, TARGET_MULTI_FACES, false, "会清空所有目标骰面的面饰和印记。", &"rare"),
+		_make_def(FOUNDRY_NEGATIVE_TOOL_SLOT, "负载扩槽", "随机将 1 个已安装且非负载骰具设为负载骰具，并清空当前金币。", TYPE_TOOL_SLOT, TARGET_NONE, false, "随机目标；金币变为 0。", &"epic"),
+		_make_def(FOUNDRY_BURN_FOR_COINS, "熔毁换金", "随机重置 5 个现有骰面，获得 20 金币。", TYPE_ECONOMY, TARGET_NONE, false, "会随机重置 5 个骰面的点数、面饰和印记。", &"uncommon"),
+		_make_def(FOUNDRY_TOOL_CLONE_PURGE, "骰具孤本复刻", "随机复制 1 个已安装骰具，并摧毁其他已安装骰具。", TYPE_TOOL_COPY, TARGET_NONE, false, "会摧毁来源与复制体之外的所有已安装骰具。", &"epic"),
+		_make_def(FOUNDRY_RED_MARK, "红印压印", "将 1 个目标骰面的印记替换为红印。", TYPE_MARK_INSTALL, TARGET_FACE, false, "若目标已有印记，将替换现有印记。", &"rare"),
+		_make_def(FOUNDRY_POLY_GAMBLE, "多彩孤注", "随机令目标骰的 1 个骰面获得多彩面饰，并清空同骰其他面饰。", TYPE_ORNAMENT_GAMBLE, TARGET_DIE, false, "会清空同一颗骰子其他骰面的面饰。", &"epic"),
+		_make_def(FOUNDRY_BLUE_MARK, "蓝印压印", "将 1 个目标骰面的印记替换为蓝印。", TYPE_MARK_INSTALL, TARGET_FACE, false, "若目标已有印记，将替换现有印记。", &"rare"),
+		_make_def(FOUNDRY_PURPLE_MARK, "紫印压印", "将 1 个目标骰面的印记替换为紫印。", TYPE_MARK_INSTALL, TARGET_FACE, false, "若目标已有印记，将替换现有印记。", &"rare"),
+		_make_def(FOUNDRY_FACE_DOUBLE_COPY, "骰面双写", "将 1 个来源骰面的三槽位完整复制到 2 个合法目标骰面。", TYPE_FACE_COPY, TARGET_FACE_DOUBLE_COPY, false, "会覆盖两个目标骰面的点数、面饰和印记。", &"legendary"),
+		_make_def(FOUNDRY_LEGENDARY_TOOL_PACK, "传奇骰具匣", "生成 1 个随机传奇骰具道具进入道具槽位。", TYPE_TOOL_ITEM_GENERATE, TARGET_NONE, true, "需要空道具槽位。", &"legendary"),
+		_make_def(FOUNDRY_ALL_COMBO_UPGRADE, "全主骰型升阶", "8 个主骰型等级全部 +1。", TYPE_COMBO_UPGRADE, TARGET_NONE, false, "只升级主骰型等级。", &"legendary"),
 	]
 
 
@@ -196,7 +196,8 @@ static func _make_def(
 	service_type: StringName,
 	target_rule: StringName,
 	requires_item_slot: bool,
-	risk_note: String
+	risk_note: String,
+	rarity: StringName = &"common"
 ) -> FoundryServiceDef:
 	var def := FoundryServiceDef.new()
 	def.service_id = service_id
@@ -206,6 +207,7 @@ static func _make_def(
 	def.target_rule = target_rule
 	def.requires_item_slot = requires_item_slot
 	def.risk_note = risk_note
+	def.rarity = rarity
 	def.implementation_status = IMPLEMENTATION_FORMAL
 	def.drop_pool = DROP_POOL_TBD
 	def.drop_weight = DROP_WEIGHT_TBD

@@ -33,6 +33,20 @@ const STAGE_TEXTURE_NAMES := ["albedo", "normal", "orm", "emission", "height"]
 const STAGE_DATA_TEXTURE_NAMES := ["orm", "height"]
 
 const DICE_MATERIALS := {
+	"lapis": {
+		"path": "res://assets/materials/dice/repro_lapis_dice.tres",
+		"base": Color(0.018, 0.095, 0.380, 1.0),
+		"edge": Color(1.00, 0.76, 0.30, 1.0),
+		"emission": Color(0.36, 0.58, 1.00, 1.0),
+		"metallic": 0.38,
+		"roughness": 0.25,
+		"emission_strength": 0.12,
+		"fresnel_strength": 0.74,
+		"face_detail_strength": 1.12,
+		"edge_line_strength": 0.66,
+		"corner_glint_strength": 0.28,
+		"side_shadow_strength": 0.34,
+	},
 	"blue": {
 		"path": "res://assets/materials/dice/repro_blue_dice.tres",
 		"base": Color(0.026, 0.150, 0.520, 1.0),

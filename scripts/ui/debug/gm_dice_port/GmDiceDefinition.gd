@@ -11,12 +11,14 @@ const MATERIAL_GOLD := &"gold"
 const MATERIAL_IRON := &"iron"
 const MATERIAL_GLASS := &"glass"
 const MATERIAL_CRYSTAL := &"crystal"
+const MATERIAL_REPRO_LAPIS := &"repro_lapis"
 const MATERIAL_REPRO_BLUE := &"repro_blue"
 const MATERIAL_REPRO_PURPLE := &"repro_purple"
 const MATERIAL_REPRO_CYAN := &"repro_cyan"
 const MATERIAL_REPRO_GOLD := &"repro_gold"
 const MATERIAL_REPRO_SILVERWHITE := &"repro_silverwhite"
 const MATERIAL_IDS := [
+	MATERIAL_REPRO_LAPIS,
 	MATERIAL_REPRO_BLUE,
 	MATERIAL_REPRO_PURPLE,
 	MATERIAL_REPRO_CYAN,
@@ -75,6 +77,8 @@ static func normalize_material_id(value: StringName) -> StringName:
 			return MATERIAL_GLASS
 		&"crystal", &"body_crystal", MATERIAL_CRYSTAL:
 			return MATERIAL_CRYSTAL
+		&"repro_lapis", &"lapis", &"blue_gold", &"qingjin", &"body_lapis", &"visual_lapis", MATERIAL_REPRO_LAPIS:
+			return MATERIAL_REPRO_LAPIS
 		&"repro_blue", &"star_blue", &"visual_blue", MATERIAL_REPRO_BLUE:
 			return MATERIAL_REPRO_BLUE
 		&"repro_purple", &"star_purple", &"visual_purple", MATERIAL_REPRO_PURPLE:
@@ -91,6 +95,8 @@ static func normalize_material_id(value: StringName) -> StringName:
 
 static func material_name(value: StringName) -> String:
 	match normalize_material_id(value):
+		MATERIAL_REPRO_LAPIS:
+			return "青金骰胚"
 		MATERIAL_REPRO_BLUE:
 			return "星蓝骰胚"
 		MATERIAL_REPRO_PURPLE:

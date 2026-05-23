@@ -13,6 +13,7 @@ const EXPECTED_DEFAULT_MATERIAL_IDS := [
 	"repro_silverwhite",
 ]
 const REPRO_MATERIAL_PATHS := {
+	"repro_lapis": "res://assets/materials/dice/repro_lapis_dice.tres",
 	"repro_blue": "res://assets/materials/dice/repro_blue_dice.tres",
 	"repro_purple": "res://assets/materials/dice/repro_purple_dice.tres",
 	"repro_cyan": "res://assets/materials/dice/repro_cyan_dice.tres",

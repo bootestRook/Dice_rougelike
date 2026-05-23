@@ -29,7 +29,7 @@ func _init() -> void:
 	all_passed = _check("generated rewards are unique", _choices_are_unique(choices)) and all_passed
 	all_passed = _check("generated rewards contain no legacy ids", not _has_legacy_reward(choices)) and all_passed
 
-	var full_pool := reward_generator.generate_forge_choices(99)
+	var full_pool := reward_generator._build_forge_piece_pool()
 	var pip_6 := _find_piece_by_id(full_pool, &"pip_6")
 	var red_6 := _find_piece_by_id(full_pool, &"red_6")
 	var blue_2 := _find_piece_by_id(full_pool, &"blue_2")

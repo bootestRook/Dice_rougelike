@@ -14,6 +14,7 @@ const REPRO_DICE_SHADER_PATH := "res://assets/shaders/dice/repro_glow_dice.gdsha
 const LAYERED_BODY_SHADER_PATH := "res://assets/shaders/dice/dice_layered_body.gdshader"
 const FACE_DIGIT_COLOR := Color(0.960784, 0.949020, 0.909804, 1.0)
 const MATERIAL_RESOURCE_PATHS := {
+	GmDiceDefinition.MATERIAL_REPRO_LAPIS: "res://assets/materials/dice/repro_lapis_dice.tres",
 	GmDiceDefinition.MATERIAL_REPRO_BLUE: "res://assets/materials/dice/repro_blue_dice.tres",
 	GmDiceDefinition.MATERIAL_REPRO_PURPLE: "res://assets/materials/dice/repro_purple_dice.tres",
 	GmDiceDefinition.MATERIAL_REPRO_CYAN: "res://assets/materials/dice/repro_cyan_dice.tres",
@@ -176,6 +177,8 @@ static func make_edge_rim_material(material_id: StringName, fallback_color: Colo
 
 static func edge_rim_color(material_id: StringName, fallback_color: Color = Color(0.80, 0.94, 1.00, 1.0)) -> Color:
 	match GmDiceDefinition.normalize_material_id(material_id):
+		GmDiceDefinition.MATERIAL_REPRO_LAPIS:
+			return Color(1.00, 0.76, 0.30, 1.0)
 		GmDiceDefinition.MATERIAL_REPRO_BLUE:
 			return Color(0.58, 0.86, 1.00, 1.0)
 		GmDiceDefinition.MATERIAL_REPRO_PURPLE:
@@ -200,6 +203,8 @@ static func edge_rim_color(material_id: StringName, fallback_color: Color = Colo
 
 static func edge_rim_energy(material_id: StringName) -> float:
 	match GmDiceDefinition.normalize_material_id(material_id):
+		GmDiceDefinition.MATERIAL_REPRO_LAPIS:
+			return 0.09
 		GmDiceDefinition.MATERIAL_REPRO_GOLD, GmDiceDefinition.MATERIAL_GOLD:
 			return 0.08
 		GmDiceDefinition.MATERIAL_REPRO_SILVERWHITE, GmDiceDefinition.MATERIAL_CRYSTAL:
@@ -230,6 +235,12 @@ static func make_programmatic_body_material(body_color: Color, material_id: Stri
 	var metallic := 0.22
 	var roughness := 0.34
 	match normalized_id:
+		GmDiceDefinition.MATERIAL_REPRO_LAPIS:
+			base = Color(0.018, 0.095, 0.380, 1.0)
+			edge = Color(1.00, 0.76, 0.30, 1.0)
+			emission = Color(0.36, 0.58, 1.00, 1.0)
+			metallic = 0.38
+			roughness = 0.25
 		GmDiceDefinition.MATERIAL_IRON:
 			base = Color(0.70, 0.76, 0.84, 1.0)
 			edge = Color(0.95, 1.00, 1.00, 1.0)
@@ -365,6 +376,8 @@ static func face_label_color(material_id: StringName, fallback_color: Color = Co
 
 static func face_label_outline_color(material_id: StringName) -> Color:
 	match GmDiceDefinition.normalize_material_id(material_id):
+		GmDiceDefinition.MATERIAL_REPRO_LAPIS:
+			return Color(0.04, 0.025, 0.00, 0.88)
 		GmDiceDefinition.MATERIAL_REPRO_BLUE:
 			return Color(0.00, 0.05, 0.18, 0.84)
 		GmDiceDefinition.MATERIAL_REPRO_PURPLE:

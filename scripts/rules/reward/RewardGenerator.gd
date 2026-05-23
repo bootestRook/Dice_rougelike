@@ -109,6 +109,38 @@ const COMBO_UPGRADE_IDS := [
 	&"upgrade_combo_five_kind",
 ]
 
+const REWARD_RARITY_ORDER := [
+	&"common",
+	&"uncommon",
+	&"rare",
+	&"epic",
+	&"legendary",
+]
+
+const NORMAL_BATTLE_RARITY_WEIGHTS := {
+	&"common": 72.0,
+	&"uncommon": 24.0,
+	&"rare": 4.0,
+	&"epic": 0.0,
+	&"legendary": 0.0,
+}
+
+const ELITE_REWARD_RARITY_WEIGHTS := {
+	&"common": 20.0,
+	&"uncommon": 45.0,
+	&"rare": 28.0,
+	&"epic": 7.0,
+	&"legendary": 0.0,
+}
+
+const BOSS_REWARD_RARITY_WEIGHTS := {
+	&"common": 0.0,
+	&"uncommon": 20.0,
+	&"rare": 45.0,
+	&"epic": 25.0,
+	&"legendary": 10.0,
+}
+
 
 var rng := RandomNumberGenerator.new()
 
@@ -118,10 +150,15 @@ func _init() -> void:
 
 
 func generate_forge_choices(count: int = 3, battle_index: int = 0) -> Array[ForgePieceDef]:
-	var pool := _build_reward_pool_for_battle(battle_index)
+	return generate_forge_choices_for_encounter(count, RunState.ENCOUNTER_BATTLE, battle_index)
+
+
+func generate_forge_choices_for_encounter(count: int = 3, encounter_type: StringName = &"battle", battle_index: int = 0) -> Array[ForgePieceDef]:
+	var pool := _build_reward_pool_for_encounter(encounter_type, battle_index)
 	var requested_count: int = max(0, count)
-	var choices := _draw_unique_choices(pool, requested_count)
-	_ensure_direct_power_choice(choices, pool)
+	var rarity_weights := _rarity_weights_for_encounter(encounter_type)
+	var choices := _draw_weighted_unique_choices(pool, requested_count, rarity_weights)
+	_ensure_direct_power_choice(choices, pool, rarity_weights)
 	return choices
 
 
@@ -131,9 +168,11 @@ func generate_forge_choices_for_battle(count: int, battle_index: int) -> Array[F
 
 func generate_forge_piece_choices(run_state: RunState, count: int = 3) -> Array[ForgePieceDef]:
 	var battle_index := 0
+	var encounter_type := RunState.ENCOUNTER_BATTLE
 	if run_state != null:
 		battle_index = run_state.battle_index
-	return generate_forge_choices(count, battle_index)
+		encounter_type = run_state.current_encounter_node_type
+	return generate_forge_choices_for_encounter(count, encounter_type, battle_index)
 
 
 func generate_forge_item_choices(count: int = 3) -> Array[ForgeItemDef]:
@@ -158,7 +197,10 @@ func roll_random_forge_item(battle_index: int = 0) -> StringName:
 	var pool := _build_reward_pool_for_battle(battle_index)
 	if pool.is_empty():
 		return &""
-	return pool[rng.randi_range(0, pool.size() - 1)].id
+	var choices := _draw_weighted_unique_choices(pool, 1, _rarity_weights_for_encounter(RunState.ENCOUNTER_BATTLE))
+	if choices.is_empty() or choices[0] == null:
+		return &""
+	return choices[0].id
 
 
 func roll_random_formal_forge_item(excluded_ids: Array = []) -> StringName:
@@ -214,7 +256,68 @@ func _draw_unique_choices(pool: Array[ForgePieceDef], requested_count: int) -> A
 	return choices
 
 
-func _ensure_direct_power_choice(choices: Array[ForgePieceDef], pool: Array[ForgePieceDef]) -> void:
+func _draw_weighted_unique_choices(pool: Array[ForgePieceDef], requested_count: int, rarity_weights: Dictionary) -> Array[ForgePieceDef]:
+	var choices: Array[ForgePieceDef] = []
+	var ids: Array[StringName] = []
+	while choices.size() < requested_count and not pool.is_empty():
+		var rarity := _roll_available_rarity(pool, rarity_weights)
+		if rarity == &"":
+			break
+
+		var candidate_indices: Array[int] = []
+		for index in range(pool.size()):
+			var piece := pool[index]
+			if piece != null and piece.get_rarity() == rarity:
+				candidate_indices.append(index)
+
+		if candidate_indices.is_empty():
+			break
+
+		var pool_index := candidate_indices[rng.randi_range(0, candidate_indices.size() - 1)]
+		var piece := pool[pool_index]
+		pool.remove_at(pool_index)
+		if piece == null or ids.has(piece.id):
+			continue
+		choices.append(piece)
+		ids.append(piece.id)
+
+	return choices
+
+
+func _roll_available_rarity(pool: Array[ForgePieceDef], rarity_weights: Dictionary) -> StringName:
+	var available_weights := {}
+	var total_weight := 0.0
+	for piece in pool:
+		if piece == null:
+			continue
+		var rarity := piece.get_rarity()
+		var weight := float(rarity_weights.get(rarity, 0.0))
+		if weight <= 0.0 or available_weights.has(rarity):
+			continue
+		available_weights[rarity] = weight
+		total_weight += weight
+
+	if total_weight <= 0.0:
+		return &""
+
+	var roll := rng.randf() * total_weight
+	var cursor := 0.0
+	for rarity in REWARD_RARITY_ORDER:
+		var weight := float(available_weights.get(rarity, 0.0))
+		if weight <= 0.0:
+			continue
+		cursor += weight
+		if roll < cursor:
+			return rarity
+
+	var last_available := &""
+	for rarity in REWARD_RARITY_ORDER:
+		if float(available_weights.get(rarity, 0.0)) > 0.0:
+			last_available = rarity
+	return last_available
+
+
+func _ensure_direct_power_choice(choices: Array[ForgePieceDef], pool: Array[ForgePieceDef], rarity_weights: Dictionary = {}) -> void:
 	if choices.is_empty() or _has_direct_power_choice(choices):
 		return
 
@@ -225,7 +328,7 @@ func _ensure_direct_power_choice(choices: Array[ForgePieceDef], pool: Array[Forg
 
 	var candidates: Array[ForgePieceDef] = []
 	for piece in pool:
-		if piece != null and _is_direct_power_piece(piece) and not used_ids.has(piece.id):
+		if piece != null and _is_direct_power_piece(piece) and not used_ids.has(piece.id) and _piece_has_positive_rarity_weight(piece, rarity_weights):
 			candidates.append(piece)
 
 	if candidates.is_empty():
@@ -248,11 +351,33 @@ func _is_direct_power_piece(piece: ForgePieceDef) -> bool:
 
 
 func _build_reward_pool_for_battle(_battle_index: int) -> Array[ForgePieceDef]:
+	return _build_reward_pool_for_encounter(RunState.ENCOUNTER_BATTLE, _battle_index)
+
+
+func _build_reward_pool_for_encounter(_encounter_type: StringName, _battle_index: int = 0) -> Array[ForgePieceDef]:
 	return _build_pool_from_ids(FULL_REWARD_POOL_IDS)
 
 
 func _build_forge_piece_pool() -> Array[ForgePieceDef]:
 	return _build_pool_from_ids(FULL_REWARD_POOL_IDS)
+
+
+func _rarity_weights_for_encounter(encounter_type: StringName) -> Dictionary:
+	match encounter_type:
+		RunState.ENCOUNTER_ELITE:
+			return ELITE_REWARD_RARITY_WEIGHTS
+		RunState.ENCOUNTER_BOSS:
+			return BOSS_REWARD_RARITY_WEIGHTS
+		_:
+			return NORMAL_BATTLE_RARITY_WEIGHTS
+
+
+func _piece_has_positive_rarity_weight(piece: ForgePieceDef, rarity_weights: Dictionary) -> bool:
+	if piece == null:
+		return false
+	if rarity_weights.is_empty():
+		return true
+	return float(rarity_weights.get(piece.get_rarity(), 0.0)) > 0.0
 
 
 func _build_pool_from_ids(ids: Array) -> Array[ForgePieceDef]:
@@ -274,46 +399,46 @@ func _build_piece_catalog() -> Dictionary:
 		&"pip_6": _make_piece(&"pip_6", [_make_int_op(ForgeOperationDef.OP_SET_PIP, 6)], &"common", [&"six", &"power"]),
 		&"ornament_chip": _make_piece(&"ornament_chip", [_make_id_op(ForgeOperationDef.OP_SET_ORNAMENT, &"orn_chip")], &"common", [&"ornament", &"stable", &"chips"]),
 		&"ornament_mult": _make_piece(&"ornament_mult", [_make_id_op(ForgeOperationDef.OP_SET_ORNAMENT, &"orn_mult")], &"common", [&"ornament", &"mult"]),
-		&"ornament_wild": _make_piece(&"ornament_wild", [_make_id_op(ForgeOperationDef.OP_SET_ORNAMENT, &"orn_wild")], &"uncommon", [&"ornament", &"straight", &"stable"]),
-		&"ornament_burst": _make_piece(&"ornament_burst", [_make_id_op(ForgeOperationDef.OP_SET_ORNAMENT, &"orn_burst")], &"common", [&"ornament", &"burst", &"xmult"]),
-		&"ornament_stay": _make_piece(&"ornament_stay", [_make_id_op(ForgeOperationDef.OP_SET_ORNAMENT, &"orn_stay")], &"common", [&"ornament", &"stay", &"stable"]),
-		&"ornament_stone": _make_piece(&"ornament_stone", [_make_id_op(ForgeOperationDef.OP_SET_ORNAMENT, &"orn_stone")], &"common", [&"ornament", &"chips", &"stable"]),
+		&"ornament_wild": _make_piece(&"ornament_wild", [_make_id_op(ForgeOperationDef.OP_SET_ORNAMENT, &"orn_wild")], &"rare", [&"ornament", &"straight", &"stable"]),
+		&"ornament_burst": _make_piece(&"ornament_burst", [_make_id_op(ForgeOperationDef.OP_SET_ORNAMENT, &"orn_burst")], &"uncommon", [&"ornament", &"burst", &"xmult"]),
+		&"ornament_stay": _make_piece(&"ornament_stay", [_make_id_op(ForgeOperationDef.OP_SET_ORNAMENT, &"orn_stay")], &"uncommon", [&"ornament", &"stay", &"stable"]),
+		&"ornament_stone": _make_piece(&"ornament_stone", [_make_id_op(ForgeOperationDef.OP_SET_ORNAMENT, &"orn_stone")], &"uncommon", [&"ornament", &"chips", &"stable"]),
 		&"ornament_gold": _make_piece(&"ornament_gold", [_make_id_op(ForgeOperationDef.OP_SET_ORNAMENT, &"orn_gold")], &"uncommon", [&"ornament", &"stay", &"stable"]),
 		&"ornament_lucky": _make_piece(&"ornament_lucky", [_make_id_op(ForgeOperationDef.OP_SET_ORNAMENT, &"orn_lucky")], &"uncommon", [&"ornament", &"mult"]),
 		&"ornament_foil": _make_piece(&"ornament_foil", [_make_id_op(ForgeOperationDef.OP_SET_ORNAMENT, &"orn_foil")], &"rare", [&"ornament", &"chips"]),
 		&"ornament_holo": _make_piece(&"ornament_holo", [_make_id_op(ForgeOperationDef.OP_SET_ORNAMENT, &"orn_holo")], &"rare", [&"ornament", &"mult"]),
-		&"ornament_poly": _make_piece(&"ornament_poly", [_make_id_op(ForgeOperationDef.OP_SET_ORNAMENT, &"orn_poly")], &"rare", [&"ornament", &"xmult"]),
-		&"mark_red": _make_piece(&"mark_red", [_make_id_op(ForgeOperationDef.OP_SET_MARK, &"mark_red")], &"common", [&"mark", &"extra_trigger", &"burst"]),
-		&"mark_blue": _make_piece(&"mark_blue", [_make_id_op(ForgeOperationDef.OP_SET_MARK, &"mark_blue")], &"common", [&"mark", &"stay", &"stable"]),
-		&"mark_purple": _make_piece(&"mark_purple", [_make_id_op(ForgeOperationDef.OP_SET_MARK, &"mark_purple")], &"common", [&"mark", &"reroll"]),
+		&"ornament_poly": _make_piece(&"ornament_poly", [_make_id_op(ForgeOperationDef.OP_SET_ORNAMENT, &"orn_poly")], &"epic", [&"ornament", &"xmult"]),
+		&"mark_red": _make_piece(&"mark_red", [_make_id_op(ForgeOperationDef.OP_SET_MARK, &"mark_red")], &"rare", [&"mark", &"extra_trigger", &"burst"]),
+		&"mark_blue": _make_piece(&"mark_blue", [_make_id_op(ForgeOperationDef.OP_SET_MARK, &"mark_blue")], &"rare", [&"mark", &"stay", &"stable"]),
+		&"mark_purple": _make_piece(&"mark_purple", [_make_id_op(ForgeOperationDef.OP_SET_MARK, &"mark_purple")], &"rare", [&"mark", &"reroll"]),
 		&"mark_gold": _make_piece(&"mark_gold", [_make_id_op(ForgeOperationDef.OP_SET_MARK, &"mark_gold")], &"uncommon", [&"mark", &"gold", &"stable"]),
 		&"mark_white": _make_piece(&"mark_white", [_make_id_op(ForgeOperationDef.OP_SET_MARK, &"mark_white")], &"rare", [&"mark", &"stable"]),
 		&"upgrade_combo_scatter": _make_piece(&"upgrade_combo_scatter", [_make_id_op(ForgeOperationDef.OP_COMBO_UPGRADE, &"scatter")], &"common", [&"upgrade", &"stable"]),
 		&"upgrade_combo_pair": _make_piece(&"upgrade_combo_pair", [_make_id_op(ForgeOperationDef.OP_COMBO_UPGRADE, &"pair")], &"common", [&"upgrade", &"stable"]),
-		&"upgrade_combo_two_pair": _make_piece(&"upgrade_combo_two_pair", [_make_id_op(ForgeOperationDef.OP_COMBO_UPGRADE, &"two_pair")], &"common", [&"upgrade", &"stable"]),
-		&"upgrade_combo_three_kind": _make_piece(&"upgrade_combo_three_kind", [_make_id_op(ForgeOperationDef.OP_COMBO_UPGRADE, &"three_kind")], &"common", [&"upgrade", &"stable"]),
-		&"upgrade_combo_full_house": _make_piece(&"upgrade_combo_full_house", [_make_id_op(ForgeOperationDef.OP_COMBO_UPGRADE, &"full_house")], &"common", [&"upgrade", &"stable"]),
-		&"upgrade_combo_four_kind": _make_piece(&"upgrade_combo_four_kind", [_make_id_op(ForgeOperationDef.OP_COMBO_UPGRADE, &"four_kind")], &"common", [&"upgrade", &"stable"]),
-		&"upgrade_combo_straight": _make_piece(&"upgrade_combo_straight", [_make_id_op(ForgeOperationDef.OP_COMBO_UPGRADE, &"straight")], &"common", [&"upgrade", &"stable"]),
-		&"upgrade_combo_five_kind": _make_piece(&"upgrade_combo_five_kind", [_make_id_op(ForgeOperationDef.OP_COMBO_UPGRADE, &"five_kind")], &"common", [&"upgrade", &"stable"]),
-		&"cleanse": _make_piece(&"cleanse", [_make_op(ForgeOperationDef.OP_CLEANSE)], &"common", [&"stable"]),
+		&"upgrade_combo_two_pair": _make_piece(&"upgrade_combo_two_pair", [_make_id_op(ForgeOperationDef.OP_COMBO_UPGRADE, &"two_pair")], &"uncommon", [&"upgrade", &"stable"]),
+		&"upgrade_combo_three_kind": _make_piece(&"upgrade_combo_three_kind", [_make_id_op(ForgeOperationDef.OP_COMBO_UPGRADE, &"three_kind")], &"uncommon", [&"upgrade", &"stable"]),
+		&"upgrade_combo_full_house": _make_piece(&"upgrade_combo_full_house", [_make_id_op(ForgeOperationDef.OP_COMBO_UPGRADE, &"full_house")], &"uncommon", [&"upgrade", &"stable"]),
+		&"upgrade_combo_four_kind": _make_piece(&"upgrade_combo_four_kind", [_make_id_op(ForgeOperationDef.OP_COMBO_UPGRADE, &"four_kind")], &"rare", [&"upgrade", &"stable"]),
+		&"upgrade_combo_straight": _make_piece(&"upgrade_combo_straight", [_make_id_op(ForgeOperationDef.OP_COMBO_UPGRADE, &"straight")], &"rare", [&"upgrade", &"stable"]),
+		&"upgrade_combo_five_kind": _make_piece(&"upgrade_combo_five_kind", [_make_id_op(ForgeOperationDef.OP_COMBO_UPGRADE, &"five_kind")], &"epic", [&"upgrade", &"stable"]),
+		&"cleanse": _make_piece(&"cleanse", [_make_op(ForgeOperationDef.OP_CLEANSE)], &"uncommon", [&"stable"]),
 
-		&"material_glass": _make_piece(&"material_glass", [_make_id_op(ForgeOperationDef.OP_SET_MATERIAL, &"glass")], &"common", [&"ornament", &"burst", &"xmult"]),
-		&"material_steel": _make_piece(&"material_steel", [_make_id_op(ForgeOperationDef.OP_SET_MATERIAL, &"steel")], &"common", [&"ornament", &"stay", &"stable"]),
-		&"glass_1": _make_piece(&"glass_1", [_make_int_op(ForgeOperationDef.OP_SET_PIP, 1), _make_id_op(ForgeOperationDef.OP_SET_MATERIAL, &"glass")], &"common", [&"low", &"ornament", &"burst", &"xmult"]),
-		&"rune_six": _make_piece(&"rune_six", [_make_id_op(ForgeOperationDef.OP_SET_RUNE, &"six")], &"common", [&"six"]),
-		&"rune_straight": _make_piece(&"rune_straight", [_make_id_op(ForgeOperationDef.OP_SET_RUNE, &"straight")], &"common", [&"straight"]),
-		&"rune_pair": _make_piece(&"rune_pair", [_make_id_op(ForgeOperationDef.OP_SET_RUNE, &"pair")], &"common", [&"extra_trigger"]),
+		&"material_glass": _make_piece(&"material_glass", [_make_id_op(ForgeOperationDef.OP_SET_MATERIAL, &"glass")], &"uncommon", [&"ornament", &"burst", &"xmult"]),
+		&"material_steel": _make_piece(&"material_steel", [_make_id_op(ForgeOperationDef.OP_SET_MATERIAL, &"steel")], &"uncommon", [&"ornament", &"stay", &"stable"]),
+		&"glass_1": _make_piece(&"glass_1", [_make_int_op(ForgeOperationDef.OP_SET_PIP, 1), _make_id_op(ForgeOperationDef.OP_SET_MATERIAL, &"glass")], &"uncommon", [&"low", &"ornament", &"burst", &"xmult"]),
+		&"rune_six": _make_piece(&"rune_six", [_make_id_op(ForgeOperationDef.OP_SET_RUNE, &"six")], &"uncommon", [&"six"]),
+		&"rune_straight": _make_piece(&"rune_straight", [_make_id_op(ForgeOperationDef.OP_SET_RUNE, &"straight")], &"rare", [&"straight"]),
+		&"rune_pair": _make_piece(&"rune_pair", [_make_id_op(ForgeOperationDef.OP_SET_RUNE, &"pair")], &"uncommon", [&"extra_trigger"]),
 		&"rune_odd": _make_piece(&"rune_odd", [_make_id_op(ForgeOperationDef.OP_SET_RUNE, &"odd")], &"common", [&"odd"]),
 		&"rune_even": _make_piece(&"rune_even", [_make_id_op(ForgeOperationDef.OP_SET_RUNE, &"even")], &"common", [&"even"]),
-		&"upgrade_1": _make_piece(&"upgrade_1", [_make_int_op(ForgeOperationDef.OP_UPGRADE, 1)], &"common", [&"stable"]),
+		&"upgrade_1": _make_piece(&"upgrade_1", [_make_int_op(ForgeOperationDef.OP_UPGRADE, 1)], &"rare", [&"stable"]),
 	}
 	_add_mark_pip_pieces(catalog, &"red", &"mark_red", &"common", [&"mark", &"extra_trigger", &"burst"])
-	_add_mark_pip_pieces(catalog, &"blue", &"mark_blue", &"common", [&"mark", &"stay", &"stable"])
-	_add_mark_pip_pieces(catalog, &"purple", &"mark_purple", &"common", [&"mark", &"reroll"])
+	_add_mark_pip_pieces(catalog, &"blue", &"mark_blue", &"rare", [&"mark", &"stay", &"stable"])
+	_add_mark_pip_pieces(catalog, &"purple", &"mark_purple", &"rare", [&"mark", &"reroll"])
 	_add_mark_pip_pieces(catalog, &"gold", &"mark_gold", &"uncommon", [&"mark", &"gold", &"stable"])
-	_add_ornament_pip_pieces(catalog, &"burst", &"orn_burst", &"common", [&"ornament", &"burst", &"xmult"])
-	_add_ornament_pip_pieces(catalog, &"stay", &"orn_stay", &"common", [&"ornament", &"stay", &"stable"])
+	_add_ornament_pip_pieces(catalog, &"burst", &"orn_burst", &"uncommon", [&"ornament", &"burst", &"xmult"])
+	_add_ornament_pip_pieces(catalog, &"stay", &"orn_stay", &"uncommon", [&"ornament", &"stay", &"stable"])
 	return catalog
 
 
@@ -323,7 +448,7 @@ func _add_mark_pip_pieces(catalog: Dictionary, id_prefix: StringName, mark_id: S
 		catalog[id] = _make_piece(id, [
 			_make_int_op(ForgeOperationDef.OP_SET_PIP, pip),
 			_make_id_op(ForgeOperationDef.OP_SET_MARK, mark_id),
-		], rarity, _merge_tags(_pip_tags(pip), tags))
+		], _composite_rarity(id_prefix, pip, rarity), _merge_tags(_pip_tags(pip), tags))
 
 
 func _add_ornament_pip_pieces(catalog: Dictionary, id_prefix: StringName, ornament_id: StringName, rarity: StringName, tags: Array) -> void:
@@ -332,7 +457,25 @@ func _add_ornament_pip_pieces(catalog: Dictionary, id_prefix: StringName, orname
 		catalog[id] = _make_piece(id, [
 			_make_int_op(ForgeOperationDef.OP_SET_PIP, pip),
 			_make_id_op(ForgeOperationDef.OP_SET_ORNAMENT, ornament_id),
-		], rarity, _merge_tags(_pip_tags(pip), tags))
+		], _composite_rarity(id_prefix, pip, rarity), _merge_tags(_pip_tags(pip), tags))
+
+
+func _composite_rarity(id_prefix: StringName, pip: int, fallback: StringName) -> StringName:
+	match id_prefix:
+		&"red":
+			return &"epic" if pip >= 4 else &"rare"
+		&"blue":
+			return &"epic" if pip >= 6 else &"rare"
+		&"purple":
+			return &"epic" if pip >= 6 else &"rare"
+		&"gold":
+			return &"rare" if pip >= 6 else &"uncommon"
+		&"burst":
+			return &"rare" if pip >= 4 else &"uncommon"
+		&"stay":
+			return &"rare" if pip >= 5 else &"uncommon"
+		_:
+			return fallback
 
 
 func _pip_tags(pip: int) -> Array[StringName]:
