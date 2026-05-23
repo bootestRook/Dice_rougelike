@@ -3,6 +3,8 @@ class_name GmDiceViewport
 
 
 signal dice_clicked(dice)
+signal dice_hovered(dice)
+signal dice_hover_cleared()
 
 
 const VIEWPORT_SIZE := Vector2i(1280, 720)
@@ -143,6 +145,7 @@ var camera_position := DEFAULT_CAMERA_POSITION
 var camera_look_at := DEFAULT_CAMERA_LOOK_AT
 var ready_row_height := DEFAULT_READY_ROW_HEIGHT
 var key_light_rotation := DEFAULT_KEY_LIGHT_ROTATION
+var hovered_dice: Node = null
 
 
 func build() -> void:
@@ -150,6 +153,7 @@ func build() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	stretch = true
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	mouse_exited.connect(_on_mouse_exited)
 
 	sub_viewport = SubViewport.new()
 	sub_viewport.name = "SubViewport"
@@ -170,13 +174,39 @@ func build() -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		var motion_event := event as InputEventMouseMotion
+		_update_hover_at_local_position(motion_event.position)
+		return
 	if event is InputEventMouseButton:
 		var mouse_event := event as InputEventMouseButton
 		if mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
-			var dice := pick_dice_at_local_position(mouse_event.position)
+			var dice := _update_hover_at_local_position(mouse_event.position)
 			if dice != null:
 				dice_clicked.emit(dice)
 				accept_event()
+
+
+func _update_hover_at_local_position(local_position: Vector2) -> Node:
+	var dice := pick_dice_at_local_position(local_position)
+	_set_hovered_dice(dice)
+	return dice
+
+
+func _set_hovered_dice(dice: Node) -> void:
+	if hovered_dice != null and not is_instance_valid(hovered_dice):
+		hovered_dice = null
+	if hovered_dice == dice:
+		return
+	hovered_dice = dice
+	if hovered_dice == null:
+		dice_hover_cleared.emit()
+	else:
+		dice_hovered.emit(hovered_dice)
+
+
+func _on_mouse_exited() -> void:
+	_set_hovered_dice(null)
 
 
 func configure_camera(new_fov: float, new_position: Vector3, new_look_at: Vector3) -> void:

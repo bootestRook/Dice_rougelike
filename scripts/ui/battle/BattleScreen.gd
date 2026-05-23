@@ -14,9 +14,13 @@ const ComboEvaluator = preload("res://scripts/rules/combo/ComboEvaluator.gd")
 const ComboUpgradeItem = preload("res://scripts/rules/combo/ComboUpgradeItem.gd")
 const DiceToolCatalog = preload("res://scripts/rules/dice_tools/DiceToolCatalog.gd")
 const DiceToolService = preload("res://scripts/rules/dice_tools/DiceToolService.gd")
+const DiceToolState = preload("res://scripts/core/dice/DiceToolState.gd")
 const FaceState = preload("res://scripts/core/dice/FaceState.gd")
+const ItemInstance = preload("res://scripts/core/items/ItemInstance.gd")
 const ForgePieceDef = preload("res://scripts/data_defs/ForgePieceDef.gd")
+const ForgeItemDef = preload("res://scripts/data_defs/ForgeItemDef.gd")
 const ForgeItemCatalog = preload("res://scripts/rules/forge/ForgeItemCatalog.gd")
+const ForgeItemService = preload("res://scripts/rules/forge/ForgeItemService.gd")
 const ForgeService = preload("res://scripts/rules/forge/ForgeService.gd")
 const ScoreEngine = preload("res://scripts/rules/scoring/ScoreEngine.gd")
 const BattleHudState = preload("res://scripts/ui/battle/view_models/BattleHudState.gd")
@@ -55,6 +59,7 @@ var game_flow_controller: GameFlowController = null
 var run_state: RunState = null
 var dice_tool_service := DiceToolService.new()
 var forge_service := ForgeService.new()
+var forge_item_service := ForgeItemService.new()
 var left_sidebar: Control = null
 var top_inventory_bar: Control = null
 var scoring_area: Control = null
@@ -71,6 +76,7 @@ var animation_layer: Control = null
 var options_menu_overlay: Control = null
 var options_menu_previous_pause_state: bool = false
 var install_focus_overlay: Control = null
+var coin_reward_overlay: Control = null
 var last_score_result: ScoreResult = null
 var current_preview_result: ScoreResult = null
 var status_text: String = ""
@@ -105,9 +111,15 @@ var reward_phase_active: bool = false
 var reward_install_active: bool = false
 var victory_reward_showcase_active: bool = false
 var victory_target_restore_pending: bool = false
+var battle_score_effect_coin_total: int = 0
 var dice_tool_face_copy_active: bool = false
 var battle_intro_sequence_events: Array[String] = []
 var pending_install_piece: ForgePieceDef = null
+var pending_forge_item_slot_index: int = -1
+var pending_forge_item_def: ForgeItemDef = null
+var pending_forge_item_targets: Array = []
+var pending_forge_item_source_ref: Dictionary = {}
+var pending_info_item_slot_index: int = -1
 var selected_install_die_index: int = -1
 var selected_install_face_index: int = -1
 var defer_initial_battle_start: bool = false
@@ -152,6 +164,7 @@ func start_battle_with_run_state(new_game_flow_controller: GameFlowController = 
 	cleanup_resolution_area()
 	current_preview_result = null
 	last_score_result = null
+	battle_score_effect_coin_total = 0
 	active_resolution_trace = null
 	resolution_log_lines.clear()
 	resolution_return_rect_by_die_index.clear()
@@ -405,6 +418,10 @@ func _build_view() -> void:
 	main_area.add_child(top_inventory_bar)
 	if top_inventory_bar.has_method("setup"):
 		top_inventory_bar.setup(style_config, icon_library, inventory_slot_view_scene)
+	if top_inventory_bar.has_signal("relic_slot_pressed"):
+		top_inventory_bar.relic_slot_pressed.connect(_on_relic_slot_pressed)
+	if top_inventory_bar.has_signal("item_slot_pressed"):
+		top_inventory_bar.item_slot_pressed.connect(_on_item_slot_pressed)
 
 	battle_main_stage_area = Control.new()
 	battle_main_stage_area.name = "BattleMainStageArea"
@@ -567,6 +584,7 @@ func _clear_battle_dice_stage_for_map() -> void:
 func _on_battle_started() -> void:
 	last_score_result = null
 	current_preview_result = null
+	battle_score_effect_coin_total = 0
 	local_combo_appearance_counts.clear()
 	local_combo_last_formula_by_id.clear()
 	victory_reward_showcase_active = false
@@ -619,6 +637,8 @@ func _on_selection_changed(selected_count: int) -> void:
 func _on_hand_scored(result: ScoreResult) -> void:
 	last_score_result = result
 	current_preview_result = null
+	if result != null:
+		battle_score_effect_coin_total += max(0, int(result.coins_delta))
 	_record_local_combo_stats(result)
 	status_text = ""
 	if game_flow_controller != null:
@@ -947,13 +967,43 @@ func _on_score_pressed() -> void:
 	_show_wild_selection_dialog(wild_requests)
 
 
+func show_battle_coin_reward(summary: Dictionary) -> void:
+	reward_phase_active = true
+	reward_install_active = false
+	pending_install_piece = null
+	_clear_pending_forge_item_use()
+	selected_install_die_index = -1
+	selected_install_face_index = -1
+	status_text = "领取金币奖励"
+	_clear_battle_animation_layer()
+	_hide_install_focus_overlay()
+	_reset_bench_display_order()
+	if scoring_area != null and scoring_area.has_method("hide_reward_choices"):
+		scoring_area.hide_reward_choices()
+	if dice_bench_area != null:
+		if dice_bench_area.has_method("hide_info"):
+			dice_bench_area.hide_info()
+		if dice_bench_area.has_method("set_install_mode"):
+			dice_bench_area.set_install_mode(false)
+		if dice_bench_area.has_method("clear_highlights"):
+			dice_bench_area.clear_highlights()
+	_ensure_coin_reward_overlay()
+	_rebuild_coin_reward_overlay(summary)
+	if coin_reward_overlay != null:
+		coin_reward_overlay.visible = true
+	_refresh_hud()
+
+
 func show_reward_choices(choices: Array) -> void:
 	reward_phase_active = true
 	reward_install_active = false
 	pending_install_piece = null
+	_clear_pending_forge_item_use()
 	selected_install_die_index = -1
 	selected_install_face_index = -1
 	status_text = str(TranslationServer.translate(&"AUTO.TEXT.BD9FEA62A9DC"))
+	_clear_battle_animation_layer()
+	_hide_battle_coin_reward()
 	_hide_install_focus_overlay()
 	_reset_bench_display_order()
 	if scoring_area != null and scoring_area.has_method("show_reward_choices"):
@@ -975,9 +1025,11 @@ func begin_reward_install(piece) -> void:
 	reward_phase_active = true
 	reward_install_active = true
 	pending_install_piece = forge_piece
+	_clear_pending_forge_item_use()
 	selected_install_die_index = -1
 	selected_install_face_index = -1
 	status_text = str(TranslationServer.translate(&"AUTO.TEXT.56B08BE6F8EA"))
+	_hide_battle_coin_reward()
 	_reset_bench_display_order()
 	if scoring_area != null and scoring_area.has_method("hide_reward_choices"):
 		scoring_area.hide_reward_choices()
@@ -996,6 +1048,264 @@ func _on_reward_choice_pressed(choice) -> void:
 	game_flow_controller.choose_reward(choice)
 
 
+func _ensure_coin_reward_overlay() -> void:
+	if coin_reward_overlay != null or layout_root == null:
+		return
+	coin_reward_overlay = Control.new()
+	coin_reward_overlay.name = "BattleCoinRewardOverlay"
+	coin_reward_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	coin_reward_overlay.z_index = 560
+	coin_reward_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	layout_root.add_child(coin_reward_overlay)
+
+
+func _rebuild_coin_reward_overlay(summary: Dictionary) -> void:
+	if coin_reward_overlay == null:
+		return
+	_clear_children(coin_reward_overlay)
+
+	var scrim := ColorRect.new()
+	scrim.name = "CoinRewardScrim"
+	scrim.color = Color(0.0, 0.0, 0.0, 0.56)
+	scrim.mouse_filter = Control.MOUSE_FILTER_STOP
+	scrim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	coin_reward_overlay.add_child(scrim)
+
+	var center := CenterContainer.new()
+	center.name = "CoinRewardCenter"
+	center.mouse_filter = Control.MOUSE_FILTER_PASS
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	coin_reward_overlay.add_child(center)
+
+	var panel := PanelContainer.new()
+	panel.name = "CoinRewardPanel"
+	panel.custom_minimum_size = Vector2(720.0, 500.0)
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	panel.add_theme_stylebox_override("panel", _make_coin_reward_panel_style())
+	center.add_child(panel)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 42)
+	margin.add_theme_constant_override("margin_top", 34)
+	margin.add_theme_constant_override("margin_right", 42)
+	margin.add_theme_constant_override("margin_bottom", 30)
+	panel.add_child(margin)
+
+	var content := VBoxContainer.new()
+	content.name = "CoinRewardContent"
+	content.alignment = BoxContainer.ALIGNMENT_CENTER
+	content.add_theme_constant_override("separation", 20)
+	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	margin.add_child(content)
+
+	var title := _make_coin_reward_label(str(summary.get("title", "金币奖励")), 46, Color(1.0, 0.96, 0.78))
+	title.name = "CoinRewardTitle"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	title.add_theme_color_override("font_outline_color", Color(0.02, 0.03, 0.02, 0.95))
+	title.add_theme_constant_override("outline_size", 5)
+	title.custom_minimum_size = Vector2(0.0, 64.0)
+	content.add_child(title)
+
+	var rows_box := VBoxContainer.new()
+	rows_box.name = "CoinRewardRows"
+	rows_box.add_theme_constant_override("separation", 10)
+	rows_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content.add_child(rows_box)
+
+	var rows: Array = summary.get("rows", [])
+	if rows.is_empty():
+		rows_box.add_child(_make_coin_reward_row({"label": "本场奖励", "amount": int(summary.get("total", 0))}))
+	else:
+		for row in rows:
+			rows_box.add_child(_make_coin_reward_row(row))
+
+	var divider := ColorRect.new()
+	divider.name = "CoinRewardDivider"
+	divider.color = Color(1.0, 0.82, 0.32, 0.72)
+	divider.custom_minimum_size = Vector2(0.0, 3.0)
+	divider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content.add_child(divider)
+
+	var total_row := HBoxContainer.new()
+	total_row.name = "CoinRewardTotalRow"
+	total_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	total_row.add_theme_constant_override("separation", 28)
+	total_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content.add_child(total_row)
+
+	var total_label := _make_coin_reward_label("合计", 34, Color(1.0, 0.96, 0.84))
+	total_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	total_row.add_child(total_label)
+
+	var total_value := _make_coin_reward_label(_format_coin_reward_amount(int(summary.get("total", 0))), 42, Color(1.0, 0.78, 0.22))
+	total_value.name = "CoinRewardTotalValue"
+	total_value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	total_value.custom_minimum_size = Vector2(220.0, 0.0)
+	total_row.add_child(total_value)
+
+	var spacer := Control.new()
+	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	content.add_child(spacer)
+
+	var button := Button.new()
+	button.name = "CoinRewardContinueButton"
+	button.text = "继续"
+	button.focus_mode = Control.FOCUS_NONE
+	button.custom_minimum_size = Vector2(260.0, 66.0)
+	button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	button.add_theme_font_size_override("font_size", 34)
+	button.add_theme_color_override("font_color", Color(1.0, 1.0, 0.92, 1.0))
+	button.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 0.92, 1.0))
+	button.add_theme_color_override("font_pressed_color", Color(1.0, 1.0, 0.92, 1.0))
+	button.add_theme_stylebox_override("normal", _make_coin_reward_button_style(Color(0.82, 0.42, 0.02, 1.0), 0.0))
+	button.add_theme_stylebox_override("hover", _make_coin_reward_button_style(Color(0.96, 0.56, 0.04, 1.0), -2.0))
+	button.add_theme_stylebox_override("pressed", _make_coin_reward_button_style(Color(0.64, 0.28, 0.0, 1.0), 2.0))
+	button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	button.pressed.connect(_on_coin_reward_continue_pressed)
+	content.add_child(button)
+
+
+func _make_coin_reward_row(row_data: Dictionary) -> Control:
+	var row := HBoxContainer.new()
+	row.name = "CoinRewardRow"
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 20)
+	row.custom_minimum_size = Vector2(0.0, 48.0)
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	var label := _make_coin_reward_label(str(row_data.get("label", "奖励")), 28, Color(0.88, 1.0, 0.92))
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(label)
+
+	var value := _make_coin_reward_label(_format_coin_reward_amount(int(row_data.get("amount", 0))), 30, Color(1.0, 0.82, 0.30))
+	value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	value.custom_minimum_size = Vector2(180.0, 0.0)
+	row.add_child(value)
+	return row
+
+
+func _make_coin_reward_label(text: String, font_size: int, color: Color) -> Label:
+	var label := Label.new()
+	label.text = text
+	label.clip_text = true
+	label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_color", color)
+	label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.78))
+	label.add_theme_constant_override("shadow_offset_x", 2)
+	label.add_theme_constant_override("shadow_offset_y", 3)
+	if style_config != null and style_config.font != null:
+		label.add_theme_font_override("font", style_config.font)
+	return label
+
+
+func _format_coin_reward_amount(amount: int) -> String:
+	return "+%d 金币" % [max(0, amount)]
+
+
+func _make_coin_reward_panel_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.035, 0.055, 0.060, 0.96)
+	style.border_color = Color(0.95, 0.78, 0.26, 0.94)
+	style.set_border_width_all(4)
+	style.set_corner_radius_all(8)
+	style.shadow_color = Color(0.0, 0.0, 0.0, 0.62)
+	style.shadow_size = 32
+	style.shadow_offset = Vector2(0.0, 10.0)
+	return style
+
+
+func _make_coin_reward_button_style(fill: Color, shadow_y: float) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = fill
+	style.border_color = Color(1.0, 0.92, 0.58, 0.92)
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(6)
+	style.content_margin_left = 18.0
+	style.content_margin_right = 18.0
+	style.content_margin_top = 8.0
+	style.content_margin_bottom = 8.0
+	style.shadow_color = Color(0.0, 0.0, 0.0, 0.45)
+	style.shadow_size = 10
+	style.shadow_offset = Vector2(0.0, 5.0 + shadow_y)
+	return style
+
+
+func _hide_battle_coin_reward() -> void:
+	if coin_reward_overlay != null:
+		coin_reward_overlay.visible = false
+
+
+func _on_coin_reward_continue_pressed() -> void:
+	_hide_battle_coin_reward()
+	if game_flow_controller == null or not game_flow_controller.has_method("continue_after_battle_coin_reward"):
+		return
+	if not game_flow_controller.continue_after_battle_coin_reward():
+		status_text = "当前没有待领取的常规奖励。"
+		_refresh_hud()
+
+
+func _on_item_slot_pressed(slot_index: int) -> void:
+	if not _can_open_inventory_info():
+		return
+	if run_state == null:
+		status_text = "当前没有局内状态，无法查看道具。"
+		_refresh_hud()
+		return
+
+	var item := _inventory_item_at_slot(slot_index)
+	if item == null:
+		status_text = "道具槽为空。"
+		_refresh_hud()
+		return
+
+	_show_inventory_item_info(slot_index, item)
+
+
+func _on_relic_slot_pressed(slot_index: int) -> void:
+	if not _can_open_inventory_info():
+		return
+	if run_state == null:
+		status_text = "当前没有局内状态，无法查看遗物。"
+		_refresh_hud()
+		return
+	_show_relic_info(slot_index)
+
+
+func _can_open_inventory_info() -> bool:
+	if is_resolution_playing or is_reroll_playing or is_battle_intro_playing:
+		return false
+	if reward_phase_active or reward_install_active or victory_reward_showcase_active:
+		status_text = "请先完成当前奖励或目标选择。"
+		_refresh_hud()
+		return false
+	return true
+
+
+func _on_inventory_info_action_pressed() -> void:
+	var slot_index := pending_info_item_slot_index
+	pending_info_item_slot_index = -1
+	if slot_index < 0:
+		return
+	var item := _inventory_item_at_slot(slot_index)
+	if item == null:
+		_hide_combo_info_popup()
+		status_text = "道具槽为空。"
+		_refresh_hud()
+		return
+
+	_hide_combo_info_popup()
+	var forge_def := ForgeItemCatalog.get_def(item.item_id)
+	if forge_def != null and forge_def.target_type != ForgeItemCatalog.TARGET_NONE:
+		_begin_forge_item_target_selection(slot_index, forge_def)
+		return
+	var result := _use_inventory_item_from_slot(slot_index)
+	_apply_inventory_item_use_result(result, true)
+
+
 func _request_install_info_for_die(index: int) -> void:
 	if dice_bench_area == null:
 		return
@@ -1010,7 +1320,9 @@ func _on_install_face_selected(die_index: int, face_index: int) -> void:
 		return
 	selected_install_die_index = die_index
 	selected_install_face_index = face_index
-	if dice_tool_face_copy_active:
+	if pending_forge_item_def != null:
+		status_text = _forge_item_face_selected_status(die_index, face_index)
+	elif dice_tool_face_copy_active:
 		status_text = "单面样本：目标为第 %d 颗骰第 %d 面。确认后覆盖点数、面饰、印记。" % [
 			die_index + 1,
 			face_index + 1,
@@ -1025,6 +1337,9 @@ func _on_install_face_selected(die_index: int, face_index: int) -> void:
 
 
 func _on_install_requested(die_index: int, face_index: int) -> void:
+	if pending_forge_item_def != null:
+		_confirm_pending_forge_item_face(die_index, face_index)
+		return
 	if dice_tool_face_copy_active:
 		var copy_target := _resolve_install_target(die_index, face_index)
 		_apply_pending_dice_tool_face_copy_target(
@@ -1054,7 +1369,12 @@ func automation_get_snapshot() -> Dictionary:
 	var snapshot := {
 		"reward_phase_active": reward_phase_active,
 		"reward_install_active": reward_install_active,
+		"pending_forge_item_slot_index": pending_forge_item_slot_index,
+		"pending_forge_item_id": str(pending_forge_item_def.id) if pending_forge_item_def != null else "",
+		"pending_forge_item_targets": pending_forge_item_targets.duplicate(true),
+		"pending_info_item_slot_index": pending_info_item_slot_index,
 		"victory_reward_showcase_active": victory_reward_showcase_active,
+		"coin_reward_overlay_visible": coin_reward_overlay != null and coin_reward_overlay.visible,
 		"status_text": status_text,
 		"is_battle_intro_playing": is_battle_intro_playing,
 		"battle_intro_sequence_events": battle_intro_sequence_events.duplicate(),
@@ -1164,6 +1484,20 @@ func automation_install_pending_piece(die_index: int, face_index: int) -> Dictio
 		return _automation_error("当前不在安装阶段。")
 	_on_install_requested(die_index, face_index)
 	return _automation_ok("已提交安装。")
+
+
+func automation_use_item_slot(slot_index: int, target_faces: Array = [], source_face_ref: Dictionary = {}) -> Dictionary:
+	if target_faces.is_empty() and source_face_ref.is_empty():
+		_on_item_slot_pressed(slot_index)
+		_on_inventory_info_action_pressed()
+	else:
+		var result := _use_inventory_item_from_slot(slot_index, target_faces, source_face_ref)
+		_apply_inventory_item_use_result(result, true)
+	return {
+		"ok": true,
+		"message": status_text,
+		"snapshot": automation_get_snapshot(),
+	}
 
 
 func _automation_roll_snapshots() -> Array[Dictionary]:
@@ -1361,14 +1695,397 @@ func _install_pending_piece_locally(die_index: int, face_index: int) -> void:
 	_refresh_hud()
 
 
+func _begin_forge_item_target_selection(slot_index: int, def: ForgeItemDef) -> void:
+	if def == null:
+		return
+	reward_phase_active = true
+	reward_install_active = true
+	victory_reward_showcase_active = false
+	dice_tool_face_copy_active = false
+	pending_install_piece = null
+	pending_forge_item_slot_index = slot_index
+	pending_forge_item_def = def
+	pending_forge_item_targets.clear()
+	pending_forge_item_source_ref.clear()
+	selected_install_die_index = -1
+	selected_install_face_index = -1
+	status_text = _forge_item_initial_prompt(def)
+	_reset_bench_display_order()
+	if scoring_area != null and scoring_area.has_method("hide_reward_choices"):
+		scoring_area.hide_reward_choices()
+	if dice_bench_area != null:
+		if dice_bench_area.has_method("hide_info"):
+			dice_bench_area.hide_info()
+		if dice_bench_area.has_method("set_install_mode"):
+			dice_bench_area.set_install_mode(true, def.get_display_name(), "使用")
+		if dice_bench_area.has_method("set_highlighted_die_indices"):
+			dice_bench_area.set_highlighted_die_indices(_all_dice_indices())
+	_show_install_focus_overlay()
+	_refresh_hud()
+
+
+func _confirm_pending_forge_item_face(die_index: int, face_index: int) -> void:
+	if pending_forge_item_def == null:
+		return
+	var target := _resolve_install_target(die_index, face_index)
+	var face_ref := _make_face_ref(int(target.get("die_index", -1)), int(target.get("face_index", -1)))
+	if not _is_valid_face_ref(face_ref):
+		status_text = "请选择有效骰面。"
+		_refresh_hud()
+		return
+
+	if pending_forge_item_def.target_type == ForgeItemCatalog.TARGET_FACE_PAIR:
+		if pending_forge_item_targets.is_empty():
+			pending_forge_item_targets.append(face_ref)
+			selected_install_die_index = -1
+			selected_install_face_index = -1
+			status_text = "%s：目标已选为第 %d 颗第 %d 面，请选择来源骰面后点击“使用”。" % [
+				pending_forge_item_def.get_display_name(),
+				int(face_ref.get("die_index", -1)) + 1,
+				int(face_ref.get("face_index", -1)) + 1,
+			]
+			if dice_bench_area != null and dice_bench_area.has_method("hide_info"):
+				dice_bench_area.hide_info()
+			_refresh_hud()
+			return
+		pending_forge_item_source_ref = face_ref
+		_apply_pending_forge_item_use(pending_forge_item_targets.duplicate(true), pending_forge_item_source_ref)
+		return
+
+	_apply_pending_forge_item_use([face_ref], {})
+
+
+func _apply_pending_forge_item_use(target_faces: Array, source_face_ref: Dictionary) -> void:
+	var result := _use_inventory_item_from_slot(pending_forge_item_slot_index, target_faces, source_face_ref)
+	_apply_inventory_item_use_result(result, bool(result.get("success", false)))
+
+
+func _use_inventory_item_from_slot(
+	slot_index: int,
+	target_faces: Array = [],
+	source_face_ref: Dictionary = {}
+) -> Dictionary:
+	if game_flow_controller != null and game_flow_controller.has_method("use_inventory_item_from_slot"):
+		return game_flow_controller.use_inventory_item_from_slot(slot_index, target_faces, source_face_ref)
+	if run_state == null:
+		return _inventory_item_use_result(false, "当前没有局内状态。")
+	run_state.ensure_item_slots_from_legacy()
+	if slot_index < 0 or slot_index >= run_state.item_slots.size():
+		return _inventory_item_use_result(false, "道具槽位无效。")
+
+	var item := run_state.item_slots[slot_index]
+	if item == null:
+		return _inventory_item_use_result(false, "道具槽为空。")
+	if _is_combo_upgrade_inventory_item(item):
+		var item_name := _inventory_item_label(item)
+		if not run_state.use_item_from_slot(slot_index):
+			return _inventory_item_use_result(false, "该主骰型升级件无法使用。")
+		return _inventory_item_use_result(true, "已使用 %s。" % [item_name], item.item_id)
+	if item.item_type == ItemInstance.TYPE_DICE_TOOL:
+		var item_name := _inventory_item_label(item)
+		if not run_state.install_dice_tool_item_from_slot(slot_index):
+			return _inventory_item_use_result(false, "骰具槽位不足，无法安装。")
+		return _inventory_item_use_result(true, "已安装骰具：%s。" % [item_name], item.item_id)
+	if item.item_type == ItemInstance.TYPE_FORGE_ITEM or ForgeItemCatalog.has_forge_item(item.item_id):
+		var result := forge_item_service.use_forge_item_from_slot(run_state, slot_index, target_faces, source_face_ref)
+		if bool(result.get("success", false)) and str(result.get("message", "")) == "":
+			result["message"] = "已使用 %s。" % [_inventory_item_label(item)]
+		return result
+	return _inventory_item_use_result(false, "该道具暂不能使用。", item.item_id)
+
+
+func _apply_inventory_item_use_result(result: Dictionary, clear_on_success: bool) -> void:
+	var success := bool(result.get("success", false))
+	var message := str(result.get("message", ""))
+	if message == "":
+		message = "道具已使用。" if success else "道具无法使用。"
+	status_text = message
+	if success and clear_on_success:
+		_clear_reward_phase_ui()
+	_refresh_hud()
+
+
+func _inventory_item_at_slot(slot_index: int) -> ItemInstance:
+	if run_state == null:
+		return null
+	run_state.ensure_item_slots_from_legacy()
+	if slot_index < 0 or slot_index >= run_state.item_slots.size():
+		return null
+	return run_state.item_slots[slot_index]
+
+
+func _is_combo_upgrade_inventory_item(item: ItemInstance) -> bool:
+	if item == null:
+		return false
+	return item.item_type == ItemInstance.TYPE_COMBO_UPGRADE or ComboUpgradeItem.from_item_id(item.item_id) != null
+
+
+func _inventory_item_label(item: ItemInstance) -> String:
+	if item == null:
+		return "该道具"
+	if item.display_name != "" and item.display_name != str(item.item_id):
+		return item.display_name
+	var name := _item_display_name(item.item_id)
+	return name if name != str(item.item_id) else "该道具"
+
+
+func _show_inventory_item_info(slot_index: int, item: ItemInstance) -> void:
+	if item == null:
+		return
+	pending_info_item_slot_index = slot_index
+	var title := _inventory_item_label(item)
+	var rows := _inventory_item_info_rows(item)
+	_show_battle_info_popup(func(popup) -> void:
+		if popup.has_method("show_custom_info"):
+			popup.show_custom_info(title, rows, "使用")
+	)
+
+
+func _show_relic_info(slot_index: int) -> void:
+	pending_info_item_slot_index = -1
+	var tool := _relic_tool_at_slot(slot_index)
+	if tool != null:
+		var title := _dice_tool_label(tool)
+		var rows := _dice_tool_info_rows(tool)
+		_show_battle_info_popup(func(popup) -> void:
+			if popup.has_method("show_custom_info"):
+				popup.show_custom_info(title, rows)
+		)
+		return
+
+	var relic_id := _legacy_relic_id_at_slot(slot_index)
+	if relic_id == &"":
+		status_text = "遗物槽为空。"
+		_refresh_hud()
+		return
+	var legacy_title := _legacy_relic_label(relic_id)
+	var legacy_rows := _legacy_relic_info_rows(relic_id)
+	_show_battle_info_popup(func(popup) -> void:
+		if popup.has_method("show_custom_info"):
+			popup.show_custom_info(legacy_title, legacy_rows)
+	)
+
+
+func _inventory_item_info_rows(item: ItemInstance) -> Array[Dictionary]:
+	var rows: Array[Dictionary] = []
+	rows.append(_make_info_row(&"type", "类型", _inventory_item_type_name(item)))
+	rows.append(_make_info_row(&"effect", "效果", _inventory_item_effect_text(item)))
+	var forge_def := ForgeItemCatalog.get_def(item.item_id)
+	if forge_def != null and forge_def.target_type != ForgeItemCatalog.TARGET_NONE:
+		rows.append(_make_info_row(&"target", "目标", _forge_item_target_text(forge_def)))
+	if item.sell_value > 0:
+		rows.append(_make_info_row(&"sell", "售价", "%d 金币" % [item.sell_value]))
+	return rows
+
+
+func _inventory_item_type_name(item: ItemInstance) -> String:
+	if item == null:
+		return "道具"
+	if _is_combo_upgrade_inventory_item(item):
+		return "主骰型升级件"
+	if item.item_type == ItemInstance.TYPE_DICE_TOOL:
+		return "骰具道具"
+	if item.item_type == ItemInstance.TYPE_FORGE_ITEM or ForgeItemCatalog.has_forge_item(item.item_id):
+		return "铸骰道具"
+	return "道具"
+
+
+func _inventory_item_effect_text(item: ItemInstance) -> String:
+	if item == null:
+		return "暂无效果说明。"
+	var combo_item := ComboUpgradeItem.from_item_id(item.item_id)
+	if combo_item != null:
+		return "使用后，%s 等级 +1。当前等级：%d。" % [
+			DisplayNames.combo_name(combo_item.target_combo_id),
+			_combo_level(combo_item.target_combo_id),
+		]
+	var forge_def := ForgeItemCatalog.get_def(item.item_id)
+	if forge_def != null:
+		var description := forge_def.get_description()
+		return description if description != "" else "使用后改造指定骰面。"
+	if item.item_type == ItemInstance.TYPE_DICE_TOOL:
+		var tool_def := DiceToolCatalog.get_def(item.item_id)
+		if tool_def != null and tool_def.effect_text != "":
+			return tool_def.effect_text
+	return "暂无效果说明。"
+
+
+func _forge_item_target_text(def: ForgeItemDef) -> String:
+	if def == null:
+		return "无需目标"
+	match def.target_type:
+		ForgeItemCatalog.TARGET_FACES:
+			return "选择 %d 个骰面" % [max(1, def.max_targets)]
+		ForgeItemCatalog.TARGET_FACE_PAIR:
+			return "先选目标骰面，再选来源骰面"
+		_:
+			return "无需目标"
+
+
+func _relic_tool_at_slot(slot_index: int) -> DiceToolState:
+	if run_state == null:
+		return null
+	if run_state.dice_tools.is_empty() and not run_state.installed_tools.is_empty():
+		run_state.dice_tools = run_state.installed_tools
+	var tools: Array = run_state.dice_tools
+	if slot_index < 0 or slot_index >= tools.size():
+		return null
+	return tools[slot_index] as DiceToolState
+
+
+func _legacy_relic_id_at_slot(slot_index: int) -> StringName:
+	if run_state == null:
+		return &""
+	if slot_index < 0 or slot_index >= run_state.relic_ids.size():
+		return &""
+	return run_state.relic_ids[slot_index]
+
+
+func _legacy_relic_label(relic_id: StringName) -> String:
+	var def := DiceToolCatalog.get_def(relic_id)
+	if def != null:
+		return def.display_name
+	return "遗物"
+
+
+func _legacy_relic_info_rows(relic_id: StringName) -> Array[Dictionary]:
+	var rows: Array[Dictionary] = []
+	rows.append(_make_info_row(&"type", "类型", "遗物"))
+	var def := DiceToolCatalog.get_def(relic_id)
+	rows.append(_make_info_row(&"effect", "效果", def.effect_text if def != null and def.effect_text != "" else "暂无效果说明。"))
+	return rows
+
+
+func _dice_tool_label(tool: DiceToolState) -> String:
+	if tool == null:
+		return "遗物"
+	var tool_id := StringName(str(tool.tool_id))
+	if tool.display_name != "" and tool.display_name != str(tool_id):
+		return tool.display_name
+	var def := DiceToolCatalog.get_def(tool_id)
+	return def.display_name if def != null and def.display_name != "" else "遗物"
+
+
+func _dice_tool_info_rows(tool: DiceToolState) -> Array[Dictionary]:
+	var rows: Array[Dictionary] = []
+	rows.append(_make_info_row(&"type", "类型", "遗物"))
+	if tool == null:
+		rows.append(_make_info_row(&"effect", "效果", "暂无效果说明。"))
+		return rows
+	var def := DiceToolCatalog.get_def(tool.tool_id)
+	rows.append(_make_info_row(&"effect", "效果", def.effect_text if def != null and def.effect_text != "" else "暂无效果说明。"))
+	var rarity := tool.rarity
+	if rarity == &"" and def != null:
+		rarity = def.rarity
+	if rarity == &"":
+		rarity = &"common"
+	rows.append(_make_info_row(&"rarity", "稀有度", _rarity_name(rarity)))
+	if tool.sell_value > 0:
+		rows.append(_make_info_row(&"sell", "售价", "%d 金币" % [tool.sell_value]))
+	if tool.is_negative:
+		rows.append(_make_info_row(&"state", "状态", "负面遗物"))
+	return rows
+
+
+func _rarity_name(rarity: StringName) -> String:
+	match rarity:
+		&"uncommon":
+			return "非凡"
+		&"rare":
+			return "稀有"
+		&"epic":
+			return "史诗"
+		&"legendary":
+			return "传说"
+		_:
+			return "普通"
+
+
+func _make_info_row(id: StringName, name: String, effect: String, selected: bool = false) -> Dictionary:
+	return {
+		"id": id,
+		"name": name,
+		"effect": effect,
+		"selected": selected,
+	}
+
+
+func _inventory_item_use_result(success: bool, message: String, item_id: StringName = &"") -> Dictionary:
+	return {
+		"success": success,
+		"message": message,
+		"item_id": item_id,
+	}
+
+
+func _forge_item_initial_prompt(def: ForgeItemDef) -> String:
+	if def == null:
+		return "请选择目标骰面。"
+	if def.target_type == ForgeItemCatalog.TARGET_FACE_PAIR:
+		return "%s：先选择要被覆盖的目标骰面。" % [def.get_display_name()]
+	return "%s：选择目标骰面后点击“使用”。" % [def.get_display_name()]
+
+
+func _forge_item_face_selected_status(die_index: int, face_index: int) -> String:
+	if pending_forge_item_def == null:
+		return ""
+	if pending_forge_item_def.target_type == ForgeItemCatalog.TARGET_FACE_PAIR and pending_forge_item_targets.is_empty():
+		return "%s：目标为第 %d 颗第 %d 面，点击“使用”后再选择来源骰面。" % [
+			pending_forge_item_def.get_display_name(),
+			die_index + 1,
+			face_index + 1,
+		]
+	if pending_forge_item_def.target_type == ForgeItemCatalog.TARGET_FACE_PAIR:
+		var target_ref: Dictionary = pending_forge_item_targets[0]
+		return "%s：将第 %d 颗第 %d 面复制到第 %d 颗第 %d 面。" % [
+			pending_forge_item_def.get_display_name(),
+			die_index + 1,
+			face_index + 1,
+			int(target_ref.get("die_index", -1)) + 1,
+			int(target_ref.get("face_index", -1)) + 1,
+		]
+	return "%s：目标为第 %d 颗第 %d 面，点击“使用”后生效。" % [
+		pending_forge_item_def.get_display_name(),
+		die_index + 1,
+		face_index + 1,
+	]
+
+
+func _make_face_ref(die_index: int, face_index: int) -> Dictionary:
+	return {
+		"die_index": die_index,
+		"face_index": face_index,
+	}
+
+
+func _is_valid_face_ref(face_ref: Dictionary) -> bool:
+	var dice := _get_dice()
+	var die_index := int(face_ref.get("die_index", -1))
+	var face_index := int(face_ref.get("face_index", -1))
+	if die_index < 0 or die_index >= dice.size():
+		return false
+	var die = dice[die_index]
+	return die != null and face_index >= 0 and face_index < die.faces.size()
+
+
+func _clear_pending_forge_item_use() -> void:
+	pending_forge_item_slot_index = -1
+	pending_forge_item_def = null
+	pending_forge_item_targets.clear()
+	pending_forge_item_source_ref.clear()
+
+
 func _clear_reward_phase_ui() -> void:
 	reward_phase_active = false
 	reward_install_active = false
 	victory_reward_showcase_active = false
 	dice_tool_face_copy_active = false
+	pending_info_item_slot_index = -1
 	pending_install_piece = null
+	_clear_pending_forge_item_use()
 	selected_install_die_index = -1
 	selected_install_face_index = -1
+	_hide_battle_coin_reward()
 	_hide_install_focus_overlay()
 	if scoring_area != null and scoring_area.has_method("hide_reward_choices"):
 		scoring_area.hide_reward_choices()
@@ -1516,6 +2233,7 @@ func _maybe_begin_pending_dice_tool_face_copy() -> void:
 	reward_install_active = true
 	dice_tool_face_copy_active = true
 	pending_install_piece = null
+	_clear_pending_forge_item_use()
 	selected_install_die_index = -1
 	selected_install_face_index = -1
 	status_text = "单面样本：选择 1 个现有目标骰面。"
@@ -1994,12 +2712,18 @@ func _refresh_hud() -> void:
 		top_inventory_bar.render(state)
 	if scoring_area.has_method("render"):
 		scoring_area.render(state)
-	if dice_bench_area.has_method("render"):
+	if dice_bench_area.has_method("render") and dice_bench_area != scoring_area:
 		dice_bench_area.render(state)
 	if map_stage_transition_active:
 		_clear_battle_dice_stage_for_map()
 	_sync_battle_intro_hidden_dice()
-	if _is_combo_info_popup_visible() and combo_info_popup.has_method("render"):
+	var should_refresh_combo_popup := (
+		_is_combo_info_popup_visible()
+		and combo_info_popup.has_method("is_combo_tab_active")
+		and bool(combo_info_popup.call("is_combo_tab_active"))
+		and combo_info_popup.has_method("render")
+	)
+	if should_refresh_combo_popup:
 		combo_info_popup.render(_build_combo_info_rows())
 	_update_install_focus_overlay_layout()
 
@@ -2172,7 +2896,8 @@ func _build_relic_slots() -> Array[SlotViewData]:
 
 	for relic_id in run_state.relic_ids:
 		var slot_data = SlotViewData.new()
-		slot_data.setup_from_id(relic_id, str(relic_id), relic_id)
+		slot_data.setup_from_id(relic_id, _legacy_relic_label(relic_id), relic_id)
+		slot_data.tooltip = str(_legacy_relic_info_rows(relic_id)[1].get("effect", ""))
 		slots.append(slot_data)
 
 	return slots
@@ -2186,8 +2911,8 @@ func _build_item_slots() -> Array[SlotViewData]:
 			if item == null:
 				continue
 			var slot_data = SlotViewData.new()
-			slot_data.setup_from_id(item.item_id, _item_display_name(item.item_id), item.item_id)
-			slot_data.tooltip = item.display_name
+			slot_data.setup_from_id(item.item_id, _inventory_item_label(item), item.item_id)
+			slot_data.tooltip = _inventory_item_effect_text(item)
 			slots.append(slot_data)
 		return slots
 
@@ -2269,39 +2994,39 @@ func _combo_name(result: ScoreResult) -> String:
 
 
 func _show_combo_info_popup() -> void:
-	_ensure_combo_info_popup()
-	if combo_info_popup == null:
-		return
-	if dice_bench_area != null and dice_bench_area.has_method("hide_info"):
-		dice_bench_area.hide_info()
-	combo_info_popup.visible = true
-	if combo_info_popup.has_method("render"):
-		combo_info_popup.render(_build_combo_info_rows())
+	_show_battle_info_popup(func(popup) -> void:
+		if popup.has_method("render"):
+			popup.render(_build_combo_info_rows())
+	)
 
 
 func _show_ornament_info_popup(id: StringName) -> void:
-	_ensure_combo_info_popup()
-	if combo_info_popup == null:
-		return
-	if dice_bench_area != null and dice_bench_area.has_method("hide_info"):
-		dice_bench_area.hide_info()
-	combo_info_popup.visible = true
-	if combo_info_popup.has_method("show_ornament_tab"):
-		combo_info_popup.show_ornament_tab(id)
+	_show_battle_info_popup(func(popup) -> void:
+		if popup.has_method("show_ornament_tab"):
+			popup.show_ornament_tab(id)
+	)
 
 
 func _show_mark_info_popup(id: StringName) -> void:
+	_show_battle_info_popup(func(popup) -> void:
+		if popup.has_method("show_mark_tab"):
+			popup.show_mark_tab(id)
+	)
+
+
+func _show_battle_info_popup(configure_popup: Callable) -> void:
 	_ensure_combo_info_popup()
 	if combo_info_popup == null:
 		return
 	if dice_bench_area != null and dice_bench_area.has_method("hide_info"):
 		dice_bench_area.hide_info()
 	combo_info_popup.visible = true
-	if combo_info_popup.has_method("show_mark_tab"):
-		combo_info_popup.show_mark_tab(id)
+	if configure_popup.is_valid():
+		configure_popup.call(combo_info_popup)
 
 
 func _hide_combo_info_popup() -> void:
+	pending_info_item_slot_index = -1
 	if combo_info_popup != null:
 		combo_info_popup.visible = false
 
@@ -2427,6 +3152,9 @@ func _item_display_name(item_id: StringName) -> String:
 	var forge_name := ForgeItemCatalog.display_name_for_id(item_id)
 	if forge_name != text:
 		return forge_name
+	var tool_def := DiceToolCatalog.get_def(item_id)
+	if tool_def != null and tool_def.display_name != "":
+		return tool_def.display_name
 	return text
 
 
@@ -2890,6 +3618,8 @@ func _ensure_combo_info_popup() -> void:
 		combo_info_popup.setup(style_config, combo_info_row_scene)
 	if combo_info_popup.has_signal("close_requested"):
 		combo_info_popup.close_requested.connect(_hide_combo_info_popup)
+	if combo_info_popup.has_signal("custom_action_pressed"):
+		combo_info_popup.custom_action_pressed.connect(_on_inventory_info_action_pressed)
 	combo_info_popup.visible = false
 
 
@@ -2917,7 +3647,24 @@ func _ensure_resources() -> void:
 
 
 func _notify_battle_won() -> void:
-	game_flow_controller.on_battle_won()
+	game_flow_controller.on_battle_won(_battle_coin_reward_context())
+
+
+func _battle_coin_reward_context() -> Dictionary:
+	var rerolls_left := 0
+	var remaining_hands := 0
+	if controller != null:
+		rerolls_left = controller.get_rerolls_left()
+		remaining_hands = maxi(0, controller.get_hands_per_battle() - controller.get_current_hand_number())
+	var unused_reroll_coins := 0
+	if run_state != null and bool(run_state.unused_reroll_gold_enabled):
+		unused_reroll_coins = mini(5, int(floor(float(rerolls_left) / 2.0)))
+	return {
+		"score_effect_coins": battle_score_effect_coin_total,
+		"unused_reroll_coins": unused_reroll_coins,
+		"rerolls_left": rerolls_left,
+		"remaining_hands": remaining_hands,
+	}
 
 
 func _notify_battle_lost() -> void:

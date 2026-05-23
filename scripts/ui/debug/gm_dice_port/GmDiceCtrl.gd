@@ -348,6 +348,9 @@ func get_idle_drift_tuning() -> Dictionary:
 func set_selected(value: bool) -> void:
 	if is_exiting or is_exited or is_returning_from_exit or is_moving_to_unselected_hold or is_in_unselected_hold or is_returning_from_unselected_hold:
 		value = false
+	if selected == value:
+		_update_selection_frame()
+		return
 	selected = value
 	if selected:
 		_stop_idle_drift(true)
@@ -1026,6 +1029,7 @@ func _prepare_roll_body() -> void:
 	_stop_idle_drift(false)
 	is_rolling = true
 	is_returning_to_ready = false
+	_update_selection_frame()
 	stable_frames = 0
 	freeze = false
 	sleeping = false
@@ -1350,7 +1354,7 @@ func _add_selection_frame_bar(local_position: Vector3, size: Vector3) -> void:
 func _update_selection_frame() -> void:
 	if _selection_frame == null:
 		return
-	_selection_frame.visible = selected and config != null and is_inside_tree()
+	_selection_frame.visible = _selection_frame_should_be_visible()
 	if not _selection_frame.visible:
 		return
 	_selection_frame.global_position = Vector3(
@@ -1358,6 +1362,20 @@ func _update_selection_frame() -> void:
 		global_position.y + DIE_HALF + SELECTION_FRAME_Y_OFFSET,
 		global_position.z
 	)
+
+
+func _selection_frame_should_be_visible() -> bool:
+	return selected \
+		and config != null \
+		and is_inside_tree() \
+		and not is_rolling \
+		and not is_returning_to_ready \
+		and not is_returning_from_exit \
+		and not is_exiting \
+		and not is_exited \
+		and not is_moving_to_unselected_hold \
+		and not is_in_unselected_hold \
+		and not is_returning_from_unselected_hold
 
 
 func _apply_config_visuals() -> void:

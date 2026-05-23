@@ -19,6 +19,7 @@ func _init() -> void:
 	all_passed = main_start_passed and all_passed
 	all_passed = await _check_roll_button_accepts_button_rect_click() and all_passed
 	all_passed = await _check_map_view_can_enter_shop_node() and all_passed
+	all_passed = await _check_enter_action_hidden_during_movement() and all_passed
 	all_passed = _check_first_circle_first_shop_context() and all_passed
 
 	var flow := GameFlowController.new()
@@ -209,6 +210,48 @@ func _check_map_view_can_enter_shop_node() -> bool:
 	all_passed = _check("leave shop returns to map and clears shop node", bool(leave_result.get("success", false)) and flow.current_state_id == &"map" and shop_node_cleared) and all_passed
 	var reenter_result := flow.request_enter_shop_from_map()
 	all_passed = _check("cleared shop node cannot be entered again in the same map ring", not reenter_result and flow.current_state_id == &"map") and all_passed
+
+	map_view.queue_free()
+	flow.queue_free()
+	await process_frame
+	return all_passed
+
+
+func _check_enter_action_hidden_during_movement() -> bool:
+	var flow := GameFlowController.new()
+	root.add_child(flow)
+	flow.start_new_run()
+	if flow.map_nodes.size() < 2:
+		flow.queue_free()
+		return _check("map movement action label setup has enough nodes", false)
+	flow.map_nodes[1]["node_type"] = &"event"
+	flow.map_nodes[1]["is_cleared"] = false
+	flow.map_position_index = 0
+
+	var map_view = MapStageViewScript.new()
+	map_view.setup(flow, flow.get_map_state())
+	root.add_child(map_view)
+	await process_frame
+	await process_frame
+	if map_view.has_method("play_raise"):
+		await map_view.call("play_raise")
+
+	map_view.set("is_marker_animating", true)
+	var movement_result := flow.apply_prepared_map_movement_roll([0], [1], [0])
+	await process_frame
+	map_view.call("_refresh_interaction_lock_state")
+	var moving_snapshot: Dictionary = map_view.call("automation_get_snapshot")
+
+	var all_passed := true
+	all_passed = _check("enter action is hidden while player marker moves", bool(movement_result.get("success", false)) and bool(moving_snapshot.get("interaction_locked", false)) and not bool(moving_snapshot.get("enter_battle_button_visible", true))) and all_passed
+	all_passed = _check("moving event target does not show enter battle text", str(moving_snapshot.get("enter_battle_button_label", "")) != "进入战斗") and all_passed
+
+	map_view.set("is_marker_animating", false)
+	map_view.call("_refresh_interaction_lock_state")
+	map_view.call("_render_state")
+	await process_frame
+	var settled_snapshot: Dictionary = map_view.call("automation_get_snapshot")
+	all_passed = _check("event node shows enter event text after movement settles", bool(settled_snapshot.get("pending_event", false)) and bool(settled_snapshot.get("enter_battle_button_visible", false)) and str(settled_snapshot.get("enter_battle_button_label", "")) == "进入奇遇") and all_passed
 
 	map_view.queue_free()
 	flow.queue_free()

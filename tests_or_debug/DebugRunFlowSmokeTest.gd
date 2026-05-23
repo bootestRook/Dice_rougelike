@@ -44,8 +44,15 @@ func _init() -> void:
 	all_passed = _check("map movement can reach a battle node", reached_battle_node) and all_passed
 	all_passed = _check("enter battle from map switches to battle phase", reached_battle_node and flow.request_enter_battle_from_map() and flow.current_state_id == &"battle") and all_passed
 
+	var coins_before_win := flow.get_run_state().coins
 	flow.on_battle_won()
-	all_passed = _check("non-final win generates 3 rewards", flow.get_run_state().last_reward_choices.size() == 3) and all_passed
+	var coin_summary := flow.get_pending_battle_coin_reward_summary()
+	all_passed = _check("non-final win enters coin reward phase first", flow.current_state_id == &"battle_coin_reward") and all_passed
+	all_passed = _check("coin reward grants clear coins before normal rewards", flow.get_run_state().coins >= coins_before_win + GameFlowController.BATTLE_CLEAR_COIN_REWARD) and all_passed
+	all_passed = _check("coin reward summary includes battle clear reward", int(coin_summary.get("total", 0)) >= GameFlowController.BATTLE_CLEAR_COIN_REWARD) and all_passed
+	all_passed = _check("normal rewards are not generated before continue", flow.get_run_state().last_reward_choices.is_empty()) and all_passed
+	all_passed = _check("continue after coin reward opens normal reward phase", flow.continue_after_battle_coin_reward() and flow.current_state_id == &"reward") and all_passed
+	all_passed = _check("non-final win generates 3 rewards after continue", flow.get_run_state().last_reward_choices.size() == 3) and all_passed
 
 	var reward = flow.get_run_state().last_reward_choices[0]
 	flow.choose_reward(reward)

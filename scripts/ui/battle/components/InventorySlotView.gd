@@ -19,6 +19,7 @@ func render(slot_data: SlotViewData, icon_library: BattleIconLibrary, style_conf
 		style_config.apply_label(count_label, style_config.small_font_size)
 		style_config.apply_label(name_label, style_config.small_font_size)
 		icon_rect.custom_minimum_size = style_config.icon_size
+	_set_descendant_mouse_filter(self, Control.MOUSE_FILTER_IGNORE)
 
 	if slot_data == null or slot_data.empty:
 		icon_rect.texture = null
@@ -33,3 +34,10 @@ func render(slot_data: SlotViewData, icon_library: BattleIconLibrary, style_conf
 	name_label.text = slot_data.display_name
 	count_label.text = str(slot_data.count) if slot_data.count > 1 else ""
 	tooltip_text = slot_data.tooltip if slot_data.tooltip != "" else slot_data.display_name
+
+
+func _set_descendant_mouse_filter(node: Node, filter: int) -> void:
+	for child in node.get_children():
+		if child is Control:
+			(child as Control).mouse_filter = filter
+		_set_descendant_mouse_filter(child, filter)

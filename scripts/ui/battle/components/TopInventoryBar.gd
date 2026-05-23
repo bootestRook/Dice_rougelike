@@ -2,6 +2,10 @@ extends HBoxContainer
 class_name TopInventoryBar
 
 
+signal relic_slot_pressed(index: int)
+signal item_slot_pressed(index: int)
+
+
 const BattleHudState = preload("res://scripts/ui/battle/view_models/BattleHudState.gd")
 const SlotViewData = preload("res://scripts/ui/battle/view_models/SlotViewData.gd")
 const BattleUiStyleConfig = preload("res://scripts/ui/battle/resources/BattleUiStyleConfig.gd")
@@ -11,6 +15,8 @@ const BattleIconLibrary = preload("res://scripts/ui/battle/resources/BattleIconL
 var style_config: BattleUiStyleConfig = null
 var icon_library: BattleIconLibrary = null
 var slot_scene: PackedScene = null
+var relic_slots_signature := ""
+var item_slots_signature := ""
 
 @onready var relic_panel: PanelContainer = %RelicPanel
 @onready var item_panel: PanelContainer = %ItemPanel
@@ -41,8 +47,14 @@ func _ready() -> void:
 func render(state: BattleHudState) -> void:
 	if state == null:
 		return
-	_render_slots(relic_slots, state.relics, state.relic_capacity, &"relic")
-	_render_slots(item_slots, state.items, state.item_capacity, &"item")
+	var next_relic_signature := _slots_signature(state.relics, state.relic_capacity)
+	if next_relic_signature != relic_slots_signature:
+		relic_slots_signature = next_relic_signature
+		_render_slots(relic_slots, state.relics, state.relic_capacity, &"relic")
+	var next_item_signature := _slots_signature(state.items, state.item_capacity)
+	if next_item_signature != item_slots_signature:
+		item_slots_signature = next_item_signature
+		_render_slots(item_slots, state.items, state.item_capacity, &"item")
 	relic_capacity_label.text = "%d / %d" % [min(state.relics.size(), state.relic_capacity), state.relic_capacity]
 	item_capacity_label.text = "%d / %d" % [min(state.items.size(), state.item_capacity), state.item_capacity]
 
@@ -70,6 +82,51 @@ func _render_slots(container: HBoxContainer, slots: Array[SlotViewData], capacit
 		container.add_child(slot_view)
 		if slot_view.has_method("render"):
 			slot_view.render(slot_data, icon_library, style_config, category)
+		_configure_slot_input(slot_view, slot_data, category, index)
+
+
+func _slots_signature(slots: Array[SlotViewData], capacity: int) -> String:
+	var parts := PackedStringArray()
+	parts.append(str(capacity))
+	for index in range(capacity):
+		var slot_data = slots[index] if index < slots.size() else null
+		if slot_data == null or slot_data.empty:
+			parts.append("%d:empty" % [index])
+			continue
+		parts.append("%d:%s:%s:%d:%d:%s:%s:%s" % [
+			index,
+			str(slot_data.id),
+			str(slot_data.icon_id),
+			int(slot_data.count),
+			int(slot_data.stack),
+			"1" if slot_data.disabled else "0",
+			slot_data.display_name,
+			slot_data.tooltip,
+		])
+	return "|".join(parts)
+
+
+func _configure_slot_input(slot_view: Control, slot_data: SlotViewData, category: StringName, index: int) -> void:
+	if slot_view == null:
+		return
+	var clickable := slot_data != null and not slot_data.empty and not slot_data.disabled
+	slot_view.mouse_filter = Control.MOUSE_FILTER_STOP if clickable else Control.MOUSE_FILTER_IGNORE
+	slot_view.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if clickable else Control.CURSOR_ARROW
+	if not clickable:
+		return
+	slot_view.gui_input.connect(func(event: InputEvent) -> void:
+		if not event is InputEventMouseButton:
+			return
+		var mouse_event := event as InputEventMouseButton
+		if not mouse_event.pressed or mouse_event.button_index != MOUSE_BUTTON_LEFT:
+			return
+		slot_view.accept_event()
+		match category:
+			&"relic":
+				relic_slot_pressed.emit(index)
+			&"item":
+				item_slot_pressed.emit(index)
+	)
 
 
 func _make_slot_view() -> Control:

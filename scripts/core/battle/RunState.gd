@@ -684,11 +684,15 @@ func apply_combo_upgrade_item(item: ComboUpgradeItem) -> bool:
 	return item.apply_to_combo_levels(combo_levels)
 
 
-func use_item(item_id: StringName) -> bool:
-	var item_index := find_item_slot_index(item_id)
-	if item_index < 0:
+func use_item_from_slot(slot_index: int) -> bool:
+	ensure_item_slots_from_legacy()
+	if slot_index < 0 or slot_index >= item_slots.size():
 		return false
 
+	var item_instance := item_slots[slot_index]
+	if item_instance == null:
+		return false
+	var item_id := item_instance.item_id
 	var item := ComboUpgradeItem.from_item_id(item_id)
 	if item == null:
 		return false
@@ -696,13 +700,20 @@ func use_item(item_id: StringName) -> bool:
 	if not apply_combo_upgrade_item(item):
 		return false
 
-	consume_item_slot(item_index)
+	consume_item_slot(slot_index)
 	record_copyable_used_item_id(item_id)
 	used_combo_upgrade_item_ids[item_id] = true
 	for tool in dice_tools:
 		if tool != null and tool.tool_id == DiceToolCatalog.TOOL_STAR_COUNTER:
 			tool.permanent_counters["combo_upgrade_used_count"] = int(tool.permanent_counters.get("combo_upgrade_used_count", 0)) + 1
 	return true
+
+
+func use_item(item_id: StringName) -> bool:
+	var item_index := find_item_slot_index(item_id)
+	if item_index < 0:
+		return false
+	return use_item_from_slot(item_index)
 
 
 func apply_combo_upgrade_piece(piece: ForgePieceDef) -> bool:

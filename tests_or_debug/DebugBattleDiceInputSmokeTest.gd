@@ -29,6 +29,11 @@ func _init() -> void:
 	all_passed = _check("正式战斗使用 3D 骰子舞台", stage is BattleDiceStage3D) and all_passed
 	all_passed = _check("旧 2D 骰子视图已不再作为战斗主输入", _find_die_view(battle_screen, 0) == null) and all_passed
 	all_passed = _check("首手 3D 落物理结果已提交到 Controller", _stage_faces_match_controller(stage, battle_screen)) and all_passed
+	all_passed = _check("Shared 3D battle stage renders once per HUD refresh", _shared_3d_stage_renders_once_per_refresh(battle_screen, stage)) and all_passed
+	all_passed = _check("HUD refresh does not restart unselected dice idle drift", _hud_refresh_keeps_unselected_idle_drift(battle_screen, stage)) and all_passed
+	all_passed = _check("Rolling selected dice hides selection frame", _rolling_selected_dice_hides_selection_frame(stage)) and all_passed
+	all_passed = _check("Unchanged inventory refresh keeps slot nodes", _unchanged_inventory_refresh_keeps_slot_nodes(battle_screen)) and all_passed
+	all_passed = _check("Unchanged score log refresh keeps row nodes", _unchanged_score_log_refresh_keeps_row_nodes(battle_screen)) and all_passed
 	var intro_snapshot: Dictionary = battle_screen.call("automation_get_snapshot")
 	var intro_events: Array = intro_snapshot.get("battle_intro_sequence_events", [])
 	all_passed = _check("回合横幅播放完后才回归入场", _event_before(intro_events, "round_banner_finished", "entry_return_started")) and all_passed
@@ -229,6 +234,91 @@ func _battle_throw_mat_hidden(viewport) -> bool:
 		return false
 	var throw_mat := sub_viewport.get_node_or_null("DiceWorld/FixedThrowMat") as Node3D
 	return throw_mat == null or not throw_mat.visible
+
+
+func _hud_refresh_keeps_unselected_idle_drift(battle_screen: Node, stage) -> bool:
+	if battle_screen == null or stage == null:
+		return false
+	var battle_mgr = stage.get("battle_mgr")
+	if battle_mgr == null or battle_mgr.using_dices.size() < 1:
+		return false
+	var instance = battle_mgr.using_dices[0]
+	if instance == null or instance.avatar == null:
+		return false
+	var avatar = instance.avatar
+	if avatar.has_method("set_selected"):
+		avatar.call("set_selected", false)
+	avatar.set("_idle_drift_active", true)
+	avatar.set("_idle_drift_elapsed", 0.42)
+	battle_screen.call("_refresh_hud")
+	battle_screen.call("_refresh_hud")
+	return is_equal_approx(float(avatar.get("_idle_drift_elapsed")), 0.42)
+
+
+func _rolling_selected_dice_hides_selection_frame(stage) -> bool:
+	if stage == null:
+		return false
+	var battle_mgr = stage.get("battle_mgr")
+	if battle_mgr == null or battle_mgr.using_dices.is_empty():
+		return false
+	var instance = battle_mgr.using_dices[0]
+	if instance == null or instance.avatar == null:
+		return false
+	var avatar = instance.avatar
+	if not avatar.has_method("set_selected"):
+		return false
+	avatar.call("set_selected", true)
+	avatar.set("is_rolling", false)
+	avatar.call("_update_selection_frame")
+	var frame = avatar.get("_selection_frame")
+	var visible_while_ready := frame != null and bool(frame.visible)
+	avatar.set("is_rolling", true)
+	avatar.call("_update_selection_frame")
+	var hidden_while_rolling := frame != null and not bool(frame.visible)
+	avatar.set("is_rolling", false)
+	avatar.call("_update_selection_frame")
+	var visible_after_roll := frame != null and bool(frame.visible)
+	avatar.call("set_selected", false)
+	return visible_while_ready and hidden_while_rolling and visible_after_roll
+
+
+func _shared_3d_stage_renders_once_per_refresh(battle_screen: Node, stage) -> bool:
+	if battle_screen == null or stage == null:
+		return false
+	var before_count := int(stage.get("debug_render_call_count"))
+	battle_screen.call("_refresh_hud")
+	var after_count := int(stage.get("debug_render_call_count"))
+	return after_count - before_count == 1
+
+
+func _unchanged_inventory_refresh_keeps_slot_nodes(battle_screen: Node) -> bool:
+	if battle_screen == null:
+		return false
+	var top_inventory = battle_screen.get("top_inventory_bar")
+	var relic_slots := _find_node_by_name(top_inventory, "RelicSlots") as HBoxContainer if top_inventory != null else null
+	if relic_slots == null:
+		return false
+	battle_screen.call("_refresh_hud")
+	if relic_slots.get_child_count() <= 0:
+		return false
+	var first_child := relic_slots.get_child(0)
+	battle_screen.call("_refresh_hud")
+	return relic_slots.get_child_count() > 0 and relic_slots.get_child(0) == first_child
+
+
+func _unchanged_score_log_refresh_keeps_row_nodes(battle_screen: Node) -> bool:
+	if battle_screen == null:
+		return false
+	var scoring_area = battle_screen.get("scoring_area")
+	var log_rows := _find_node_by_name(scoring_area, "LogRows") as VBoxContainer if scoring_area != null else null
+	if log_rows == null:
+		return true
+	battle_screen.call("_refresh_hud")
+	if log_rows.get_child_count() <= 0:
+		return false
+	var first_child := log_rows.get_child(0)
+	battle_screen.call("_refresh_hud")
+	return log_rows.get_child_count() > 0 and log_rows.get_child(0) == first_child
 
 
 func _stage_hides_all_dice(stage) -> bool:

@@ -227,6 +227,7 @@ func _check_economy_unlocks() -> bool:
 	var flow := GameFlowController.new()
 	flow.run_state = run_state
 	flow.on_battle_won()
+	var coin_summary := flow.get_pending_battle_coin_reward_summary()
 
 	var shop_run := _make_run(20)
 	var shop_service := ShopService.new()
@@ -238,14 +239,19 @@ func _check_economy_unlocks() -> bool:
 	var reward_flow := GameFlowController.new()
 	reward_flow.run_state = reward_run
 	reward_flow.on_battle_won()
+	var reward_coin_phase := reward_flow.current_state_id == &"battle_coin_reward"
+	var reward_continue := reward_flow.continue_after_battle_coin_reward()
 	var passed: bool = (
-		run_state.coins == 34
+		run_state.coins == 50
+		and int(coin_summary.get("total", 0)) == 25
 		and bool(result.get("success", false))
 		and shop_run.coins == 8
 		and shop_run.item_slots.is_empty()
 		and shop_run.has_long_term_unlock(LongTermUnlockCatalog.UNLOCK_ITEM_SLOT_PLUS_1)
 		and duplicate_reason == "该长期解锁已获得"
 		and not shop_run.shop_logs.is_empty()
+		and reward_coin_phase
+		and reward_continue
 		and reward_run.last_reward_choices.size() == 4
 	)
 	return _check("economy and reward-choice unlocks apply after battle", passed)

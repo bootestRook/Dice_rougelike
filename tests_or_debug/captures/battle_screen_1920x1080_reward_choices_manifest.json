@@ -1,0 +1,8 @@
+{
+	"fields": [
+		"常规奖励",
+		"挑选"
+	],
+	"scenario": "battle reward flow choices screen",
+	"screenshot": "G:/Dice_rougelike/tests_or_debug/captures/battle_screen_1920x1080_reward_choices.png"
+}

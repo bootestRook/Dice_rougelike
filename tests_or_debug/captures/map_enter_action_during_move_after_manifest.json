@@ -1,0 +1,11 @@
+{
+	"current_node_type": "event",
+	"enter_battle_button_disabled": true,
+	"enter_battle_button_label": "进入奇遇",
+	"enter_battle_button_visible": false,
+	"error": 0,
+	"interaction_locked": true,
+	"is_movement_roll_pending": false,
+	"output": "G:/Dice_rougelike/tests_or_debug/captures/map_enter_action_during_move_after.png",
+	"pending_event": true
+}

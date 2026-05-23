@@ -5,14 +5,19 @@ class_name GameFlowController
 const ForgePieceDef = preload("res://scripts/data_defs/ForgePieceDef.gd")
 const DiceToolService = preload("res://scripts/rules/dice_tools/DiceToolService.gd")
 const ForgeService = preload("res://scripts/rules/forge/ForgeService.gd")
+const ForgeItemService = preload("res://scripts/rules/forge/ForgeItemService.gd")
+const ForgeItemCatalog = preload("res://scripts/rules/forge/ForgeItemCatalog.gd")
 const RewardGenerator = preload("res://scripts/rules/reward/RewardGenerator.gd")
 const RunState = preload("res://scripts/core/battle/RunState.gd")
 const ShopService = preload("res://scripts/rules/shop/ShopService.gd")
 const RollService = preload("res://scripts/rules/roll/RollService.gd")
+const ItemInstance = preload("res://scripts/core/items/ItemInstance.gd")
+const ComboUpgradeItem = preload("res://scripts/rules/combo/ComboUpgradeItem.gd")
 
 
 const MAP_MOVEMENT_DICE_COUNT := 2
 const STARTING_COINS := 9999
+const BATTLE_CLEAR_COIN_REWARD := 16
 const FIRST_CIRCLE_FIRST_SHOP_INDEX := 15
 
 signal flow_state_changed(state_id: StringName)
@@ -21,6 +26,7 @@ signal map_requested(map_state: Dictionary)
 signal map_state_changed(map_state: Dictionary)
 signal map_movement_settled(map_state: Dictionary)
 signal battle_requested(run_state: RunState)
+signal battle_coin_reward_requested(summary: Dictionary)
 signal reward_requested(choices: Array)
 signal forge_install_requested(piece: ForgePieceDef)
 signal shop_requested(shop_state: Dictionary)
@@ -34,6 +40,7 @@ var run_state: RunState = null
 var dice_tool_service := DiceToolService.new()
 var reward_generator := RewardGenerator.new()
 var forge_service := ForgeService.new()
+var forge_item_service := ForgeItemService.new()
 var shop_service := ShopService.new()
 var map_roll_service := RollService.new()
 var map_nodes: Array[Dictionary] = []
@@ -53,6 +60,7 @@ var map_roll_count: int = 0
 var map_refresh_count: int = 0
 var map_rng := RandomNumberGenerator.new()
 var reward_origin_node_type: StringName = &""
+var pending_battle_coin_reward_summary: Dictionary = {}
 
 
 func set_flow_state(state_id: StringName) -> void:
@@ -66,6 +74,7 @@ func start_new_run() -> void:
 	run_state.coins = STARTING_COINS
 	_reset_demo_map()
 	reward_origin_node_type = &""
+	pending_battle_coin_reward_summary.clear()
 	set_flow_state(&"map")
 	run_started.emit(run_state)
 	run_state_changed.emit(run_state)
@@ -89,32 +98,106 @@ func start_next_battle() -> void:
 	battle_requested.emit(run_state)
 
 
-func on_battle_won() -> void:
+func on_battle_won(reward_context: Dictionary = {}) -> void:
 	if run_state == null:
 		push_warning("GameFlowController.on_battle_won without run_state.")
 		return
 
-	_apply_long_term_victory_economy()
+	var summary := _apply_battle_coin_reward(reward_context)
 
 	if run_state.is_final_battle():
+		pending_battle_coin_reward_summary.clear()
 		run_state.mark_run_won()
 		set_flow_state(&"run_victory")
 		run_state_changed.emit(run_state)
 		run_result_requested.emit(run_state)
 		return
 
+	reward_origin_node_type = run_state.current_encounter_node_type
+	run_state.last_reward_choices.clear()
+	run_state.pending_forge_piece = null
+	pending_battle_coin_reward_summary = summary.duplicate(true)
+	set_flow_state(&"battle_coin_reward")
+	run_state_changed.emit(run_state)
+	battle_coin_reward_requested.emit(pending_battle_coin_reward_summary.duplicate(true))
+
+
+func continue_after_battle_coin_reward() -> bool:
+	if run_state == null:
+		push_warning("GameFlowController.continue_after_battle_coin_reward without run_state.")
+		return false
+	if current_state_id != &"battle_coin_reward":
+		return false
+
 	var reward_choice_count: int = maxi(1, 3 + int(run_state.battle_reward_choice_bonus))
 	var choices := reward_generator.generate_battle_reward_choices(run_state, reward_choice_count)
 	reward_origin_node_type = run_state.current_encounter_node_type
 	run_state.last_reward_choices = choices
+	pending_battle_coin_reward_summary.clear()
 	set_flow_state(&"reward")
 	run_state_changed.emit(run_state)
 	reward_requested.emit(choices)
+	return true
 
 
-func _apply_long_term_victory_economy() -> void:
+func get_pending_battle_coin_reward_summary() -> Dictionary:
+	return pending_battle_coin_reward_summary.duplicate(true)
+
+
+func _apply_battle_coin_reward(reward_context: Dictionary = {}) -> Dictionary:
+	var rows: Array[Dictionary] = []
+	var coins_before := run_state.coins
+	var long_term_rows := _apply_long_term_victory_economy()
+
+	var clear_gain := _battle_clear_coin_reward()
+	if clear_gain > 0:
+		run_state.add_coins(clear_gain, &"battle_clear")
+	rows.append(_coin_reward_row("通关奖励", clear_gain, &"battle_clear"))
+
+	var score_effect_coins: int = maxi(0, int(reward_context.get("score_effect_coins", 0)))
+	var unused_reroll_coins: int = maxi(0, int(reward_context.get("unused_reroll_coins", 0)))
+	unused_reroll_coins = mini(unused_reroll_coins, score_effect_coins)
+	var remaining_round_label := "剩余轮次"
+	if reward_context.has("remaining_hands"):
+		remaining_round_label = "剩余轮次(%d)" % [maxi(0, int(reward_context.get("remaining_hands", 0)))]
+	rows.append(_coin_reward_row(remaining_round_label, unused_reroll_coins, &"unused_reroll"))
+
+	var dice_skill_coins: int = maxi(0, score_effect_coins - unused_reroll_coins)
+	rows.append(_coin_reward_row("骰子技能", dice_skill_coins, &"dice_skill"))
+
+	for row in long_term_rows:
+		rows.append(row)
+
+	var display_total := 0
+	for row in rows:
+		display_total += int(row.get("amount", 0))
+
+	return {
+		"title": "金币奖励",
+		"rows": rows,
+		"total": display_total,
+		"coins_before": coins_before,
+		"coins_after": run_state.coins,
+		"applied_total": max(0, run_state.coins - coins_before),
+	}
+
+
+func _battle_clear_coin_reward() -> int:
+	return BATTLE_CLEAR_COIN_REWARD
+
+
+func _coin_reward_row(label: String, amount: int, kind: StringName) -> Dictionary:
+	return {
+		"label": label,
+		"amount": max(0, amount),
+		"kind": kind,
+	}
+
+
+func _apply_long_term_victory_economy() -> Array[Dictionary]:
+	var rows: Array[Dictionary] = []
 	if run_state == null:
-		return
+		return rows
 	if bool(run_state.interest_enabled):
 		var interest := mini(max(0, int(run_state.interest_cap)), int(floor(float(max(0, run_state.coins)) / 5.0)))
 		if interest > 0:
@@ -124,6 +207,7 @@ func _apply_long_term_victory_economy() -> void:
 				"source": &"interest",
 				"coins": interest,
 			})
+			rows.append(_coin_reward_row("利息本金", interest, &"long_term_interest"))
 	if bool(run_state.money_tree_enabled):
 		var gain := 4 if run_state.coins >= 25 else 2
 		run_state.add_coins(gain, &"long_term_money_tree")
@@ -132,6 +216,8 @@ func _apply_long_term_victory_economy() -> void:
 			"source": &"money_tree",
 			"coins": gain,
 		})
+		rows.append(_coin_reward_row("摇钱树", gain, &"long_term_money_tree"))
+	return rows
 
 
 func on_battle_lost() -> void:
@@ -265,6 +351,46 @@ func apply_pending_dice_tool_face_copy(die_index: int, face_index: int) -> Dicti
 	return result
 
 
+func use_inventory_item_from_slot(
+	slot_index: int,
+	target_faces: Array = [],
+	source_face_ref: Dictionary = {}
+) -> Dictionary:
+	if run_state == null:
+		return _inventory_item_result(false, "当前没有局内状态。")
+	run_state.ensure_item_slots_from_legacy()
+	if slot_index < 0 or slot_index >= run_state.item_slots.size():
+		return _inventory_item_result(false, "道具槽位无效。")
+
+	var item: ItemInstance = run_state.item_slots[slot_index]
+	if item == null:
+		return _inventory_item_result(false, "道具槽为空。")
+
+	if _is_combo_upgrade_inventory_item(item):
+		var item_name := _inventory_item_label(item)
+		if not run_state.use_item_from_slot(slot_index):
+			return _inventory_item_result(false, "该主骰型升级件无法使用。")
+		run_state_changed.emit(run_state)
+		return _inventory_item_result(true, "已使用 %s。" % [item_name], item.item_id)
+
+	if item.item_type == ItemInstance.TYPE_DICE_TOOL:
+		var item_name := _inventory_item_label(item)
+		if not run_state.install_dice_tool_item_from_slot(slot_index):
+			return _inventory_item_result(false, "骰具槽位不足，无法安装。")
+		run_state_changed.emit(run_state)
+		return _inventory_item_result(true, "已安装骰具：%s。" % [item_name], item.item_id)
+
+	if item.item_type == ItemInstance.TYPE_FORGE_ITEM or ForgeItemCatalog.has_forge_item(item.item_id):
+		var result := forge_item_service.use_forge_item_from_slot(run_state, slot_index, target_faces, source_face_ref)
+		if bool(result.get("success", false)):
+			run_state_changed.emit(run_state)
+			if str(result.get("message", "")) == "":
+				result["message"] = "已使用 %s。" % [_inventory_item_label(item)]
+		return result
+
+	return _inventory_item_result(false, "该道具暂不能使用。", item.item_id)
+
+
 func record_hand_score(score_or_result, hand_number: int = 0) -> void:
 	if run_state == null:
 		return
@@ -279,6 +405,34 @@ func back_to_main() -> void:
 
 func get_run_state() -> RunState:
 	return run_state
+
+
+func _is_combo_upgrade_inventory_item(item: ItemInstance) -> bool:
+	if item == null:
+		return false
+	return item.item_type == ItemInstance.TYPE_COMBO_UPGRADE or ComboUpgradeItem.from_item_id(item.item_id) != null
+
+
+func _inventory_item_label(item: ItemInstance) -> String:
+	if item == null:
+		return "该道具"
+	if item.display_name != "":
+		return item.display_name
+	var combo_item := ComboUpgradeItem.from_item_id(item.item_id)
+	if combo_item != null:
+		return combo_item.display_name
+	var forge_name := ForgeItemCatalog.display_name_for_id(item.item_id)
+	if forge_name != str(item.item_id):
+		return forge_name
+	return "该道具"
+
+
+func _inventory_item_result(success: bool, message: String, item_id: StringName = &"") -> Dictionary:
+	return {
+		"success": success,
+		"message": message,
+		"item_id": item_id,
+	}
 
 
 func enter_battle() -> void:

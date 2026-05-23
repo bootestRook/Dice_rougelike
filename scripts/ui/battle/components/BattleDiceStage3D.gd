@@ -7,6 +7,10 @@ const DieViewData = preload("res://scripts/ui/battle/view_models/DieViewData.gd"
 const BattleUiStyleConfig = preload("res://scripts/ui/battle/resources/BattleUiStyleConfig.gd")
 const BattleIconLibrary = preload("res://scripts/ui/battle/resources/BattleIconLibrary.gd")
 const DiceVisualLibrary = preload("res://scripts/ui/battle/resources/DiceVisualLibrary.gd")
+const DisplayNames = preload("res://scripts/ui/DisplayNames.gd")
+const FaceState = preload("res://scripts/core/dice/FaceState.gd")
+const RichTextHighlighter = preload("res://scripts/ui/RichTextHighlighter.gd")
+const DiceHoverRing = preload("res://scripts/ui/battle/components/DiceHoverRing.gd")
 const GmDiceDefinitionScript = preload("res://scripts/ui/debug/gm_dice_port/GmDiceDefinition.gd")
 const GmDiceFaceDefinitionScript = preload("res://scripts/ui/debug/gm_dice_port/GmDiceFaceDefinition.gd")
 const GmDiceViewportScript = preload("res://scripts/ui/debug/gm_dice_port/GmDiceViewport.gd")
@@ -54,6 +58,10 @@ var dice_viewport: GmDiceViewport = null
 var ready_mgr: GmReadyMgr = null
 var battle_mgr: GmBattleMgr = null
 var overlay_layer: Control = null
+var hover_overlay_layer: Control = null
+var hover_ring: DiceHoverRing = null
+var hover_info_panel: PanelContainer = null
+var hover_info_labels: Dictionary = {}
 var action_buttons_layer: Control = null
 var reroll_button: Button = null
 var organize_button: Button = null
@@ -70,11 +78,14 @@ var highlighted_die_indices: Array[int] = []
 var resolution_die_indices: Array[int] = []
 var focused_die_index := 0
 var popup_die_index := -1
+var hover_die_index := -1
 var install_mode_active := false
 var install_piece_name := ""
+var install_action_text := ""
 var is_sorting_dice := false
 var entry_return_revealing := false
 var last_entry_return_started_from_hidden := false
+var debug_render_call_count: int = 0
 
 
 func setup(
@@ -104,7 +115,13 @@ func _ready() -> void:
 	_apply_style()
 
 
+func _process(_delta: float) -> void:
+	if hover_die_index >= 0:
+		_position_hover_widgets(hover_die_index)
+
+
 func render(state: BattleHudState) -> void:
+	debug_render_call_count += 1
 	current_state = state
 	if state == null:
 		return
@@ -116,6 +133,7 @@ func render(state: BattleHudState) -> void:
 	_sync_selection_from_state(state)
 	_apply_transient_state()
 	_render_overlay_text(state)
+	_refresh_hover_presentation()
 
 
 func play_reroll_for_selected() -> void:
@@ -169,13 +187,54 @@ func show_reward_choices(choices: Array) -> void:
 	_ensure_reward_overlay()
 	_clear_children(reward_overlay)
 	reward_overlay.visible = true
+
+	var scrim := ColorRect.new()
+	scrim.name = "RewardChoiceScrim"
+	scrim.color = Color(0.0, 0.0, 0.0, 0.34)
+	scrim.mouse_filter = Control.MOUSE_FILTER_STOP
+	scrim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	reward_overlay.add_child(scrim)
+
 	var center := CenterContainer.new()
+	center.name = "RewardChoiceCenter"
+	center.mouse_filter = Control.MOUSE_FILTER_PASS
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	reward_overlay.add_child(center)
+
+	var content := VBoxContainer.new()
+	content.name = "RewardChoiceContent"
+	content.alignment = BoxContainer.ALIGNMENT_CENTER
+	content.add_theme_constant_override("separation", 24)
+	content.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	content.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	center.add_child(content)
+
+	var title := Label.new()
+	title.name = "RewardChoiceTitle"
+	title.text = "常规奖励"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	title.custom_minimum_size = Vector2(0.0, 58.0)
+	title.add_theme_font_size_override("font_size", 42)
+	title.add_theme_color_override("font_color", Color(1.0, 0.96, 0.78, 1.0))
+	title.add_theme_color_override("font_outline_color", Color(0.02, 0.03, 0.02, 0.95))
+	title.add_theme_constant_override("outline_size", 5)
+	if style_config != null and style_config.font != null:
+		title.add_theme_font_override("font", style_config.font)
+	content.add_child(title)
+
 	var row := HBoxContainer.new()
+	row.name = "RewardChoiceRow"
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", 24)
-	center.add_child(row)
+	content.add_child(row)
+	if choices.is_empty():
+		var empty_label := Label.new()
+		empty_label.text = "没有可选奖励"
+		empty_label.add_theme_font_size_override("font_size", 24)
+		empty_label.add_theme_color_override("font_color", Color(0.95, 0.86, 0.72, 1.0))
+		row.add_child(empty_label)
+		return
 	for choice in choices:
 		row.add_child(_make_reward_choice_card(choice))
 
@@ -202,7 +261,7 @@ func show_info_for_die(index: int) -> void:
 		return
 	popup.visible = true
 	if popup.has_method("set_install_context"):
-		popup.call("set_install_context", install_mode_active, install_piece_name)
+		popup.call("set_install_context", install_mode_active, install_piece_name, install_action_text)
 	if popup.has_method("render"):
 		popup.call("render", die_data)
 	_position_popup(index)
@@ -212,6 +271,7 @@ func hide_info() -> void:
 	if popup != null:
 		popup.visible = false
 	popup_die_index = -1
+	_clear_hovered_die()
 
 
 func is_info_visible() -> bool:
@@ -224,11 +284,12 @@ func is_global_point_inside_info_popup(global_point: Vector2) -> bool:
 	return popup.get_global_rect().has_point(global_point)
 
 
-func set_install_mode(enabled: bool, piece_name: String = "") -> void:
+func set_install_mode(enabled: bool, piece_name: String = "", action_text: String = "") -> void:
 	install_mode_active = enabled
 	install_piece_name = piece_name
+	install_action_text = action_text
 	if popup != null and popup.has_method("set_install_context"):
-		popup.call("set_install_context", install_mode_active, install_piece_name)
+		popup.call("set_install_context", install_mode_active, install_piece_name, install_action_text)
 
 
 func is_install_mode_active() -> bool:
@@ -441,6 +502,10 @@ func _build() -> void:
 	dice_viewport.configure_ready_row_height(dice_initial_height)
 	dice_viewport.configure_key_light(key_light_pitch, key_light_yaw)
 	dice_viewport.dice_clicked.connect(_on_dice_viewport_dice_clicked)
+	if dice_viewport.has_signal("dice_hovered"):
+		dice_viewport.dice_hovered.connect(_on_dice_viewport_dice_hovered)
+	if dice_viewport.has_signal("dice_hover_cleared"):
+		dice_viewport.dice_hover_cleared.connect(_on_dice_viewport_dice_hover_cleared)
 	_configure_battle_stage_background()
 
 	ready_mgr = GmReadyMgrScript.new()
@@ -488,6 +553,7 @@ func _build() -> void:
 	marker_layer.z_index = 35
 	stage_root.add_child(marker_layer)
 
+	_build_hover_overlay(stage_root)
 	_build_action_buttons(stage_root)
 
 
@@ -560,6 +626,86 @@ func _build_action_buttons(parent: Control) -> void:
 	actions.add_child(score_button)
 
 
+func _build_hover_overlay(parent: Control) -> void:
+	hover_overlay_layer = Control.new()
+	hover_overlay_layer.name = "DiceHoverOverlayLayer"
+	hover_overlay_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	hover_overlay_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hover_overlay_layer.z_index = 70
+	parent.add_child(hover_overlay_layer)
+
+	hover_ring = DiceHoverRing.new()
+	hover_ring.name = "DiceHoverRing"
+	hover_ring.visible = false
+	hover_ring.completed.connect(_on_hover_ring_completed)
+	hover_overlay_layer.add_child(hover_ring)
+
+	hover_info_panel = _make_hover_info_panel()
+	hover_info_panel.visible = false
+	hover_overlay_layer.add_child(hover_info_panel)
+
+
+func _make_hover_info_panel() -> PanelContainer:
+	var panel := PanelContainer.new()
+	panel.name = "DiceHoverFaceInfoPanel"
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.custom_minimum_size = Vector2(340.0, 156.0)
+
+	var margin := MarginContainer.new()
+	margin.name = "HoverInfoMargin"
+	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	margin.add_theme_constant_override("margin_left", 16)
+	margin.add_theme_constant_override("margin_top", 12)
+	margin.add_theme_constant_override("margin_right", 16)
+	margin.add_theme_constant_override("margin_bottom", 12)
+	panel.add_child(margin)
+
+	var rows := VBoxContainer.new()
+	rows.name = "HoverInfoRows"
+	rows.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rows.add_theme_constant_override("separation", 7)
+	margin.add_child(rows)
+
+	var title := Label.new()
+	title.name = "HoverTitleLabel"
+	title.text = "骰面信息"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rows.add_child(title)
+	hover_info_labels["title"] = title
+
+	_add_hover_info_row(rows, "body", "骰胚")
+	_add_hover_info_row(rows, "pip", "点数")
+	_add_hover_info_row(rows, "ornament", "面饰")
+	_add_hover_info_row(rows, "mark", "印记")
+	return panel
+
+
+func _add_hover_info_row(parent: VBoxContainer, key: String, caption: String) -> void:
+	var row := HBoxContainer.new()
+	row.name = "%sRow" % [key.capitalize()]
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_theme_constant_override("separation", 10)
+	parent.add_child(row)
+
+	var caption_label := Label.new()
+	caption_label.name = "%sCaptionLabel" % [key.capitalize()]
+	caption_label.text = caption
+	caption_label.custom_minimum_size = Vector2(62.0, 0.0)
+	caption_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(caption_label)
+	hover_info_labels["%s_caption" % [key]] = caption_label
+
+	var value_label := Label.new()
+	value_label.name = "%sValueLabel" % [key.capitalize()]
+	value_label.text = "-"
+	value_label.custom_minimum_size = Vector2(210.0, 0.0)
+	value_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	value_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(value_label)
+	hover_info_labels[key] = value_label
+
+
 func _apply_style() -> void:
 	if not is_node_ready():
 		return
@@ -569,6 +715,7 @@ func _apply_style() -> void:
 			if button != null:
 				style_config.apply_button(button)
 		_apply_action_button_styles()
+	_apply_hover_info_style()
 
 
 func _apply_action_button_styles() -> void:
@@ -591,6 +738,52 @@ func _apply_action_button_styles() -> void:
 		Color(0.88, 0.95, 0.94, 1.0),
 		20
 	)
+
+
+func _apply_hover_info_style() -> void:
+	if hover_info_panel == null:
+		return
+	hover_info_panel.add_theme_stylebox_override("panel", _make_hover_info_panel_style())
+	var title_label := hover_info_labels.get("title") as Label
+	if title_label != null:
+		if style_config != null:
+			style_config.apply_label(title_label, style_config.small_font_size + 2, Color(0.95, 0.92, 0.78))
+		title_label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.88))
+		title_label.add_theme_constant_override("outline_size", 4)
+	for key in ["body", "pip", "ornament", "mark"]:
+		var caption := hover_info_labels.get("%s_caption" % [key]) as Label
+		if caption != null:
+			if style_config != null:
+				style_config.apply_label(caption, style_config.small_font_size, Color(0.62, 0.92, 0.86))
+			caption.autowrap_mode = TextServer.AUTOWRAP_OFF
+			caption.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+			caption.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.86))
+			caption.add_theme_constant_override("outline_size", 3)
+		var value := hover_info_labels.get(key) as Label
+		if value != null:
+			if style_config != null:
+				style_config.apply_label(value, style_config.small_font_size, Color(0.96, 0.94, 0.86))
+			value.autowrap_mode = TextServer.AUTOWRAP_OFF
+			value.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+			value.custom_minimum_size = Vector2(210.0, 0.0)
+			value.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.88))
+			value.add_theme_constant_override("outline_size", 3)
+
+
+func _make_hover_info_panel_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.035, 0.055, 0.060, 0.88)
+	style.border_color = Color(0.44, 0.78, 0.74, 0.96)
+	style.set_border_width_all(3)
+	style.set_corner_radius_all(8)
+	style.content_margin_left = 0.0
+	style.content_margin_top = 0.0
+	style.content_margin_right = 0.0
+	style.content_margin_bottom = 0.0
+	style.shadow_color = Color(0.0, 0.0, 0.0, 0.42)
+	style.shadow_size = 14
+	style.shadow_offset = Vector2(0.0, 8.0)
+	return style
 
 
 func _apply_banner_action_button_style(button: Button, fill: Color, accent: Color, text_color: Color, font_size: int = 34) -> void:
@@ -636,6 +829,7 @@ func _ensure_roster_for_state(state: BattleHudState) -> void:
 	roster_signature = next_signature
 	face_state_signature = ""
 	display_die_order.clear()
+	_clear_hovered_die()
 	if battle_mgr != null and battle_mgr.has_method("clear_display_die_order"):
 		battle_mgr.clear_display_die_order()
 	var definitions: Array = []
@@ -709,6 +903,8 @@ func _apply_transient_state() -> void:
 			avatar.visible = not hidden_die_indices.has(index)
 		if avatar.has_method("set_selected") and current_state != null:
 			avatar.call("set_selected", current_state.selected_dice_indices.has(index) or highlighted_die_indices.has(index))
+	if hover_die_index >= 0 and hidden_die_indices.has(hover_die_index):
+		_clear_hovered_die()
 
 
 func _render_overlay_text(state: BattleHudState) -> void:
@@ -722,12 +918,131 @@ func _render_overlay_text(state: BattleHudState) -> void:
 		organize_button.disabled = state.controls_locked or is_sorting_dice
 
 
+func _show_hover_face_info(index: int) -> void:
+	if hover_overlay_layer == null or hover_ring == null or hover_info_panel == null:
+		return
+	if current_state == null:
+		_clear_hovered_die()
+		return
+	var die_data := _die_data_at(index)
+	if die_data == null or die_data.current_face == null:
+		_clear_hovered_die()
+		return
+	_render_hover_info_panel(die_data)
+	if not hover_ring.visible or hover_die_index != index:
+		hover_ring.restart()
+	else:
+		hover_ring.visible = true
+	hover_info_panel.visible = true
+	_position_hover_widgets(index)
+
+
+func _on_hover_ring_completed() -> void:
+	if hover_die_index < 0:
+		return
+	if current_state == null or _die_data_at(hover_die_index) == null:
+		_clear_hovered_die()
+		return
+	_render_hover_info_panel(_die_data_at(hover_die_index))
+	if hover_info_panel != null:
+		hover_info_panel.visible = true
+	_position_hover_widgets(hover_die_index)
+
+
+func _refresh_hover_presentation() -> void:
+	if hover_die_index < 0:
+		return
+	if hidden_die_indices.has(hover_die_index):
+		_clear_hovered_die()
+		return
+	if current_state == null or _die_data_at(hover_die_index) == null:
+		_clear_hovered_die()
+		return
+	_show_hover_face_info(hover_die_index)
+
+
+func _render_hover_info_panel(die_data: DieViewData) -> void:
+	var face = die_data.current_face
+	_set_hover_label_text("body", die_data.body_name)
+	_set_hover_label_text("pip", str(face.pip) if face != null else "-")
+	_set_hover_label_text("ornament", face.ornament_name if face != null else "-")
+	_set_hover_label_text("mark", face.mark_name if face != null else "-")
+
+
+func _set_hover_label_text(key: String, text: String) -> void:
+	var label := hover_info_labels.get(key) as Label
+	if label != null:
+		label.text = text
+
+
+func _position_hover_widgets(index: int) -> void:
+	if hover_overlay_layer == null or hover_ring == null or hover_info_panel == null:
+		return
+	if not hover_ring.visible and not hover_info_panel.visible:
+		return
+	var global_rect := _dice_global_rect(index)
+	var local_rect := _global_rect_to_hover_layer_local(global_rect)
+	var center := local_rect.get_center()
+	var ring_side := clampf(maxf(local_rect.size.x, local_rect.size.y) * 0.74, 56.0, 88.0)
+	hover_ring.position = center - Vector2(ring_side, ring_side) * 0.5
+	hover_ring.size = Vector2(ring_side, ring_side)
+	hover_ring.queue_redraw()
+
+	var bounds := hover_overlay_layer.size
+	if bounds.x <= 0.0 or bounds.y <= 0.0:
+		bounds = size
+	var panel_size := Vector2(340.0, 156.0)
+	hover_info_panel.size = panel_size
+	var panel_position := Vector2(center.x - panel_size.x * 0.5, local_rect.position.y - panel_size.y - 18.0)
+	if panel_position.y < 18.0:
+		panel_position.y = local_rect.position.y + local_rect.size.y + 18.0
+	panel_position.x = clampf(panel_position.x, 18.0, maxf(18.0, bounds.x - panel_size.x - 18.0))
+	panel_position.y = clampf(panel_position.y, 18.0, maxf(18.0, bounds.y - panel_size.y - 18.0))
+	hover_info_panel.position = panel_position
+
+
+func _global_rect_to_hover_layer_local(global_rect: Rect2) -> Rect2:
+	if hover_overlay_layer == null:
+		return global_rect
+	var inverse := hover_overlay_layer.get_global_transform_with_canvas().affine_inverse()
+	var local_position := inverse * global_rect.position
+	var local_end := inverse * (global_rect.position + global_rect.size)
+	return Rect2(local_position, local_end - local_position)
+
+
+func _clear_hovered_die() -> void:
+	hover_die_index = -1
+	if hover_ring != null:
+		hover_ring.stop()
+	if hover_info_panel != null:
+		hover_info_panel.visible = false
+
+
 func _on_dice_viewport_dice_clicked(dice) -> void:
 	var index := _avatar_index(dice)
 	if index < 0:
 		return
 	focused_die_index = index
 	die_pressed.emit(index)
+
+
+func _on_dice_viewport_dice_hovered(dice) -> void:
+	var index := _avatar_index(dice)
+	if index < 0 or hidden_die_indices.has(index):
+		_clear_hovered_die()
+		return
+	var previous_index := hover_die_index
+	hover_die_index = index
+	if previous_index != index and hover_ring != null:
+		hover_ring.stop()
+	if popup == null or not popup.visible:
+		focused_die_index = index
+	_show_hover_face_info(index)
+	die_hovered.emit(index)
+
+
+func _on_dice_viewport_dice_hover_cleared() -> void:
+	_clear_hovered_die()
 
 
 func _on_organize_pressed() -> void:
@@ -998,11 +1313,65 @@ func _ensure_reward_overlay() -> void:
 func _make_reward_choice_card(choice) -> Control:
 	var button := Button.new()
 	button.custom_minimum_size = Vector2(300.0, 300.0)
-	button.text = _choice_display_text(choice)
+	button.text = ""
 	button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	button.pressed.connect(func() -> void: reward_choice_pressed.emit(choice))
 	if style_config != null:
 		style_config.apply_button(button)
+
+	var margin := MarginContainer.new()
+	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	margin.add_theme_constant_override("margin_left", 14)
+	margin.add_theme_constant_override("margin_top", 14)
+	margin.add_theme_constant_override("margin_right", 14)
+	margin.add_theme_constant_override("margin_bottom", 14)
+	button.add_child(margin)
+
+	var box := VBoxContainer.new()
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_theme_constant_override("separation", 10)
+	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	box.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	margin.add_child(box)
+
+	var label := RichTextLabel.new()
+	label.name = "RewardChoiceRichText"
+	label.bbcode_enabled = true
+	label.fit_content = true
+	label.scroll_active = false
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	label.mouse_filter = Control.MOUSE_FILTER_PASS
+	var text := _choice_display_text(choice)
+	RichTextHighlighter.setup_rich_label(
+		label,
+		_reward_text_to_bbcode(text),
+		style_config.body_font_size if style_config != null else 18,
+		Color(0.96, 0.92, 0.78),
+		style_config.font if style_config != null else null
+	)
+	label.text = _reward_text_to_bbcode(text)
+	if _reward_text_has_info_link(text):
+		label.mouse_filter = Control.MOUSE_FILTER_STOP
+		label.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		label.meta_clicked.connect(_on_reward_info_meta_clicked)
+
+	box.add_child(label)
+
+	var pick_label := Label.new()
+	pick_label.name = "RewardChoicePickLabel"
+	pick_label.text = "挑选"
+	pick_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	pick_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	pick_label.custom_minimum_size = Vector2(0.0, 42.0)
+	pick_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pick_label.add_theme_font_size_override("font_size", 24)
+	pick_label.add_theme_color_override("font_color", Color(1.0, 0.92, 0.65, 1.0))
+	if style_config != null and style_config.font != null:
+		pick_label.add_theme_font_override("font", style_config.font)
+	box.add_child(pick_label)
 	return button
 
 
@@ -1016,6 +1385,120 @@ func _choice_display_text(choice) -> String:
 	if object != null and object.has_method("get_effect_text"):
 		lines.append(str(object.call("get_effect_text")))
 	return "\n".join(lines) if not lines.is_empty() else str(choice)
+
+
+func _reward_text_to_bbcode(text: String) -> String:
+	var keywords := _reward_info_keywords()
+	var result := PackedStringArray()
+	var index := 0
+	while index < text.length():
+		var keyword := _reward_info_keyword_at(text, index, keywords)
+		if not keyword.is_empty():
+			result.append(_reward_info_link_bbcode(keyword))
+			index += str(keyword["name"]).length()
+			continue
+
+		var next_index := index + 1
+		while next_index < text.length() and _reward_info_keyword_at(text, next_index, keywords).is_empty():
+			next_index += 1
+		result.append(RichTextHighlighter.score_text_to_bbcode(text.substr(index, next_index - index)))
+		index = next_index
+	return "".join(result)
+
+
+func _reward_text_has_info_link(text: String) -> bool:
+	var keywords := _reward_info_keywords()
+	for index in range(text.length()):
+		if not _reward_info_keyword_at(text, index, keywords).is_empty():
+			return true
+	return false
+
+
+func _reward_info_keyword_at(text: String, index: int, keywords: Array[Dictionary]) -> Dictionary:
+	for keyword in keywords:
+		var name := str(keyword["name"])
+		if name == "" or index + name.length() > text.length():
+			continue
+		if text.substr(index, name.length()) == name:
+			return keyword
+	return {}
+
+
+func _reward_info_keywords() -> Array[Dictionary]:
+	var keywords: Array[Dictionary] = []
+	for id in _reward_ornament_ids():
+		_append_reward_info_keyword(keywords, &"ornament", id, DisplayNames.ornament_name(id))
+	for id in _reward_mark_ids():
+		_append_reward_info_keyword(keywords, &"mark", id, DisplayNames.mark_name(id))
+	keywords.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return str(a["name"]).length() > str(b["name"]).length()
+	)
+	return keywords
+
+
+func _append_reward_info_keyword(keywords: Array[Dictionary], kind: StringName, id: StringName, display_name: String) -> void:
+	if display_name == "":
+		return
+	for keyword in keywords:
+		if str(keyword["name"]) == display_name and StringName(str(keyword["kind"])) == kind:
+			return
+	keywords.append({
+		"kind": kind,
+		"id": id,
+		"name": display_name,
+	})
+
+
+func _reward_ornament_ids() -> Array[StringName]:
+	return [
+		FaceState.ORN_CHIP,
+		FaceState.ORN_MULT,
+		FaceState.ORN_WILD,
+		FaceState.ORN_BURST,
+		FaceState.ORN_STAY,
+		FaceState.ORN_STONE,
+		FaceState.ORN_GOLD,
+		FaceState.ORN_LUCKY,
+		FaceState.ORN_FOIL,
+		FaceState.ORN_HOLO,
+		FaceState.ORN_POLY,
+	]
+
+
+func _reward_mark_ids() -> Array[StringName]:
+	return [
+		FaceState.MARK_RED,
+		FaceState.MARK_BLUE,
+		FaceState.MARK_PURPLE,
+		FaceState.MARK_GOLD,
+		FaceState.MARK_WHITE,
+		&"black",
+	]
+
+
+func _reward_info_link_bbcode(keyword: Dictionary) -> String:
+	var kind := StringName(str(keyword["kind"]))
+	var id := StringName(str(keyword["id"]))
+	var display_name := str(keyword["name"])
+	var color := style_config.info_link_text_color.to_html(false) if style_config != null else "ff9300"
+	return "[url=%s:%s][u][color=#%s]%s[/color][/u][/url]" % [
+		str(kind),
+		str(id),
+		color,
+		_escape_bbcode(display_name),
+	]
+
+
+func _on_reward_info_meta_clicked(meta) -> void:
+	var text := str(meta)
+	if text.begins_with("ornament:"):
+		reward_ornament_link_requested.emit(StringName(text.trim_prefix("ornament:")))
+	elif text.begins_with("mark:"):
+		reward_mark_link_requested.emit(StringName(text.trim_prefix("mark:")))
+
+
+func _escape_bbcode(text: String) -> String:
+	return text.replace("[", "\\[").replace("]", "\\]")
 
 
 func _make_floating_label(text: String) -> Control:

@@ -10,12 +10,14 @@ const RichTextHighlighter = preload("res://scripts/ui/RichTextHighlighter.gd")
 
 
 signal close_requested()
+signal custom_action_pressed()
 
 
 enum InfoTab {
 	COMBO,
 	ORNAMENT,
 	MARK,
+	CUSTOM,
 }
 
 
@@ -25,12 +27,17 @@ var combo_rows: Array[ComboInfoRowData] = []
 var selected_ornament_id: StringName = &""
 var selected_mark_id: StringName = &""
 var current_tab: int = InfoTab.COMBO
+var custom_info_title: String = ""
+var custom_info_rows: Array[Dictionary] = []
+var custom_action_text: String = ""
+var custom_action_button: Button = null
 
 @onready var scrim: ColorRect = %Scrim
 @onready var window_panel: PanelContainer = %WindowPanel
 @onready var popup_margin: MarginContainer = %PopupMargin
 @onready var title_label: Label = %TitleLabel
 @onready var info_tabs: TabBar = %InfoTabs
+@onready var header_margin: MarginContainer = %Header.get_parent() as MarginContainer
 @onready var combo_header: HBoxContainer = %Header
 @onready var header_level: Label = %HeaderLevel
 @onready var header_combo: Label = %HeaderCombo
@@ -57,6 +64,7 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	return_button.pressed.connect(func() -> void: close_requested.emit())
 	info_tabs.tab_changed.connect(_on_tab_changed)
+	_ensure_custom_action_button()
 	_apply_static_text()
 	_apply_style()
 	_apply_tab()
@@ -86,6 +94,20 @@ func show_mark_tab(mark_id: StringName) -> void:
 	_apply_tab()
 
 
+func show_custom_info(title: String, rows: Array[Dictionary], action_text: String = "") -> void:
+	custom_info_title = title
+	custom_info_rows = rows.duplicate(true)
+	custom_action_text = action_text
+	current_tab = InfoTab.CUSTOM
+	_apply_style()
+	_render_custom_rows()
+	_apply_tab()
+
+
+func is_combo_tab_active() -> bool:
+	return current_tab == InfoTab.COMBO
+
+
 func _on_tab_changed(tab: int) -> void:
 	current_tab = tab
 	if current_tab == InfoTab.COMBO:
@@ -99,8 +121,12 @@ func _apply_tab() -> void:
 	if not is_node_ready():
 		return
 	_apply_static_text()
-	info_tabs.current_tab = current_tab
+	info_tabs.visible = current_tab != InfoTab.CUSTOM
+	if current_tab != InfoTab.CUSTOM:
+		info_tabs.current_tab = current_tab
 	var combo_visible := current_tab == InfoTab.COMBO
+	if header_margin != null:
+		header_margin.visible = combo_visible
 	combo_header.visible = combo_visible
 	row_scroll.visible = combo_visible
 	info_scroll.visible = not combo_visible
@@ -109,8 +135,11 @@ func _apply_tab() -> void:
 			title_label.text = str(TranslationServer.translate(&"AUTO.TEXT.6FC540C2D9D3"))
 		InfoTab.MARK:
 			title_label.text = str(TranslationServer.translate(&"AUTO.TEXT.DBE74CDF4EC4"))
+		InfoTab.CUSTOM:
+			title_label.text = custom_info_title if custom_info_title != "" else "信息"
 		_:
 			title_label.text = str(TranslationServer.translate(&"AUTO.TEXT.3A7FB8F6A252"))
+	_refresh_custom_action_button()
 
 
 func _apply_static_text() -> void:
@@ -149,6 +178,17 @@ func _render_effect_rows() -> void:
 		))
 
 
+func _render_custom_rows() -> void:
+	_clear_children(info_rows_container)
+	for row in custom_info_rows:
+		info_rows_container.add_child(_make_effect_row(
+			StringName(str(row.get("id", ""))),
+			str(row.get("name", "")),
+			str(row.get("effect", "")),
+			bool(row.get("selected", false))
+		))
+
+
 func _apply_style() -> void:
 	if not is_node_ready() or style_config == null:
 		return
@@ -160,11 +200,38 @@ func _apply_style() -> void:
 	for label in [header_level, header_combo, header_chips_label, header_x_label, header_mult_label, header_count]:
 		style_config.apply_label(label, style_config.small_font_size)
 	style_config.apply_button(return_button)
+	if custom_action_button != null:
+		style_config.apply_button(custom_action_button)
 	if style_config.options_button_background != null:
 		for state in ["normal", "hover", "pressed", "focus"]:
 			return_button.add_theme_stylebox_override(state, style_config.options_button_background)
+			if custom_action_button != null:
+				custom_action_button.add_theme_stylebox_override(state, style_config.options_button_background)
 	rows_container.add_theme_constant_override("separation", max(4, style_config.card_gap / 2))
 	info_rows_container.add_theme_constant_override("separation", max(6, style_config.card_gap / 2))
+
+
+func _ensure_custom_action_button() -> void:
+	if custom_action_button != null or return_button == null:
+		return
+	var parent := return_button.get_parent()
+	if parent == null:
+		return
+	custom_action_button = Button.new()
+	custom_action_button.name = "CustomInfoActionButton"
+	custom_action_button.focus_mode = Control.FOCUS_NONE
+	custom_action_button.custom_minimum_size = return_button.custom_minimum_size
+	custom_action_button.pressed.connect(func() -> void: custom_action_pressed.emit())
+	parent.add_child(custom_action_button)
+	parent.move_child(custom_action_button, return_button.get_index())
+	_refresh_custom_action_button()
+
+
+func _refresh_custom_action_button() -> void:
+	if custom_action_button == null:
+		return
+	custom_action_button.text = custom_action_text
+	custom_action_button.visible = current_tab == InfoTab.CUSTOM and custom_action_text != ""
 
 
 func _make_combo_row() -> Control:

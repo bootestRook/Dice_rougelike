@@ -1,0 +1,9 @@
+{
+	"fields": [
+		"金币奖励",
+		"通关奖励",
+		"继续"
+	],
+	"scenario": "battle reward flow coin screen",
+	"screenshot": "G:/Dice_rougelike/tests_or_debug/captures/battle_screen_1920x1080_coin_reward.png"
+}

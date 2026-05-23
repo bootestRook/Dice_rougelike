@@ -21,6 +21,7 @@ var face_info_card_scene: PackedScene = null
 var tail_local_x: float = -1.0
 var install_mode_enabled: bool = false
 var install_piece_name: String = ""
+var install_action_text: String = ""
 var selected_face_index: int = -1
 var current_die_index: int = -1
 var face_cards: Array[Control] = []
@@ -87,9 +88,10 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 
 
-func set_install_context(enabled: bool, piece_name: String = "") -> void:
+func set_install_context(enabled: bool, piece_name: String = "", action_text: String = "") -> void:
 	install_mode_enabled = enabled
 	install_piece_name = piece_name
+	install_action_text = action_text
 	if not install_mode_enabled:
 		selected_face_index = -1
 	_refresh_install_button()
@@ -234,7 +236,6 @@ func _ensure_install_button() -> void:
 		return
 	install_button = Button.new()
 	install_button.name = "InstallButton"
-	install_button.text = str(TranslationServer.translate(&"AUTO.TEXT.402052AA36CD"))
 	install_button.focus_mode = Control.FOCUS_NONE
 	install_button.custom_minimum_size = Vector2(96.0, 34.0)
 	install_button.pressed.connect(_on_install_button_pressed)
@@ -273,6 +274,7 @@ func _refresh_face_selection() -> void:
 func _refresh_install_button() -> void:
 	if install_button == null:
 		return
+	install_button.text = install_action_text if install_action_text != "" else str(TranslationServer.translate(&"AUTO.TEXT.402052AA36CD"))
 	install_button.visible = install_mode_enabled
 	install_button.disabled = not install_mode_enabled or selected_face_index < 0
 

@@ -29,6 +29,7 @@ var round_marker_layer: Control = null
 var round_caption_label: Label = null
 var round_value_label: Label = null
 var round_marker_font: Font = null
+var score_log_signature := "<unset>"
 
 @onready var margin: MarginContainer = %ScoringMargin
 @onready var title_label: Label = %TitleLabel
@@ -514,6 +515,10 @@ func _stage_status_text(state: BattleHudState) -> String:
 
 
 func _render_log(lines: Array[String]) -> void:
+	var next_signature := _score_log_signature(lines)
+	if next_signature == score_log_signature:
+		return
+	score_log_signature = next_signature
 	_clear_children(log_rows)
 	if lines.is_empty():
 		_add_log_row(str(TranslationServer.translate(&"AUTO.TEXT.FA5D45A99246")))
@@ -521,6 +526,14 @@ func _render_log(lines: Array[String]) -> void:
 
 	for line in lines:
 		_add_log_row(line)
+
+
+func _score_log_signature(lines: Array[String]) -> String:
+	var parts := PackedStringArray()
+	parts.append(str(lines.size()))
+	for line in lines:
+		parts.append(line)
+	return "\n".join(parts)
 
 
 func _add_log_row(text: String) -> void:

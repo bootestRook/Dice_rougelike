@@ -43,6 +43,7 @@ func _create_flow_controller() -> void:
 	add_child(game_flow_controller)
 	game_flow_controller.map_requested.connect(_on_map_requested)
 	game_flow_controller.battle_requested.connect(_on_battle_requested)
+	game_flow_controller.battle_coin_reward_requested.connect(_on_battle_coin_reward_requested)
 	game_flow_controller.reward_requested.connect(_on_reward_requested)
 	game_flow_controller.forge_install_requested.connect(_on_forge_install_requested)
 	game_flow_controller.shop_requested.connect(_on_shop_requested)
@@ -517,6 +518,16 @@ func _on_map_requested(map_state: Dictionary) -> void:
 		else:
 			map_stage_view.visible = true
 			_set_run_stage_input_locked(false)
+
+
+func _on_battle_coin_reward_requested(summary: Dictionary) -> void:
+	var existing_battle_screen := _current_battle_screen()
+	if existing_battle_screen != null and existing_battle_screen.has_method("show_battle_coin_reward"):
+		current_view_id = &"battle_coin_reward"
+		existing_battle_screen.call("show_battle_coin_reward", summary)
+		return
+	if game_flow_controller != null and game_flow_controller.has_method("continue_after_battle_coin_reward"):
+		game_flow_controller.continue_after_battle_coin_reward()
 
 
 func _on_reward_requested(choices: Array) -> void:

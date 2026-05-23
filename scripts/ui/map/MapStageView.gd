@@ -238,6 +238,7 @@ func automation_get_snapshot() -> Dictionary:
 		"roll_button_texture_rect": roll_button.get_global_rect() if roll_button != null else Rect2(),
 		"enter_battle_button_visible": enter_battle_button_wrapper != null and enter_battle_button_wrapper.visible,
 		"enter_battle_button_disabled": enter_battle_button.disabled if enter_battle_button != null else false,
+		"enter_battle_button_label": _texture_button_label(enter_battle_button_wrapper),
 		"circle_action_badge_visible": circle_action_badge != null and circle_action_badge.visible,
 		"marker_step_duration": art_config.marker_step_duration if art_config != null else 0.0,
 		"movement_step_label_visible": movement_step_label.visible if movement_step_label != null else false,
@@ -444,7 +445,7 @@ func _build_center_panel() -> void:
 	roll_button.pressed.connect(_on_roll_pressed)
 	board_root.add_child(roll_button_wrapper)
 
-	enter_battle_button_wrapper = _make_texture_button("进入战斗")
+	enter_battle_button_wrapper = _make_texture_button("进入节点")
 	enter_battle_button_wrapper.name = "EnterBattleButton"
 	enter_battle_button_wrapper.z_index = 92
 	enter_battle_button_wrapper.visible = false
@@ -622,14 +623,15 @@ func _sync_movement_dice_stage_visibility() -> void:
 		or bool(map_state.get("pending_reward", false))
 		or bool(map_state.get("pending_event", false))
 	)
+	var action_controls_visible := controls_visible and not _is_interaction_locked()
 	if movement_dice_physics_view != null:
 		movement_dice_physics_view.visible = controls_visible
 	if circle_action_badge != null:
 		circle_action_badge.visible = controls_visible
 	if roll_button_wrapper != null:
-		roll_button_wrapper.visible = controls_visible and not pending_action
+		roll_button_wrapper.visible = action_controls_visible and not pending_action
 	if enter_battle_button_wrapper != null:
-		enter_battle_button_wrapper.visible = controls_visible and pending_action
+		enter_battle_button_wrapper.visible = action_controls_visible and pending_action
 
 
 func _movement_controls_visible() -> bool:
@@ -1166,15 +1168,16 @@ func _render_center_text() -> void:
 	var pending_event := bool(map_state.get("pending_event", false))
 	var pending_action := pending_battle or pending_shop or pending_reward or pending_event
 	var controls_visible := _movement_controls_visible()
-	roll_button_wrapper.visible = controls_visible and not pending_action
-	enter_battle_button_wrapper.visible = controls_visible and pending_action
+	var action_controls_visible := controls_visible and not _is_interaction_locked()
+	roll_button_wrapper.visible = action_controls_visible and not pending_action
+	enter_battle_button_wrapper.visible = action_controls_visible and pending_action
 	if circle_action_badge != null:
 		circle_action_badge.visible = controls_visible
 	if roll_button != null:
-		roll_button.disabled = pending_action or is_marker_animating or is_board_animating
+		roll_button.disabled = pending_action or _is_interaction_locked()
 	if enter_battle_button != null:
-		enter_battle_button.disabled = not pending_action or is_marker_animating or is_board_animating
-	var action_label := "进入骰商铺" if pending_shop else ("领取奖励" if pending_reward else ("进入奇遇" if pending_event else ("进入首领战" if current_type == &"boss" else "进入战斗")))
+		enter_battle_button.disabled = not pending_action or _is_interaction_locked()
+	var action_label := _enter_action_label(current_type, pending_battle, pending_shop, pending_reward, pending_event)
 	_set_texture_button_label(enter_battle_button_wrapper, action_label)
 	_render_movement_dice()
 	_layout_roll_button()
@@ -1518,6 +1521,24 @@ func _is_battle_node_type(node_type: StringName) -> bool:
 	return node_type == &"battle" or node_type == &"elite" or node_type == &"boss"
 
 
+func _enter_action_label(
+	current_type: StringName,
+	pending_battle: bool,
+	pending_shop: bool,
+	pending_reward: bool,
+	pending_event: bool
+) -> String:
+	if pending_shop:
+		return "进入骰商铺"
+	if pending_reward:
+		return "领取奖励"
+	if pending_event:
+		return "进入奇遇"
+	if pending_battle:
+		return "进入首领战" if current_type == &"boss" else "进入战斗"
+	return "进入节点"
+
+
 func _set_texture_button_label(wrapper: Control, text: String) -> void:
 	if wrapper == null:
 		return
@@ -1525,3 +1546,12 @@ func _set_texture_button_label(wrapper: Control, text: String) -> void:
 	if label == null:
 		return
 	label.text = text
+
+
+func _texture_button_label(wrapper: Control) -> String:
+	if wrapper == null:
+		return ""
+	var label := wrapper.get_node_or_null("ButtonLabel") as Label
+	if label == null:
+		return ""
+	return label.text
