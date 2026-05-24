@@ -1,3 +1,30 @@
+# 2026-05-24 中文编码乱码彻查进度
+
+## 追加处理：本地化测试与终端 UTF-8
+
+- 根据用户要求继续修复未处理项。
+- `DebugLocalizationSmokeTest.gd` 首轮失败项：`TAG.EVEN` 缺失、以及过时的“源码不得有中文”检查；后者与当前项目“玩家可见文本必须中文”的口径冲突。
+- 已补 `i18n/zh_Hans.po`、`i18n/en.po`、`i18n/game.pot` 的 `TAG.EVEN`。
+- 已把 `DebugLocalizationSmokeTest.gd` 的“no visible CJK in player text sources”改为“no mojibake in source text”，保留防乱码能力，不再错误禁止中文源码文本。
+- `DebugLocalizationSmokeTest.gd` 第二轮失败项：动态复合铸骰件 `FORGE_PART.STAY_4.NAME` 缺少静态 key；实际显示文本由 `display_name/description` 动态生成。测试已改为验证最终显示文本解析成功，只对没有内联显示文本的资源继续要求 key。
+- 已给 `DisplayNames.forge_tag_name()` 补 `upgrade/combo_upgrade` 标签映射，避免奖励标签暴露内部 ID。
+- 已在 `tools/dev/godot.cmd` 设置 `chcp 65001`，并在 `tools/dev/godot.ps1` 设置 console/pipeline UTF-8；`tools/dev/README.md` 已说明推荐用包装器运行中文 Debug 输出。
+- 验证通过：`DebugLocalizationSmokeTest.gd`、`DebugChineseEncodingSmokeTest.gd`、通过 `tools/dev/godot.cmd` 运行的 `DebugChineseDisplaySmokeTest.gd`、主场景 headless。
+
+- 启动本轮编码排查，使用 `planning-with-files`。
+- `session-catchup.py` 返回 exit code 1 且无输出；继续基于当前工作树、现有计划文件和源文件扫描。
+- 当前工作树已有若干未提交改动；本轮不会回退这些改动。
+- 初步确认：`task_plan.md` 和 `DebugChineseDisplaySmokeTest.gd` 在 PowerShell `Get-Content` 输出中会显示成乱码，但原始文件按 UTF-8 解码后中文是正确的，说明至少一部分现象来自终端输出编码，不是文件内容损坏。
+- 首次扫描脚本因在命令内直接构造 `U+FFFD` 替换字符触发 ASCII 编码错误，已改为 code point 构造后重跑。
+- 全量扫描 798 个文本文件：未发现 UTF-8 解码错误；未发现真实写入的典型中文 mojibake；发现 5 个 UTF-8 BOM 文件，准备转换为 UTF-8 无 BOM。
+- 已移除 5 个 UTF-8 BOM：`docs/dice_tools_catalog.md`、`openspec/changes/archive/2026-05-22-match-reference-star-dice-visuals/tasks.md`、`tests_or_debug/captures/battle_screen_1920x1080_stage_frame_removed_after_manifest.json`、`tests_or_debug/DebugLeftSidebarFixedLayoutSmokeTest.gd`、`tools/scene_builders/BuildGmDiceVisualRepro.gd`。
+- 曾尝试把编码完整性检查扩展到 `DebugLocalizationSmokeTest.gd`，但该脚本整体存在既有失败项（缺少 `TAG.EVEN`、源码中文检查），不适合作为本轮防回归入口；已回收这部分改动。
+- 已新增独立 `DebugChineseEncodingSmokeTest.gd`：覆盖项目文本扩展名，检查 UTF-8 BOM，并增加常见 Latin/GBK mojibake 模式。
+- `DebugChineseEncodingSmokeTest.gd` 通过：Godot 侧扫描 778 个文本文件，UTF-8 clean、无 BOM、无 mojibake pattern。
+- `DebugChineseDisplaySmokeTest.gd`、`DebugFaceDisplaySmokeTest.gd` 和主场景 headless 启动均已通过。
+- `DebugLocalizationSmokeTest.gd` 曾运行失败：新增的 `UTF-8 and mojibake integrity` 子项通过，但脚本整体因既有 `TAG.EVEN` 缺失和“源码中可见中文”检查失败退出；该失败与本轮编码修复无关。
+- 最终 Python 复扫 799 个文本文件：UTF-8 解码错误 0、BOM 0、典型乱码命中 0；最终 `DebugChineseEncodingSmokeTest.gd` 仍通过。
+
 # 骰商铺进度记录
 
 ## 2026-05-23 追加：第一圈商店保护
@@ -153,3 +180,29 @@
 - Updated `assets/ui/map/ATTRIBUTION.md` so attribution no longer points at deleted node placeholders or the deleted source sheet.
 - Verification passed: main scene startup, `DebugMapBackgroundTextureVisibilitySmokeTest.gd`, `DebugMapStageFlowSmokeTest.gd`, `DebugBattleSmokeTest.gd`, `DebugBattleDiceInputSmokeTest.gd`, and targeted `git diff --check`.
 - Visual acceptance: copied the existing map capture as a before baseline, reran `CaptureFirstCircleShopProtectionMap.gd`, and confirmed the before/after PNG hashes match.
+# 2026-05-24 Elite Victory Flow Progress
+
+- Started bugfix pass for elite battles entering the next hand after displaying victory.
+- Using `planning-with-files`.
+- Checked current files and git status; existing dirty files will be preserved unless directly relevant.
+- `session-catchup.py` returned exit code 1 with no output.
+- Found the stale victory overlay path: the legacy hand intro restores it, but the current 3D initial-roll path does not.
+- Ran `DebugBattleSmokeTest.gd` before patch; it passed, confirming the basic controller finish path is not obviously broken.
+- Patched `BattleScreen.gd` so a predicted victory records pending target restoration before committing resolution, and the external 3D hand entry restores the target panel before rolling in.
+- Added `DebugEliteVictoryFlowSmokeTest.gd`.
+- `DebugEliteVictoryFlowSmokeTest.gd`: PASS. Godot reported existing CanvasItem/ObjectDB leak warnings on exit, but command exit code was 0.
+- Regression verification passed: `DebugBattleSmokeTest.gd`, `DebugBattleDiceInputSmokeTest.gd`, `DebugBattleRewardFlowUiSmokeTest.gd`, `DebugRunFlowSmokeTest.gd`, main scene startup, and `git diff --check`.
+- `DebugBattleDiceInputSmokeTest.gd`, `DebugBattleRewardFlowUiSmokeTest.gd`, and the new elite flow Debug emitted CanvasItem/ObjectDB leak warnings on exit; all returned exit code 0.
+- Visual acceptance capture passed: `tests_or_debug/captures/elite_victory_flow/elite_victory_flow_before.png` shows the stale victory target overlay, and `tests_or_debug/captures/elite_victory_flow/elite_victory_flow_after.png` shows the restored elite target score before the new 3D hand roll.
+# 2026-05-24 UI Debug Cleanup Warning Progress
+
+- Started cleanup pass for CanvasItem/ObjectDB leak warnings in UI Debug/capture commands.
+- `session-catchup.py` returned exit code 1 with no output again.
+- Current working tree has many unrelated dirty files; this pass will only touch focused Debug/capture cleanup scripts.
+- Patched focused UI Debug/capture scripts to remove instantiated UI roots and wait several frames before `quit()`.
+- Found and fixed the actual CanvasItem leak source in `BattleScreen._instantiate_control()`: unused eager fallback controls are now freed when a PackedScene instance succeeds.
+- Added LeftBattleSidebar runtime feedback flushing/exit cleanup so UI Debug scripts can finish transient tweens before teardown.
+- While verifying the now warning-free run, Godot surfaced strict compile errors in map event scripts; patched the small self-reference/type-inference issues.
+- Verification now passes without CanvasItem/ObjectDB warnings for `DebugBattleDiceInputSmokeTest.gd`, `DebugBattleRewardFlowUiSmokeTest.gd`, and `DebugEliteVictoryFlowSmokeTest.gd`.
+- `CaptureEliteVictoryFlowState.gd` still reports a D3D12 Texture RID backend warning with the default renderer, but passes without leak warnings when run with `--rendering-driver opengl3`; capture script now uses OS window capture instead of viewport texture readback.
+- `DebugBattleSmokeTest.gd`, main scene startup, and `git diff --check` passed. `git diff --check` reported CRLF normalization warnings in unrelated existing dirty files, with exit code 0.

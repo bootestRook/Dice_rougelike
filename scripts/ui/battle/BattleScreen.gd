@@ -31,6 +31,7 @@ const BattleUiStyleConfig = preload("res://scripts/ui/battle/resources/BattleUiS
 const BattleIconLibrary = preload("res://scripts/ui/battle/resources/BattleIconLibrary.gd")
 const DiceVisualLibrary = preload("res://scripts/ui/battle/resources/DiceVisualLibrary.gd")
 const RoundIntroBanner = preload("res://scripts/ui/battle/components/RoundIntroBanner.gd")
+const HoverInfoOverlay = preload("res://scripts/ui/battle/components/HoverInfoOverlay.gd")
 const RuntimeUiLayoutTuner = preload("res://scripts/ui/debug/RuntimeUiLayoutTuner.gd")
 
 
@@ -64,6 +65,7 @@ var left_sidebar: Control = null
 var top_inventory_bar: Control = null
 var scoring_area: Control = null
 var dice_bench_area: Control = null
+var inventory_hover_info_overlay: HoverInfoOverlay = null
 var combo_info_popup: Control = null
 var layout_root: Control = null
 var battle_main_stage_area: Control = null
@@ -119,7 +121,6 @@ var pending_forge_item_slot_index: int = -1
 var pending_forge_item_def: ForgeItemDef = null
 var pending_forge_item_targets: Array = []
 var pending_forge_item_source_ref: Dictionary = {}
-var pending_info_item_slot_index: int = -1
 var selected_install_die_index: int = -1
 var selected_install_face_index: int = -1
 var defer_initial_battle_start: bool = false
@@ -418,10 +419,18 @@ func _build_view() -> void:
 	main_area.add_child(top_inventory_bar)
 	if top_inventory_bar.has_method("setup"):
 		top_inventory_bar.setup(style_config, icon_library, inventory_slot_view_scene)
-	if top_inventory_bar.has_signal("relic_slot_pressed"):
-		top_inventory_bar.relic_slot_pressed.connect(_on_relic_slot_pressed)
 	if top_inventory_bar.has_signal("item_slot_pressed"):
 		top_inventory_bar.item_slot_pressed.connect(_on_item_slot_pressed)
+	if top_inventory_bar.has_signal("slot_hovered"):
+		top_inventory_bar.slot_hovered.connect(_on_inventory_slot_hovered)
+	if top_inventory_bar.has_signal("slot_hover_cleared"):
+		top_inventory_bar.slot_hover_cleared.connect(_on_inventory_slot_hover_cleared)
+
+	inventory_hover_info_overlay = HoverInfoOverlay.new()
+	inventory_hover_info_overlay.name = "InventoryHoverInfoOverlay"
+	inventory_hover_info_overlay.z_index = 190
+	inventory_hover_info_overlay.setup(style_config, "InventoryHoverInfoPanel", Vector2(420.0, 190.0))
+	layout_root.add_child(inventory_hover_info_overlay)
 
 	battle_main_stage_area = Control.new()
 	battle_main_stage_area.name = "BattleMainStageArea"
@@ -1249,10 +1258,10 @@ func _on_coin_reward_continue_pressed() -> void:
 
 
 func _on_item_slot_pressed(slot_index: int) -> void:
-	if not _can_open_inventory_info():
+	if not _can_interact_inventory_slot(true):
 		return
 	if run_state == null:
-		status_text = "当前没有局内状态，无法查看道具。"
+		status_text = "当前没有局内状态，无法使用道具。"
 		_refresh_hud()
 		return
 
@@ -1262,48 +1271,55 @@ func _on_item_slot_pressed(slot_index: int) -> void:
 		_refresh_hud()
 		return
 
-	_show_inventory_item_info(slot_index, item)
+	if inventory_hover_info_overlay != null:
+		inventory_hover_info_overlay.interrupt_target(_inventory_hover_target_id(&"item", slot_index))
 
-
-func _on_relic_slot_pressed(slot_index: int) -> void:
-	if not _can_open_inventory_info():
-		return
-	if run_state == null:
-		status_text = "当前没有局内状态，无法查看遗物。"
-		_refresh_hud()
-		return
-	_show_relic_info(slot_index)
-
-
-func _can_open_inventory_info() -> bool:
-	if is_resolution_playing or is_reroll_playing or is_battle_intro_playing:
-		return false
-	if reward_phase_active or reward_install_active or victory_reward_showcase_active:
-		status_text = "请先完成当前奖励或目标选择。"
-		_refresh_hud()
-		return false
-	return true
-
-
-func _on_inventory_info_action_pressed() -> void:
-	var slot_index := pending_info_item_slot_index
-	pending_info_item_slot_index = -1
-	if slot_index < 0:
-		return
-	var item := _inventory_item_at_slot(slot_index)
-	if item == null:
-		_hide_combo_info_popup()
-		status_text = "道具槽为空。"
-		_refresh_hud()
-		return
-
-	_hide_combo_info_popup()
 	var forge_def := ForgeItemCatalog.get_def(item.item_id)
 	if forge_def != null and forge_def.target_type != ForgeItemCatalog.TARGET_NONE:
 		_begin_forge_item_target_selection(slot_index, forge_def)
 		return
+
 	var result := _use_inventory_item_from_slot(slot_index)
 	_apply_inventory_item_use_result(result, true)
+
+
+func _on_inventory_slot_hovered(category: StringName, slot_index: int, slot_view: Control) -> void:
+	if slot_view == null or inventory_hover_info_overlay == null:
+		return
+	if not _can_interact_inventory_slot(false):
+		inventory_hover_info_overlay.hide_hover()
+		return
+	var info := _inventory_hover_info(category, slot_index)
+	if info.is_empty():
+		inventory_hover_info_overlay.hide_hover()
+		return
+	var rows: Array[Dictionary] = info.get("rows", [])
+	inventory_hover_info_overlay.show_hover(
+		_inventory_hover_target_id(category, slot_index),
+		slot_view.get_global_rect(),
+		str(info.get("title", "")),
+		rows
+	)
+
+
+func _on_inventory_slot_hover_cleared(category: StringName, slot_index: int, _slot_view: Control) -> void:
+	if inventory_hover_info_overlay != null and inventory_hover_info_overlay.is_current_target(_inventory_hover_target_id(category, slot_index)):
+		inventory_hover_info_overlay.hide_hover()
+
+
+func _inventory_hover_target_id(category: StringName, slot_index: int) -> StringName:
+	return StringName("%s_%d" % [str(category), slot_index])
+
+
+func _can_interact_inventory_slot(show_status: bool) -> bool:
+	if is_resolution_playing or is_reroll_playing or is_battle_intro_playing:
+		return false
+	if reward_phase_active or reward_install_active or victory_reward_showcase_active:
+		if show_status:
+			status_text = "请先完成当前奖励或目标选择。"
+			_refresh_hud()
+		return false
+	return true
 
 
 func _request_install_info_for_die(index: int) -> void:
@@ -1372,7 +1388,6 @@ func automation_get_snapshot() -> Dictionary:
 		"pending_forge_item_slot_index": pending_forge_item_slot_index,
 		"pending_forge_item_id": str(pending_forge_item_def.id) if pending_forge_item_def != null else "",
 		"pending_forge_item_targets": pending_forge_item_targets.duplicate(true),
-		"pending_info_item_slot_index": pending_info_item_slot_index,
 		"victory_reward_showcase_active": victory_reward_showcase_active,
 		"coin_reward_overlay_visible": coin_reward_overlay != null and coin_reward_overlay.visible,
 		"status_text": status_text,
@@ -1489,7 +1504,6 @@ func automation_install_pending_piece(die_index: int, face_index: int) -> Dictio
 func automation_use_item_slot(slot_index: int, target_faces: Array = [], source_face_ref: Dictionary = {}) -> Dictionary:
 	if target_faces.is_empty() and source_face_ref.is_empty():
 		_on_item_slot_pressed(slot_index)
-		_on_inventory_info_action_pressed()
 	else:
 		var result := _use_inventory_item_from_slot(slot_index, target_faces, source_face_ref)
 		_apply_inventory_item_use_result(result, true)
@@ -1698,6 +1712,8 @@ func _install_pending_piece_locally(die_index: int, face_index: int) -> void:
 func _begin_forge_item_target_selection(slot_index: int, def: ForgeItemDef) -> void:
 	if def == null:
 		return
+	if inventory_hover_info_overlay != null:
+		inventory_hover_info_overlay.hide_hover()
 	reward_phase_active = true
 	reward_install_active = true
 	victory_reward_showcase_active = false
@@ -1829,42 +1845,37 @@ func _inventory_item_label(item: ItemInstance) -> String:
 	return name if name != str(item.item_id) else "该道具"
 
 
-func _show_inventory_item_info(slot_index: int, item: ItemInstance) -> void:
-	if item == null:
-		return
-	pending_info_item_slot_index = slot_index
-	var title := _inventory_item_label(item)
-	var rows := _inventory_item_info_rows(item)
-	_show_battle_info_popup(func(popup) -> void:
-		if popup.has_method("show_custom_info"):
-			popup.show_custom_info(title, rows, "使用")
-	)
+func _inventory_hover_info(category: StringName, slot_index: int) -> Dictionary:
+	match category:
+		&"item":
+			var item := _inventory_item_at_slot(slot_index)
+			if item == null:
+				return {}
+			return {
+				"title": _inventory_item_label(item),
+				"rows": _inventory_item_info_rows(item),
+			}
+		&"relic":
+			return _relic_hover_info(slot_index)
+		_:
+			return {}
 
 
-func _show_relic_info(slot_index: int) -> void:
-	pending_info_item_slot_index = -1
+func _relic_hover_info(slot_index: int) -> Dictionary:
 	var tool := _relic_tool_at_slot(slot_index)
 	if tool != null:
-		var title := _dice_tool_label(tool)
-		var rows := _dice_tool_info_rows(tool)
-		_show_battle_info_popup(func(popup) -> void:
-			if popup.has_method("show_custom_info"):
-				popup.show_custom_info(title, rows)
-		)
-		return
+		return {
+			"title": _dice_tool_label(tool),
+			"rows": _dice_tool_info_rows(tool),
+		}
 
 	var relic_id := _legacy_relic_id_at_slot(slot_index)
 	if relic_id == &"":
-		status_text = "遗物槽为空。"
-		_refresh_hud()
-		return
-	var legacy_title := _legacy_relic_label(relic_id)
-	var legacy_rows := _legacy_relic_info_rows(relic_id)
-	_show_battle_info_popup(func(popup) -> void:
-		if popup.has_method("show_custom_info"):
-			popup.show_custom_info(legacy_title, legacy_rows)
-	)
-
+		return {}
+	return {
+		"title": _legacy_relic_label(relic_id),
+		"rows": _legacy_relic_info_rows(relic_id),
+	}
 
 func _inventory_item_info_rows(item: ItemInstance) -> Array[Dictionary]:
 	var rows: Array[Dictionary] = []
@@ -2080,7 +2091,6 @@ func _clear_reward_phase_ui() -> void:
 	reward_install_active = false
 	victory_reward_showcase_active = false
 	dice_tool_face_copy_active = false
-	pending_info_item_slot_index = -1
 	pending_install_piece = null
 	_clear_pending_forge_item_use()
 	selected_install_die_index = -1
@@ -2220,6 +2230,8 @@ func _settle_selected(wild_effective_pips: Dictionary = {}) -> void:
 	if will_win:
 		await _play_victory_reward_showcase()
 	suppress_next_hand_scored_fx = true
+	if will_win:
+		victory_target_restore_pending = _has_victory_target_feedback()
 	controller.commit_pending_resolution()
 	cleanup_resolution_area()
 	_maybe_begin_pending_dice_tool_face_copy()
@@ -3020,13 +3032,14 @@ func _show_battle_info_popup(configure_popup: Callable) -> void:
 		return
 	if dice_bench_area != null and dice_bench_area.has_method("hide_info"):
 		dice_bench_area.hide_info()
+	if inventory_hover_info_overlay != null:
+		inventory_hover_info_overlay.hide_hover()
 	combo_info_popup.visible = true
 	if configure_popup.is_valid():
 		configure_popup.call(combo_info_popup)
 
 
 func _hide_combo_info_popup() -> void:
-	pending_info_item_slot_index = -1
 	if combo_info_popup != null:
 		combo_info_popup.visible = false
 
@@ -3308,6 +3321,10 @@ func _play_initial_3d_roll_for_hand() -> void:
 	if dice_bench_area != null and dice_bench_area.has_method("set_hidden_die_indices"):
 		dice_bench_area.set_hidden_die_indices(battle_intro_die_indices)
 	_refresh_hud()
+	await _restore_victory_target_feedback_if_needed()
+	if controller == null or not controller.is_waiting_for_initial_roll_results():
+		_finish_initial_battle_intro()
+		return
 	await get_tree().process_frame
 
 	var round_number := controller.get_current_hand_number() if controller != null else 1
@@ -3618,8 +3635,6 @@ func _ensure_combo_info_popup() -> void:
 		combo_info_popup.setup(style_config, combo_info_row_scene)
 	if combo_info_popup.has_signal("close_requested"):
 		combo_info_popup.close_requested.connect(_hide_combo_info_popup)
-	if combo_info_popup.has_signal("custom_action_pressed"):
-		combo_info_popup.custom_action_pressed.connect(_on_inventory_info_action_pressed)
 	combo_info_popup.visible = false
 
 
@@ -3627,7 +3642,11 @@ func _instantiate_control(scene: PackedScene, fallback: Control) -> Control:
 	if scene != null:
 		var instance := scene.instantiate()
 		if instance is Control:
+			if fallback != null:
+				fallback.free()
 			return instance
+		if instance != null:
+			instance.queue_free()
 	return fallback
 
 

@@ -55,6 +55,12 @@ func _init() -> void:
 		await create_timer(1.05).timeout
 		await process_frame
 		await process_frame
+		var after_choice_snapshot: Dictionary = main_view.call("automation_get_snapshot") if main_view != null and main_view.has_method("automation_get_snapshot") else {}
+		if str(after_choice_snapshot.get("view", "")) == "forge" and main_view.has_method("automation_install_piece"):
+			main_view.call("automation_install_piece", 0, 0)
+			await create_timer(1.05).timeout
+			await process_frame
+			await process_frame
 
 		var returned_map_view := _find_node_by_name(main_view, "MapStageView") as Control
 		var returned_snapshot: Dictionary = returned_map_view.call("automation_get_snapshot") if returned_map_view != null else {}

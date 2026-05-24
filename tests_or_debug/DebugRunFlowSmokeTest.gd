@@ -4,7 +4,6 @@ class_name DebugRunFlowSmokeTest
 
 const GameFlowController = preload("res://scripts/runtime/GameFlowController.gd")
 const RunState = preload("res://scripts/core/battle/RunState.gd")
-const ItemInstance = preload("res://scripts/core/items/ItemInstance.gd")
 const BattleLogEntry = preload("res://scripts/log/BattleLogEntry.gd")
 const ScoreResult = preload("res://scripts/core/scoring/ScoreResult.gd")
 
@@ -29,7 +28,7 @@ func _init() -> void:
 	all_passed = _check_map_movement_uses_first_two_formal_dice() and all_passed
 	all_passed = _check_danger_target_formula() and all_passed
 	all_passed = _check_circle_boss_final_rule() and all_passed
-	all_passed = _check_map_reward_and_event_nodes() and all_passed
+	all_passed = _check_map_event_nodes() and all_passed
 	all_passed = _check_map_boss_stop_and_return_refresh(flow) and all_passed
 
 	var reached_battle_node := false
@@ -150,35 +149,27 @@ func _check_map_movement_uses_first_two_formal_dice() -> bool:
 	return all_passed
 
 
-func _check_map_reward_and_event_nodes() -> bool:
-	var reward_flow := GameFlowController.new()
-	reward_flow.start_new_run()
-	var reward_index := _first_node_index_of_type(reward_flow.get_map_state().get("nodes", []), &"reward")
-	reward_flow.map_position_index = reward_index
-	var reward_before_battle_index := reward_flow.get_run_state().battle_index
-	var reward_entered := reward_flow.request_enter_reward_from_map()
-	var reward_choices: Array = reward_flow.get_run_state().last_reward_choices
-	var reward_choice = reward_choices[0] if not reward_choices.is_empty() else null
-	reward_flow.choose_reward(reward_choice)
-	var reward_state := reward_flow.get_map_state()
-	var reward_nodes: Array = reward_state.get("nodes", [])
-
+func _check_map_event_nodes() -> bool:
 	var event_flow := GameFlowController.new()
 	event_flow.start_new_run()
+	var before_battle_index := event_flow.get_run_state().battle_index
 	var event_index := _first_node_index_of_type(event_flow.get_map_state().get("nodes", []), &"event")
 	event_flow.map_position_index = event_index
 	var event_entered := event_flow.request_enter_event_from_map()
 	var event_choices: Array = event_flow.get_run_state().last_reward_choices
 	var event_choice = event_choices[0] if not event_choices.is_empty() else null
 	event_flow.choose_reward(event_choice)
-	var event_item := event_flow.get_run_state().item_slots[0] if event_flow.get_run_state().item_slots.size() > 0 else null
+	if event_flow.current_state_id == &"forge":
+		event_flow.install_pending_piece(0, 0)
+	var event_state := event_flow.get_map_state()
+	var event_nodes: Array = event_state.get("nodes", [])
 
 	var all_passed := true
-	all_passed = _check("map reward node enters direct reward phase", reward_index >= 0 and reward_entered and reward_flow.current_state_id == &"map") and all_passed
-	all_passed = _check("map reward node grants item without advancing battle index", reward_flow.get_run_state().item_slots.size() == 1 and reward_flow.get_run_state().battle_index == reward_before_battle_index) and all_passed
-	all_passed = _check("map reward node is cleared after choice", reward_nodes.size() > reward_index and bool(reward_nodes[reward_index].get("is_cleared", false))) and all_passed
-	all_passed = _check("map event node grants dice-tool item reward", event_index >= 0 and event_entered and event_flow.current_state_id == &"map" and event_item != null and event_item.item_type == ItemInstance.TYPE_DICE_TOOL) and all_passed
-	reward_flow.free()
+	all_passed = _check("map has no standalone reward node", _first_node_index_of_type(event_flow.get_map_state().get("nodes", []), &"reward") < 0) and all_passed
+	all_passed = _check("map has no standalone penalty node", _first_node_index_of_type(event_flow.get_map_state().get("nodes", []), &"penalty") < 0) and all_passed
+	all_passed = _check("map event node enters direct event phase", event_index >= 0 and event_entered) and all_passed
+	all_passed = _check("map event resolves without advancing battle index", event_flow.current_state_id == &"map" and event_flow.get_run_state().battle_index == before_battle_index) and all_passed
+	all_passed = _check("map event node is cleared after choice", event_nodes.size() > event_index and bool(event_nodes[event_index].get("is_cleared", false))) and all_passed
 	event_flow.free()
 	return all_passed
 
@@ -239,11 +230,11 @@ func _map_node_bag_is_valid(nodes: Array) -> bool:
 		return false
 	if int(counts.get(&"forge", 0)) != 2:
 		return false
-	if int(counts.get(&"reward", 0)) != 5:
+	if int(counts.get(&"reward", 0)) != 0:
 		return false
-	if int(counts.get(&"event", 0)) != 4:
+	if int(counts.get(&"event", 0)) != 11:
 		return false
-	if int(counts.get(&"penalty", 0)) != 2:
+	if int(counts.get(&"penalty", 0)) != 0:
 		return false
 	if int(counts.get(&"rest", 0)) != 2:
 		return false
@@ -284,17 +275,8 @@ func _first_node_index_of_type(nodes: Array, node_type: StringName) -> int:
 func _map_spacing_is_valid(nodes: Array) -> bool:
 	for index in range(nodes.size()):
 		var type_id := StringName(str(nodes[index].get("node_type", "")))
-		if type_id == &"penalty":
-			if index <= 2:
-				return false
-			if index > 0 and StringName(str(nodes[index - 1].get("node_type", ""))) == &"penalty":
-				return false
-			if index + 1 < nodes.size() and StringName(str(nodes[index + 1].get("node_type", ""))) == &"penalty":
-				return false
-			if index > 0 and StringName(str(nodes[index - 1].get("node_type", ""))) == &"elite":
-				return false
-			if index + 1 < nodes.size() and StringName(str(nodes[index + 1].get("node_type", ""))) == &"elite":
-				return false
+		if type_id == &"reward" or type_id == &"penalty":
+			return false
 	return true
 
 

@@ -22,6 +22,11 @@ If it finds a Codex temp Godot folder, it copies the executable files into
 `%LOCALAPPDATA%\CodexGodot\...` before running, so later sessions do not depend
 on the temp folder still existing.
 
+On Windows, the wrapper also switches the console and PowerShell pipeline to
+UTF-8 before launching Godot. Use this wrapper for Debug scripts that print
+Chinese text; direct `Get-Content` or direct `godot` calls can still display
+valid UTF-8 text incorrectly if the terminal code page is not UTF-8.
+
 To pin the resolved executable as the user-level `GODOT_BIN`:
 
 ```powershell

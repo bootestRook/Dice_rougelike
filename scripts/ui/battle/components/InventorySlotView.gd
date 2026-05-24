@@ -33,7 +33,7 @@ func render(slot_data: SlotViewData, icon_library: BattleIconLibrary, style_conf
 	icon_rect.texture = icon_library.get_icon(icon_category, slot_data.icon_id) if icon_library != null else null
 	name_label.text = slot_data.display_name
 	count_label.text = str(slot_data.count) if slot_data.count > 1 else ""
-	tooltip_text = slot_data.tooltip if slot_data.tooltip != "" else slot_data.display_name
+	tooltip_text = ""
 
 
 func _set_descendant_mouse_filter(node: Node, filter: int) -> void:

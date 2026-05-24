@@ -1,4 +1,4 @@
-﻿extends SceneTree
+extends SceneTree
 
 
 const RoundedDiceMeshFactory := preload("res://scripts/ui/debug/RoundedDiceMeshFactory.gd")

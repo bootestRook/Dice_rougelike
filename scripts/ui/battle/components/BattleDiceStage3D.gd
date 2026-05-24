@@ -10,7 +10,7 @@ const DiceVisualLibrary = preload("res://scripts/ui/battle/resources/DiceVisualL
 const DisplayNames = preload("res://scripts/ui/DisplayNames.gd")
 const FaceState = preload("res://scripts/core/dice/FaceState.gd")
 const RichTextHighlighter = preload("res://scripts/ui/RichTextHighlighter.gd")
-const DiceHoverRing = preload("res://scripts/ui/battle/components/DiceHoverRing.gd")
+const HoverInfoOverlay = preload("res://scripts/ui/battle/components/HoverInfoOverlay.gd")
 const GmDiceDefinitionScript = preload("res://scripts/ui/debug/gm_dice_port/GmDiceDefinition.gd")
 const GmDiceFaceDefinitionScript = preload("res://scripts/ui/debug/gm_dice_port/GmDiceFaceDefinition.gd")
 const GmDiceViewportScript = preload("res://scripts/ui/debug/gm_dice_port/GmDiceViewport.gd")
@@ -58,10 +58,7 @@ var dice_viewport: GmDiceViewport = null
 var ready_mgr: GmReadyMgr = null
 var battle_mgr: GmBattleMgr = null
 var overlay_layer: Control = null
-var hover_overlay_layer: Control = null
-var hover_ring: DiceHoverRing = null
-var hover_info_panel: PanelContainer = null
-var hover_info_labels: Dictionary = {}
+var hover_overlay_layer: HoverInfoOverlay = null
 var action_buttons_layer: Control = null
 var reroll_button: Button = null
 var organize_button: Button = null
@@ -117,6 +114,9 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	if hover_die_index >= 0:
+		if not _can_start_dice_hover(hover_die_index):
+			_clear_hovered_die()
+			return
 		_position_hover_widgets(hover_die_index)
 
 
@@ -627,84 +627,13 @@ func _build_action_buttons(parent: Control) -> void:
 
 
 func _build_hover_overlay(parent: Control) -> void:
-	hover_overlay_layer = Control.new()
+	hover_overlay_layer = HoverInfoOverlay.new()
 	hover_overlay_layer.name = "DiceHoverOverlayLayer"
 	hover_overlay_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	hover_overlay_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hover_overlay_layer.z_index = 70
+	hover_overlay_layer.setup(style_config, "DiceHoverFaceInfoPanel", Vector2(340.0, 156.0))
 	parent.add_child(hover_overlay_layer)
-
-	hover_ring = DiceHoverRing.new()
-	hover_ring.name = "DiceHoverRing"
-	hover_ring.visible = false
-	hover_ring.completed.connect(_on_hover_ring_completed)
-	hover_overlay_layer.add_child(hover_ring)
-
-	hover_info_panel = _make_hover_info_panel()
-	hover_info_panel.visible = false
-	hover_overlay_layer.add_child(hover_info_panel)
-
-
-func _make_hover_info_panel() -> PanelContainer:
-	var panel := PanelContainer.new()
-	panel.name = "DiceHoverFaceInfoPanel"
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.custom_minimum_size = Vector2(340.0, 156.0)
-
-	var margin := MarginContainer.new()
-	margin.name = "HoverInfoMargin"
-	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	margin.add_theme_constant_override("margin_left", 16)
-	margin.add_theme_constant_override("margin_top", 12)
-	margin.add_theme_constant_override("margin_right", 16)
-	margin.add_theme_constant_override("margin_bottom", 12)
-	panel.add_child(margin)
-
-	var rows := VBoxContainer.new()
-	rows.name = "HoverInfoRows"
-	rows.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	rows.add_theme_constant_override("separation", 7)
-	margin.add_child(rows)
-
-	var title := Label.new()
-	title.name = "HoverTitleLabel"
-	title.text = "骰面信息"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	rows.add_child(title)
-	hover_info_labels["title"] = title
-
-	_add_hover_info_row(rows, "body", "骰胚")
-	_add_hover_info_row(rows, "pip", "点数")
-	_add_hover_info_row(rows, "ornament", "面饰")
-	_add_hover_info_row(rows, "mark", "印记")
-	return panel
-
-
-func _add_hover_info_row(parent: VBoxContainer, key: String, caption: String) -> void:
-	var row := HBoxContainer.new()
-	row.name = "%sRow" % [key.capitalize()]
-	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_theme_constant_override("separation", 10)
-	parent.add_child(row)
-
-	var caption_label := Label.new()
-	caption_label.name = "%sCaptionLabel" % [key.capitalize()]
-	caption_label.text = caption
-	caption_label.custom_minimum_size = Vector2(62.0, 0.0)
-	caption_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_child(caption_label)
-	hover_info_labels["%s_caption" % [key]] = caption_label
-
-	var value_label := Label.new()
-	value_label.name = "%sValueLabel" % [key.capitalize()]
-	value_label.text = "-"
-	value_label.custom_minimum_size = Vector2(210.0, 0.0)
-	value_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	value_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_child(value_label)
-	hover_info_labels[key] = value_label
-
 
 func _apply_style() -> void:
 	if not is_node_ready():
@@ -715,7 +644,8 @@ func _apply_style() -> void:
 			if button != null:
 				style_config.apply_button(button)
 		_apply_action_button_styles()
-	_apply_hover_info_style()
+	if hover_overlay_layer != null:
+		hover_overlay_layer.setup(style_config, "DiceHoverFaceInfoPanel", Vector2(340.0, 156.0))
 
 
 func _apply_action_button_styles() -> void:
@@ -738,53 +668,6 @@ func _apply_action_button_styles() -> void:
 		Color(0.88, 0.95, 0.94, 1.0),
 		20
 	)
-
-
-func _apply_hover_info_style() -> void:
-	if hover_info_panel == null:
-		return
-	hover_info_panel.add_theme_stylebox_override("panel", _make_hover_info_panel_style())
-	var title_label := hover_info_labels.get("title") as Label
-	if title_label != null:
-		if style_config != null:
-			style_config.apply_label(title_label, style_config.small_font_size + 2, Color(0.95, 0.92, 0.78))
-		title_label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.88))
-		title_label.add_theme_constant_override("outline_size", 4)
-	for key in ["body", "pip", "ornament", "mark"]:
-		var caption := hover_info_labels.get("%s_caption" % [key]) as Label
-		if caption != null:
-			if style_config != null:
-				style_config.apply_label(caption, style_config.small_font_size, Color(0.62, 0.92, 0.86))
-			caption.autowrap_mode = TextServer.AUTOWRAP_OFF
-			caption.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
-			caption.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.86))
-			caption.add_theme_constant_override("outline_size", 3)
-		var value := hover_info_labels.get(key) as Label
-		if value != null:
-			if style_config != null:
-				style_config.apply_label(value, style_config.small_font_size, Color(0.96, 0.94, 0.86))
-			value.autowrap_mode = TextServer.AUTOWRAP_OFF
-			value.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
-			value.custom_minimum_size = Vector2(210.0, 0.0)
-			value.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.88))
-			value.add_theme_constant_override("outline_size", 3)
-
-
-func _make_hover_info_panel_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.035, 0.055, 0.060, 0.88)
-	style.border_color = Color(0.44, 0.78, 0.74, 0.96)
-	style.set_border_width_all(3)
-	style.set_corner_radius_all(8)
-	style.content_margin_left = 0.0
-	style.content_margin_top = 0.0
-	style.content_margin_right = 0.0
-	style.content_margin_bottom = 0.0
-	style.shadow_color = Color(0.0, 0.0, 0.0, 0.42)
-	style.shadow_size = 14
-	style.shadow_offset = Vector2(0.0, 8.0)
-	return style
-
 
 func _apply_banner_action_button_style(button: Button, fill: Color, accent: Color, text_color: Color, font_size: int = 34) -> void:
 	if button == null:
@@ -919,7 +802,10 @@ func _render_overlay_text(state: BattleHudState) -> void:
 
 
 func _show_hover_face_info(index: int) -> void:
-	if hover_overlay_layer == null or hover_ring == null or hover_info_panel == null:
+	if hover_overlay_layer == null:
+		return
+	if not _can_start_dice_hover(index):
+		_clear_hovered_die()
 		return
 	if current_state == null:
 		_clear_hovered_die()
@@ -928,113 +814,101 @@ func _show_hover_face_info(index: int) -> void:
 	if die_data == null or die_data.current_face == null:
 		_clear_hovered_die()
 		return
-	_render_hover_info_panel(die_data)
-	if not hover_ring.visible or hover_die_index != index:
-		hover_ring.restart()
-	else:
-		hover_ring.visible = true
-	hover_info_panel.visible = true
-	_position_hover_widgets(index)
-
-
-func _on_hover_ring_completed() -> void:
-	if hover_die_index < 0:
-		return
-	if current_state == null or _die_data_at(hover_die_index) == null:
-		_clear_hovered_die()
-		return
-	_render_hover_info_panel(_die_data_at(hover_die_index))
-	if hover_info_panel != null:
-		hover_info_panel.visible = true
-	_position_hover_widgets(hover_die_index)
+	hover_overlay_layer.show_hover(
+		_hover_die_target_id(index),
+		_dice_global_rect(index),
+		"骰面信息",
+		_hover_face_info_rows(die_data)
+	)
 
 
 func _refresh_hover_presentation() -> void:
 	if hover_die_index < 0:
 		return
-	if hidden_die_indices.has(hover_die_index):
-		_clear_hovered_die()
-		return
-	if current_state == null or _die_data_at(hover_die_index) == null:
+	if not _can_start_dice_hover(hover_die_index):
 		_clear_hovered_die()
 		return
 	_show_hover_face_info(hover_die_index)
 
 
-func _render_hover_info_panel(die_data: DieViewData) -> void:
+func _can_start_dice_hover(index: int) -> bool:
+	if index < 0 or hidden_die_indices.has(index):
+		return false
+	if current_state == null or _die_data_at(index) == null:
+		return false
+	if battle_mgr == null or index >= battle_mgr.using_dices.size():
+		return false
+	var snapshot := battle_mgr.get_snapshot()
+	if bool(snapshot.get("rolling", false)) or entry_return_revealing:
+		return false
+	if int(snapshot.get("pending_launches", 0)) > 0 or int(snapshot.get("pending_ready_returns", 0)) > 0:
+		return false
+	if bool(snapshot.get("dice_exit_animating", false)) or bool(snapshot.get("dice_exit_return_animating", false)):
+		return false
+	if int(snapshot.get("pending_dice_exit_animations", 0)) > 0 or int(snapshot.get("pending_dice_exit_return_animations", 0)) > 0:
+		return false
+	if bool(snapshot.get("unselected_hold_active", false)) or int(snapshot.get("pending_unselected_hold_returns", 0)) > 0:
+		return false
+	var instance = battle_mgr.using_dices[index]
+	if instance == null or instance.avatar == null:
+		return false
+	var avatar = instance.avatar
+	if not avatar.visible:
+		return false
+	if bool(avatar.get("is_rolling")) or bool(avatar.get("is_returning_to_ready")):
+		return false
+	if bool(avatar.get("is_returning_from_exit")) or bool(avatar.get("is_exiting")) or bool(avatar.get("is_exited")):
+		return false
+	if bool(avatar.get("is_moving_to_unselected_hold")) or bool(avatar.get("is_in_unselected_hold")) or bool(avatar.get("is_returning_from_unselected_hold")):
+		return false
+	return true
+
+
+func _hover_face_info_rows(die_data: DieViewData) -> Array[Dictionary]:
 	var face = die_data.current_face
-	_set_hover_label_text("body", die_data.body_name)
-	_set_hover_label_text("pip", str(face.pip) if face != null else "-")
-	_set_hover_label_text("ornament", face.ornament_name if face != null else "-")
-	_set_hover_label_text("mark", face.mark_name if face != null else "-")
-
-
-func _set_hover_label_text(key: String, text: String) -> void:
-	var label := hover_info_labels.get(key) as Label
-	if label != null:
-		label.text = text
+	return [
+		{"key": "Body", "name": "骰胚", "effect": die_data.body_name},
+		{"key": "Pip", "name": "点数", "effect": str(face.pip) if face != null else "-"},
+		{"key": "Ornament", "name": "面饰", "effect": face.ornament_name if face != null else "-"},
+		{"key": "Mark", "name": "印记", "effect": face.mark_name if face != null else "-"},
+	]
 
 
 func _position_hover_widgets(index: int) -> void:
-	if hover_overlay_layer == null or hover_ring == null or hover_info_panel == null:
-		return
-	if not hover_ring.visible and not hover_info_panel.visible:
-		return
-	var global_rect := _dice_global_rect(index)
-	var local_rect := _global_rect_to_hover_layer_local(global_rect)
-	var center := local_rect.get_center()
-	var ring_side := clampf(maxf(local_rect.size.x, local_rect.size.y) * 0.74, 56.0, 88.0)
-	hover_ring.position = center - Vector2(ring_side, ring_side) * 0.5
-	hover_ring.size = Vector2(ring_side, ring_side)
-	hover_ring.queue_redraw()
-
-	var bounds := hover_overlay_layer.size
-	if bounds.x <= 0.0 or bounds.y <= 0.0:
-		bounds = size
-	var panel_size := Vector2(340.0, 156.0)
-	hover_info_panel.size = panel_size
-	var panel_position := Vector2(center.x - panel_size.x * 0.5, local_rect.position.y - panel_size.y - 18.0)
-	if panel_position.y < 18.0:
-		panel_position.y = local_rect.position.y + local_rect.size.y + 18.0
-	panel_position.x = clampf(panel_position.x, 18.0, maxf(18.0, bounds.x - panel_size.x - 18.0))
-	panel_position.y = clampf(panel_position.y, 18.0, maxf(18.0, bounds.y - panel_size.y - 18.0))
-	hover_info_panel.position = panel_position
-
-
-func _global_rect_to_hover_layer_local(global_rect: Rect2) -> Rect2:
 	if hover_overlay_layer == null:
-		return global_rect
-	var inverse := hover_overlay_layer.get_global_transform_with_canvas().affine_inverse()
-	var local_position := inverse * global_rect.position
-	var local_end := inverse * (global_rect.position + global_rect.size)
-	return Rect2(local_position, local_end - local_position)
+		return
+	hover_overlay_layer.update_target_rect(_dice_global_rect(index))
 
 
 func _clear_hovered_die() -> void:
 	hover_die_index = -1
-	if hover_ring != null:
-		hover_ring.stop()
-	if hover_info_panel != null:
-		hover_info_panel.visible = false
+	if hover_overlay_layer != null:
+		hover_overlay_layer.hide_hover()
+
+
+func _hover_die_target_id(index: int) -> StringName:
+	return StringName("die_%d" % [index])
 
 
 func _on_dice_viewport_dice_clicked(dice) -> void:
 	var index := _avatar_index(dice)
 	if index < 0:
 		return
+	if hover_overlay_layer != null:
+		hover_overlay_layer.interrupt_target(_hover_die_target_id(index))
 	focused_die_index = index
 	die_pressed.emit(index)
 
 
 func _on_dice_viewport_dice_hovered(dice) -> void:
 	var index := _avatar_index(dice)
-	if index < 0 or hidden_die_indices.has(index):
+	if index < 0 or not _can_start_dice_hover(index):
 		_clear_hovered_die()
 		return
 	var previous_index := hover_die_index
 	hover_die_index = index
-	if previous_index != index and hover_ring != null:
-		hover_ring.stop()
+	if previous_index != index and hover_overlay_layer != null:
+		hover_overlay_layer.hide_hover()
 	if popup == null or not popup.visible:
 		focused_die_index = index
 	_show_hover_face_info(index)

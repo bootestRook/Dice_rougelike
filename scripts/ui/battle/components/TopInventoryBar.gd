@@ -2,8 +2,9 @@ extends HBoxContainer
 class_name TopInventoryBar
 
 
-signal relic_slot_pressed(index: int)
 signal item_slot_pressed(index: int)
+signal slot_hovered(category: StringName, index: int, slot_view: Control)
+signal slot_hover_cleared(category: StringName, index: int, slot_view: Control)
 
 
 const BattleHudState = preload("res://scripts/ui/battle/view_models/BattleHudState.gd")
@@ -109,23 +110,27 @@ func _slots_signature(slots: Array[SlotViewData], capacity: int) -> String:
 func _configure_slot_input(slot_view: Control, slot_data: SlotViewData, category: StringName, index: int) -> void:
 	if slot_view == null:
 		return
-	var clickable := slot_data != null and not slot_data.empty and not slot_data.disabled
-	slot_view.mouse_filter = Control.MOUSE_FILTER_STOP if clickable else Control.MOUSE_FILTER_IGNORE
-	slot_view.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if clickable else Control.CURSOR_ARROW
-	if not clickable:
+	var interactive := slot_data != null and not slot_data.empty and not slot_data.disabled
+	slot_view.mouse_filter = Control.MOUSE_FILTER_STOP if interactive else Control.MOUSE_FILTER_IGNORE
+	slot_view.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if interactive and category == &"item" else Control.CURSOR_ARROW
+	if not interactive:
 		return
+	slot_view.mouse_entered.connect(func() -> void:
+		slot_hovered.emit(category, index, slot_view)
+	)
+	slot_view.mouse_exited.connect(func() -> void:
+		slot_hover_cleared.emit(category, index, slot_view)
+	)
 	slot_view.gui_input.connect(func(event: InputEvent) -> void:
+		if category != &"item":
+			return
 		if not event is InputEventMouseButton:
 			return
 		var mouse_event := event as InputEventMouseButton
 		if not mouse_event.pressed or mouse_event.button_index != MOUSE_BUTTON_LEFT:
 			return
 		slot_view.accept_event()
-		match category:
-			&"relic":
-				relic_slot_pressed.emit(index)
-			&"item":
-				item_slot_pressed.emit(index)
+		item_slot_pressed.emit(index)
 	)
 
 

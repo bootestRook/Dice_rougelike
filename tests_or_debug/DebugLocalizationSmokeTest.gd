@@ -23,7 +23,7 @@ func _init() -> void:
 	all_passed = _run_check("data keys", _test_data_keys()) and all_passed
 	all_passed = _run_check("localized runtime text", _test_localized_runtime_text()) and all_passed
 	all_passed = _run_check("UTF-8 and mojibake integrity", _test_text_integrity()) and all_passed
-	all_passed = _run_check("no visible CJK in player text sources", _test_no_visible_chinese_in_player_text_sources()) and all_passed
+	all_passed = _run_check("no mojibake in source text", _test_no_mojibake_in_source_text()) and all_passed
 
 	if all_passed:
 		print("PASS: DebugLocalizationSmokeTest")
@@ -228,10 +228,16 @@ func _test_data_keys() -> bool:
 			if piece == null:
 				push_error("Reward pool contains null piece.")
 				return false
-			if not _key_translates(piece.get_name_key()):
+			if not _piece_text_resolves(piece.get_display_name(), piece.get_name_key(), piece.id):
+				push_error("Forge piece display name did not resolve: %s" % [str(piece.id)])
+				return false
+			if piece.display_name == "" and not _key_translates(piece.get_name_key()):
 				push_error("Missing forge piece name key: %s" % [str(piece.get_name_key())])
 				return false
-			if not _key_translates(piece.get_desc_key()):
+			if not _piece_text_resolves(piece.get_description(), piece.get_desc_key(), piece.id):
+				push_error("Forge piece description did not resolve: %s" % [str(piece.id)])
+				return false
+			if piece.description == "" and not _key_translates(piece.get_desc_key()):
 				push_error("Missing forge piece desc key: %s" % [str(piece.get_desc_key())])
 				return false
 			if not _key_translates(piece.get_rarity_key()):
@@ -248,10 +254,8 @@ func _test_data_keys() -> bool:
 				if operation_text == str(operation.get_text_key()):
 					push_error("Forge operation did not localize: %s" % [str(operation.get_text_key())])
 					return false
-			for tag in piece.get_archetype_tags():
-				if not _key_translates(LocKeys.tag_key(tag)):
-					push_error("Missing forge piece archetype tag key: %s" % [str(tag)])
-					return false
+			if not _piece_tags_resolve(piece):
+				return false
 
 		if not _test_id_key_group("material", [&"none", &"glass", &"steel", &"blood", &"mirror", &"curse"]):
 			return false
@@ -262,6 +266,25 @@ func _test_data_keys() -> bool:
 		if not _test_data_resource_files():
 			return false
 
+	return true
+
+
+func _piece_text_resolves(text: String, key: StringName, id: StringName) -> bool:
+	var trimmed := text.strip_edges()
+	return trimmed != "" and trimmed != str(key) and trimmed != str(id)
+
+
+func _piece_tags_resolve(piece) -> bool:
+	var tags_text: String = piece.get_tags_display_text()
+	if tags_text.strip_edges() == "":
+		push_error("Forge piece tags are empty: %s" % [str(piece.id)])
+		return false
+
+	for tag in piece.get_archetype_tags():
+		var raw_tag := str(tag)
+		if raw_tag != "" and tags_text.contains(raw_tag):
+			push_error("Forge piece archetype tag leaked raw id %s on %s: %s" % [raw_tag, str(piece.id), tags_text])
+			return false
 	return true
 
 
@@ -308,7 +331,7 @@ func _test_data_resource_files() -> bool:
 	return true
 
 
-func _test_no_visible_chinese_in_player_text_sources() -> bool:
+func _test_no_mojibake_in_source_text() -> bool:
 	var paths: Array[String] = []
 	_collect_files("res://", SOURCE_EXTENSIONS, paths)
 	var failing_paths: PackedStringArray = []
@@ -316,14 +339,15 @@ func _test_no_visible_chinese_in_player_text_sources() -> bool:
 		if _source_path_excluded(path):
 			continue
 		var text := FileAccess.get_file_as_string(path)
-		if _contains_cjk(text):
-			failing_paths.append(path)
+		var pattern := _first_mojibake_pattern(text)
+		if pattern != "":
+			failing_paths.append("%s (%s)" % [path, pattern])
 
 	if failing_paths.is_empty():
 		return true
 
 	for path in failing_paths:
-		push_error("CJK player text found outside localization resources: %s" % [path])
+		push_error("Possible mojibake source text found: %s" % [path])
 	return false
 
 
@@ -425,14 +449,6 @@ func _source_path_excluded(path: String) -> bool:
 		return true
 	if path.get_file().begins_with("Debug"):
 		return true
-	return false
-
-
-func _contains_cjk(text: String) -> bool:
-	for index in range(text.length()):
-		var code := text.unicode_at(index)
-		if (code >= 0x3400 and code <= 0x9FFF) or (code >= 0xF900 and code <= 0xFAFF):
-			return true
 	return false
 
 

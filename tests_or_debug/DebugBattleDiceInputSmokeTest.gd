@@ -102,7 +102,7 @@ func _init() -> void:
 	all_passed = _check("Victory reward showcase does not spawn RerollMagicFx", not bool(magic_spawned_during_victory_showcase[0])) and all_passed
 	all_passed = _check("Victory reward showcase keeps dice visible", stage != null and not _stage_hides_all_dice(stage)) and all_passed
 
-	battle_screen.queue_free()
+	await _cleanup_nodes_before_quit([battle_screen])
 	print("PASS: DebugBattleDiceInputSmokeTest" if all_passed else "FAIL: DebugBattleDiceInputSmokeTest")
 	print("--- DebugBattleDiceInputSmokeTest: end ---")
 	quit(0 if all_passed else 1)
@@ -376,6 +376,26 @@ func _wait_for_initial_3d_roll(battle_screen: Node) -> void:
 		if controller.has_method("is_waiting_for_initial_roll_results") and not controller.is_waiting_for_initial_roll_results():
 			return
 		await physics_frame
+
+
+func _cleanup_nodes_before_quit(nodes: Array) -> void:
+	await _flush_runtime_feedback(nodes)
+	for node in nodes:
+		if node != null and is_instance_valid(node):
+			node.queue_free()
+	for _index in range(8):
+		await process_frame
+	await physics_frame
+	await process_frame
+
+
+func _flush_runtime_feedback(nodes: Array) -> void:
+	for node in nodes:
+		if node == null or not is_instance_valid(node):
+			continue
+		var sidebar = node.get("left_sidebar")
+		if sidebar != null and sidebar.has_method("automation_flush_runtime_feedback"):
+			await sidebar.automation_flush_runtime_feedback()
 
 
 func _check(label: String, passed: bool) -> bool:

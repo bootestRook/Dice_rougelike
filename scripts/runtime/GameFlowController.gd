@@ -13,6 +13,9 @@ const ShopService = preload("res://scripts/rules/shop/ShopService.gd")
 const RollService = preload("res://scripts/rules/roll/RollService.gd")
 const ItemInstance = preload("res://scripts/core/items/ItemInstance.gd")
 const ComboUpgradeItem = preload("res://scripts/rules/combo/ComboUpgradeItem.gd")
+const MapEventChoice = preload("res://scripts/data_defs/MapEventChoice.gd")
+const MapEventGenerator = preload("res://scripts/rules/event/MapEventGenerator.gd")
+const MapEventService = preload("res://scripts/rules/event/MapEventService.gd")
 
 
 const MAP_MOVEMENT_DICE_COUNT := 2
@@ -39,6 +42,8 @@ var current_state_id: StringName = &"boot"
 var run_state: RunState = null
 var dice_tool_service := DiceToolService.new()
 var reward_generator := RewardGenerator.new()
+var map_event_generator := MapEventGenerator.new()
+var map_event_service := MapEventService.new()
 var forge_service := ForgeService.new()
 var forge_item_service := ForgeItemService.new()
 var shop_service := ShopService.new()
@@ -236,6 +241,8 @@ func choose_reward(reward) -> void:
 		return
 	var piece := reward as ForgePieceDef
 	if piece == null:
+		if _choose_map_event_choice(reward):
+			return
 		if _choose_direct_item_reward(reward):
 			return
 		push_warning("GameFlowController.choose_reward called with unsupported reward.")
@@ -266,6 +273,45 @@ func _choose_direct_item_reward(reward) -> bool:
 	run_state.last_reward_choices.clear()
 	run_state.pending_forge_piece = null
 	run_state_changed.emit(run_state)
+	_complete_current_reward_origin()
+	return true
+
+
+func _choose_map_event_choice(reward) -> bool:
+	var choice := reward as MapEventChoice
+	if choice == null:
+		return false
+	var result := map_event_service.apply_choice(run_state, choice)
+	if not bool(result.get("success", false)):
+		push_warning(str(result.get("message", "Map event choice failed.")))
+		return true
+	run_state.last_reward_choices.clear()
+	run_state.pending_forge_piece = null
+	var mode := StringName(str(result.get("mode", &"complete")))
+	if mode == &"forge_install":
+		var piece := result.get("piece", null) as ForgePieceDef
+		if piece == null:
+			_complete_current_reward_origin()
+			return true
+		run_state.pending_forge_piece = piece
+		set_flow_state(&"forge")
+		run_state_changed.emit(run_state)
+		forge_install_requested.emit(piece)
+		return true
+	if mode == &"start_battle":
+		reward_origin_node_type = &""
+		run_state.last_reward_choices.clear()
+		run_state.pending_forge_piece = null
+		run_state.set_current_encounter_node_type(&"battle")
+		map_pending_reward = false
+		map_pending_event = false
+		map_pending_battle = false
+		map_pending_shop = false
+		set_flow_state(&"battle")
+		run_state_changed.emit(run_state)
+		map_state_changed.emit(get_map_state())
+		battle_requested.emit(run_state)
+		return true
 	_complete_current_reward_origin()
 	return true
 
@@ -332,10 +378,13 @@ func install_pending_piece(die_index: int, face_index: int) -> bool:
 	run_state.record_installed_piece(piece, die_index, face_index)
 	run_state.pending_forge_piece = null
 	run_state.last_reward_choices.clear()
-	reward_origin_node_type = &""
-	run_state.advance_battle()
 	run_state_changed.emit(run_state)
-	return_to_map_after_battle()
+	if reward_origin_node_type == &"reward" or reward_origin_node_type == &"event":
+		_complete_current_reward_origin()
+	else:
+		reward_origin_node_type = &""
+		run_state.advance_battle()
+		return_to_map_after_battle()
 	return true
 
 
@@ -503,7 +552,7 @@ func _enter_direct_reward_from_map(node_type: StringName) -> bool:
 	if run_state == null:
 		return false
 	var reward_choice_count: int = maxi(1, 3 + int(run_state.battle_reward_choice_bonus))
-	var choices := reward_generator.generate_special_event_choices(reward_choice_count) if node_type == &"event" else reward_generator.generate_map_reward_node_choices(reward_choice_count)
+	var choices := _generate_map_event_node_choices(reward_choice_count) if node_type == &"event" else reward_generator.generate_map_reward_node_choices(reward_choice_count)
 	if choices.is_empty():
 		return false
 	reward_origin_node_type = node_type
@@ -516,6 +565,14 @@ func _enter_direct_reward_from_map(node_type: StringName) -> bool:
 	map_state_changed.emit(get_map_state())
 	reward_requested.emit(choices)
 	return true
+
+
+func _generate_map_event_node_choices(reward_choice_count: int) -> Array:
+	var choices := map_event_generator.generate_event_choices(run_state, map_position_index, reward_choice_count)
+	if run_state != null:
+		run_state.next_event_bias = &""
+		run_state.next_event_bias_multiplier = 1.0
+	return choices
 
 
 func leave_shop() -> Dictionary:
@@ -1054,9 +1111,7 @@ func _map_node_counts_for_refresh(_refresh_index: int) -> Dictionary:
 		&"elite": 2,
 		&"shop": 3,
 		&"forge": 2,
-		&"reward": 5,
-		&"event": 4,
-		&"penalty": 2,
+		&"event": 11,
 		&"rest": 2,
 	}
 
@@ -1088,17 +1143,11 @@ func _map_candidate_score(candidate: Array[StringName]) -> int:
 	var penalty := 0
 	for index in range(candidate.size()):
 		var type_id := candidate[index]
-		if type_id == &"penalty":
-			if index <= 1:
-				penalty += 8
-			if index > 0 and candidate[index - 1] == &"penalty":
-				penalty += 10
-			if index + 1 < candidate.size() and candidate[index + 1] == &"penalty":
-				penalty += 10
+		if type_id == &"elite":
 			if index > 0 and candidate[index - 1] == &"elite":
-				penalty += 6
+				penalty += 8
 			if index + 1 < candidate.size() and candidate[index + 1] == &"elite":
-				penalty += 6
+				penalty += 8
 	return -penalty
 
 

@@ -1,4 +1,4 @@
-﻿## 1. Baseline and Acceptance Gate
+## 1. Baseline and Acceptance Gate
 
 - [x] 1.1 Record the current failed visual result as the new baseline, including run_id, screenshot path, manifest path, and a short note that the previous result was not visually accepted.
 - [x] 1.2 Create or update a reference gap checklist report that names the visible targets from the reference image: solid dice body, three visible faces, top values, front star emblems, side shading, glowing borders, contact shadow, star table, blue-gold UI, and bottom action bar.

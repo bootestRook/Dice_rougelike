@@ -54,7 +54,7 @@ func _init() -> void:
 			)
 			item.metadata["rarity"] = &"common"
 			run_state.install_dice_tool_item_instance(item)
-		battle_screen.setup(null, run_state)
+		battle_screen.setup(null, run_state, _has_arg("iteminfo") or _has_arg("relicinfo"))
 	root.add_child(battle_screen)
 
 	await process_frame
@@ -105,14 +105,10 @@ func _init() -> void:
 		battle_screen._show_mark_info_popup(&"red")
 		await process_frame
 		await process_frame
-	if _has_arg("iteminfo") and battle_screen.has_method("_on_item_slot_pressed"):
-		battle_screen.call("_on_item_slot_pressed", 0)
-		await process_frame
-		await process_frame
-	if _has_arg("relicinfo") and battle_screen.has_method("_on_relic_slot_pressed"):
-		battle_screen.call("_on_relic_slot_pressed", 0)
-		await process_frame
-		await process_frame
+	if _has_arg("iteminfo"):
+		await _show_inventory_hover_info(battle_screen, "ItemSlots")
+	if _has_arg("relicinfo"):
+		await _show_inventory_hover_info(battle_screen, "RelicSlots")
 	if _has_arg("hover") and battle_screen.get("dice_bench_area") != null:
 		var stage = battle_screen.get("dice_bench_area")
 		var battle_mgr = stage.get("battle_mgr") if stage != null else null
@@ -254,6 +250,18 @@ func _wait_for_initial_3d_roll(battle_screen: Node) -> void:
 		if controller.has_method("is_waiting_for_initial_roll_results") and not controller.is_waiting_for_initial_roll_results():
 			return
 		await physics_frame
+
+
+func _show_inventory_hover_info(battle_screen: Node, slots_name: String) -> void:
+	var slots := _find_node_by_name(battle_screen, slots_name) as HBoxContainer
+	if slots == null or slots.get_child_count() <= 0:
+		return
+	var slot := slots.get_child(0) as Control
+	if slot == null:
+		return
+	slot.mouse_entered.emit()
+	for _index in range(24):
+		await process_frame
 
 
 func _sample_coin_reward_summary() -> Dictionary:

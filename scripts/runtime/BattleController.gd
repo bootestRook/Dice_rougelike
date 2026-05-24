@@ -521,7 +521,12 @@ func _apply_long_term_battle_parameters(config: BattleConfig, source_run_state: 
 	config.hands_per_battle = max(1, config.hands_per_battle + source_run_state.battle_rounds_available_delta)
 	config.rerolls_per_hand = max(0, config.rerolls_per_hand + source_run_state.battle_rerolls_per_hand_delta)
 	config.max_scored_faces_per_round = max(1, config.max_scored_faces_per_round + source_run_state.max_scored_faces_per_round_delta)
+	config.hands_per_battle = max(1, config.hands_per_battle + source_run_state.next_battle_hands_delta)
+	config.rerolls_per_hand = max(0, config.rerolls_per_hand + source_run_state.consume_queued_battle_rerolls_per_hand_delta())
+	config.rerolls_per_hand = max(0, config.rerolls_per_hand + source_run_state.next_battle_rerolls_per_hand_delta)
+	config.target_score = max(1, int(round(float(config.target_score) * maxf(0.1, source_run_state.next_battle_target_score_multiplier))))
 	config.max_selected_dice = config.max_scored_faces_per_round
+	source_run_state.clear_next_battle_modifiers()
 
 
 func _build_score_context() -> ScoreContext:

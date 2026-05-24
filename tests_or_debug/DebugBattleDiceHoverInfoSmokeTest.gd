@@ -53,15 +53,52 @@ func _init() -> void:
 		avatar = battle_mgr.using_dices[0].avatar
 	all_passed = _check("3D 骰子实例已创建", avatar != null) and all_passed
 
-	if avatar != null:
-		stage.call("_on_dice_viewport_dice_hovered", avatar)
-		await process_frame
-		await process_frame
-
 	var ring := _find_node_by_name(stage, "DiceHoverRing") as Control
 	var panel := _find_node_by_name(stage, "DiceHoverFaceInfoPanel") as Control
+	if ring != null:
+		ring.set("fill_seconds", 0.08)
+
+	if avatar != null:
+		stage.call("_on_dice_viewport_dice_hovered", avatar)
+	await process_frame
+
 	all_passed = _check("悬浮时显示灰色圆环进度条", ring != null and ring.visible) and all_passed
-	all_passed = _check("悬浮后立即显示骰面信息面板", panel != null and panel.visible) and all_passed
+	all_passed = _check("圆环完成前隐藏骰面信息面板", panel != null and not panel.visible) and all_passed
+
+	if avatar != null:
+		stage.call("_on_dice_viewport_dice_clicked", avatar)
+	await _wait_frames(8)
+	all_passed = _check("点击可选骰子会立刻打断圆环进度", ring != null and not ring.visible) and all_passed
+	all_passed = _check("点击打断后信息框不会补弹出", panel != null and not panel.visible) and all_passed
+
+	if avatar != null:
+		stage.call("_on_dice_viewport_dice_hovered", avatar)
+	await _wait_frames(8)
+	all_passed = _check("未离开同一骰子前不会重新触发悬浮链路", ring != null and not ring.visible and panel != null and not panel.visible) and all_passed
+
+	stage.call("_on_dice_viewport_dice_hover_cleared")
+	await process_frame
+	if battle_mgr != null:
+		battle_mgr.set("rolling", true)
+	if avatar != null:
+		stage.call("_on_dice_viewport_dice_hovered", avatar)
+	await _wait_frames(4)
+	all_passed = _check("投掷阶段不会触发骰子悬浮圆环", ring != null and not ring.visible) and all_passed
+	all_passed = _check("投掷阶段不会触发骰子信息框", panel != null and not panel.visible) and all_passed
+	if battle_mgr != null:
+		battle_mgr.set("rolling", false)
+
+	stage.call("_on_dice_viewport_dice_hover_cleared")
+	await process_frame
+	if avatar != null:
+		stage.call("_on_dice_viewport_dice_hovered", avatar)
+	await process_frame
+	all_passed = _check("鼠标离开后重新悬浮会重新显示圆环", ring != null and ring.visible) and all_passed
+	all_passed = _check("重新悬浮时信息框仍等待圆环完成", panel != null and not panel.visible) and all_passed
+
+	await _wait_for_hover_ring_to_finish(ring)
+	all_passed = _check("圆环完成后消失", ring != null and not ring.visible) and all_passed
+	all_passed = _check("圆环消失后显示骰面信息面板", panel != null and panel.visible) and all_passed
 	all_passed = _check("信息面板显示骰胚", _label_text(panel, "BodyValueLabel") == die_data.body_name) and all_passed
 	all_passed = _check("信息面板显示点数", _label_text(panel, "PipValueLabel") == str(die_data.current_face.pip)) and all_passed
 	all_passed = _check("信息面板显示面饰", _label_text(panel, "OrnamentValueLabel") == die_data.current_face.ornament_name) and all_passed
@@ -83,6 +120,18 @@ func _init() -> void:
 func _label_text(root_node: Node, node_name: String) -> String:
 	var label := _find_node_by_name(root_node, node_name) as Label
 	return label.text if label != null else ""
+
+
+func _wait_for_hover_ring_to_finish(ring: Control) -> void:
+	var frames := 0
+	while ring != null and ring.visible and frames < 24:
+		await process_frame
+		frames += 1
+
+
+func _wait_frames(count: int) -> void:
+	for _index in range(count):
+		await process_frame
 
 
 func _panel_text_has_internal_id(panel: Node) -> bool:

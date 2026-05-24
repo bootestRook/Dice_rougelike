@@ -1,4 +1,4 @@
-﻿# 骰具完整清单
+# 骰具完整清单
 
 来源：`scripts/rules/dice_tools/DiceToolCatalog.gd`。
 

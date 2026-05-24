@@ -1,0 +1,15 @@
+{
+	"captures": [
+		{
+			"expected": "鼠标悬浮后只显示灰色圆环进度条，信息框保持隐藏",
+			"id": "hover_ring",
+			"screenshot": "G:/Dice_rougelike/tests_or_debug/captures/battle_dice_hover_info/hover_ring.png"
+		},
+		{
+			"expected": "圆环完成并消失后显示骰面信息框",
+			"id": "hover_info",
+			"screenshot": "G:/Dice_rougelike/tests_or_debug/captures/battle_dice_hover_info/hover_info.png"
+		}
+	],
+	"scenario": "battle dice hover info sequence"
+}

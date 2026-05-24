@@ -28,6 +28,7 @@ Thumbs.db
 
 # Local developer tool overrides
 .godot-bin
+.codegraph/
 
 # Logs / temp files
 *.log

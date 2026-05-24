@@ -1,3 +1,20 @@
+# 2026-05-24 中文编码乱码发现
+
+## 追加发现：本地化测试与终端 UTF-8
+
+- `DebugLocalizationSmokeTest.gd` 的 CJK 禁止断言来自旧本地化迁移口径；当前项目按 AGENTS 要求保留大量中文可见文本，因此应检查乱码而不是禁止中文。
+- 动态复合铸骰件如 `stay_4`、`red_2` 等不需要逐个静态 `FORGE_PART.*.NAME` key；它们已有动态 `display_name/description`。测试应验证最终显示文本，不应把缺少冗余 key 当作失败。
+- Windows 终端中文显示乱码可以通过项目包装器缓解：`.cmd` 切到 UTF-8 代码页，`.ps1` 设置 `[Console]::OutputEncoding` 和 `$OutputEncoding` 为 UTF-8。直接调用 `Get-Content` 或 `godot` 仍取决于外部终端配置。
+
+- `.editorconfig` 已声明 `charset = utf-8`。
+- 直接用 PowerShell `Get-Content` 查看中文文件时，工具输出会把 UTF-8 中文误显示成类似 `涓婚...` 的乱码；这不是充分证据，后续判断以 Python 按 UTF-8 读取的原始代码点为准。
+- `task_plan.md` 文件头按 UTF-8 读取为 `# 骰商铺实现计划`，说明该文件本身不是乱码。
+- `tests_or_debug/DebugChineseDisplaySmokeTest.gd` 中的断言字符串按 UTF-8 读取为 `主骰型`、`标准骰胚`、`爆裂面饰` 等正确中文，说明该文件在终端中的乱码显示同样属于输出编码问题。
+- 全量文本扫描结果：798 个文本文件均可按 UTF-8 解码，没有真实 UTF-8 损坏。
+- 典型乱码扫描没有命中源代码、场景、资源、i18n 或测试文件；唯一初版命中来自本文件记录的终端乱码示例，不属于项目代码。
+- 存在 5 个 UTF-8 BOM 文件：`docs/dice_tools_catalog.md`、`openspec/changes/archive/2026-05-22-match-reference-star-dice-visuals/tasks.md`、`tests_or_debug/captures/battle_screen_1920x1080_stage_frame_removed_after_manifest.json`、`tests_or_debug/DebugLeftSidebarFixedLayoutSmokeTest.gd`、`tools/scene_builders/BuildGmDiceVisualRepro.gd`。
+- `DebugLocalizationSmokeTest.gd` 当前不适合作为编码防回归入口，因为该脚本还有既有本地化失败项；独立编码测试能避免把本轮验收和无关本地化迁移混在一起。
+
 # 骰商铺发现记录
 
 ## 2026-05-23 第一圈商店保护发现
@@ -115,3 +132,17 @@
 - Kept `assets/scenes/preview/preview_shots/*.png`: not runtime game dependencies, but material pipeline Debug tests and docs still depend on them.
 - No battle VFX frames in `assets/ui/battle/vfx` are unused: reroll frames are preloaded by `RerollMagicFx.gd`, and round intro textures are ext_resources in `RoundIntroBanner.tscn`.
 - After cleanup, the only runtime-unreferenced images left under `assets/` are material preview screenshots intentionally retained for pipeline validation.
+# 2026-05-24 Elite Victory Flow Findings
+
+- User report: in an elite battle, score is already over the target and the UI displays "战斗胜利", but the flow still proceeds into the next hand roll.
+- Working tree was already dirty before this pass: `scripts/ui/battle/components/BattleDiceStage3D.gd`, `tests_or_debug/CaptureBattleScreenLayout.gd`, and `tests_or_debug/DebugBattleDiceHoverInfoSmokeTest.gd`.
+- `session-catchup.py` returned exit code 1 with no output; continue from current git status and source inspection.
+- `BattleController.commit_pending_resolution()` already stops `start_next_hand()` when `battle_state.battle_finished` is true.
+- `BattleScreen._play_battle_intro_magic()` restores/clears the victory target overlay before a new hand intro, but the newer external 3D entry path `_play_initial_3d_roll_for_hand()` does not.
+- If the victory target overlay is active and the 3D path enters a hand, the left target panel can still show "战斗胜利" while dice are rolling.
+# 2026-05-24 UI Debug Cleanup Warning Findings
+
+- Known warning commands from the last pass: `DebugBattleDiceInputSmokeTest.gd`, `DebugBattleRewardFlowUiSmokeTest.gd`, `DebugEliteVictoryFlowSmokeTest.gd`, and `CaptureEliteVictoryFlowState.gd`.
+- These scripts instantiate UI scenes or controls and call `quit()` immediately after `queue_free()` or without freeing the instantiated screen, so queued frees may not be flushed before SceneTree shutdown.
+- Verbose leak output showed stray fallback `PanelContainer` / `HBoxContainer` / `Control` nodes from `BattleScreen._instantiate_control(scene, fallback)`: callers eagerly constructed fallback controls, but the helper returned the scene instance without freeing the unused fallback.
+- After fixing the CanvasItem leaks, `DebugBattleDiceInputSmokeTest.gd` also exposed existing strict GDScript compile issues in map event scripts; they were small self-reference/type-inference fixes.

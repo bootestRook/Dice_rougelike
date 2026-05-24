@@ -6,9 +6,9 @@ signal completed()
 
 
 @export_range(0.05, 2.0, 0.01) var fill_seconds := 0.34
-@export_range(1.0, 20.0, 0.5) var line_width := 5.0
-@export var track_color := Color(0.34, 0.34, 0.34, 0.72)
-@export var progress_color := Color(0.78, 0.78, 0.74, 0.92)
+@export_range(1.0, 20.0, 0.5) var line_width := 7.0
+@export var track_color := Color(0.62, 0.62, 0.62, 0.78)
+@export var progress_color := Color(0.88, 0.88, 0.84, 0.95)
 
 var progress := 0.0
 var completed_emitted := false
@@ -53,7 +53,7 @@ func _draw() -> void:
 	if size.x <= 0.0 or size.y <= 0.0:
 		return
 	var center := size * 0.5
-	var radius := minf(size.x, size.y) * 0.36
+	var radius := minf(size.x, size.y) * 0.40
 	var points := 96
 	draw_arc(center, radius, 0.0, TAU, points, track_color, line_width, true)
 	if progress > 0.0:

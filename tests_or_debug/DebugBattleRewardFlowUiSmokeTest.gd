@@ -64,6 +64,7 @@ func _init() -> void:
 	snapshot = battle_screen.automation_get_snapshot()
 	all_passed = _check("choosing normal reward enters install phase", flow.current_state_id == &"forge" and bool(snapshot.get("reward_install_active", false))) and all_passed
 
+	await _cleanup_nodes_before_quit([battle_screen, flow])
 	print("PASS: DebugBattleRewardFlowUiSmokeTest" if all_passed else "FAIL: DebugBattleRewardFlowUiSmokeTest")
 	print("--- DebugBattleRewardFlowUiSmokeTest: end ---")
 	quit(0 if all_passed else 1)
@@ -100,6 +101,26 @@ func _find_label_with_text(root_node: Node, text: String) -> Label:
 		if result != null:
 			return result
 	return null
+
+
+func _cleanup_nodes_before_quit(nodes: Array) -> void:
+	await _flush_runtime_feedback(nodes)
+	for node in nodes:
+		if node != null and is_instance_valid(node):
+			node.queue_free()
+	for _index in range(8):
+		await process_frame
+	await physics_frame
+	await process_frame
+
+
+func _flush_runtime_feedback(nodes: Array) -> void:
+	for node in nodes:
+		if node == null or not is_instance_valid(node):
+			continue
+		var sidebar = node.get("left_sidebar")
+		if sidebar != null and sidebar.has_method("automation_flush_runtime_feedback"):
+			await sidebar.automation_flush_runtime_feedback()
 
 
 func _check(label: String, passed: bool) -> bool:

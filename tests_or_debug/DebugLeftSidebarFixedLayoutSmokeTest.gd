@@ -1,4 +1,4 @@
-﻿extends SceneTree
+extends SceneTree
 class_name DebugLeftSidebarFixedLayoutSmokeTest
 
 

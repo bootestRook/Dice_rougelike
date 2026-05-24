@@ -147,6 +147,18 @@ var max_scored_faces_per_round_delta: int = 0
 var battle_reward_choice_bonus: int = 0
 var pending_dice_tool_face_copy: Dictionary = {}
 var foundry_logs: Array[Dictionary] = []
+var next_event_bias: StringName = &""
+var next_event_bias_multiplier: float = 1.0
+var next_battle_rerolls_per_hand_delta: int = 0
+var queued_battle_rerolls_per_hand_deltas: Array[int] = []
+var next_battle_hands_delta: int = 0
+var next_battle_target_score_multiplier: float = 1.0
+var next_battle_disabled_score_die_count: int = 0
+var next_battle_disabled_ornament_count: int = 0
+var current_circle_boss_target_score_multiplier: float = 1.0
+var current_circle_non_boss_target_score_multiplier: float = 1.0
+var map_event_flags: Dictionary = {}
+var next_shop_modifiers: Dictionary = {}
 
 
 func _init() -> void:
@@ -241,6 +253,14 @@ func setup_new_run() -> void:
 	battle_reward_choice_bonus = 0
 	pending_dice_tool_face_copy.clear()
 	foundry_logs.clear()
+	next_event_bias = &""
+	next_event_bias_multiplier = 1.0
+	clear_next_battle_modifiers()
+	queued_battle_rerolls_per_hand_deltas.clear()
+	current_circle_boss_target_score_multiplier = 1.0
+	current_circle_non_boss_target_score_multiplier = 1.0
+	map_event_flags.clear()
+	next_shop_modifiers.clear()
 	create_default_loadout()
 	starting_total_face_count = get_total_face_count()
 
@@ -279,6 +299,8 @@ func advance_battle() -> void:
 func advance_circle_after_boss() -> void:
 	if current_circle_index < maxi(0, max_circles - 1):
 		current_circle_index += 1
+	current_circle_boss_target_score_multiplier = 1.0
+	current_circle_non_boss_target_score_multiplier = 1.0
 	reset_circle_pressure()
 
 
@@ -361,7 +383,8 @@ func get_target_score(node_type: StringName = &"") -> int:
 	var resolved_type := current_encounter_node_type if node_type == &"" else normalized_encounter_node_type(node_type)
 	var multiplier := get_encounter_type_multiplier(resolved_type)
 	var danger_multiplier := get_danger_multiplier_for_node(resolved_type)
-	return int(round(float(base_score) * multiplier * danger_multiplier))
+	var circle_event_multiplier := _circle_event_target_multiplier(resolved_type)
+	return int(round(float(base_score) * multiplier * danger_multiplier * circle_event_multiplier))
 
 
 func get_target_breakdown(node_type: StringName = &"") -> Dictionary:
@@ -375,8 +398,34 @@ func get_target_breakdown(node_type: StringName = &"") -> Dictionary:
 		"effective_danger_action_count": get_effective_danger_action_count(resolved_type),
 		"danger_bonus_percent": get_danger_bonus_percent_for_node(resolved_type),
 		"danger_multiplier": get_danger_multiplier_for_node(resolved_type),
+		"circle_event_multiplier": _circle_event_target_multiplier(resolved_type),
 		"target_score": get_target_score(resolved_type),
 	}
+
+
+func clear_next_battle_modifiers() -> void:
+	next_battle_rerolls_per_hand_delta = 0
+	next_battle_hands_delta = 0
+	next_battle_target_score_multiplier = 1.0
+	next_battle_disabled_score_die_count = 0
+	next_battle_disabled_ornament_count = 0
+
+
+func enqueue_battle_rerolls_per_hand_delta(delta: int, charges: int) -> void:
+	for _index in range(maxi(0, charges)):
+		queued_battle_rerolls_per_hand_deltas.append(delta)
+
+
+func consume_queued_battle_rerolls_per_hand_delta() -> int:
+	if queued_battle_rerolls_per_hand_deltas.is_empty():
+		return 0
+	return int(queued_battle_rerolls_per_hand_deltas.pop_front())
+
+
+func _circle_event_target_multiplier(resolved_type: StringName) -> float:
+	if resolved_type == ENCOUNTER_BOSS:
+		return maxf(0.1, current_circle_boss_target_score_multiplier)
+	return maxf(0.1, current_circle_non_boss_target_score_multiplier)
 
 
 func has_free_item_slot() -> bool:

@@ -31,6 +31,7 @@ var hand_count_tween: Tween = null
 var money_count_tween: Tween = null
 var circle_base_score_tween: Tween = null
 var victory_target_tween: Tween = null
+var active_decrease_feedback_tweens: Array[Tween] = []
 var victory_target_layer: Control = null
 var victory_target_label: Label = null
 var victory_target_active: bool = false
@@ -90,6 +91,10 @@ func _ready() -> void:
 	info_button.pressed.connect(func() -> void: info_pressed.emit())
 	options_button.pressed.connect(func() -> void: options_pressed.emit())
 	_apply_style()
+
+
+func _exit_tree() -> void:
+	_kill_runtime_tweens()
 
 
 func setup_style(new_style_config: BattleUiStyleConfig) -> void:
@@ -208,6 +213,33 @@ func clear_battle_victory_target_feedback() -> void:
 	if target_score_panel != null:
 		target_score_panel.rotation = 0.0
 		target_score_panel.scale = Vector2.ONE
+
+
+func _kill_runtime_tweens() -> void:
+	for tween in _runtime_tweens():
+		if tween != null and tween.is_valid():
+			tween.kill()
+	hand_count_tween = null
+	money_count_tween = null
+	circle_base_score_tween = null
+	victory_target_tween = null
+	active_decrease_feedback_tweens.clear()
+
+
+func automation_flush_runtime_feedback() -> void:
+	for tween in _runtime_tweens():
+		if tween != null and tween.is_valid():
+			tween.custom_step(10.0)
+	await get_tree().process_frame
+	await get_tree().process_frame
+
+
+func _runtime_tweens() -> Array:
+	var tweens: Array = [hand_count_tween, money_count_tween, circle_base_score_tween, victory_target_tween]
+	for tween in active_decrease_feedback_tweens:
+		if tween != null and not tweens.has(tween):
+			tweens.append(tween)
+	return tweens
 
 
 func play_final_score_pop() -> void:
@@ -800,9 +832,11 @@ func _play_decrease_feedback(
 	if floating != null:
 		tween.parallel().tween_property(floating, "position:x", panel_size.x, 0.2).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
 		tween.parallel().tween_property(floating, "modulate:a", 0.0, 0.12).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	active_decrease_feedback_tweens.append(tween)
 	await tween.finished
+	active_decrease_feedback_tweens.erase(tween)
 	if is_instance_valid(overlay):
-		overlay.queue_free()
+		overlay.free()
 
 
 func _play_money_count_pop() -> void:

@@ -100,6 +100,169 @@ const DIRECT_POWER_IDS := [
 	&"stay_6",
 ]
 
+const MAP_EVENT_REWARD_POOLS := {
+	&"pip": [
+		&"pip_1",
+		&"pip_2",
+		&"pip_3",
+		&"pip_4",
+		&"pip_5",
+		&"pip_6",
+	],
+	&"basic_ornament": [
+		&"ornament_chip",
+		&"ornament_mult",
+		&"ornament_burst",
+		&"ornament_stay",
+		&"ornament_stone",
+	],
+	&"chip_mult_ornament": [
+		&"ornament_chip",
+		&"ornament_mult",
+	],
+	&"common_face": [
+		&"pip_1",
+		&"pip_2",
+		&"pip_3",
+		&"pip_4",
+		&"pip_5",
+		&"pip_6",
+		&"ornament_chip",
+		&"ornament_mult",
+		&"ornament_burst",
+		&"ornament_stay",
+		&"ornament_stone",
+	],
+	&"rare_face": [
+		&"ornament_wild",
+		&"ornament_gold",
+		&"ornament_lucky",
+		&"mark_gold",
+		&"burst_1",
+		&"burst_2",
+		&"burst_3",
+		&"burst_4",
+		&"burst_5",
+		&"burst_6",
+		&"stay_1",
+		&"stay_2",
+		&"stay_3",
+		&"stay_4",
+		&"stay_5",
+		&"stay_6",
+		&"gold_1",
+		&"gold_2",
+		&"gold_3",
+		&"gold_4",
+		&"gold_5",
+		&"gold_6",
+	],
+	&"gambler_rare": [
+		&"mark_red",
+		&"mark_blue",
+		&"mark_purple",
+		&"mark_gold",
+		&"mark_white",
+		&"ornament_foil",
+		&"ornament_holo",
+		&"ornament_poly",
+		&"red_6",
+		&"blue_6",
+		&"purple_6",
+		&"gold_6",
+	],
+	&"gold_ornament": [&"ornament_gold"],
+	&"gold_mark": [&"mark_gold"],
+	&"red_mark": [&"mark_red"],
+	&"blue_mark": [&"mark_blue"],
+	&"purple_mark": [&"mark_purple"],
+	&"white_mark": [&"mark_white"],
+	&"red_gate": [
+		&"mark_red",
+		&"ornament_burst",
+		&"burst_1",
+		&"burst_2",
+		&"burst_3",
+		&"burst_4",
+		&"burst_5",
+		&"burst_6",
+	],
+	&"red_gate_low": [
+		&"ornament_burst",
+		&"burst_1",
+		&"burst_2",
+	],
+	&"blue_gate": [
+		&"mark_blue",
+		&"ornament_stay",
+		&"stay_1",
+		&"stay_2",
+		&"stay_3",
+		&"stay_4",
+		&"stay_5",
+		&"stay_6",
+	],
+	&"blue_gate_low": [
+		&"ornament_stay",
+		&"stay_1",
+		&"stay_2",
+	],
+	&"gold_gate": [
+		&"mark_gold",
+		&"ornament_gold",
+		&"gold_4",
+		&"gold_5",
+		&"gold_6",
+	],
+	&"gold_gate_low": [
+		&"mark_gold",
+		&"ornament_gold",
+	],
+	&"wealth_story": [
+		&"mark_gold",
+		&"ornament_gold",
+	],
+	&"foil_holo": [
+		&"ornament_foil",
+		&"ornament_holo",
+	],
+	&"poly_ornament": [&"ornament_poly"],
+	&"composite": [
+		&"red_6",
+		&"blue_6",
+		&"purple_6",
+		&"gold_6",
+		&"burst_6",
+		&"stay_6",
+	],
+	&"rgb_composite": [
+		&"red_1",
+		&"red_2",
+		&"red_3",
+		&"red_4",
+		&"red_5",
+		&"red_6",
+		&"blue_1",
+		&"blue_2",
+		&"blue_3",
+		&"blue_4",
+		&"blue_5",
+		&"blue_6",
+		&"purple_1",
+		&"purple_2",
+		&"purple_3",
+		&"purple_4",
+		&"purple_5",
+		&"purple_6",
+	],
+	&"battle_story": [
+		&"ornament_chip",
+		&"ornament_mult",
+		&"ornament_burst",
+		&"ornament_stay",
+	],
+}
+
 const COMBO_UPGRADE_IDS := [
 	&"upgrade_combo_scatter",
 	&"upgrade_combo_pair",
@@ -216,6 +379,34 @@ func generate_forge_item_choices(count: int = 3) -> Array[ForgeItemDef]:
 		if def != null:
 			choices.append(def)
 	return choices
+
+
+func generate_map_event_forge_piece(pool_id: StringName) -> ForgePieceDef:
+	var ids: Array = MAP_EVENT_REWARD_POOLS.get(pool_id, [])
+	if ids.is_empty():
+		ids = MAP_EVENT_REWARD_POOLS.get(&"common_face", [])
+	var pool := _build_pool_from_ids(ids)
+	var choices := _draw_unique_choices(pool, 1)
+	return choices[0] if not choices.is_empty() else null
+
+
+func generate_map_event_dice_tool_item_id(rarity: StringName = &"common") -> StringName:
+	var source := []
+	match rarity:
+		&"rare":
+			source = DiceToolCatalog.get_special_dice_tool_item_pool(&"rare")
+		&"epic":
+			source = DiceToolCatalog.get_special_dice_tool_item_pool(&"epic")
+		&"legendary":
+			source = DiceToolCatalog.get_legendary_dice_tool_item_pool()
+		_:
+			source = DiceToolCatalog.get_generated_dice_tool_item_pool(rarity)
+	if source.is_empty():
+		source = DiceToolCatalog.get_generated_dice_tool_item_pool()
+	if source.is_empty():
+		return &""
+	var data := Dictionary(source[rng.randi_range(0, source.size() - 1)])
+	return StringName(str(data.get("id", &"")))
 
 
 func generate_foundry_service_choices(count: int = 3) -> Array[FoundryServiceDef]:

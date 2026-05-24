@@ -1,0 +1,14 @@
+{
+	"scenario": "三色骰扉奇遇事件面板",
+	"screenshot": "G:/Dice_rougelike/tests_or_debug/captures/tricolor_gate_event_panel_after.png",
+	"fields": [
+		"事件标题",
+		"事件类型",
+		"场景描述",
+		"推开红扉",
+		"推开蓝扉",
+		"推开金扉",
+		"绕过三扉"
+	],
+	"visual_acceptance_status": "pending_human_review"
+}

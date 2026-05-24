@@ -1,3 +1,28 @@
+# 2026-05-24 中文编码乱码彻查计划
+
+## 追加处理：本地化测试与终端 UTF-8
+- 状态：complete
+- 范围：修复 `DebugLocalizationSmokeTest.gd` 既有失败；让 `tools/dev/godot.cmd` / `godot.ps1` 在 Windows 下以 UTF-8 输出 Godot 日志，降低中文显示乱码风险。
+- 处理：补 `TAG.EVEN`，把过时的“源码不得有中文”断言改为“源码不得有 mojibake”，动态铸骰件改为校验最终显示文本；新增 `upgrade/combo_upgrade` 标签中文映射。
+- 验证：`DebugLocalizationSmokeTest.gd`、`DebugChineseEncodingSmokeTest.gd`、通过包装器运行的 `DebugChineseDisplaySmokeTest.gd`、主场景 headless 均通过。
+
+## 目标
+彻查项目文本文件中真实写入仓库的中文乱码、非 UTF-8 内容和典型误编码痕迹；修复确认的问题，并加入防回归检查。保持现有功能逻辑不变。
+
+## 阶段
+| 阶段 | 状态 | 内容 |
+|---|---|---|
+| 1. 范围确认 | complete | 已确认判断依据为原始字节与 UTF-8 解码结果，PowerShell 显示乱码不直接作为文件损坏证据 |
+| 2. 全量扫描 | complete | 已扫描 UTF-8 解码错误、替换字符、典型 mojibake 模式和中文可见文本 |
+| 3. 修复 | complete | 无真实中文乱码；已移除 5 个 UTF-8 BOM，统一为 UTF-8 无 BOM |
+| 4. 防回归 | complete | 已新增独立 `DebugChineseEncodingSmokeTest.gd`，覆盖项目文本扩展名、UTF-8 BOM 和典型 mojibake 模式 |
+| 5. 验证 | complete | 已运行编码复扫、`DebugChineseEncodingSmokeTest.gd`、中文显示/面显示 Debug、主场景 headless 和 `git diff --check` |
+
+## 决策
+- 不根据 PowerShell `Get-Content` 的显示结果直接判定文件乱码；以原始字节和 UTF-8 解码结果为准。
+- 本轮不回退已有 dirty/untracked 改动，只在编码排查需要的文件上做最小改动。
+- 功能行为不变，新增检查只做验证和防回归。
+
 # 骰商铺实现计划
 
 ## 2026-05-23 追加处理：商店骰包总表
@@ -123,3 +148,54 @@ Remove image/VFX resources that are not referenced by the current game runtime, 
 | 2. Decide cleanup scope | complete | Delete old map node placeholder images and the unused generated source sheet; keep material preview screenshots because pipeline Debug tests assert them. |
 | 3. Delete files | complete | Removed old map node placeholder PNG files, the unused source sheet, matching `.import` sidecars, and the now-empty source folder. |
 | 4. Verify | complete | Main scene startup, focused Debug checks, targeted diff check, and before/after map screenshot hash comparison passed. |
+# 2026-05-24 Elite Victory Flow Bug
+
+## Goal
+Fix the battle flow where an elite battle can show victory after the score reaches the target but still advance into the next hand roll.
+
+## Phases
+| Phase | Status | Notes |
+|---|---|---|
+| 1. Inspect flow | complete | Located controller finish guard and stale UI victory target overlay in the 3D hand entry path. |
+| 2. Patch logic | complete | Restored the target panel before external 3D hand entry and marked predicted victory overlays for restoration. |
+| 3. Add Debug coverage | complete | Added elite controller victory and stale victory overlay regression coverage. |
+| 4. Verify | complete | Focused battle Debug tests, reward flow, run flow, visual capture, main scene startup, and `git diff --check` passed. |
+
+## Decisions
+- Preserve existing dirty files unless they are directly required for this bug.
+- Keep the fix in runtime/controller logic; UI should only reflect returned battle state.
+
+## Verification
+- `DebugEliteVictoryFlowSmokeTest.gd`: PASS
+- `DebugBattleSmokeTest.gd`: PASS
+- `DebugBattleDiceInputSmokeTest.gd`: PASS
+- `DebugBattleRewardFlowUiSmokeTest.gd`: PASS
+- `DebugRunFlowSmokeTest.gd`: PASS
+- Visual capture: PASS
+- Main scene startup: PASS
+- `git diff --check`: PASS
+
+# 2026-05-24 UI Debug Cleanup Warnings
+
+## Goal
+Remove Godot CanvasItem/ObjectDB leak warnings from the UI Debug and capture commands used for the elite victory flow verification.
+
+## Phases
+| Phase | Status | Notes |
+|---|---|---|
+| 1. Inspect cleanup paths | complete | Found eager fallback controls leaked by `BattleScreen._instantiate_control()` and pending UI feedback tweens in Debug teardown. |
+| 2. Patch cleanup waits | complete | Freed unused fallback controls, added sidebar feedback flush/exit cleanup, and cleaned Debug/capture roots before quitting. |
+| 3. Verify warning-free runs | complete | Known headless UI Debug commands now exit without CanvasItem/ObjectDB warnings; capture is clean with OpenGL driver. |
+
+## Decisions
+- Scope this pass to Debug/capture scripts, not runtime UI behavior.
+- Preserve unrelated current dirty files.
+
+## Verification
+- `DebugBattleDiceInputSmokeTest.gd`: PASS, no CanvasItem/ObjectDB warnings
+- `DebugBattleRewardFlowUiSmokeTest.gd`: PASS, no CanvasItem/ObjectDB warnings
+- `DebugEliteVictoryFlowSmokeTest.gd`: PASS, no CanvasItem/ObjectDB warnings
+- `CaptureEliteVictoryFlowState.gd` with `--rendering-driver opengl3`: PASS, no leak warnings
+- `DebugBattleSmokeTest.gd`: PASS
+- Main scene startup: PASS
+- `git diff --check`: PASS with existing CRLF normalization warnings on unrelated dirty files

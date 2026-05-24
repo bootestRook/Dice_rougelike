@@ -946,6 +946,9 @@ msgstr "All odd"
 msgid "TAG.ALL_EVEN"
 msgstr "All even"
 
+msgid "TAG.EVEN"
+msgstr "Even"
+
 msgid "TAG.LOW_TOTAL"
 msgstr "Low total"
 

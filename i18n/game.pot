@@ -903,6 +903,9 @@ msgstr ""
 msgid "TAG.ALL_EVEN"
 msgstr ""
 
+msgid "TAG.EVEN"
+msgstr ""
+
 msgid "TAG.LOW_TOTAL"
 msgstr ""
 

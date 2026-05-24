@@ -225,6 +225,8 @@ static func forge_tag_name(id: StringName) -> String:
 			return str(TranslationServer.translate(&"AUTO.TEXT.A3685EA6FAFC"))
 		&"extra_trigger":
 			return str(TranslationServer.translate(&"AUTO.TEXT.22CE35BEF3DF"))
+		&"upgrade", &"combo_upgrade":
+			return str(TranslationServer.translate(&"FORGE_OP.COMBO_UPGRADE"))
 		_:
 			return str(id)
 

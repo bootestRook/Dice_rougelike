@@ -946,6 +946,9 @@ msgstr "全奇数"
 msgid "TAG.ALL_EVEN"
 msgstr "全偶数"
 
+msgid "TAG.EVEN"
+msgstr "偶数"
+
 msgid "TAG.LOW_TOTAL"
 msgstr "低点数合计"
 
